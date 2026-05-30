@@ -54,9 +54,14 @@ export const Header = () => {
                 {t(item.labelKey)}
               </NavLink>
             ) : (
-              <a key={item.labelKey} href={item.to} className={INACTIVE_LINK}>
+              <button
+                key={item.labelKey}
+                type="button"
+                className={`${INACTIVE_LINK} cursor-default`}
+                aria-disabled="true"
+              >
                 {t(item.labelKey)}
-              </a>
+              </button>
             ),
           )}
         </nav>

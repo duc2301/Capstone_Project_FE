@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { t } from '../shared/lib/i18n/translations';
+import { t } from '@/shared/lib/i18n';
 
 export function NotFoundPage() {
   return (
@@ -8,7 +8,7 @@ export function NotFoundPage() {
       <span className="text-8xl font-bold text-gray-200">404</span>
       <p className="text-gray-500 text-lg">{t('common.notFound')}</p>
       <Link
-        to="/accounts"
+        to="/"
         className="text-blue-600 hover:underline"
       >
         {t('common.backHome')}

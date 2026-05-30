@@ -1,10 +1,8 @@
 import { useState } from 'react';
 
-import type { Account } from '../entities/account/model/account.types';
-import { useAccounts } from '../features/accounts/hooks/useAccounts';
-import { CreateAccountForm } from '../features/accounts/ui/CreateAccountForm';
-import { UpdateAccountForm } from '../features/accounts/ui/UpdateAccountForm';
-import { t } from '../shared/lib/i18n/translations';
+import type { Account } from '@/entities/account';
+import { CreateAccountForm, UpdateAccountForm, useAccounts } from '@/features/accounts';
+import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'edit';
 

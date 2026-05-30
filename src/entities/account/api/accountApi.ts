@@ -1,5 +1,5 @@
-import axiosInstance from '../../../shared/api/axiosInstance';
-import type { ApiResponse } from '../../../shared/api/apiResponse.types';
+import type { ApiResponse } from '@/shared/api';
+import { axiosInstance } from '@/shared/api';
 import type { Account, CreateAccountPayload, UpdateAccountPayload } from '../model/account.types';
 
 export const accountApi = {

@@ -1,4 +1,4 @@
-import { t } from '../../../shared/lib/i18n/translations';
+import { t } from '@/shared/lib/i18n';
 
 const columns = [
   {
@@ -34,7 +34,6 @@ export const Footer = () => {
   return (
     <footer className="bg-[#30312C] text-slate-300 mt-0">
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-        {/* Brand */}
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 rounded-md bg-[#406623] flex items-center justify-center">
@@ -48,7 +47,6 @@ export const Footer = () => {
           <p className="text-xs text-slate-400 leading-relaxed">{t('footer.tagline')}</p>
         </div>
 
-        {/* Columns */}
         {columns.map((col) => (
           <div key={col.titleKey}>
             <h4 className="text-white text-sm font-semibold mb-3">{t(col.titleKey)}</h4>

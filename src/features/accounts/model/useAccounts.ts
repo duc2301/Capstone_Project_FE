@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { Account, CreateAccountPayload, UpdateAccountPayload } from '../../../entities/account/model/account.types';
-import { t } from '../../../shared/lib/i18n/translations';
-import { accountApi } from '../../../entities/account/api/accountApi';
+import type { Account, CreateAccountPayload, UpdateAccountPayload } from '@/entities/account';
+import { accountApi } from '@/entities/account';
+import { t } from '@/shared/lib/i18n';
 
 interface UseAccountsReturn {
   accounts: Account[];
@@ -48,8 +48,23 @@ export function useAccounts(): UseAccountsReturn {
   }, [fetchAccounts]);
 
   useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data } = await accountApi.getAll();
+        if (!cancelled) setAccounts(data.result ?? []);
+      } catch {
+        if (!cancelled) setError(t('common.error'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return { accounts, loading, error, fetchAccounts, createAccount, updateAccount, deleteAccount };
 }

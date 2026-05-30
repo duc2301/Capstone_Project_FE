@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import type { Account, UpdateAccountPayload } from '../../../entities/account/model/account.types';
-import { t } from '../../../shared/lib/i18n/translations';
+import type { Account, UpdateAccountPayload } from '@/entities/account';
+import { t } from '@/shared/lib/i18n';
 
 interface Props {
   account: Account;

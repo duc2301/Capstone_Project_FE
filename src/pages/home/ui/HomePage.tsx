@@ -1,23 +1,20 @@
-import { Footer } from '../widgets/Footer';
-import { Header } from '../widgets/Header';
-import { t } from '../shared/lib/i18n/translations';
+import { t } from '@/shared/lib/i18n';
+import { Footer } from '@/widgets/Footer';
+import { Header } from '@/widgets/Header';
 
 const HeroSection = () => {
   return (
     <section className="relative overflow-hidden bg-[#FBF9F1]">
-      {/* top-right quarter circle #C2F09C 20% */}
       <div
         className="absolute -top-40 -right-40 w-[520px] h-[520px] rounded-full"
         style={{ backgroundColor: 'rgba(194, 240, 156, 0.2)' }}
       />
-      {/* bottom-left larger circle #FFDCBD 20% */}
       <div
         className="absolute -bottom-60 -left-60 w-[720px] h-[720px] rounded-full"
         style={{ backgroundColor: 'rgba(255, 220, 189, 0.2)' }}
       />
 
       <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-        {/* Left */}
         <div className="space-y-7">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 border border-[#406623]/20 text-[#406623] text-[11px] font-semibold tracking-wide uppercase">
             <span className="text-[#406623]">✦</span>
@@ -60,9 +57,7 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Right: image with floating tags + card */}
         <div className="relative h-[460px]">
-          {/* image */}
           <div
             className="absolute inset-0 rounded-2xl bg-cover bg-center shadow-2xl shadow-emerald-900/20"
             style={{
@@ -71,19 +66,15 @@ const HeroSection = () => {
             }}
           />
 
-          {/* WIP tag */}
           <div className="absolute top-5 right-5 px-3 py-1.5 rounded-full bg-[#406623]/90 backdrop-blur-sm text-white text-[11px] font-medium inline-flex items-center gap-2 shadow-lg">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
             {t('home.hero.tag.wip')}
           </div>
 
-          {/* Shared tag */}
           <div className="absolute top-1/2 right-8 -translate-y-8 px-3 py-1.5 rounded-full bg-[#406623]/90 backdrop-blur-sm text-white text-[11px] font-medium inline-flex items-center gap-2 shadow-lg">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-300" />
             {t('home.hero.tag.shared')}
           </div>
-
-          {/* Published card */}
           <div className="absolute -bottom-6 left-6 right-6 bg-white rounded-2xl shadow-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-1.5 h-1.5 rounded-full bg-[#406623]" />
@@ -145,7 +136,6 @@ const WhySection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Without */}
           <div className="relative rounded-2xl border border-slate-200/80 bg-white p-7 shadow-sm overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-red-50/60 -mr-8 -mt-8" />
             <div className="relative">
@@ -170,8 +160,6 @@ const WhySection = () => {
               </ul>
             </div>
           </div>
-
-          {/* With */}
           <div className="relative rounded-2xl border bg-white p-7 shadow-sm overflow-hidden" style={{ borderColor: 'rgba(64, 102, 35, 0.25)' }}>
             <div
               className="absolute top-0 right-0 w-24 h-24 rounded-full -mr-8 -mt-8"

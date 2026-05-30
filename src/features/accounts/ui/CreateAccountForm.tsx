@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import type { CreateAccountPayload } from '../../../entities/account/model/account.types';
-import { t } from '../../../shared/lib/i18n/translations';
+import type { CreateAccountPayload } from '@/entities/account';
+import { t } from '@/shared/lib/i18n';
 
 interface Props {
   onSubmit: (payload: CreateAccountPayload) => Promise<void>;

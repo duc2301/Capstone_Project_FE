@@ -32,8 +32,11 @@ export const translations = {
   'header.nav.consult': 'Tư vấn',
   'header.nav.guide': 'Hướng dẫn',
   'header.nav.contact': 'Liên hệ',
+  'header.nav.accounts': 'Tài khoản',
   'header.search.placeholder': 'Tìm kiếm...',
   'header.login': 'Đăng nhập',
+  'header.register': 'Đăng ký',
+  'header.logout': 'Đăng xuất',
 
   // Hero
   'home.hero.badge': 'Kiến tạo CDE kiến trúc',
@@ -80,6 +83,44 @@ export const translations = {
   'footer.col.support.tech': 'Hỗ trợ kỹ thuật',
   'footer.col.support.training': 'Tập huấn',
   'footer.col.support.community': 'Mạng xã hội',
+
+  // Login
+  'login.title': 'Đăng nhập',
+  'login.subtitle': 'Truy cập vào hệ thống Quản lý Dữ liệu chung.',
+  'login.emailLabel': 'EMAIL DOANH NGHIỆP',
+  'login.emailPlaceholder': 'name@company.com',
+  'login.passwordLabel': 'MẬT KHẨU',
+  'login.passwordPlaceholder': '••••••••',
+  'login.forgotPassword': 'Quên mật khẩu?',
+  'login.submit': 'ĐĂNG NHẬP',
+  'login.divider': 'HOẶC',
+  'login.sso': 'Đăng nhập với Google',
+  'login.hero.heading': 'Một nguồn dữ liệu duy nhất cho mọi dự án xây dựng',
+  'login.hero.tag1': 'QUẢN LÝ DỰ ÁN',
+  'login.hero.tag2': 'PHỐI HỢP NHÓM',
+  'login.hero.tag3': 'BIM/CDE',
+  'login.hero.brand': 'VNCDE',
+  'login.error.invalidCredentials': 'Email hoặc mật khẩu không đúng.',
+  'login.error.generic': 'Đã xảy ra lỗi. Vui lòng thử lại.',
+  'login.noAccount': 'Chưa có tài khoản?',
+  'login.signUp': 'Đăng ký ngay',
+
+  // Register
+  'register.title': 'Tạo tài khoản',
+  'register.subtitle': 'Đăng ký để bắt đầu sử dụng hệ thống Quản lý Dữ liệu chung.',
+  'register.userNameLabel': 'TÊN NGƯỜI DÙNG',
+  'register.userNamePlaceholder': 'nguyenvana',
+  'register.emailLabel': 'EMAIL DOANH NGHIỆP',
+  'register.emailPlaceholder': 'name@company.com',
+  'register.passwordLabel': 'MẬT KHẨU',
+  'register.passwordPlaceholder': '••••••••',
+  'register.confirmPasswordLabel': 'XÁC NHẬN MẬT KHẨU',
+  'register.confirmPasswordPlaceholder': '••••••••',
+  'register.submit': 'ĐĂNG KÝ',
+  'register.haveAccount': 'Đã có tài khoản?',
+  'register.signIn': 'Đăng nhập',
+  'register.error.passwordMismatch': 'Mật khẩu xác nhận không khớp.',
+  'register.error.generic': 'Đăng ký thất bại. Vui lòng thử lại.',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

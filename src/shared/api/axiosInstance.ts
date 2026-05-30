@@ -62,10 +62,12 @@ axiosInstance.interceptors.response.use(
       refreshPromise ??= refreshAccessToken();
       const newToken = await refreshPromise;
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
-      return await axiosInstance(originalRequest);
+      return await axiosInstance<unknown>(originalRequest);
     } catch (refreshError) {
       authStorage.clear();
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       return Promise.reject(refreshError);
     } finally {
       refreshPromise = null;

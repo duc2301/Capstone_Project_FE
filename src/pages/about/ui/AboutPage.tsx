@@ -327,6 +327,7 @@ function ZoneTags({ zones }: { zones: ZoneId[] }) {
     <div className="flex flex-wrap gap-2">
       {zones.map((zone) => {
         const tag = ZONE_TAG[zone];
+        if (!tag) return null;
         return (
           <span
             key={zone}

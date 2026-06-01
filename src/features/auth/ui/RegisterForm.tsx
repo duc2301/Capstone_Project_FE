@@ -1,14 +1,117 @@
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { useRegister } from '../model/useRegister';
 
-const FIELD_CLASS =
-  'box-border w-full px-4 py-2.5 bg-[#1D2027] border border-[#414754] rounded-sm font-sans text-base text-[#E0E2EC] placeholder:text-[#8B909F] focus:outline-none focus:border-[#ACC7FF] transition-colors';
+const INPUT_BASE =
+  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white px-4 font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
 const LABEL_CLASS =
-  'font-heading text-xs font-bold leading-3 tracking-[0.6px] text-[#C1C6D6] w-full';
+  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
+
+function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2 text-[#406623]">
+      {icon}
+      <h2 className="font-jakarta text-sm font-semibold uppercase tracking-[0.7px]">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
+    </svg>
+  );
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+  return open ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
+      <path d="m1 1 22 22" />
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+    </svg>
+  );
+}
+
+interface PasswordFieldProps {
+  id: string;
+  name: 'password' | 'confirmPassword';
+  labelKey: TranslationKey;
+  placeholderKey: TranslationKey;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  hintKey?: TranslationKey;
+}
+
+function PasswordField({
+  id,
+  name,
+  labelKey,
+  placeholderKey,
+  value,
+  onChange,
+  hintKey,
+}: PasswordFieldProps) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className={LABEL_CLASS}>
+        {t(labelKey)}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          name={name}
+          type={visible ? 'text' : 'password'}
+          required
+          minLength={6}
+          value={value}
+          onChange={onChange}
+          placeholder={t(placeholderKey)}
+          autoComplete="new-password"
+          className={`${INPUT_BASE} pr-12`}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((prev) => !prev)}
+          tabIndex={-1}
+          aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#73796B] transition-colors hover:text-[#43493C]"
+        >
+          <EyeIcon open={visible} />
+        </button>
+      </div>
+      {hintKey && (
+        <p className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#73796B]">
+          {t(hintKey)}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function RegisterForm() {
   const { loading, error, register } = useRegister();
@@ -18,6 +121,7 @@ export function RegisterForm() {
     password: '',
     confirmPassword: '',
   });
+  const [agreed, setAgreed] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -29,122 +133,126 @@ export function RegisterForm() {
   };
 
   return (
-    <form
-      id="register-form"
-      onSubmit={handleSubmit}
-      className="flex flex-col items-start px-4 gap-8 w-full max-w-[420px]"
-    >
-      <div className="flex flex-col items-start gap-1 w-full">
-        <h1 className="font-heading text-[32px] font-semibold leading-[38px] text-[#E0E2EC] w-full">
+    <div className="flex w-full max-w-[896px] flex-col gap-12">
+      <header className="flex flex-col items-center gap-4 text-center">
+        <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
           {t('register.title')}
         </h1>
-        <p className="font-sans text-base font-normal leading-6 text-[#C1C6D6] w-full">
+        <p className="max-w-[512px] font-jakarta text-base text-[#73796B]">
           {t('register.subtitle')}
         </p>
-      </div>
+      </header>
 
-      {error && (
-        <div className="flex items-center gap-2 w-full px-4 py-3 rounded-sm bg-red-500/10 border border-red-500/30">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4M12 16h.01" />
-          </svg>
-          <span className="font-sans text-sm text-red-400">{error}</span>
-        </div>
-      )}
-
-      <div className="flex flex-col items-start gap-4 w-full">
-        <div className="flex flex-col items-start gap-1 w-full">
-          <label htmlFor="register-username" className={LABEL_CLASS}>
-            {t('register.userNameLabel')}
-          </label>
-          <input
-            id="register-username"
-            name="userName"
-            type="text"
-            required
-            value={form.userName}
-            onChange={handleChange}
-            placeholder={t('register.userNamePlaceholder')}
-            autoComplete="username"
-            className={FIELD_CLASS}
-          />
-        </div>
-
-        <div className="flex flex-col items-start gap-1 w-full">
-          <label htmlFor="register-email" className={LABEL_CLASS}>
-            {t('register.emailLabel')}
-          </label>
-          <input
-            id="register-email"
-            name="email"
-            type="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            placeholder={t('register.emailPlaceholder')}
-            autoComplete="email"
-            className={FIELD_CLASS}
-          />
-        </div>
-
-        <div className="flex flex-col items-start gap-1 w-full">
-          <label htmlFor="register-password" className={LABEL_CLASS}>
-            {t('register.passwordLabel')}
-          </label>
-          <input
-            id="register-password"
-            name="password"
-            type="password"
-            required
-            minLength={6}
-            value={form.password}
-            onChange={handleChange}
-            placeholder={t('register.passwordPlaceholder')}
-            autoComplete="new-password"
-            className={FIELD_CLASS}
-          />
-        </div>
-
-        <div className="flex flex-col items-start gap-1 w-full">
-          <label htmlFor="register-confirm-password" className={LABEL_CLASS}>
-            {t('register.confirmPasswordLabel')}
-          </label>
-          <input
-            id="register-confirm-password"
-            name="confirmPassword"
-            type="password"
-            required
-            minLength={6}
-            value={form.confirmPassword}
-            onChange={handleChange}
-            placeholder={t('register.confirmPasswordPlaceholder')}
-            autoComplete="new-password"
-            className={FIELD_CLASS}
-          />
-        </div>
-      </div>
-
-      <button
-        id="register-submit-btn"
-        type="submit"
-        disabled={loading}
-        className="flex justify-center items-center gap-2 w-full py-4 bg-[#ACC7FF] rounded-sm font-heading text-xs font-bold tracking-[0.6px] uppercase text-[#002F68] hover:bg-[#C4D8FF] active:bg-[#94B5F5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+      <form
+        id="register-form"
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 rounded-3xl border border-[#C3C9B9] bg-white px-6 pb-12 pt-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-12 md:pb-16 md:pt-12"
       >
-        <span>{loading ? '...' : t('register.submit')}</span>
-        {!loading && (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M5 12h14M13 5l7 7-7 7" />
-          </svg>
+        {error && (
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+            <span className="font-jakarta text-sm text-red-600">{error}</span>
+          </div>
         )}
-      </button>
 
-      <p className="font-sans text-sm text-[#C1C6D6] w-full text-center">
-        {t('register.haveAccount')}{' '}
-        <Link to="/login" className="text-[#ACC7FF] hover:underline transition-colors">
-          {t('register.signIn')}
-        </Link>
-      </p>
-    </form>
+        <section className="flex flex-col gap-6">
+          <SectionHeader icon={<UserIcon />} title={t('register.section.personal')} />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="register-username" className={LABEL_CLASS}>
+                {t('register.userNameLabel')}
+              </label>
+              <input
+                id="register-username"
+                name="userName"
+                type="text"
+                required
+                value={form.userName}
+                onChange={handleChange}
+                placeholder={t('register.userNamePlaceholder')}
+                autoComplete="username"
+                className={INPUT_BASE}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="register-email" className={LABEL_CLASS}>
+                {t('register.emailLabel')}
+              </label>
+              <input
+                id="register-email"
+                name="email"
+                type="email"
+                required
+                value={form.email}
+                onChange={handleChange}
+                placeholder={t('register.emailPlaceholder')}
+                autoComplete="email"
+                className={INPUT_BASE}
+              />
+            </div>
+          </div>
+        </section>
+
+        <div className="h-px bg-[#C3C9B9]/30" />
+
+        <section className="flex flex-col gap-6">
+          <SectionHeader icon={<ShieldIcon />} title={t('register.section.security')} />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <PasswordField
+              id="register-password"
+              name="password"
+              labelKey="register.passwordLabel"
+              placeholderKey="register.passwordPlaceholder"
+              value={form.password}
+              onChange={handleChange}
+              hintKey="register.passwordHint"
+            />
+            <PasswordField
+              id="register-confirm-password"
+              name="confirmPassword"
+              labelKey="register.confirmPasswordLabel"
+              placeholderKey="register.confirmPasswordPlaceholder"
+              value={form.confirmPassword}
+              onChange={handleChange}
+            />
+          </div>
+        </section>
+
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-1 h-5 w-5 shrink-0 rounded border-[#C3C9B9] text-[#406623] accent-[#406623] focus:ring-[#406623]"
+          />
+          <span className="font-jakarta text-base text-[#43493C]">
+            {t('register.agreeTerms')}
+          </span>
+        </label>
+
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#C3C9B9]/30 pt-6 sm:flex-row">
+          <p className="font-jakarta text-base text-[#73796B]">
+            {t('register.haveAccount')}{' '}
+            <Link to="/login" className="font-semibold text-[#406623] transition-colors hover:underline">
+              {t('register.signIn')}
+            </Link>
+          </p>
+          <button
+            id="register-submit-btn"
+            type="submit"
+            disabled={loading || !agreed}
+            className="flex items-center justify-center rounded-full bg-[#406623] px-12 py-4 font-jakarta text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? '...' : t('register.submit')}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

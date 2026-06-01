@@ -14,35 +14,32 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'header.nav.home', to: '/', routed: true },
-  { labelKey: 'header.nav.about', to: '#', routed: false },
+  { labelKey: 'header.nav.about', to: '/about', routed: true },
   { labelKey: 'header.nav.consult', to: '#', routed: false },
-  { labelKey: 'header.nav.guide', to: '#', routed: false },
   { labelKey: 'header.nav.contact', to: '#', routed: false },
   { labelKey: 'header.nav.accounts', to: '/accounts', routed: true, authOnly: true },
 ];
 
-const INACTIVE_LINK = 'text-slate-600 hover:text-slate-900 text-[13px] transition-colors';
+const INACTIVE_LINK =
+  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C] hover:text-[#406623] transition-colors';
 const ACTIVE_LINK =
-  'text-[#406623] text-[13px] font-medium relative after:absolute after:-bottom-[18px] after:left-0 after:right-0 after:h-[2px] after:bg-[#406623]';
+  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#406623] relative after:absolute after:-bottom-1.5 after:left-0 after:right-0 after:h-0.5 after:bg-[#406623]';
 
 export const Header = () => {
   const { currentUser, isAuthenticated } = useSession();
   const { loading: loggingOut, logout } = useLogout();
 
   return (
-    <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[min(1200px,calc(100%-32px))]">
-      <div className="rounded-full bg-white/95 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-black/5 px-6 h-14 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-[#406623] flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <path d="M4 21V8l8-5 8 5v13" />
-              <path d="M9 21v-6h6v6" />
-            </svg>
-          </div>
-          <span className="font-semibold text-slate-900 text-[15px]">{t('brand.name')}</span>
+    <header className="fixed top-5 left-1/2 z-50 w-[min(1216px,calc(100%-32px))] -translate-x-1/2">
+      <div className="flex h-[68px] items-center justify-between rounded-full border border-white/20 bg-white/20 px-8 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)] backdrop-blur-md">
+        <Link
+          to="/"
+          className="font-display text-2xl font-bold text-[#406623]"
+        >
+          {t('brand.name')}
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden items-center gap-6 md:flex">
           {NAV_ITEMS.filter((item) => !item.authOnly || isAuthenticated).map((item) =>
             item.routed ? (
               <NavLink
@@ -66,29 +63,29 @@ export const Header = () => {
           )}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 text-sm text-slate-400 w-40">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="flex items-center gap-4">
+          <div className="hidden items-center gap-2 rounded-full border border-[#C3C9B9]/30 bg-[#F0EEE6]/50 px-4 py-1.5 text-[#43493C]/70 sm:flex">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="7" />
               <path d="m21 21-4.3-4.3" />
             </svg>
             <input
               type="text"
               placeholder={t('header.search.placeholder')}
-              className="bg-transparent outline-none text-xs flex-1 placeholder:text-slate-400"
+              className="w-28 bg-transparent font-jakarta text-sm outline-none placeholder:text-[#43493C]/70"
             />
           </div>
 
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline text-[13px] font-medium text-slate-700 max-w-[120px] truncate">
+              <span className="hidden max-w-[120px] truncate font-jakarta text-sm font-medium text-[#43493C] sm:inline">
                 {currentUser?.userName}
               </span>
               <button
                 type="button"
                 onClick={logout}
                 disabled={loggingOut}
-                className="px-5 py-1.5 rounded-full border border-[#406623] text-[#406623] text-[13px] font-medium hover:bg-[#406623]/5 disabled:opacity-50 transition-colors"
+                className="rounded-full border border-[#406623] px-6 py-2.5 font-jakarta text-sm font-semibold tracking-[0.14px] text-[#406623] transition-colors hover:bg-[#406623]/5 disabled:opacity-50"
               >
                 {t('header.logout')}
               </button>
@@ -97,13 +94,13 @@ export const Header = () => {
             <div className="flex items-center gap-3">
               <Link
                 to="/register"
-                className="hidden sm:inline text-[13px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                className="hidden font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C] transition-colors hover:text-[#406623] sm:inline"
               >
                 {t('header.register')}
               </Link>
               <Link
                 to="/login"
-                className="px-5 py-1.5 rounded-full bg-[#406623] text-white text-[13px] font-medium hover:bg-[#34521c] transition-colors"
+                className="rounded-full bg-[#406623] px-6 py-2.5 font-jakarta text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-[#34521c]"
               >
                 {t('header.login')}
               </Link>

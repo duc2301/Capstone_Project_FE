@@ -6,6 +6,11 @@ import type { ApiResponse } from './apiResponse.types';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+
+const isAuthEndpoint = (url?: string): boolean =>
+  url !== undefined && AUTH_ENDPOINTS.some((path) => url.includes(path));
+
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10_000,
@@ -52,7 +57,10 @@ axiosInstance.interceptors.response.use(
       | undefined;
 
     const shouldRefresh =
-      error.response?.status === 401 && originalRequest && !originalRequest._retry;
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url);
 
     if (!shouldRefresh) return Promise.reject(error);
 

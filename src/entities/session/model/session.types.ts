@@ -1,8 +1,15 @@
+export const AccountRole = {
+  Admin: 'Admin',
+  User: 'User',
+} as const;
+
+export type AccountRole = (typeof AccountRole)[keyof typeof AccountRole];
+
 export interface CurrentUser {
   accountId: string;
   userName: string;
   email: string;
-  role: string;
+  role: AccountRole | number;
 }
 
 export interface AuthResult extends CurrentUser {

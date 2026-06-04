@@ -32,6 +32,7 @@ export const translations = {
   'header.nav.consult': 'Tư vấn',
   'header.nav.guide': 'Hướng dẫn',
   'header.nav.contact': 'Liên hệ',
+  'header.nav.viewer': 'Model 3D',
   'header.nav.accounts': 'Tài khoản',
   'header.search.placeholder': 'Tìm kiếm...',
   'header.login': 'Đăng nhập',
@@ -226,6 +227,30 @@ export const translations = {
   'about.roles.row4.name': 'Nhà thầu thi công',
   'about.roles.row4.desc': 'Khai thác bản vẽ thi công, báo cáo tiến độ, cập nhật mô hình as-built.',
   'about.roles.row4.permission': 'Khai thác',
+
+  // Viewer (xem model 3D/2D trên web qua APS Viewer)
+  'viewer.title': 'Trình xem mô hình 3D/2D',
+  'viewer.subtitle':
+    'Tải lên tệp CAD/BIM để xem trực tiếp trên trình duyệt với đầy đủ công cụ: xoay, phóng, mặt cắt, đo đạc, markup, cây đối tượng, thuộc tính.',
+  'viewer.dropzone.title': 'Kéo & thả tệp mô hình vào đây',
+  'viewer.dropzone.hint': 'hoặc bấm để chọn tệp từ máy tính',
+  'viewer.dropzone.button': 'Chọn tệp',
+  'viewer.dropzone.formats': 'Định dạng hỗ trợ',
+  'viewer.upload.uploading': 'Đang tải tệp lên...',
+  'viewer.upload.translating': 'Đang dịch mô hình sang định dạng web...',
+  'viewer.upload.translatingHint':
+    'Quá trình này có thể mất vài phút với tệp lớn (.rvt, .nwd).',
+  'viewer.status.loading': 'Đang khởi tạo trình xem...',
+  'viewer.back': 'Tải tệp khác',
+  'viewer.error.unsupported': 'Định dạng tệp không được hỗ trợ.',
+  'viewer.error.upload': 'Tải tệp lên thất bại. Vui lòng thử lại.',
+  'viewer.error.status': 'Không lấy được trạng thái dịch mô hình.',
+  'viewer.error.translateFailed':
+    'Dịch mô hình thất bại. Định dạng có thể không được APS hỗ trợ (ví dụ .pln, .doc, .xls).',
+  'viewer.error.token': 'Không lấy được token trình xem từ máy chủ.',
+  'viewer.error.init': 'Khởi tạo trình xem thất bại.',
+  'viewer.error.load': 'Tải mô hình thất bại.',
+  'viewer.error.retry': 'Thử lại',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

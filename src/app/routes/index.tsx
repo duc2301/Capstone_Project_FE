@@ -6,6 +6,7 @@ import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
 import { RegisterPage } from '@/pages/register';
+import { ViewerPage } from '@/pages/viewer';
 import { RequireAuth } from './RequireAuth';
 
 export const AppRoutes = () => {
@@ -20,6 +21,14 @@ export const AppRoutes = () => {
         element={
           <RequireAuth>
             <AccountsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/viewer"
+        element={
+          <RequireAuth>
+            <ViewerPage />
           </RequireAuth>
         }
       />

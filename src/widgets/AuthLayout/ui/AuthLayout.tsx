@@ -1,18 +1,11 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
-
-const FOOTER_LINKS: TranslationKey[] = [
-  'auth.footer.privacy',
-  'auth.footer.terms',
-  'auth.footer.support',
-];
 
 function AuthTopBar() {
   return (
-    <header className="absolute top-12 left-1/2 z-20 w-[min(1230px,calc(100%-32px))] -translate-x-1/2">
+    <header className="absolute top-6 left-1/2 z-20 w-[min(1230px,calc(100%-32px))] -translate-x-1/2">
       <div className="flex h-[61px] items-center justify-between rounded-full border border-white/20 bg-[#FBF9F1]/80 px-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
         <span className="font-display text-2xl font-bold text-[#406623]">
           {t('auth.brand')}
@@ -32,27 +25,6 @@ function AuthTopBar() {
   );
 }
 
-function AuthFooter() {
-  return (
-    <footer className="flex flex-col items-center justify-center gap-3 px-6 py-8 text-center md:flex-row md:gap-6">
-      <p className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#73796B]">
-        {t('auth.footer.copyright')}
-      </p>
-      <nav className="flex items-center gap-6">
-        {FOOTER_LINKS.map((key) => (
-          <a
-            key={key}
-            href="#"
-            className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#73796B] transition-colors hover:text-[#406623]"
-          >
-            {t(key)}
-          </a>
-        ))}
-      </nav>
-    </footer>
-  );
-}
-
 interface Props {
   children: ReactNode;
 }
@@ -62,7 +34,6 @@ export function AuthLayout({ children }: Props) {
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#FBF9F1]">
       <AuthTopBar />
       <main className="flex flex-1 flex-col">{children}</main>
-      <AuthFooter />
     </div>
   );
 }

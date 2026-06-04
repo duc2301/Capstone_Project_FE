@@ -72,7 +72,7 @@ export function LoginPage() {
     <AuthLayout>
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <LoginBrandPanel />
-        <div className="flex items-center justify-center px-6 py-32 lg:px-12">
+        <div className="flex items-center justify-center px-6 pb-8 pt-24 lg:px-12">
           <LoginForm />
         </div>
       </div>

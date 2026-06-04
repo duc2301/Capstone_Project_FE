@@ -6,7 +6,7 @@ import { t } from '@/shared/lib/i18n';
 import { useLogin } from '../model/useLogin';
 
 const INPUT_BASE =
-  'h-14 w-full rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
+  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
 const LABEL_CLASS =
   'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
 
@@ -68,8 +68,8 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex w-full max-w-[448px] flex-col gap-8">
-      <header className="flex flex-col gap-2">
+    <div className="flex w-full max-w-[448px] flex-col gap-4">
+      <header className="flex flex-col gap-1">
         <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
           Chào mừng trở lại
         </h1>
@@ -78,8 +78,8 @@ export function LoginForm() {
         </p>
       </header>
 
-      <div className="flex flex-col gap-8 rounded-3xl border border-[#C3C9B9]/30 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-        <form id="login-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 rounded-3xl border border-[#C3C9B9]/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        <form id="login-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && (
             <div
               role="alert"
@@ -168,7 +168,7 @@ export function LoginForm() {
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#406623] font-jakarta text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#406623] font-jakarta text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span>{loading ? '...' : t('login.submit')}</span>
             {!loading && (
@@ -179,11 +179,11 @@ export function LoginForm() {
           </button>
         </form>
 
-        <div className="border-t border-[#C3C9B9]/30 pt-8">
+        <div className="border-t border-[#C3C9B9]/30 pt-4">
           <button
             id="login-sso-btn"
             type="button"
-            className="flex h-14 w-full items-center justify-center gap-3 rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-sm font-semibold tracking-[0.14px] text-[#1B1C17] transition-colors hover:bg-[#FBF9F1]"
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-sm font-semibold tracking-[0.14px] text-[#1B1C17] transition-colors hover:bg-[#FBF9F1]"
           >
             <GoogleIcon />
             <span>{t('login.sso')}</span>

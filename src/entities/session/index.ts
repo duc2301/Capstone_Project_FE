@@ -1,4 +1,5 @@
 export { sessionApi } from './api/sessionApi';
+export { AccountRole } from './model/session.types';
 export type {
   AuthResult,
   CurrentUser,

@@ -5,8 +5,10 @@ import { AccountsPage } from '@/pages/accounts';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
+import { OrganizationsPage } from '@/pages/organizations';
+import { ProfilePage } from '@/pages/profile';
 import { RegisterPage } from '@/pages/register';
-import { ViewerPage } from '@/pages/viewer';
+import { AdminLayout } from '@/widgets/AdminLayout';
 import { RequireAuth } from './RequireAuth';
 
 export const AppRoutes = () => {
@@ -20,15 +22,29 @@ export const AppRoutes = () => {
         path="/accounts"
         element={
           <RequireAuth>
-            <AccountsPage />
+            <AdminLayout>
+              <AccountsPage />
+            </AdminLayout>
           </RequireAuth>
         }
       />
       <Route
-        path="/viewer"
+        path="/organizations"
         element={
           <RequireAuth>
-            <ViewerPage />
+            <AdminLayout>
+              <OrganizationsPage />
+            </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <ProfilePage />
+            </AdminLayout>
           </RequireAuth>
         }
       />

@@ -17,6 +17,8 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'header.nav.about', to: '/about', routed: true },
   { labelKey: 'header.nav.consult', to: '#', routed: false },
   { labelKey: 'header.nav.contact', to: '#', routed: false },
+  { labelKey: 'header.nav.accounts', to: '/accounts', routed: true, authOnly: true },
+  { labelKey: 'admin.nav.profile', to: '/profile', routed: true, authOnly: true },
   { labelKey: 'header.nav.viewer', to: '/viewer', routed: true, authOnly: true },
 ];
 

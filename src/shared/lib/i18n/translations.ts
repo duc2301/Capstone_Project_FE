@@ -130,7 +130,7 @@ export const translations = {
   // Register
   'register.title': 'Tạo tài khoản',
   'register.subtitle':
-    'Gia nhập hệ sinh thái quản lý dữ liệu công trình hiện đại dành cho kỹ sư và kiến trúc sư.',
+    'Gia nhập hệ sinh thái quản lý dữ liệu công trình hiện đại',
   'register.section.personal': 'THÔNG TIN CÁ NHÂN',
   'register.section.security': 'BẢO MẬT TÀI KHOẢN',
   'register.userNameLabel': 'Tên người dùng',

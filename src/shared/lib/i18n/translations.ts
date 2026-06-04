@@ -294,9 +294,7 @@ export const translations = {
   'common.comingSoon': 'Tính năng đang phát triển.',
   'common.saveChanges': 'Lưu thay đổi',
   'common.close': 'Đóng',
-  'common.loading': 'Đang tải dữ liệu...',
-  'common.error': 'Đã có lỗi xảy ra, vui lòng thử lại.',
-  'common.noData': 'Không có dữ liệu',
+
 
   // ── Organization CRUD ─────────────────────────────
   'org.title': 'Quản lý tổ chức',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
@@ -136,7 +136,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <p className="truncate text-sm font-semibold text-white">
               {currentUser?.userName ?? 'User'}
             </p>
-            <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white ${currentUser?.role?.toLowerCase() === 'admin' ? 'bg-danger' : 'bg-warning text-primary'}`}>
+            <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white ${currentUser?.role?.toString().toLowerCase() === 'admin' ? 'bg-danger' : 'bg-warning text-primary'}`}>
               {currentUser?.role ?? 'Member'}
             </span>
           </div>

@@ -37,7 +37,7 @@ export function useLogin(): UseLoginReturn {
         if (data.result.role === AccountRole.Admin) {
           navigate('/accounts', { replace: true });
         } else {
-          navigate('/projects', { replace: true });
+          navigate('/', { replace: true });
         }
       } catch (err) {
         const axiosError = err as AxiosError<ApiResponse>;

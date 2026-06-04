@@ -32,57 +32,99 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow mb-6 space-y-4">
-      <h2 className="text-lg font-semibold text-gray-800">{t('account.createNew')}</h2>
-      <div className="grid grid-cols-2 gap-4">
-        <input
-          name="userName"
-          value={form.userName}
-          onChange={handleChange}
-          placeholder={t('account.userName')}
-          required
-          className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder={t('account.email')}
-          required
-          className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder={t('account.password')}
-          required
-          className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          name="role"
-          value={form.role}
-          onChange={handleChange}
-          placeholder={t('account.role')}
-          className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        {/* User Name */}
+        <div className="space-y-1.5">
+          <label htmlFor="create-userName" className="block text-sm font-medium text-text-secondary">
+            {t('account.userName')}
+          </label>
+          <input
+            id="create-userName"
+            name="userName"
+            value={form.userName}
+            onChange={handleChange}
+            placeholder={t('account.userName')}
+            required
+            className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        {/* Email */}
+        <div className="space-y-1.5">
+          <label htmlFor="create-email" className="block text-sm font-medium text-text-secondary">
+            {t('account.email')}
+          </label>
+          <input
+            id="create-email"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder={t('account.email')}
+            required
+            className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        {/* Password */}
+        <div className="space-y-1.5">
+          <label htmlFor="create-password" className="block text-sm font-medium text-text-secondary">
+            {t('account.password')}
+          </label>
+          <input
+            id="create-password"
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            placeholder={t('account.password')}
+            required
+            className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        {/* Role */}
+        <div className="space-y-1.5">
+          <label htmlFor="create-role" className="block text-sm font-medium text-text-secondary">
+            {t('account.role')}
+          </label>
+          <input
+            id="create-role"
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+            placeholder={t('account.role')}
+            className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
       </div>
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {t('account.save')}
-        </button>
+
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-3 border-t border-card-border pt-5">
         <button
           type="button"
           onClick={onCancel}
-          className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 transition-colors"
+          className="rounded-[var(--radius-button)] border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg hover:border-text-muted"
         >
           {t('account.cancel')}
+        </button>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {submitting ? (
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              {t('account.save')}
+            </span>
+          ) : (
+            t('account.save')
+          )}
         </button>
       </div>
     </form>

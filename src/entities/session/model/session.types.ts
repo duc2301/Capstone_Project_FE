@@ -1,8 +1,13 @@
+export enum AccountRole {
+  Admin = 'Admin',
+  User = 'User',
+}
+
 export interface CurrentUser {
   accountId: string;
   userName: string;
   email: string;
-  role: string;
+  role: AccountRole | number;
 }
 
 export interface AuthResult extends CurrentUser {

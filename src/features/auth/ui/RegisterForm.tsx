@@ -7,7 +7,7 @@ import { t } from '@/shared/lib/i18n';
 import { useRegister } from '../model/useRegister';
 
 const INPUT_BASE =
-  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white px-4 font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
+  'h-10 w-full rounded-xl border border-[#C3C9B9] bg-white px-4 font-jakarta text-sm text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
 const LABEL_CLASS =
   'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
 
@@ -77,7 +77,7 @@ function PasswordField({
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className={LABEL_CLASS}>
         {t(labelKey)}
       </label>
@@ -133,12 +133,12 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="flex w-full max-w-[896px] flex-col gap-12">
-      <header className="flex flex-col items-center gap-4 text-center">
-        <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+    <div className="flex w-full max-w-[896px] flex-col gap-4">
+      <header className="flex flex-col items-center gap-1.5 text-center">
+        <h1 className="font-display text-[26px] font-semibold leading-8 text-[#1B1C17]">
           {t('register.title')}
         </h1>
-        <p className="max-w-[512px] font-jakarta text-base text-[#73796B]">
+        <p className="max-w-[512px] font-jakarta text-sm text-[#73796B]">
           {t('register.subtitle')}
         </p>
       </header>
@@ -146,7 +146,7 @@ export function RegisterForm() {
       <form
         id="register-form"
         onSubmit={handleSubmit}
-        className="flex flex-col gap-8 rounded-3xl border border-[#C3C9B9] bg-white px-6 pb-12 pt-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-12 md:pb-16 md:pt-12"
+        className="flex flex-col gap-5 rounded-3xl border border-[#C3C9B9] bg-white px-6 py-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-10 md:py-6"
       >
         {error && (
           <div
@@ -161,10 +161,10 @@ export function RegisterForm() {
           </div>
         )}
 
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-4">
           <SectionHeader icon={<UserIcon />} title={t('register.section.personal')} />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="register-username" className={LABEL_CLASS}>
                 {t('register.userNameLabel')}
               </label>
@@ -180,7 +180,7 @@ export function RegisterForm() {
                 className={INPUT_BASE}
               />
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="register-email" className={LABEL_CLASS}>
                 {t('register.emailLabel')}
               </label>
@@ -201,9 +201,9 @@ export function RegisterForm() {
 
         <div className="h-px bg-[#C3C9B9]/30" />
 
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-4">
           <SectionHeader icon={<ShieldIcon />} title={t('register.section.security')} />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <PasswordField
               id="register-password"
               name="password"
@@ -236,7 +236,7 @@ export function RegisterForm() {
           </span>
         </label>
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#C3C9B9]/30 pt-6 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-[#C3C9B9]/30 pt-4 sm:flex-row">
           <p className="font-jakarta text-base text-[#73796B]">
             {t('register.haveAccount')}{' '}
             <Link to="/login" className="font-semibold text-[#406623] transition-colors hover:underline">
@@ -247,7 +247,7 @@ export function RegisterForm() {
             id="register-submit-btn"
             type="submit"
             disabled={loading || !agreed}
-            className="flex items-center justify-center rounded-full bg-[#406623] px-12 py-4 font-jakarta text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center justify-center rounded-full bg-[#406623] px-10 py-3 font-jakarta text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? '...' : t('register.submit')}
           </button>

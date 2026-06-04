@@ -71,9 +71,8 @@ function DecorativeBimVisuals() {
 export function RegisterPage() {
   return (
     <AuthLayout>
-      <div className="flex flex-1 flex-col items-center px-4 pb-24 pt-40">
+      <div className="flex h-full items-center justify-center overflow-y-auto px-4 py-6">
         <RegisterForm />
-        <DecorativeBimVisuals />
       </div>
     </AuthLayout>
   );

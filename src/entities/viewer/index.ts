@@ -3,5 +3,5 @@ export type {
   TranslationStatus,
   TranslationStatusResult,
   UploadModelResult,
-  ViewerToken,
+  ViewerToken
 } from './model/viewer.types';

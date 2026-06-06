@@ -125,14 +125,14 @@ export function OrganizationsPage() {
   }, [organizations, searchQuery]);
 
   /* ── Stats ───────────────────────────────────────── */
+  const [now] = useState(() => Date.now());
   const stats = useMemo(() => {
     const total = organizations.length;
     const uniqueTypes = new Set(organizations.map((o) => o.organizationTypeId)).size;
-    const now = Date.now();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;
     const recent = organizations.filter((o) => o.createdAt && now - new Date(o.createdAt).getTime() < thirtyDays).length;
     return { total, active: total, uniqueTypes, recent };
-  }, [organizations]);
+  }, [organizations, now]);
 
   return (
     <div className="space-y-6">

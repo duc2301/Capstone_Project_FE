@@ -3,5 +3,5 @@ export type {
   ChangePasswordPayload,
   Profile,
   ProfileGroup,
-  UpdateProfilePayload,
+  UpdateProfilePayload
 } from './model/profile.types';

@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
+import { NotificationBell } from '@/features/notifications';
 import { t } from '@/shared/lib/i18n';
 
 /* ── Breadcrumb mapping ────────────────────────────── */
@@ -75,19 +76,8 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
           />
         </div>
 
-        {/* Notification bell */}
-        <button
-          type="button"
-          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-card-border bg-card text-text-muted transition-colors hover:text-text"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
-            3
-          </span>
-        </button>
+        {/* Notification bell + realtime popup */}
+        <NotificationBell variant="admin" />
 
         {/* Help */}
         <button

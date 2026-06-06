@@ -5,9 +5,12 @@ import { AccountsPage } from '@/pages/accounts';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
+import { NotificationsPage } from '@/pages/notifications';
 import { OrganizationsPage } from '@/pages/organizations';
 import { ProfilePage } from '@/pages/profile';
+import { ProjectsPage } from '@/pages/projects';
 import { RegisterPage } from '@/pages/register';
+import { ViewerPage } from '@/pages/viewer';
 import { AdminLayout } from '@/widgets/AdminLayout';
 import { RequireAuth } from './RequireAuth';
 
@@ -45,6 +48,34 @@ export const AppRoutes = () => {
             <AdminLayout>
               <ProfilePage />
             </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <ProjectsPage />
+            </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <NotificationsPage />
+            </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/viewer"
+        element={
+          <RequireAuth>
+            <ViewerPage />
           </RequireAuth>
         }
       />

@@ -2,5 +2,5 @@ export { organizationTypeApi } from './api/organizationTypeApi';
 export type {
   CreateOrganizationTypePayload,
   OrganizationType,
-  UpdateOrganizationTypePayload,
+  UpdateOrganizationTypePayload
 } from './model/organizationType.types';

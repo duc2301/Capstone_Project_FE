@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
+import { useNotifications } from '@/entities/notification';
 import { useSession } from '@/entities/session';
 import { useLogout } from '@/features/auth';
 import type { TranslationKey } from '@/shared/lib/i18n';
@@ -73,7 +74,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'admin.nav.accounts', to: '/accounts', icon: IconProfile },
   { labelKey: 'admin.nav.organizations', to: '/organizations', icon: IconOrganization },
   { labelKey: 'admin.nav.projects', to: '/projects', icon: IconProjects },
-  { labelKey: 'admin.nav.notifications', to: '/notifications', icon: IconNotifications, badge: 3 },
+  { labelKey: 'admin.nav.notifications', to: '/notifications', icon: IconNotifications },
   { labelKey: 'admin.nav.profile', to: '/profile', icon: IconProfile },
   { labelKey: 'admin.nav.settings', to: '/settings', icon: IconSettings },
 ];
@@ -86,6 +87,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const { currentUser } = useSession();
+  const { unreadCount } = useNotifications();
   const { loading: loggingOut, logout } = useLogout();
   const location = useLocation();
 
@@ -147,6 +149,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           {NAV_ITEMS.map((item) => {
             const active = isActive(item.to);
             const Icon = item.icon;
+            const badge = item.to === '/notifications' ? unreadCount : item.badge;
             return (
               <NavLink
                 key={item.to}
@@ -165,9 +168,9 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   <Icon />
                 </span>
                 <span className="flex-1">{t(item.labelKey)}</span>
-                {item.badge && item.badge > 0 && (
+                {badge !== undefined && badge > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold text-white">
-                    {item.badge}
+                    {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </NavLink>

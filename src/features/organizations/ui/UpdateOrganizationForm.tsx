@@ -43,7 +43,7 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
       } else {
         alert('Không tìm thấy doanh nghiệp với mã số thuế này.');
       }
-    } catch (error) {
+    } catch {
       alert('Không thể kết nối dịch vụ tra cứu MST. Bạn có thể nhập thủ công.');
     } finally {
       setLookingUp(false);

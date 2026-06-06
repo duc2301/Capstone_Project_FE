@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
 import { useLogout } from '@/features/auth';
+import { NotificationBell } from '@/features/notifications';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -19,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'header.nav.contact', to: '#', routed: false },
   { labelKey: 'header.nav.accounts', to: '/accounts', routed: true, authOnly: true },
   { labelKey: 'admin.nav.profile', to: '/profile', routed: true, authOnly: true },
+  { labelKey: 'header.nav.viewer', to: '/viewer', routed: true, authOnly: true },
 ];
 
 const INACTIVE_LINK =
@@ -79,6 +81,7 @@ export const Header = () => {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
+              <NotificationBell variant="header" />
               <span className="hidden max-w-[120px] truncate font-jakarta text-sm font-medium text-[#43493C] sm:inline">
                 {currentUser?.userName}
               </span>

@@ -13,7 +13,6 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
     userName: '',
     email: '',
     password: '',
-    role: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -80,21 +79,6 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
             onChange={handleChange}
             placeholder={t('account.password')}
             required
-            className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-
-        {/* Role */}
-        <div className="space-y-1.5">
-          <label htmlFor="create-role" className="block text-sm font-medium text-text-secondary">
-            {t('account.role')}
-          </label>
-          <input
-            id="create-role"
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            placeholder={t('account.role')}
             className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>

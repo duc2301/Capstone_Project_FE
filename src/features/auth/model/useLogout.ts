@@ -17,8 +17,6 @@ export function useLogout(): UseLogoutReturn {
   const logout = useCallback(async () => {
     setLoading(true);
 
-    // Báo server thu hồi refresh token; lỗi mạng/logout không nên chặn việc
-    // đăng xuất phía client, nên nuốt lỗi bằng .catch().
     const refreshToken = authStorage.getRefreshToken();
     if (refreshToken) {
       await sessionApi.logout({ refreshToken }).catch(() => undefined);

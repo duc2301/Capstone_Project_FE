@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import type { CreateProjectWithGroupsInput, ProjectGroupDraft } from '../model/useProjects';
+import { AddressField } from './AddressField';
 
 interface Props {
   onSubmit: (input: CreateProjectWithGroupsInput) => Promise<void>;
@@ -35,6 +36,9 @@ const buildDefaultGroups = (): GroupRow[] =>
 export function CreateProjectForm({ onSubmit, onCancel }: Props) {
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
+  const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [groups, setGroups] = useState<GroupRow[]>(buildDefaultGroups);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,9 +56,14 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
     if (!projectName.trim()) return;
     setSubmitting(true);
     try {
+      const lat = Number.parseFloat(latitude);
+      const lng = Number.parseFloat(longitude);
       await onSubmit({
         projectName: projectName.trim(),
         projectDescription: projectDescription.trim() || undefined,
+        address: address.trim() || undefined,
+        latitude: Number.isFinite(lat) ? lat : undefined,
+        longitude: Number.isFinite(lng) ? lng : undefined,
         groups: groups.filter((g) => g.name.trim()),
       });
     } finally {
@@ -90,6 +99,19 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
           placeholder={t('projects.form.description')}
           rows={3}
           className={inputClass}
+        />
+      </div>
+
+      {/* ── Vị trí dự án (ProjectLocation) — geocode miễn phí qua OpenStreetMap ── */}
+      <div className="space-y-2 border-t border-card-border pt-5">
+        <h3 className="font-heading text-sm font-bold text-text">{t('projects.form.location')}</h3>
+        <AddressField
+          value={{ address, latitude, longitude }}
+          onChange={(loc) => {
+            setAddress(loc.address);
+            setLatitude(loc.latitude);
+            setLongitude(loc.longitude);
+          }}
         />
       </div>
 

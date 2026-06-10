@@ -24,13 +24,36 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const selectedGroup = useMemo(
+    () => groups.find((g) => g.id === groupId),
+    [groups, groupId],
+  );
+
+  /* Tài khoản đã thuộc nhóm được chọn → không cho mời lại */
+  const existingIds = useMemo(
+    () => new Set((selectedGroup?.members ?? []).map((m) => m.accountId)),
+    [selectedGroup],
+  );
+
+  const invitableAccounts = useMemo(
+    () => accounts.filter((a) => !existingIds.has(a.id)),
+    [accounts, existingIds],
+  );
+
   const filteredAccounts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return accounts;
-    return accounts.filter(
+    if (!q) return invitableAccounts;
+    return invitableAccounts.filter(
       (a) => a.userName.toLowerCase().includes(q) || a.email.toLowerCase().includes(q),
     );
-  }, [accounts, query]);
+  }, [invitableAccounts, query]);
+
+  const selectGroup = (id: string) => {
+    setGroupId(id);
+    setSelectedIds([]);
+    setLeaderId('');
+    setQuery('');
+  };
 
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
@@ -66,128 +89,162 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* ── Chọn nhóm thuộc dự án ───────────────────── */}
-      <div className="space-y-1.5">
-        <label htmlFor="invite-group" className="block text-sm font-medium text-text-secondary">
-          {t('projects.invite.group')}
-        </label>
-        <select
-          id="invite-group"
-          value={groupId}
-          onChange={(e) => setGroupId(e.target.value)}
-          required
-          disabled={loadingGroups || groups.length === 0}
-          className={fieldClass}
-        >
-          <option value="" disabled>
-            {t('projects.invite.placeholder.group')}
-          </option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-        {!loadingGroups && groups.length === 0 && (
-          <p className="text-xs text-text-muted">{t('projects.invite.noGroups')}</p>
-        )}
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <p className="text-sm text-text-muted">{t('projects.manage.invite.desc')}</p>
 
-      {/* ── Chọn nhiều thành viên + tìm kiếm ────────── */}
+      {/* ── Chọn nhóm (pills) ───────────────────────── */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-text-secondary">
-          {t('projects.invite.members')}
-        </label>
-        <div className="flex items-center gap-2 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('projects.invite.searchUser')}
-            className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
-          />
-        </div>
-
-        <div className="max-h-64 space-y-1 overflow-y-auto rounded-[var(--radius-input)] border border-card-border p-1">
-          {filteredAccounts.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-text-muted">
-              {t('projects.invite.noUsers')}
-            </p>
-          ) : (
-            filteredAccounts.map((a) => {
-              const selected = selectedIds.includes(a.id);
-              const isLeader = selected && leaderId === a.id;
-              return (
-                <div
-                  key={a.id}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${selected ? 'bg-primary-ghost' : 'hover:bg-content-bg'}`}
-                >
-                  <label className="flex flex-1 cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => toggleSelect(a.id)}
-                      className="h-4 w-4 shrink-0 accent-primary"
-                    />
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
-                      {a.userName.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-text">{a.userName}</span>
-                      <span className="block truncate text-xs text-text-muted">{a.email}</span>
-                    </span>
-                  </label>
-
-                  {selected && (
-                    <button
-                      type="button"
-                      onClick={() => setLeaderId(a.id)}
-                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${isLeader ? 'bg-primary text-white' : 'border border-card-border text-text-secondary hover:border-primary hover:text-primary'}`}
-                    >
-                      {t('projects.invite.leaderBadge')}
-                    </button>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {selectedIds.length > 0 && (
-          <p className="text-xs text-text-muted">
-            {t('projects.invite.selectedPrefix')} {selectedIds.length} {t('projects.invite.peopleSuffix')} · {t('projects.invite.leaderHint')}
+        <span className="block text-sm font-medium text-text-secondary">{t('projects.invite.group')}</span>
+        {loadingGroups ? (
+          <p className="text-sm text-text-muted">{t('common.loading')}</p>
+        ) : groups.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-card-border bg-input-bg px-4 py-3 text-sm text-text-muted">
+            {t('projects.invite.noGroups')}
           </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {groups.map((g) => {
+              const active = g.id === groupId;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => selectGroup(g.id)}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${active ? 'border-primary bg-primary text-white' : 'border-card-border bg-card text-text-secondary hover:border-primary hover:text-primary'}`}
+                >
+                  {g.name}
+                  <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold ${active ? 'bg-white/25 text-white' : 'bg-content-bg text-text-muted'}`}>
+                    {g.members.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* ── Ghi chú ─────────────────────────────────── */}
-      <div className="space-y-1.5">
-        <label htmlFor="invite-note" className="block text-sm font-medium text-text-secondary">
-          {t('projects.invite.note')}
-        </label>
-        <input
-          id="invite-note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder={t('projects.invite.note')}
-          className={fieldClass}
-        />
-      </div>
+      {/* ── Chưa chọn nhóm ──────────────────────────── */}
+      {!groupId && !loadingGroups && groups.length > 0 && (
+        <p className="rounded-xl border border-dashed border-card-border bg-input-bg px-4 py-8 text-center text-sm text-text-muted">
+          {t('projects.invite.selectGroupFirst')}
+        </p>
+      )}
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={submitting || !canSubmit}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
-        >
-          {submitting ? t('common.loading') : t('projects.invite.submit')}
-        </button>
-      </div>
+      {/* ── Đã chọn nhóm → danh sách có thể mời ──────── */}
+      {groupId && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-muted">
+            <span>
+              <strong className="text-text-secondary">{existingIds.size}</strong> {t('projects.invite.inGroupSuffix')}
+            </span>
+            <span className="h-1 w-1 rounded-full bg-card-border" />
+            <span>
+              <strong className="text-text-secondary">{invitableAccounts.length}</strong> {t('projects.invite.invitableSuffix')}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('projects.invite.searchUser')}
+              className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
+            />
+          </div>
+
+          <div className="max-h-72 space-y-1 overflow-y-auto rounded-[var(--radius-input)] border border-card-border p-1.5">
+            {invitableAccounts.length === 0 ? (
+              <p className="px-3 py-8 text-center text-sm text-text-muted">{t('projects.invite.allInGroup')}</p>
+            ) : filteredAccounts.length === 0 ? (
+              <p className="px-3 py-8 text-center text-sm text-text-muted">{t('projects.invite.noUsers')}</p>
+            ) : (
+              filteredAccounts.map((a) => {
+                const selected = selectedIds.includes(a.id);
+                const isLeader = selected && leaderId === a.id;
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${selected ? 'bg-primary-ghost ring-1 ring-primary/30' : 'hover:bg-content-bg'}`}
+                  >
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleSelect(a.id)}
+                        className="h-4 w-4 shrink-0 accent-primary"
+                      />
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
+                        {a.userName.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-text">{a.userName}</span>
+                        <span className="block truncate text-xs text-text-muted">{a.email}</span>
+                      </span>
+                    </label>
+
+                    {selected && (
+                      <button
+                        type="button"
+                        onClick={() => setLeaderId(a.id)}
+                        title={t('projects.invite.leaderBadge')}
+                        className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${isLeader ? 'bg-primary text-white' : 'border border-card-border text-text-secondary hover:border-primary hover:text-primary'}`}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill={isLeader ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        {t('projects.invite.leaderBadge')}
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {selectedIds.length > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-primary-ghost px-4 py-2.5">
+              <span className="text-xs text-text-secondary">
+                {t('projects.invite.selectedPrefix')} <strong className="text-primary">{selectedIds.length}</strong> {t('projects.invite.peopleSuffix')} · {t('projects.invite.leaderHint')}
+              </span>
+              <button
+                type="button"
+                onClick={resetSelection}
+                className="shrink-0 text-xs font-semibold text-text-muted transition-colors hover:text-danger"
+              >
+                {t('projects.invite.clear')}
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label htmlFor="invite-note" className="block text-sm font-medium text-text-secondary">
+              {t('projects.invite.note')}
+            </label>
+            <input
+              id="invite-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={t('projects.invite.note')}
+              className={fieldClass}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={submitting || !canSubmit}
+              className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+            >
+              {submitting ? t('common.loading') : t('projects.invite.submit')}
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

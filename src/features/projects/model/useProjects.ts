@@ -16,6 +16,9 @@ export interface ProjectGroupDraft {
 export interface CreateProjectWithGroupsInput {
   projectName: string;
   projectDescription?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
   groups: ProjectGroupDraft[];
 }
 
@@ -50,6 +53,9 @@ export function useProjects(): UseProjectsReturn {
     const { data: projectRes } = await projectApi.create({
       projectName: input.projectName,
       projectDescription: input.projectDescription,
+      address: input.address,
+      latitude: input.latitude,
+      longitude: input.longitude,
     });
     const project = projectRes.result;
     if (!project) throw new Error('Project creation failed');

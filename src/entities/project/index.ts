@@ -6,6 +6,8 @@ export type {
   AssignManagerPayload,
   CreateProjectPayload,
   Participant,
-  Project
+  Project,
+  ProjectLocation,
+  ProjectModel
 } from './model/project.types';
 

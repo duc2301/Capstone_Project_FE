@@ -1,14 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import type { Group } from '@/entities/group';
-import type { Project } from '@/entities/project';
-import {
-  AssignManagerForm,
-  CreateProjectForm,
-  InviteMemberForm,
-  useProjectInvite,
-  useProjects,
-} from '@/features/projects';
+import { CreateProjectForm, useProjectInvite, useProjects } from '@/features/projects';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -58,33 +51,12 @@ function Modal({ title, onClose, children }: ModalProps) {
 
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
-  const { projects, loading, error, createProject, assignManager } = useProjects();
-  const { accounts, getProjectGroups, inviteMany } = useProjectInvite();
+  const navigate = useNavigate();
+  const { projects, loading, error, createProject } = useProjects();
+  const { accounts } = useProjectInvite();
 
   const [creating, setCreating] = useState(false);
-  const [managed, setManaged] = useState<Project | null>(null);
-  const [managedGroups, setManagedGroups] = useState<Group[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  useEffect(() => {
-    if (!managed) return;
-    let cancelled = false;
-    (async () => {
-      setLoadingGroups(true);
-      try {
-        const projectGroups = await getProjectGroups(managed.id);
-        if (!cancelled) setManagedGroups(projectGroups);
-      } catch {
-        if (!cancelled) setManagedGroups([]);
-      } finally {
-        if (!cancelled) setLoadingGroups(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [managed, getProjectGroups]);
 
   const accountNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -105,28 +77,6 @@ export function ProjectsPage() {
     } catch {
       showToast(t('common.error'), 'error');
     }
-  };
-
-  const handleAssign = async (payload: Parameters<typeof assignManager>[1]) => {
-    if (!managed) return;
-    try {
-      await assignManager(managed.id, payload);
-      showToast(t('projects.toast.managerAssigned'));
-    } catch {
-      showToast(t('common.error'), 'error');
-    }
-  };
-
-  const handleInvite = async (input: Parameters<typeof inviteMany>[0]) => {
-    const result = await inviteMany(input);
-    if (result.sent === 0) {
-      showToast(t('common.error'), 'error');
-    } else if (result.failed > 0) {
-      showToast(t('projects.toast.invitedPartial'), 'error');
-    } else {
-      showToast(t('projects.toast.invited'));
-    }
-    return result;
   };
 
   return (
@@ -190,7 +140,11 @@ export function ProjectsPage() {
                   </tr>
                 ) : (
                   projects.map((p) => (
-                    <tr key={p.id} className="transition-colors duration-150 hover:bg-primary-ghost">
+                    <tr
+                      key={p.id}
+                      onClick={() => navigate(`/projects/${p.id}`)}
+                      className="cursor-pointer transition-colors duration-150 hover:bg-primary-ghost"
+                    >
                       <td className="px-6 py-4 font-semibold text-text">{p.projectName}</td>
                       <td className="px-6 py-4">
                         <span className="inline-block rounded-[var(--radius-badge)] bg-info-light px-2.5 py-1 text-xs font-semibold text-info">
@@ -208,7 +162,10 @@ export function ProjectsPage() {
                       <td className="px-6 py-4 text-right">
                         <button
                           type="button"
-                          onClick={() => setManaged(p)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/projects/${p.id}`);
+                          }}
                           className="rounded-[var(--radius-button)] border border-primary px-4 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost"
                         >
                           {t('projects.manage')}
@@ -227,33 +184,6 @@ export function ProjectsPage() {
       {creating && (
         <Modal title={t('projects.modal.createTitle')} onClose={() => setCreating(false)}>
           <CreateProjectForm onSubmit={handleCreate} onCancel={() => setCreating(false)} />
-        </Modal>
-      )}
-
-      {/* Manage modal: assign manager + invite member */}
-      {managed && (
-        <Modal title={`${t('projects.modal.manageTitle')}: ${managed.projectName}`} onClose={() => setManaged(null)}>
-          <div className="space-y-8">
-            <section className="space-y-3">
-              <h3 className="font-heading text-sm font-bold text-text">{t('projects.assignManager.title')}</h3>
-              <AssignManagerForm
-                accounts={accounts}
-                currentManagerId={managed.managerAccountId}
-                onSubmit={handleAssign}
-              />
-            </section>
-
-            <section className="space-y-3 border-t border-card-border pt-6">
-              <h3 className="font-heading text-sm font-bold text-text">{t('projects.invite.title')}</h3>
-              <InviteMemberForm
-                projectId={managed.id}
-                accounts={accounts}
-                groups={managedGroups}
-                loadingGroups={loadingGroups}
-                onSubmit={handleInvite}
-              />
-            </section>
-          </div>
         </Modal>
       )}
     </div>

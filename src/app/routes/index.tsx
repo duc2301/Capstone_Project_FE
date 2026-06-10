@@ -1,5 +1,3 @@
-import { Route, Routes } from 'react-router-dom';
-
 import { AboutPage } from '@/pages/about';
 import { AccountsPage } from '@/pages/accounts';
 import { HomePage } from '@/pages/home';
@@ -8,10 +6,12 @@ import { NotFoundPage } from '@/pages/not-found';
 import { NotificationsPage } from '@/pages/notifications';
 import { OrganizationsPage } from '@/pages/organizations';
 import { ProfilePage } from '@/pages/profile';
+import { ProjectDetailPage } from '@/pages/project-detail';
 import { ProjectsPage } from '@/pages/projects';
 import { RegisterPage } from '@/pages/register';
 import { ViewerPage } from '@/pages/viewer';
 import { AdminLayout } from '@/widgets/AdminLayout';
+import { Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './RequireAuth';
 
 export const AppRoutes = () => {
@@ -57,6 +57,16 @@ export const AppRoutes = () => {
           <RequireAuth>
             <AdminLayout>
               <ProjectsPage />
+            </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/:projectId"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <ProjectDetailPage />
             </AdminLayout>
           </RequireAuth>
         }

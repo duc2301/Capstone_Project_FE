@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import type { Group, GroupMember } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
+import { DocumentsTab } from '@/features/folders';
 import type { AddGroupInput } from '@/features/projects';
 import {
   CreateGroupForm,
@@ -660,8 +661,11 @@ export function ProjectDetailPage() {
         </div>
       )}
 
+      {/* ── Tab: Tài liệu (cây thư mục CDE) ───────────── */}
+      {tab === 'documents' && <DocumentsTab projectId={project.id} />}
+
       {/* ── Tabs chưa triển khai ──────────────────────── */}
-      {(tab === 'partners' || tab === 'packages' || tab === 'documents' || tab === 'settings') && (
+      {(tab === 'partners' || tab === 'packages' || tab === 'settings') && (
         <ComingSoon />
       )}
 

@@ -527,6 +527,22 @@ export const translations = {
   'projectDetail.teams.groupForm.title': 'Thêm nhóm mới',
   'projectDetail.teams.groupForm.submit': 'Tạo nhóm',
   'projectDetail.teams.toast.groupAdded': 'Đã thêm nhóm mới',
+
+  // Project detail — tab Tài liệu (cây thư mục CDE)
+  'documents.structure': 'CẤU TRÚC DỰ ÁN',
+  'documents.upload': 'Tải tệp lên',
+  'documents.newFolder': 'Thư mục mới',
+  'documents.empty': 'Dự án chưa có thư mục nào.',
+  'documents.error': 'Không tải được cây thư mục.',
+  'documents.selectFolder': 'Chọn một thư mục để xem nội dung.',
+  'documents.fileListSoon': 'Danh sách tệp trong thư mục này sẽ hiển thị ở đây.',
+  'documents.yourPermission': 'Quyền của bạn',
+  'documents.perm.view': 'Xem',
+  'documents.perm.edit': 'Sửa',
+  'documents.perm.update': 'Cập nhật',
+  'documents.perm.download': 'Tải về',
+  'documents.perm.verify': 'Thẩm tra',
+  'documents.perm.approve': 'Phê duyệt',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

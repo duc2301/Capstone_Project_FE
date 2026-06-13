@@ -34,6 +34,7 @@ export function useProjectInvite(): UseProjectInviteReturn {
         const accRes = await accountApi.getAll();
         if (!cancelled) setAccounts(accRes.data.result ?? []);
       } catch {
+        // Lỗi tải danh sách tài khoản — để trống, người dùng có thể mở lại modal.
       } finally {
         if (!cancelled) setLoading(false);
       }

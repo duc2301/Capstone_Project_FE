@@ -13,6 +13,11 @@ interface UseApsViewerReturn {
   status: ViewerStatus;
   error: string | null;
 }
+
+const POLL_INTERVAL_MS = 3000;
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 export function useApsViewer(urn: string): UseApsViewerReturn {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<Autodesk.Viewing.GuiViewer3D | null>(null);
@@ -31,6 +36,28 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
       if (cancelled) return;
       setStatus('error');
       setError(message);
+    };
+
+    const waitForTranslation = async (): Promise<boolean> => {
+      while (!cancelled) {
+        const { data } = await viewerApi.getStatus(urn);
+        if (cancelled) return false;
+
+        if (!data.isSuccess || !data.result) {
+          fail(data.message || t('viewer.error.status'));
+          return false;
+        }
+
+        const { status: translationStatus } = data.result;
+        if (translationStatus === 'success') return true;
+        if (translationStatus === 'failed' || translationStatus === 'timeout') {
+          fail(t('viewer.error.translateFailed'));
+          return false;
+        }
+
+        await delay(POLL_INTERVAL_MS);
+      }
+      return false;
     };
 
     const getAccessToken = (onTokenReady: Autodesk.Viewing.TokenCallback) => {
@@ -69,6 +96,9 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
           return;
         }
         viewerRef.current = viewer;
+
+        const translated = await waitForTranslation();
+        if (cancelled || !translated) return;
 
         Autodesk.Viewing.Document.load(
           `urn:${urn}`,

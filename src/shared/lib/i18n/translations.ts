@@ -634,6 +634,11 @@ export const translations = {
   'placeholder.auditLog.title': 'Nhật ký hệ thống',
   'placeholder.auditLog.desc': 'Xem lịch sử thay đổi và hoạt động trên hệ thống.',
   'placeholder.comingSoon': 'Tính năng đang được phát triển.',
+
+  // Mô hình BIM (ProjectModels)
+  'projectDetail.models.title': 'Mô hình BIM',
+  'projectDetail.models.empty': 'Chưa có mô hình BIM nào.',
+  'projectDetail.models.filesSuffix': 'tệp',
   // Project detail — tab Tài liệu (cây thư mục CDE)
   'documents.structure': 'CẤU TRÚC DỰ ÁN',
   'documents.upload': 'Tải tệp lên',

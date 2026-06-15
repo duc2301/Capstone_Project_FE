@@ -9,6 +9,7 @@ export interface NotificationContextValue {
   status: RealtimeStatus;
   refresh: () => Promise<void>;
   markRead: (id: string) => Promise<void>;
+  markAllRead: () => Promise<void>;
 }
 
 export const NotificationContext = createContext<NotificationContextValue | null>(null);

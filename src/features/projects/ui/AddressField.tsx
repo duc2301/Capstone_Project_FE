@@ -73,7 +73,6 @@ export function AddressField({ value, onChange }: Props) {
           {locating ? t('projects.form.geocoding') : t('projects.form.geocode')}
         </button>
       </div>
-      <p className="text-xs text-text-muted">{t('projects.form.geocodeHint')}</p>
 
       {value.latitude && value.longitude && (
         <p className="text-xs text-text-secondary">

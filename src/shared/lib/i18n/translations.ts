@@ -376,6 +376,23 @@ export const translations = {
   'notification.time.hoursAgo': 'giờ trước',
   'notification.time.daysAgo': 'ngày trước',
 
+  // Notification — trang thông báo (feed + bộ lọc)
+  'notification.search.placeholder': 'Tìm kiếm thông báo...',
+  'notification.filter.unread': 'Chưa đọc',
+  'notification.filter.important': 'Quan trọng',
+  'notification.filter.byDate': 'Lọc theo ngày',
+  'notification.markAllRead': 'Đánh dấu tất cả đã đọc',
+  'notification.refresh': 'Làm mới',
+  'notification.noResults': 'Không tìm thấy thông báo phù hợp.',
+  'notification.date.all': 'Mọi thời điểm',
+  'notification.date.today': 'Hôm nay',
+  'notification.date.week': '7 ngày qua',
+  'notification.date.month': '30 ngày qua',
+  'notification.category.invitation': 'Lời mời',
+  'notification.category.project': 'Dự án',
+  'notification.pagination.prev': 'Trang trước',
+  'notification.pagination.next': 'Trang sau',
+
   // Projects (Admin tạo dự án, gán Manager, mời thành viên)
   'projects.title': 'Dự án',
   'projects.subtitle': 'Quản lý dự án, chỉ định quản lý và mời thành viên tham gia.',
@@ -399,7 +416,6 @@ export const translations = {
   'projects.form.geocode': 'Định vị',
   'projects.form.geocoding': 'Đang định vị...',
   'projects.form.located': 'Đã định vị',
-  'projects.form.geocodeHint': 'Nhập địa chỉ rồi bấm "Định vị" để tự lấy kinh độ/vĩ độ (miễn phí, dùng OpenStreetMap).',
   'projects.form.geocodeNotFound': 'Không tìm thấy toạ độ cho địa chỉ này. Thử nhập chi tiết hơn.',
   'projects.form.geocodeError': 'Lỗi khi định vị. Vui lòng thử lại.',
   'projects.create.submit': 'Tạo dự án',
@@ -618,6 +634,21 @@ export const translations = {
   'placeholder.auditLog.title': 'Nhật ký hệ thống',
   'placeholder.auditLog.desc': 'Xem lịch sử thay đổi và hoạt động trên hệ thống.',
   'placeholder.comingSoon': 'Tính năng đang được phát triển.',
+  // Project detail — tab Tài liệu (cây thư mục CDE)
+  'documents.structure': 'CẤU TRÚC DỰ ÁN',
+  'documents.upload': 'Tải tệp lên',
+  'documents.newFolder': 'Thư mục mới',
+  'documents.empty': 'Dự án chưa có thư mục nào.',
+  'documents.error': 'Không tải được cây thư mục.',
+  'documents.selectFolder': 'Chọn một thư mục để xem nội dung.',
+  'documents.fileListSoon': 'Danh sách tệp trong thư mục này sẽ hiển thị ở đây.',
+  'documents.yourPermission': 'Quyền của bạn',
+  'documents.perm.view': 'Xem',
+  'documents.perm.edit': 'Sửa',
+  'documents.perm.update': 'Cập nhật',
+  'documents.perm.download': 'Tải về',
+  'documents.perm.verify': 'Thẩm tra',
+  'documents.perm.approve': 'Phê duyệt',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

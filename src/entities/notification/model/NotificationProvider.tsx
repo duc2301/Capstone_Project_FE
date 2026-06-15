@@ -13,6 +13,17 @@ interface Props {
   children: ReactNode;
 }
 
+/**
+ * Dừng kết nối SignalR một cách an toàn: chờ start() settle rồi mới stop,
+ * tránh lỗi "stopped during negotiation" khi React StrictMode mount/unmount 2 lần.
+ */
+function stopConnectionQuietly(
+  connection: HubConnection,
+  startPromise: Promise<unknown>,
+): void {
+  void startPromise.finally(() => connection.stop().catch(() => undefined));
+}
+
 export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,6 +43,7 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
       const { data } = await notificationApi.getMine();
       if (data.isSuccess && data.result) setNotifications(data.result);
     } catch {
+      // Lỗi mạng khi tải lại — giữ nguyên danh sách hiện tại, người dùng có thể thử lại.
     } finally {
       setLoading(false);
     }
@@ -44,8 +56,16 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
     try {
       await notificationApi.markRead(id);
     } catch {
+      // Đã cập nhật lạc quan trên UI; bỏ qua lỗi gọi API nền.
     }
   }, []);
+
+  const markAllRead = useCallback(async () => {
+    const unreadIds = notifications.filter((n) => !n.isRead).map((n) => n.id);
+    if (unreadIds.length === 0) return;
+    setNotifications((prev) => prev.map((n) => (n.isRead ? n : { ...n, isRead: true })));
+    await Promise.allSettled(unreadIds.map((id) => notificationApi.markRead(id)));
+  }, [notifications]);
 
   useEffect(() => {
     if (!accountId) return;
@@ -60,6 +80,7 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
           setNotifications(data.result);
         }
       } catch {
+        // Lỗi tải lần đầu — realtime/refresh sau đó sẽ bù lại dữ liệu.
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -80,7 +101,7 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
     connection.onclose(() => !cancelled && setStatus('disconnected'));
 
     void loadInitial();
-    connection
+    const startPromise = connection
       .start()
       .then(() => !cancelled && setStatus('connected'))
       .catch(() => !cancelled && setStatus('disconnected'));
@@ -88,7 +109,7 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
     return () => {
       cancelled = true;
       connection.off(SIGNALR_EVENTS.receiveNotification);
-      void connection.stop();
+      stopConnectionQuietly(connection, startPromise);
       connectionRef.current = null;
       setNotifications([]);
       setStatus('idle');
@@ -96,8 +117,8 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
   }, [accountId]);
 
   const value = useMemo(
-    () => ({ notifications, unreadCount, loading, status, refresh, markRead }),
-    [notifications, unreadCount, loading, status, refresh, markRead],
+    () => ({ notifications, unreadCount, loading, status, refresh, markRead, markAllRead }),
+    [notifications, unreadCount, loading, status, refresh, markRead, markAllRead],
   );
 
   return (

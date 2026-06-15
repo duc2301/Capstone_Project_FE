@@ -17,6 +17,7 @@ export function usePendingInvitations(): UsePendingInvitationsReturn {
         setPendingIds(new Set(data.result.map((i) => i.id)));
       }
     } catch {
+      // Lỗi mạng — giữ nguyên tập lời mời hiện tại.
     }
   }, []);
 
@@ -29,6 +30,7 @@ export function usePendingInvitations(): UsePendingInvitationsReturn {
           setPendingIds(new Set(data.result.map((i) => i.id)));
         }
       } catch {
+        // Lỗi tải lần đầu — sẽ được làm mới khi phản hồi lời mời.
       }
     })();
     return () => {

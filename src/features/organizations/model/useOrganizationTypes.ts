@@ -1,52 +1,40 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { OrganizationType } from '@/entities/organization-type';
+import type { CreateOrganizationTypePayload, OrganizationType } from '@/entities/organization-type';
 import { organizationTypeApi } from '@/entities/organization-type';
-import { t } from '@/shared/lib/i18n';
 
-interface UseOrganizationTypesReturn {
-  orgTypes: OrganizationType[];
-  loading: boolean;
-  error: string | null;
-  fetchOrgTypes: () => Promise<void>;
-}
-
-export function useOrganizationTypes(): UseOrganizationTypesReturn {
+export function useOrganizationTypes() {
   const [orgTypes, setOrgTypes] = useState<OrganizationType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchOrgTypes = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const { data } = await organizationTypeApi.getAll();
       setOrgTypes(data.result ?? []);
     } catch {
-      setError(t('common.error'));
+      console.error('Failed to fetch organization types');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    fetchOrgTypes();
+  }, [fetchOrgTypes]);
 
-    (async () => {
-      try {
-        const { data } = await organizationTypeApi.getAll();
-        if (!cancelled) setOrgTypes(data.result ?? []);
-      } catch {
-        if (!cancelled) setError(t('common.error'));
-      } finally {
-        if (!cancelled) setLoading(false);
+  const createOrgType = useCallback(async (payload: CreateOrganizationTypePayload): Promise<OrganizationType | null> => {
+    try {
+      const { data } = await organizationTypeApi.create(payload);
+      const created = data.result;
+      if (created) {
+        setOrgTypes((prev) => [...prev, created]);
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+      return created ?? null;
+    } catch {
+      console.error('Failed to create organization type');
+      return null;
+    }
   }, []);
 
-  return { orgTypes, loading, error, fetchOrgTypes };
+  return { orgTypes, loading, createOrgType, refetch: fetchOrgTypes };
 }

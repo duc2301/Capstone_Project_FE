@@ -71,7 +71,7 @@ function Modal({ title, onClose, children }: ModalProps) {
 /* ── Main page ─────────────────────────────────────── */
 export function OrganizationsPage() {
   const { organizations, loading, error, createOrganization, updateOrganization, deleteOrganization } = useOrganizations();
-  const { orgTypes } = useOrganizationTypes();
+  const { orgTypes, createOrgType } = useOrganizationTypes();
 
   const [formMode, setFormMode] = useState<FormMode>('idle');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -182,6 +182,7 @@ export function OrganizationsPage() {
             color="#1976D2"
             bgColor="#E3F2FD"
           />
+
           <StatCard
             icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
             value={stats.recent}
@@ -253,7 +254,7 @@ export function OrganizationsPage() {
                     {t('org.col.name')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.type')}
+                    {t('org.type')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
                     {t('org.col.contact')}
@@ -354,7 +355,7 @@ export function OrganizationsPage() {
       {/* ── Create Modal ───────────────────────────── */}
       {formMode === 'create' && (
         <Modal title={t('org.modal.createTitle')} onClose={closeForm}>
-          <CreateOrganizationForm orgTypes={orgTypes} onSubmit={handleCreate} onCancel={closeForm} />
+          <CreateOrganizationForm orgTypes={orgTypes} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}
 
@@ -366,6 +367,7 @@ export function OrganizationsPage() {
             orgTypes={orgTypes}
             onSubmit={handleUpdate}
             onCancel={closeForm}
+            onCreateOrgType={createOrgType}
           />
         </Modal>
       )}

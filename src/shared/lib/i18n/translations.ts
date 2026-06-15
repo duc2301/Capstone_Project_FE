@@ -627,6 +627,10 @@ export const translations = {
   'placeholder.packages.desc': 'Quản lý gói thầu và hợp đồng dự án.',
   'placeholder.teams.title': 'Đội ngũ',
   'placeholder.teams.desc': 'Quản lý đội ngũ và phân công nhiệm vụ.',
+  'placeholder.documents.title': 'Quản lý tài liệu',
+  'placeholder.documents.desc': 'Truy cập, tải lên và quản lý tài liệu dự án.',
+  'placeholder.settings.title': 'Cài đặt',
+  'placeholder.settings.desc': 'Tùy chỉnh tài khoản và tùy chọn hệ thống.',
   'placeholder.approvals.title': 'Quy trình phê duyệt',
   'placeholder.approvals.desc': 'Thiết lập và vận hành quy trình phê duyệt tài liệu.',
   'placeholder.discussions.title': 'Thảo luận',
@@ -634,6 +638,11 @@ export const translations = {
   'placeholder.auditLog.title': 'Nhật ký hệ thống',
   'placeholder.auditLog.desc': 'Xem lịch sử thay đổi và hoạt động trên hệ thống.',
   'placeholder.comingSoon': 'Tính năng đang được phát triển.',
+
+  // Mô hình BIM (ProjectModels)
+  'projectDetail.models.title': 'Mô hình BIM',
+  'projectDetail.models.empty': 'Chưa có mô hình BIM nào.',
+  'projectDetail.models.filesSuffix': 'tệp',
   // Project detail — tab Tài liệu (cây thư mục CDE)
   'documents.structure': 'CẤU TRÚC DỰ ÁN',
   'documents.upload': 'Tải tệp lên',

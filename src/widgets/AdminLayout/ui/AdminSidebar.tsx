@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { useNotifications } from '@/entities/notification';
-import { AccountRole, useSession } from '@/entities/session';
+import { isAccountAdmin, useSession } from '@/entities/session';
 import { useLogout } from '@/features/auth';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
@@ -142,6 +142,18 @@ interface NavItem {
   dividerBefore?: boolean;
 }
 
+/** Menu items visible to regular users (non-admin) */
+const USER_NAV_ROUTES = new Set([
+  '/dashboard',
+  '/projects',
+  '/teams',
+  '/documents',
+  '/discussions',
+  '/notifications',
+  '/profile',
+  '/settings',
+]);
+
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'admin.nav.overview',       to: '/dashboard',     icon: IconOverview },
   { labelKey: 'admin.nav.organizations',  to: '/organizations', icon: IconOrganization },
@@ -171,11 +183,13 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const { loading: loggingOut, logout } = useLogout();
   const location = useLocation();
 
-  const isAdmin = currentUser?.role?.toString() === AccountRole.Admin
-    || currentUser?.role?.toString().toLowerCase() === 'admin';
+  const isAdmin = isAccountAdmin(currentUser?.role);
 
-  /* Filter nav items by role */
-  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (!isAdmin && !USER_NAV_ROUTES.has(item.to)) return false;
+    return true;
+  });
 
   /* Initials for avatar */
   const initials = (currentUser?.userName ?? 'U')

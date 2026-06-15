@@ -13,6 +13,9 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/projects': 'DỰ ÁN CỦA TÔI',
   '/notifications': 'THÔNG BÁO',
   '/settings': 'CÀI ĐẶT',
+  '/teams': 'ĐỘI NGŨ',
+  '/documents': 'QUẢN LÝ TÀI LIỆU',
+  '/discussions': 'THẢO LUẬN',
 };
 
 interface AdminTopBarProps {

@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { LoginPayload } from '@/entities/session';
-import { AccountRole, sessionApi, useSession } from '@/entities/session';
+import { getPostLoginPath, sessionApi, useSession } from '@/entities/session';
 import type { ApiResponse } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
@@ -34,11 +34,7 @@ export function useLogin(): UseLoginReturn {
 
         signIn(data.result);
 
-        if (data.result.role === AccountRole.Admin) {
-          navigate('/accounts', { replace: true });
-        } else {
-          navigate('/', { replace: true });
-        }
+        navigate(getPostLoginPath(data.result.role), { replace: true });
       } catch (err) {
         const axiosError = err as AxiosError<ApiResponse>;
 

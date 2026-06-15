@@ -1,17 +1,20 @@
 import { useState } from 'react';
 
 import type { Organization, UpdateOrganizationPayload } from '@/entities/organization';
-import type { OrganizationType } from '@/entities/organization-type';
+import type { OrganizationType, CreateOrganizationTypePayload } from '@/entities/organization-type';
 import { t } from '@/shared/lib/i18n';
+
+const OTHER_VALUE = '__other__';
 
 interface Props {
   organization: Organization;
   orgTypes: OrganizationType[];
   onSubmit: (id: string, payload: UpdateOrganizationPayload) => Promise<void>;
   onCancel: () => void;
+  onCreateOrgType?: (payload: CreateOrganizationTypePayload) => Promise<OrganizationType | null>;
 }
 
-export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCancel }: Props) {
+export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCancel, onCreateOrgType }: Props) {
   const [form, setForm] = useState<UpdateOrganizationPayload>({
     taxCode: organization.taxCode,
     legalName: organization.legalName,
@@ -22,6 +25,8 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
     email: organization.email ?? '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [isOtherType, setIsOtherType] = useState(false);
+  const [customTypeName, setCustomTypeName] = useState('');
 
   const [lookingUp, setLookingUp] = useState(false);
 
@@ -54,11 +59,42 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === OTHER_VALUE) {
+      setIsOtherType(true);
+      setCustomTypeName('');
+      setForm((prev) => ({ ...prev, organizationTypeId: '' }));
+    } else {
+      setIsOtherType(false);
+      setCustomTypeName('');
+      setForm((prev) => ({ ...prev, organizationTypeId: val }));
+    }
+  };
+
+  const handleBackToSelect = () => {
+    setIsOtherType(false);
+    setCustomTypeName('');
+    setForm((prev) => ({ ...prev, organizationTypeId: organization.organizationTypeId }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await onSubmit(organization.id, form);
+      let finalPayload = { ...form };
+
+      if (isOtherType && customTypeName.trim() && onCreateOrgType) {
+        const code = customTypeName.trim().replace(/\s+/g, '');
+        const created = await onCreateOrgType({ code, name: customTypeName.trim() });
+        if (!created) {
+          alert('Tạo loại tổ chức thất bại. Vui lòng thử lại.');
+          return;
+        }
+        finalPayload = { ...finalPayload, organizationTypeId: created.id };
+      }
+
+      await onSubmit(organization.id, finalPayload);
     } finally {
       setSubmitting(false);
     }
@@ -129,23 +165,51 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
           />
         </div>
 
-        {/* Organization Type */}
+        {/* Organization Type — dropdown hoặc input tại chỗ */}
         <div className="space-y-1.5">
           <label htmlFor="edit-orgType" className="block text-sm font-medium text-text-secondary">
             {t('org.type')}
           </label>
-          <select
-            id="edit-orgType"
-            name="organizationTypeId"
-            value={form.organizationTypeId ?? ''}
-            onChange={handleChange}
-            className={inputClass}
-          >
-            <option value="">{t('org.selectType')}</option>
-            {orgTypes.filter((ot) => ot.isActive).map((ot) => (
-              <option key={ot.id} value={ot.id}>{ot.name}</option>
-            ))}
-          </select>
+          {!isOtherType ? (
+            <select
+              id="edit-orgType"
+              value={form.organizationTypeId ?? ''}
+              onChange={handleTypeSelect}
+              className={inputClass}
+            >
+              <option value="">{t('org.selectType')}</option>
+              {orgTypes.filter((ot) => ot.isActive).map((ot) => (
+                <option key={ot.id} value={ot.id}>{ot.name}</option>
+              ))}
+              {onCreateOrgType && (
+                <option value={OTHER_VALUE}>{t('org.typeOther')}</option>
+              )}
+            </select>
+          ) : (
+            <div className="relative">
+              <input
+                id="edit-orgType"
+                value={customTypeName}
+                onChange={(e) => setCustomTypeName(e.target.value)}
+                placeholder={t('org.typeOtherPlaceholder')}
+                required
+                maxLength={200}
+                autoFocus
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={handleBackToSelect}
+                title="Quay lại chọn từ danh sách"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Address */}

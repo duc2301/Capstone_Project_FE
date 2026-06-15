@@ -1,4 +1,4 @@
-/* ── OrganizationType ─────────────────────────────── */
+/* ── OrganizationType ──────────────────────────────── */
 export interface OrganizationType {
   id: string;
   code: string;
@@ -11,12 +11,4 @@ export interface CreateOrganizationTypePayload {
   code: string;
   name: string;
   description?: string;
-  isActive?: boolean;
-}
-
-export interface UpdateOrganizationTypePayload {
-  code?: string;
-  name?: string;
-  description?: string;
-  isActive?: boolean;
 }

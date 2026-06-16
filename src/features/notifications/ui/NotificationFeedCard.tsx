@@ -22,6 +22,7 @@ function getInitials(name: string): string {
 function getCategoryLabel(linkType?: NotificationLinkType | null): string | null {
   if (linkType === 'ProjectInvitation') return t('notification.category.invitation');
   if (linkType === 'Project') return t('notification.category.project');
+  if (linkType === 'Group') return t('notification.category.group');
   return null;
 }
 

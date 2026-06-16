@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import type { Group, GroupMember } from '@/entities/group';
-import { groupApi } from '@/entities/group';
-import type { Organization } from '@/entities/organization';
+import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
+import { groupApi, GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
+import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
 import { useOrganizations } from '@/features/organizations';
 import type { AddGroupInput } from '@/features/projects';
-import type { CreateGroupPayload } from '@/entities/group/model/group.types';
 import {
   CreateGroupForm,
   ManageProjectPanel,
@@ -17,6 +16,7 @@ import {
   useProjectGroups,
   useProjectInvite,
 } from '@/features/projects';
+import { getApiErrorMessage } from '@/shared/api';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -157,9 +157,32 @@ function ComingSoon() {
 }
 
 /* ── Group member row ──────────────────────────────────── */
-function MemberRow({ member, isAdminOrManager, onShowToast }: { member: GroupMember; isAdminOrManager?: boolean; onShowToast?: (msg: string, type?: 'success' | 'error') => void }) {
+function MemberRow({
+  member,
+  groupId,
+  isAdminOrManager,
+  onChangeRole,
+  onRemoveMember,
+}: {
+  member: GroupMember;
+  groupId: string;
+  isAdminOrManager?: boolean;
+  onChangeRole: (groupId: string, accountId: string, newRole: number) => Promise<void>;
+  onRemoveMember: (groupId: string, accountId: string) => Promise<void>;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const isLeader = member.role === GroupMemberRole.Leader;
+
+  const run = async (action: () => Promise<void>) => {
+    setMenuOpen(false);
+    setBusy(true);
+    try {
+      await action();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="flex items-center gap-3 group/member">
@@ -181,8 +204,9 @@ function MemberRow({ member, isAdminOrManager, onShowToast }: { member: GroupMem
       {isAdminOrManager && (
         <div className="relative">
           <button
+            disabled={busy}
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary opacity-0 group-hover/member:opacity-100 transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary opacity-0 group-hover/member:opacity-100 transition-all disabled:opacity-50"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="1" />
@@ -196,22 +220,24 @@ function MemberRow({ member, isAdminOrManager, onShowToast }: { member: GroupMem
               <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
               <div className="absolute right-0 top-10 z-50 w-48 rounded-xl border border-card-border bg-card p-1 shadow-dropdown animate-fade-in">
                 <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onShowToast?.('Tính năng thay đổi vai trò đang được phát triển', 'success');
-                  }}
+                  onClick={() =>
+                    run(() =>
+                      onChangeRole(
+                        groupId,
+                        member.accountId,
+                        isLeader ? GroupMemberRole.Member : GroupMemberRole.Leader,
+                      ),
+                    )
+                  }
                   className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text transition-colors hover:bg-content-bg hover:text-primary"
                 >
-                  {isLeader ? 'Hạ cấp thành viên' : 'Chỉ định làm Trưởng nhóm'}
+                  {isLeader ? t('projectDetail.teams.member.demote') : t('projectDetail.teams.member.promote')}
                 </button>
                 <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onShowToast?.('Tính năng xóa thành viên đang được phát triển', 'error');
-                  }}
+                  onClick={() => run(() => onRemoveMember(groupId, member.accountId))}
                   className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-danger transition-colors hover:bg-danger-light"
                 >
-                  Xóa khỏi nhóm
+                  {t('projectDetail.teams.member.remove')}
                 </button>
               </div>
             </>
@@ -226,18 +252,28 @@ function MemberRow({ member, isAdminOrManager, onShowToast }: { member: GroupMem
 function GroupCard({
   group,
   organizations,
+  isAdmin,
   isAdminOrManager,
   onUpdateGroup,
+  onRemoveGroup,
+  onChangeRole,
+  onRemoveMember,
   onShowToast,
 }: {
   group: Group;
   organizations: Organization[];
+  isAdmin: boolean;
   isAdminOrManager: boolean;
   onUpdateGroup: (groupId: string, payload: Partial<CreateGroupPayload>) => Promise<void>;
+  onRemoveGroup: (groupId: string) => Promise<void>;
+  onChangeRole: (groupId: string, accountId: string, newRole: number) => Promise<void>;
+  onRemoveMember: (groupId: string, accountId: string) => Promise<void>;
   onShowToast: (msg: string, type?: 'success' | 'error') => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [removingGroup, setRemovingGroup] = useState(false);
   const [editingName, setEditingName] = useState(group.name);
   const [editingDesc, setEditingDesc] = useState(group.description || '');
   const [editingOrgId, setEditingOrgId] = useState(group.organizationId || '');
@@ -263,22 +299,38 @@ function GroupCard({
             {group.description && <p className="text-sm text-text-muted mt-0.5">{group.description}</p>}
           </div>
         </div>
-        {isAdminOrManager && (
-          <button
-            onClick={() => {
-              setEditingName(group.name);
-              setEditingDesc(group.description || '');
-              setEditingOrgId(group.organizationId || '');
-              setEditGroupModalOpen(true);
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {isAdminOrManager && (
+            <button
+              onClick={() => {
+                setEditingName(group.name);
+                setEditingDesc(group.description || '');
+                setEditingOrgId(group.organizationId || '');
+                setEditGroupModalOpen(true);
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              title={t('projectDetail.teams.removeGroup')}
+              onClick={() => setRemoveConfirmOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-danger-light hover:text-danger transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -333,7 +385,16 @@ function GroupCard({
           {group.members.length === 0 ? (
             <p className="text-sm text-text-muted">{t('projectDetail.teams.noMembers')}</p>
           ) : (
-            group.members.map((m) => <MemberRow key={m.accountId} member={m} isAdminOrManager={isAdminOrManager} onShowToast={onShowToast} />)
+            group.members.map((m) => (
+              <MemberRow
+                key={m.accountId}
+                member={m}
+                groupId={group.id}
+                isAdminOrManager={isAdminOrManager}
+                onChangeRole={onChangeRole}
+                onRemoveMember={onRemoveMember}
+              />
+            ))
           )}
         </div>
       )}
@@ -419,12 +480,12 @@ function GroupCard({
                     await onUpdateGroup(group.id, {
                       name: editingName.trim(),
                       description: editingDesc.trim() || undefined,
-                      organizationId: editingOrgId || null as any,
+                      organizationId: editingOrgId || undefined,
                     });
                     setEditGroupModalOpen(false);
                     onShowToast('Cập nhật nhóm thành công');
-                  } catch {
-                    onShowToast('Có lỗi xảy ra', 'error');
+                  } catch (err) {
+                    onShowToast(getApiErrorMessage(err, t('common.error')), 'error');
                   } finally {
                     setUpdatingGroup(false);
                   }
@@ -432,6 +493,48 @@ function GroupCard({
                 className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
                 {updatingGroup ? t('common.loading') : 'Lưu thay đổi'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {removeConfirmOpen && (
+        <Modal title={t('projectDetail.teams.removeGroup.title')} onClose={() => setRemoveConfirmOpen(false)}>
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-text-secondary">
+              {t('projectDetail.teams.removeGroup.desc')}
+            </p>
+            <div className="flex items-center gap-3 rounded-xl border border-card-border bg-content-bg p-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                {group.name.charAt(0).toUpperCase()}
+              </span>
+              <p className="truncate text-sm font-semibold text-text">{group.name}</p>
+            </div>
+            <div className="mt-2 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={removingGroup}
+                onClick={() => setRemoveConfirmOpen(false)}
+                className="rounded-xl px-4 py-2.5 text-sm font-bold text-text-secondary hover:bg-content-bg"
+              >
+                {t('projectDetail.teams.removeGroup.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={removingGroup}
+                onClick={async () => {
+                  try {
+                    setRemovingGroup(true);
+                    await onRemoveGroup(group.id);
+                    setRemoveConfirmOpen(false);
+                  } finally {
+                    setRemovingGroup(false);
+                  }
+                }}
+                className="rounded-xl bg-danger px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
+              >
+                {removingGroup ? t('common.loading') : t('projectDetail.teams.removeGroup.submit')}
               </button>
             </div>
           </div>
@@ -448,7 +551,7 @@ export function ProjectDetailPage() {
 
   const { project, loading, error, assignManager } = useProjectDetail(projectId);
   const { accounts, inviteMany } = useProjectInvite();
-  const { groups, loading: groupsLoading, addGroup, refresh: refreshGroups } = useProjectGroups(projectId);
+  const { groups, loading: groupsLoading, addGroup, removeGroup, refresh: refreshGroups } = useProjectGroups(projectId);
   const { organizations } = useOrganizations();
 
   // Tính toán danh sách đối tác đã tham gia dự án
@@ -482,17 +585,17 @@ export function ProjectDetailPage() {
     try {
       await assignManager(payload);
       showToast(t('projects.toast.managerAssigned'));
-    } catch {
-      showToast(t('common.error'), 'error');
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
   };
 
   const handleInvite = async (input: Parameters<typeof inviteMany>[0]) => {
     const result = await inviteMany(input);
     if (result.sent === 0) {
-      showToast(t('common.error'), 'error');
+      showToast(result.errorMessage ?? t('common.error'), 'error');
     } else if (result.failed > 0) {
-      showToast(t('projects.toast.invitedPartial'), 'error');
+      showToast(result.errorMessage ?? t('projects.toast.invitedPartial'), 'error');
     } else {
       showToast(t('projects.toast.invited'));
     }
@@ -504,8 +607,8 @@ export function ProjectDetailPage() {
       await addGroup(input);
       setAddGroupOpen(false);
       showToast(t('projectDetail.teams.toast.groupAdded'));
-    } catch {
-      showToast(t('common.error'), 'error');
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
   };
 
@@ -514,13 +617,45 @@ export function ProjectDetailPage() {
     await refreshGroups();
   };
 
+  // Xóa mềm 1 nhóm khỏi dự án (chỉ Admin).
+  const handleRemoveGroup = async (groupId: string) => {
+    try {
+      await removeGroup(groupId);
+      showToast(t('projectDetail.teams.toast.groupRemoved'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
+    }
+  };
+
+  // Đổi vai trò 1 thành viên (Leader => chuyển trưởng nhóm).
+  const handleChangeRole = async (groupId: string, accountId: string, newRole: number) => {
+    try {
+      await groupApi.changeMemberRole(groupId, accountId, { role: newRole });
+      await refreshGroups();
+      showToast(t('projectDetail.teams.toast.roleChanged'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
+    }
+  };
+
+  // Xóa mềm 1 thành viên khỏi nhóm (BE thông báo cho người bị gỡ).
+  const handleRemoveMember = async (groupId: string, accountId: string) => {
+    try {
+      await groupApi.changeMemberStatus(groupId, accountId, { status: GroupMemberStatus.Left });
+      await refreshGroups();
+      showToast(t('projectDetail.teams.toast.memberRemoved'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
+    }
+  };
+
   const handleAssignPartner = async (groupId: string, organizationId: string) => {
     try {
       await groupApi.update(groupId, { organizationId });
       await refreshGroups();
       showToast('Đã gán đối tác cho nhóm thành công');
-    } catch {
-      showToast(t('common.error'), 'error');
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
   };
 
@@ -903,8 +1038,12 @@ export function ProjectDetailPage() {
                   key={g.id}
                   group={g}
                   organizations={organizations}
+                  isAdmin={isAdmin}
                   isAdminOrManager={canViewAllTabs}
                   onUpdateGroup={handleUpdateGroup}
+                  onRemoveGroup={handleRemoveGroup}
+                  onChangeRole={handleChangeRole}
+                  onRemoveMember={handleRemoveMember}
                   onShowToast={showToast}
                 />
               ))}

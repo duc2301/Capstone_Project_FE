@@ -6,6 +6,7 @@ import type {
   CreateProjectPayload,
   Participant,
   Project,
+  UpdateParticipantStatusPayload,
 } from '../model/project.types';
 
 export const projectApi = {
@@ -29,4 +30,14 @@ export const projectApi = {
 
   getParticipants: (projectId: string) =>
     axiosInstance.get<ApiResponse<Participant[]>>(`/projects/${projectId}/participants`),
+
+  updateParticipantStatus: (
+    projectId: string,
+    groupId: string,
+    payload: UpdateParticipantStatusPayload,
+  ) =>
+    axiosInstance.put<ApiResponse<Participant>>(
+      `/projects/${projectId}/participants/${groupId}/status`,
+      payload,
+    ),
 };

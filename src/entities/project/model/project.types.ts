@@ -64,12 +64,24 @@ export const ProjectParticipantRole = {
 export type ProjectParticipantRole =
   (typeof ProjectParticipantRole)[keyof typeof ProjectParticipantRole];
 
+export const ProjectParticipantStatus = {
+  Active: 0,
+  Inactive: 1,
+} as const;
+export type ProjectParticipantStatus =
+  (typeof ProjectParticipantStatus)[keyof typeof ProjectParticipantStatus];
+
 export interface Participant {
   id: string;
   projectId: string;
   groupId: string;
   role: ProjectParticipantRole;
+  status: ProjectParticipantStatus;
   joinedAt?: string | null;
+}
+
+export interface UpdateParticipantStatusPayload {
+  status: ProjectParticipantStatus;
 }
 
 export interface AddParticipantPayload {

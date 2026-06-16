@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { Group } from '@/entities/group';
 import { groupApi } from '@/entities/group';
-import { projectApi, ProjectParticipantRole } from '@/entities/project';
+import { projectApi, ProjectParticipantRole, ProjectParticipantStatus } from '@/entities/project';
 import { t } from '@/shared/lib/i18n';
 
 export interface AddGroupInput {
@@ -16,6 +16,16 @@ interface UseProjectGroupsReturn {
   error: string | null;
   refresh: () => Promise<void>;
   addGroup: (input: AddGroupInput) => Promise<void>;
+  removeGroup: (groupId: string) => Promise<void>;
+}
+
+function activeGroups(participants: { groupId: string; status: number }[], groups: Group[]): Group[] {
+  const activeIds = new Set(
+    participants
+      .filter((p) => p.status === ProjectParticipantStatus.Active)
+      .map((p) => p.groupId),
+  );
+  return groups.filter((g) => activeIds.has(g.id));
 }
 
 export function useProjectGroups(projectId: string | undefined): UseProjectGroupsReturn {
@@ -32,8 +42,7 @@ export function useProjectGroups(projectId: string | undefined): UseProjectGroup
         projectApi.getParticipants(projectId),
         groupApi.getAll(),
       ]);
-      const groupIds = new Set((partRes.data.result ?? []).map((p) => p.groupId));
-      setGroups((grpRes.data.result ?? []).filter((g) => groupIds.has(g.id)));
+      setGroups(activeGroups(partRes.data.result ?? [], grpRes.data.result ?? []));
     } catch {
       setError(t('common.error'));
     } finally {
@@ -51,8 +60,7 @@ export function useProjectGroups(projectId: string | undefined): UseProjectGroup
           groupApi.getAll(),
         ]);
         if (cancelled) return;
-        const groupIds = new Set((partRes.data.result ?? []).map((p) => p.groupId));
-        setGroups((grpRes.data.result ?? []).filter((g) => groupIds.has(g.id)));
+        setGroups(activeGroups(partRes.data.result ?? [], grpRes.data.result ?? []));
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {
@@ -82,5 +90,16 @@ export function useProjectGroups(projectId: string | undefined): UseProjectGroup
     [projectId, load],
   );
 
-  return { groups, loading, error, refresh: load, addGroup };
+  const removeGroup = useCallback(
+    async (groupId: string) => {
+      if (!projectId) return;
+      await projectApi.updateParticipantStatus(projectId, groupId, {
+        status: ProjectParticipantStatus.Inactive,
+      });
+      await load();
+    },
+    [projectId, load],
+  );
+
+  return { groups, loading, error, refresh: load, addGroup, removeGroup };
 }

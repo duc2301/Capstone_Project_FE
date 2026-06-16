@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { invitationApi } from '@/entities/invitation';
+import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
 export type InvitationAction = 'accept' | 'reject';
@@ -26,8 +27,8 @@ export function useInvitationActions(onDone?: () => void): UseInvitationActionsR
         if (action === 'accept') await invitationApi.accept(id);
         else await invitationApi.reject(id);
         onDone?.();
-      } catch {
-        setError(t('common.error'));
+      } catch (err) {
+        setError(getApiErrorMessage(err, t('common.error')));
       } finally {
         setProcessingId(null);
         setProcessingAction(null);

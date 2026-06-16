@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreateProjectForm, useProjectInvite, useProjects } from '@/features/projects';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
@@ -54,6 +55,8 @@ export function ProjectsPage() {
   const navigate = useNavigate();
   const { projects, loading, error, createProject } = useProjects();
   const { accounts } = useProjectInvite();
+  const { currentUser } = useSession();
+  const isAdmin = isAccountAdmin(currentUser?.role);
 
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -93,17 +96,19 @@ export function ProjectsPage() {
           <h1 className="font-heading text-2xl font-bold text-text lg:text-3xl">{t('projects.title')}</h1>
           <p className="mt-1 text-sm text-text-muted">{t('projects.subtitle')}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          className="flex shrink-0 items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          {t('projects.createNew')}
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="flex shrink-0 items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            {t('projects.createNew')}
+          </button>
+        )}
       </div>
 
       {loading && (

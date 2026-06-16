@@ -2,9 +2,14 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import type { Group, GroupMember } from '@/entities/group';
+import { groupApi } from '@/entities/group';
+import type { Organization } from '@/entities/organization';
 import { GroupMemberRole } from '@/entities/invitation';
+import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
+import { useOrganizations } from '@/features/organizations';
 import type { AddGroupInput } from '@/features/projects';
+import type { CreateGroupPayload } from '@/entities/group/model/group.types';
 import {
   CreateGroupForm,
   ManageProjectPanel,
@@ -152,10 +157,12 @@ function ComingSoon() {
 }
 
 /* ── Group member row ──────────────────────────────────── */
-function MemberRow({ member }: { member: GroupMember }) {
+function MemberRow({ member, isAdminOrManager, onShowToast }: { member: GroupMember; isAdminOrManager?: boolean; onShowToast?: (msg: string, type?: 'success' | 'error') => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const isLeader = member.role === GroupMemberRole.Leader;
+
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 group/member">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
         {member.userName.charAt(0).toUpperCase()}
       </span>
@@ -164,41 +171,148 @@ function MemberRow({ member }: { member: GroupMember }) {
         {member.email && <p className="truncate text-xs text-text-muted">{member.email}</p>}
       </div>
       <span
-        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-          isLeader ? 'bg-primary text-white' : 'bg-content-bg text-text-secondary'
-        }`}
+        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isLeader ? 'bg-primary text-white' : 'bg-content-bg text-text-secondary'
+          }`}
       >
         {isLeader ? t('projectDetail.teams.role.leader') : t('projectDetail.teams.role.member')}
       </span>
+
+      {/* 3-dot menu */}
+      {isAdminOrManager && (
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary opacity-0 group-hover/member:opacity-100 transition-all"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="12" cy="5" r="1" />
+              <circle cx="12" cy="19" r="1" />
+            </svg>
+          </button>
+
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+              <div className="absolute right-0 top-10 z-50 w-48 rounded-xl border border-card-border bg-card p-1 shadow-dropdown animate-fade-in">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onShowToast?.('Tính năng thay đổi vai trò đang được phát triển', 'success');
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text transition-colors hover:bg-content-bg hover:text-primary"
+                >
+                  {isLeader ? 'Hạ cấp thành viên' : 'Chỉ định làm Trưởng nhóm'}
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onShowToast?.('Tính năng xóa thành viên đang được phát triển', 'error');
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-danger transition-colors hover:bg-danger-light"
+                >
+                  Xóa khỏi nhóm
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Group (team) card ─────────────────────────────────── */
-function GroupCard({ group }: { group: Group }) {
+function GroupCard({
+  group,
+  organizations,
+  isAdminOrManager,
+  onUpdateGroup,
+  onShowToast,
+}: {
+  group: Group;
+  organizations: Organization[];
+  isAdminOrManager: boolean;
+  onUpdateGroup: (groupId: string, payload: Partial<CreateGroupPayload>) => Promise<void>;
+  onShowToast: (msg: string, type?: 'success' | 'error') => void;
+  onOpenInvite: (groupId: string) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false);
+  const [editingName, setEditingName] = useState(group.name);
+  const [editingDesc, setEditingDesc] = useState(group.description || '');
+  const [editingOrgId, setEditingOrgId] = useState(group.organizationId || '');
+  const [updatingGroup, setUpdatingGroup] = useState(false);
+
+  const partner = group.organizationId ? organizations.find((o) => o.id === group.organizationId) : null;
+  const partnerName = partner ? (partner.displayName || partner.legalName) : null;
+
   return (
     <div className="flex flex-col gap-4 rounded-[24px] border border-[#C3C9B9] bg-card p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </span>
-        <h3 className="font-display text-xl text-primary">{group.name}</h3>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </span>
+          <div>
+            <h3 className="font-display text-xl text-primary">{group.name}</h3>
+            {group.description && <p className="text-sm text-text-muted mt-0.5">{group.description}</p>}
+          </div>
+        </div>
+        {isAdminOrManager && (
+          <button
+            onClick={() => {
+              setEditingName(group.name);
+              setEditingDesc(group.description || '');
+              setEditingOrgId(group.organizationId || '');
+              setEditGroupModalOpen(true);
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
+        )}
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-text-secondary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-        </svg>
-        <span>
-          {group.members.length} {t('projectDetail.teams.membersSuffix')}
-        </span>
+      <div className="flex flex-col gap-2">
+        {partnerName && (
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+              <path d="M9 22v-4h6v4" />
+              <path d="M8 6h.01" />
+              <path d="M16 6h.01" />
+              <path d="M12 6h.01" />
+              <path d="M12 10h.01" />
+              <path d="M12 14h.01" />
+              <path d="M16 10h.01" />
+              <path d="M16 14h.01" />
+              <path d="M8 10h.01" />
+              <path d="M8 14h.01" />
+            </svg>
+            <span className="truncate flex items-center gap-2">
+              Quản lý bởi: <span className="font-bold text-text">{partnerName}</span>
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+          <span>
+            {group.members.length} {t('projectDetail.teams.membersSuffix')}
+          </span>
+        </div>
       </div>
 
       <button
@@ -220,9 +334,109 @@ function GroupCard({ group }: { group: Group }) {
           {group.members.length === 0 ? (
             <p className="text-sm text-text-muted">{t('projectDetail.teams.noMembers')}</p>
           ) : (
-            group.members.map((m) => <MemberRow key={m.accountId} member={m} />)
+            group.members.map((m) => <MemberRow key={m.accountId} member={m} isAdminOrManager={isAdminOrManager} onShowToast={onShowToast} />)
           )}
         </div>
+      )}
+
+      {editGroupModalOpen && (
+        <Modal title="Chỉnh sửa thông tin nhóm" onClose={() => setEditGroupModalOpen(false)}>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text">Tên nhóm</label>
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                className="rounded-[var(--radius-input)] border border-card-border bg-content-bg p-3 text-sm text-text outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text">Mô tả nhóm (tuỳ chọn)</label>
+              <input
+                type="text"
+                value={editingDesc}
+                onChange={(e) => setEditingDesc(e.target.value)}
+                className="rounded-[var(--radius-input)] border border-card-border bg-content-bg p-3 text-sm text-text outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text">Đối tác quản lý</label>
+              <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
+                <button
+                  onClick={() => setEditingOrgId('')}
+                  className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${!editingOrgId ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
+                    }`}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-content-bg text-text-muted">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-text">Không gán đối tác</p>
+                </button>
+                {organizations.map((org) => {
+                  const orgName = org.displayName || org.legalName || '---';
+                  const isSelected = editingOrgId === org.id;
+                  return (
+                    <button
+                      key={org.id}
+                      onClick={() => setEditingOrgId(org.id)}
+                      className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
+                        }`}
+                    >
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${isSelected ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
+                        }`}>
+                        {orgName.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-text">{orgName}</p>
+                        <p className="truncate text-xs text-text-muted">{org.taxCode || '---'}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={updatingGroup}
+                onClick={() => setEditGroupModalOpen(false)}
+                className="rounded-xl px-4 py-2.5 text-sm font-bold text-text-secondary hover:bg-content-bg"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={!editingName.trim() || updatingGroup}
+                onClick={async () => {
+                  try {
+                    setUpdatingGroup(true);
+                    await onUpdateGroup(group.id, {
+                      name: editingName.trim(),
+                      description: editingDesc.trim() || undefined,
+                      organizationId: editingOrgId || null as any,
+                    });
+                    setEditGroupModalOpen(false);
+                    onShowToast('Cập nhật nhóm thành công');
+                  } catch {
+                    onShowToast('Có lỗi xảy ra', 'error');
+                  } finally {
+                    setUpdatingGroup(false);
+                  }
+                }}
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+              >
+                {updatingGroup ? t('common.loading') : 'Lưu thay đổi'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -235,10 +449,21 @@ export function ProjectDetailPage() {
 
   const { project, loading, error, assignManager } = useProjectDetail(projectId);
   const { accounts, inviteMany } = useProjectInvite();
-  const { groups, loading: groupsLoading, addGroup } = useProjectGroups(projectId);
+  const { groups, loading: groupsLoading, addGroup, refresh: refreshGroups } = useProjectGroups(projectId);
+  const { organizations } = useOrganizations();
+
+  // Tính toán danh sách đối tác đã tham gia dự án
+  const projectPartners = useMemo(() => {
+    const orgIds = new Set(groups.map((g) => g.organizationId).filter(Boolean));
+    return organizations.filter((org) => orgIds.has(org.id));
+  }, [groups, organizations]);
+
+  const { currentUser } = useSession();
 
   const [tab, setTab] = useState<TabId>('info');
   const [manageOpen, setManageOpen] = useState(false);
+  const [manageTab, setManageTab] = useState<'manager' | 'invite' | 'partner'>('manager');
+  const [defaultInviteGroupId, setDefaultInviteGroupId] = useState('');
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -246,6 +471,10 @@ export function ProjectDetailPage() {
     if (!project?.managerAccountId) return null;
     return accounts.find((a) => a.id === project.managerAccountId)?.userName ?? project.managerAccountId;
   }, [accounts, project]);
+
+  const isAdmin = isAccountAdmin(currentUser?.role);
+  const isManager = project?.managerAccountId === currentUser?.accountId;
+  const canViewAllTabs = isAdmin || isManager;
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -281,6 +510,27 @@ export function ProjectDetailPage() {
     } catch {
       showToast(t('common.error'), 'error');
     }
+  };
+
+  const handleUpdateGroup = async (groupId: string, payload: Partial<CreateGroupPayload>) => {
+    await groupApi.update(groupId, payload);
+    await refreshGroups();
+  };
+
+  const handleAssignPartner = async (groupId: string, organizationId: string) => {
+    try {
+      await groupApi.update(groupId, { organizationId });
+      await refreshGroups();
+      showToast('Đã gán đối tác cho nhóm thành công');
+    } catch {
+      showToast(t('common.error'), 'error');
+    }
+  };
+
+  const handleOpenInvite = (groupId: string) => {
+    setDefaultInviteGroupId(groupId);
+    setManageTab('invite');
+    setManageOpen(true);
   };
 
   /* ── Loading / error / not found ─────────────────────── */
@@ -378,17 +628,16 @@ export function ProjectDetailPage() {
       </section>
 
       {/* ── Tabs ──────────────────────────────────────── */}
-      <nav className="flex gap-1 overflow-x-auto border-b border-card-border">
-        {TABS.map((item) => (
+      <nav className="flex gap-1 overflow-x-auto border-b border-card-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {TABS.filter((item) => canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id)).map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`-mb-px shrink-0 border-b-2 px-8 py-4 text-base transition-colors ${
-              tab === item.id
-                ? 'border-primary font-bold text-primary'
-                : 'border-transparent font-medium text-text-secondary hover:text-primary'
-            }`}
+            className={`-mb-px shrink-0 border-b-2 px-8 py-4 text-base transition-colors ${tab === item.id
+              ? 'border-primary font-bold text-primary'
+              : 'border-transparent font-medium text-text-secondary hover:text-primary'
+              }`}
           >
             {t(item.key)}
           </button>
@@ -617,30 +866,36 @@ export function ProjectDetailPage() {
             <h2 className="font-display text-2xl font-semibold text-primary">
               {t('projectDetail.teams.title')}
             </h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setManageOpen(true)}
-                className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                {t('projectDetail.teams.manage')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddGroupOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                {t('projectDetail.teams.addGroup')}
-              </button>
-            </div>
+            {canViewAllTabs && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManageTab('manager');
+                    setDefaultInviteGroupId('');
+                    setManageOpen(true);
+                  }}
+                  className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  {t('projectDetail.teams.manage')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddGroupOpen(true)}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  {t('projectDetail.teams.addGroup')}
+                </button>
+              </div>
+            )}
           </div>
 
           {groupsLoading ? (
@@ -654,7 +909,15 @@ export function ProjectDetailPage() {
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {groups.map((g) => (
-                <GroupCard key={g.id} group={g} />
+                <GroupCard
+                  key={g.id}
+                  group={g}
+                  organizations={organizations}
+                  isAdminOrManager={canViewAllTabs}
+                  onUpdateGroup={handleUpdateGroup}
+                  onShowToast={showToast}
+                  onOpenInvite={handleOpenInvite}
+                />
               ))}
             </div>
           )}
@@ -664,8 +927,97 @@ export function ProjectDetailPage() {
       {/* ── Tab: Tài liệu (cây thư mục CDE) ───────────── */}
       {tab === 'documents' && <DocumentsTab projectId={project.id} />}
 
+      {tab === 'partners' && (
+        <div className="space-y-6">
+          <h2 className="font-display text-2xl font-semibold text-primary">
+            {t('projectDetail.tab.partners')}
+          </h2>
+          {projectPartners.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
+              <p className="text-sm text-text-muted">Dự án chưa có đối tác nào tham gia.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {projectPartners.map((partner) => (
+                <div key={partner.id} className="flex flex-col gap-4 rounded-[24px] border border-[#C3C9B9] bg-card p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-start gap-4">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl font-bold text-primary">
+                      {(partner.displayName || partner.legalName).charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3
+                        className="font-display text-lg font-bold text-text leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden"
+                        title={partner.displayName || partner.legalName}
+                      >
+                        {partner.displayName || partner.legalName}
+                      </h3>
+                      <p className="text-sm text-text-muted truncate mt-0.5">MST: {partner.taxCode}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-2 border-t border-card-border pt-4">
+                    {partner.email && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                          <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        <span className="text-text truncate" title={partner.email}>{partner.email}</span>
+                      </div>
+                    )}
+                    {partner.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        <span className="text-text truncate">{partner.phone}</span>
+                      </div>
+                    )}
+                    {partner.address && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0 mt-0.5">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span className="text-text line-clamp-2" title={partner.address}>{partner.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Nhóm mà đối tác này quản lí */}
+                  {(() => {
+                    const partnerGroups = groups.filter((g) => g.organizationId === partner.id);
+                    if (partnerGroups.length === 0) return null;
+                    return (
+                      <div className="border-t border-card-border pt-4">
+                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-text-muted">Nhóm phụ trách</p>
+                        <div className="flex flex-wrap gap-2">
+                          {partnerGroups.map((g) => (
+                            <span
+                              key={g.id}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                              </svg>
+                              {g.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Tabs chưa triển khai ──────────────────────── */}
-      {(tab === 'partners' || tab === 'packages' || tab === 'settings') && (
+      {(tab === 'packages' || tab === 'settings') && (
         <ComingSoon />
       )}
 
@@ -680,6 +1032,9 @@ export function ProjectDetailPage() {
             currentManagerId={project.managerAccountId}
             onAssign={handleAssign}
             onInvite={handleInvite}
+            onAssignPartner={handleAssignPartner}
+            defaultTab={manageTab}
+            defaultGroupId={defaultInviteGroupId}
           />
         </Modal>
       )}

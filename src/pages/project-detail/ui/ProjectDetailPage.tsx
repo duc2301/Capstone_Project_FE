@@ -220,15 +220,10 @@ function MemberRow({
               <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
               <div className="absolute right-0 top-10 z-50 w-48 rounded-xl border border-card-border bg-card p-1 shadow-dropdown animate-fade-in">
                 <button
-                  onClick={() =>
-                    run(() =>
-                      onChangeRole(
-                        groupId,
-                        member.accountId,
-                        isLeader ? GroupMemberRole.Member : GroupMemberRole.Leader,
-                      ),
-                    )
-                  }
+                  onClick={() => {
+                    const newRole = isLeader ? GroupMemberRole.Member : GroupMemberRole.Leader;
+                    run(() => onChangeRole(groupId, member.accountId, newRole));
+                  }}
                   className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text transition-colors hover:bg-content-bg hover:text-primary"
                 >
                   {isLeader ? t('projectDetail.teams.member.demote') : t('projectDetail.teams.member.promote')}
@@ -350,7 +345,7 @@ function GroupCard({
               <path d="M8 14h.01" />
             </svg>
             <span className="truncate flex items-center gap-2">
-              Quản lý bởi: <span className="font-bold text-text">{partnerName}</span>
+              {t('projectDetail.partners.managedBy')} <span className="font-bold text-text">{partnerName}</span>
             </span>
           </div>
         )}
@@ -382,28 +377,31 @@ function GroupCard({
 
       {open && (
         <div className="space-y-3 border-t border-card-border pt-4">
-          {group.members.length === 0 ? (
-            <p className="text-sm text-text-muted">{t('projectDetail.teams.noMembers')}</p>
-          ) : (
-            group.members.map((m) => (
-              <MemberRow
-                key={m.accountId}
-                member={m}
-                groupId={group.id}
-                isAdminOrManager={isAdminOrManager}
-                onChangeRole={onChangeRole}
-                onRemoveMember={onRemoveMember}
-              />
-            ))
-          )}
+          {(() => {
+            const activeMembers = group.members.filter((m) => m.status !== GroupMemberStatus.Left);
+            return activeMembers.length === 0 ? (
+              <p className="text-sm text-text-muted">{t('projectDetail.teams.noMembers')}</p>
+            ) : (
+              activeMembers.map((m) => (
+                <MemberRow
+                  key={m.accountId}
+                  member={m}
+                  groupId={group.id}
+                  isAdminOrManager={isAdminOrManager}
+                  onChangeRole={onChangeRole}
+                  onRemoveMember={onRemoveMember}
+                />
+              ))
+            );
+          })()}
         </div>
       )}
 
       {editGroupModalOpen && (
-        <Modal title="Chỉnh sửa thông tin nhóm" onClose={() => setEditGroupModalOpen(false)}>
+        <Modal title={t('projectDetail.teams.editGroup.title')} onClose={() => setEditGroupModalOpen(false)}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text">Tên nhóm</label>
+              <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.name')}</label>
               <input
                 type="text"
                 value={editingName}
@@ -412,7 +410,7 @@ function GroupCard({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text">Mô tả nhóm (tuỳ chọn)</label>
+              <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.description')}</label>
               <input
                 type="text"
                 value={editingDesc}
@@ -421,7 +419,7 @@ function GroupCard({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text">Đối tác quản lý</label>
+              <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.partner')}</label>
               <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
                 <button
                   onClick={() => setEditingOrgId('')}
@@ -434,7 +432,7 @@ function GroupCard({
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                   </div>
-                  <p className="text-sm font-semibold text-text">Không gán đối tác</p>
+                  <p className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.noPartner')}</p>
                 </button>
                 {organizations.map((org) => {
                   const orgName = org.displayName || org.legalName || '---';
@@ -469,7 +467,7 @@ function GroupCard({
                 onClick={() => setEditGroupModalOpen(false)}
                 className="rounded-xl px-4 py-2.5 text-sm font-bold text-text-secondary hover:bg-content-bg"
               >
-                Hủy
+                {t('projectDetail.teams.editGroup.cancel')}
               </button>
               <button
                 type="button"
@@ -483,7 +481,7 @@ function GroupCard({
                       organizationId: editingOrgId || undefined,
                     });
                     setEditGroupModalOpen(false);
-                    onShowToast('Cập nhật nhóm thành công');
+                    onShowToast(t('projectDetail.teams.toast.groupUpdated'));
                   } catch (err) {
                     onShowToast(getApiErrorMessage(err, t('common.error')), 'error');
                   } finally {
@@ -492,7 +490,7 @@ function GroupCard({
                 }}
                 className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
-                {updatingGroup ? t('common.loading') : 'Lưu thay đổi'}
+                {updatingGroup ? t('common.loading') : t('projectDetail.teams.editGroup.save')}
               </button>
             </div>
           </div>
@@ -653,7 +651,7 @@ export function ProjectDetailPage() {
     try {
       await groupApi.update(groupId, { organizationId });
       await refreshGroups();
-      showToast('Đã gán đối tác cho nhóm thành công');
+      showToast(t('projectDetail.teams.toast.partnerAssigned'));
     } catch (err) {
       showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
@@ -1062,7 +1060,7 @@ export function ProjectDetailPage() {
           </h2>
           {projectPartners.length === 0 ? (
             <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
-              <p className="text-sm text-text-muted">Dự án chưa có đối tác nào tham gia.</p>
+              <p className="text-sm text-text-muted">{t('projectDetail.partners.empty')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -1079,7 +1077,7 @@ export function ProjectDetailPage() {
                       >
                         {partner.displayName || partner.legalName}
                       </h3>
-                      <p className="text-sm text-text-muted truncate mt-0.5">MST: {partner.taxCode}</p>
+                      <p className="text-sm text-text-muted truncate mt-0.5">{t('projectDetail.partners.taxCode')} {partner.taxCode}</p>
                     </div>
                   </div>
                   <div className="space-y-2 mt-2 border-t border-card-border pt-4">
@@ -1117,7 +1115,7 @@ export function ProjectDetailPage() {
                     if (partnerGroups.length === 0) return null;
                     return (
                       <div className="border-t border-card-border pt-4">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-text-muted">Nhóm phụ trách</p>
+                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-text-muted">{t('projectDetail.partners.groupsLabel')}</p>
                         <div className="flex flex-wrap gap-2">
                           {partnerGroups.map((g) => (
                             <span

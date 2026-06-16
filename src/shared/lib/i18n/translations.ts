@@ -557,6 +557,21 @@ export const translations = {
   'projectDetail.teams.removeGroup.cancel': 'Hủy',
   'projectDetail.teams.removeGroup.submit': 'Xóa khỏi dự án',
   'projectDetail.teams.toast.groupRemoved': 'Đã xóa nhóm khỏi dự án',
+  // Chỉnh sửa nhóm (modal)
+  'projectDetail.teams.editGroup.title': 'Chỉnh sửa thông tin nhóm',
+  'projectDetail.teams.editGroup.name': 'Tên nhóm',
+  'projectDetail.teams.editGroup.description': 'Mô tả nhóm (tuỳ chọn)',
+  'projectDetail.teams.editGroup.partner': 'Đối tác quản lý',
+  'projectDetail.teams.editGroup.noPartner': 'Không gán đối tác',
+  'projectDetail.teams.editGroup.cancel': 'Hủy',
+  'projectDetail.teams.editGroup.save': 'Lưu thay đổi',
+  'projectDetail.teams.toast.groupUpdated': 'Cập nhật nhóm thành công',
+  'projectDetail.teams.toast.partnerAssigned': 'Đã gán đối tác cho nhóm thành công',
+  // Đối tác trong dự án
+  'projectDetail.partners.managedBy': 'Quản lý bởi:',
+  'projectDetail.partners.empty': 'Dự án chưa có đối tác nào tham gia.',
+  'projectDetail.partners.groupsLabel': 'Nhóm phụ trách',
+  'projectDetail.partners.taxCode': 'MST:',
 
   // ── Sidebar expanded navigation (User/Team Leader) ─
   'admin.nav.packages': 'Gói thầu',

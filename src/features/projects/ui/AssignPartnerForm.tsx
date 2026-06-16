@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
 import type { Group } from '@/entities/group';
 import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
+import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
+import { useEffect, useState } from 'react';
 
 interface AssignPartnerFormProps {
   groups: Group[];
@@ -29,7 +30,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
         }
       } catch (err) {
         if (!cancelled) {
-          setError(t('common.error'));
+          setError(getApiErrorMessage(err, t('common.error')));
         }
       } finally {
         if (!cancelled) {
@@ -52,7 +53,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
       setSelectedGroupId('');
       setSelectedOrgId('');
     } catch (err) {
-      setError(t('common.error'));
+      setError(getApiErrorMessage(err, t('common.error')));
     } finally {
       setSubmitting(false);
     }

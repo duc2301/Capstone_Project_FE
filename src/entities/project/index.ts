@@ -1,5 +1,5 @@
 export { projectApi } from './api/projectApi';
-export { ProjectParticipantRole, ProjectPhase, ProjectStatus } from './model/project.types';
+export { ProjectParticipantRole, ProjectParticipantStatus, ProjectPhase, ProjectStatus } from './model/project.types';
 export type {
   AddParticipantPayload,
   AddParticipantsBulkPayload,
@@ -8,6 +8,7 @@ export type {
   Participant,
   Project,
   ProjectLocation,
-  ProjectModel
+  ProjectModel,
+  UpdateParticipantStatusPayload
 } from './model/project.types';
 

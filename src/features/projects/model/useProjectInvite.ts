@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Account } from '@/entities/account';
 import { accountApi } from '@/entities/account';
 import { GroupMemberRole, invitationApi } from '@/entities/invitation';
+import { getApiErrorMessage } from '@/shared/api';
 
 export interface InviteManyInput {
   projectId: string;
@@ -15,6 +16,7 @@ export interface InviteManyInput {
 export interface InviteManyResult {
   sent: number;
   failed: number;
+  errorMessage?: string;
 }
 
 interface UseProjectInviteReturn {
@@ -34,7 +36,6 @@ export function useProjectInvite(): UseProjectInviteReturn {
         const accRes = await accountApi.getAll();
         if (!cancelled) setAccounts(accRes.data.result ?? []);
       } catch {
-        // Lỗi tải danh sách tài khoản — để trống, người dùng có thể mở lại modal.
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -56,8 +57,16 @@ export function useProjectInvite(): UseProjectInviteReturn {
         }),
       ),
     );
-    const failed = results.filter((r) => r.status === 'rejected').length;
-    return { sent: input.accountIds.length - failed, failed };
+    const failures = results.filter(
+      (r): r is PromiseRejectedResult => r.status === 'rejected',
+    );
+    const errorMessage =
+      failures.length > 0 ? getApiErrorMessage(failures[0].reason, '') : '';
+    return {
+      sent: input.accountIds.length - failures.length,
+      failed: failures.length,
+      errorMessage: errorMessage || undefined,
+    };
   }, []);
 
   return { accounts, loading, inviteMany };

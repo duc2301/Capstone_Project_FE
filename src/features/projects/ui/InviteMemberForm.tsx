@@ -59,10 +59,9 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
     if (selectedIds.includes(id)) {
       const next = selectedIds.filter((x) => x !== id);
       setSelectedIds(next);
-      if (leaderId === id) setLeaderId(next[0] ?? '');
+      if (leaderId === id) setLeaderId('');
     } else {
       setSelectedIds([...selectedIds, id]);
-      if (!leaderId) setLeaderId(id);
     }
   };
 
@@ -73,8 +72,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
     setQuery('');
   };
 
-  const canSubmit =
-    Boolean(groupId) && selectedIds.length > 0 && selectedIds.includes(leaderId);
+  const canSubmit = Boolean(groupId) && selectedIds.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

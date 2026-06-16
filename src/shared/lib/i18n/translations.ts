@@ -390,6 +390,7 @@ export const translations = {
   'notification.date.month': '30 ngày qua',
   'notification.category.invitation': 'Lời mời',
   'notification.category.project': 'Dự án',
+  'notification.category.group': 'Nhóm',
   'notification.pagination.prev': 'Trang trước',
   'notification.pagination.next': 'Trang sau',
 
@@ -464,7 +465,7 @@ export const translations = {
   // Mời thành viên (Task 4) — chọn nhóm, nhiều người, 1 trưởng nhóm
   'projects.invite.searchUser': 'Tìm người dùng theo tên hoặc email...',
   'projects.invite.members': 'Chọn thành viên mời vào nhóm',
-  'projects.invite.leaderHint': 'Chọn 1 người làm trưởng nhóm',
+  'projects.invite.leaderHint': 'Có thể chọn 1 người làm trưởng nhóm (không bắt buộc)',
   'projects.invite.leaderBadge': 'Trưởng nhóm',
   'projects.invite.selectedPrefix': 'Đã chọn',
   'projects.invite.peopleSuffix': 'người',
@@ -543,6 +544,34 @@ export const translations = {
   'projectDetail.teams.groupForm.title': 'Thêm nhóm mới',
   'projectDetail.teams.groupForm.submit': 'Tạo nhóm',
   'projectDetail.teams.toast.groupAdded': 'Đã thêm nhóm mới',
+  // Quản lý thành viên trong nhóm (menu 3 chấm)
+  'projectDetail.teams.member.promote': 'Chỉ định làm Trưởng nhóm',
+  'projectDetail.teams.member.demote': 'Hạ xuống Thành viên',
+  'projectDetail.teams.member.remove': 'Xóa khỏi nhóm',
+  'projectDetail.teams.toast.memberRemoved': 'Đã xóa thành viên khỏi nhóm',
+  'projectDetail.teams.toast.roleChanged': 'Đã cập nhật vai trò thành viên',
+  // Xóa mềm nhóm khỏi dự án (chỉ Admin)
+  'projectDetail.teams.removeGroup': 'Xóa nhóm khỏi dự án',
+  'projectDetail.teams.removeGroup.title': 'Xóa nhóm khỏi dự án',
+  'projectDetail.teams.removeGroup.desc': 'Nhóm sẽ bị ẩn khỏi dự án (xóa mềm — có thể thêm lại sau). Thành viên trong nhóm không bị xóa.',
+  'projectDetail.teams.removeGroup.cancel': 'Hủy',
+  'projectDetail.teams.removeGroup.submit': 'Xóa khỏi dự án',
+  'projectDetail.teams.toast.groupRemoved': 'Đã xóa nhóm khỏi dự án',
+  // Chỉnh sửa nhóm (modal)
+  'projectDetail.teams.editGroup.title': 'Chỉnh sửa thông tin nhóm',
+  'projectDetail.teams.editGroup.name': 'Tên nhóm',
+  'projectDetail.teams.editGroup.description': 'Mô tả nhóm (tuỳ chọn)',
+  'projectDetail.teams.editGroup.partner': 'Đối tác quản lý',
+  'projectDetail.teams.editGroup.noPartner': 'Không gán đối tác',
+  'projectDetail.teams.editGroup.cancel': 'Hủy',
+  'projectDetail.teams.editGroup.save': 'Lưu thay đổi',
+  'projectDetail.teams.toast.groupUpdated': 'Cập nhật nhóm thành công',
+  'projectDetail.teams.toast.partnerAssigned': 'Đã gán đối tác cho nhóm thành công',
+  // Đối tác trong dự án
+  'projectDetail.partners.managedBy': 'Quản lý bởi:',
+  'projectDetail.partners.empty': 'Dự án chưa có đối tác nào tham gia.',
+  'projectDetail.partners.groupsLabel': 'Nhóm phụ trách',
+  'projectDetail.partners.taxCode': 'MST:',
 
   // ── Sidebar expanded navigation (User/Team Leader) ─
   'admin.nav.packages': 'Gói thầu',

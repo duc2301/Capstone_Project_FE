@@ -188,17 +188,22 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
                     </label>
 
                     {selected && (
-                      <button
-                        type="button"
-                        onClick={() => setLeaderId(a.id)}
-                        title={t('projects.invite.leaderBadge')}
-                        className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${isLeader ? 'bg-primary text-white' : 'border border-card-border text-text-secondary hover:border-primary hover:text-primary'}`}
+                      <select
+                        value={isLeader ? 'leader' : 'member'}
+                        onChange={(e) => {
+                          if (e.target.value === 'leader') {
+                            setLeaderId(a.id);
+                          } else if (isLeader) {
+                            // If they change the leader back to member, we remove leaderId
+                            setLeaderId('');
+                          }
+                        }}
+                        className={`shrink-0 rounded-lg border px-2 py-1.5 text-xs font-semibold outline-none transition-colors ${isLeader ? 'border-primary bg-primary-light text-primary' : 'border-input-border bg-input-bg text-text-secondary'
+                          }`}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill={isLeader ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        {t('projects.invite.leaderBadge')}
-                      </button>
+                        <option value="member">{t('projectDetail.teams.role.member') || 'Thành viên'}</option>
+                        <option value="leader">{t('projectDetail.teams.role.leader') || 'Trưởng nhóm'}</option>
+                      </select>
                     )}
                   </div>
                 );

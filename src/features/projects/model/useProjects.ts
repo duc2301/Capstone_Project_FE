@@ -6,6 +6,7 @@ import type {
   Project,
 } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
+import { isAccountAdmin, useSession } from '@/entities/session';
 import { t } from '@/shared/lib/i18n';
 
 export interface ProjectGroupDraft {
@@ -32,6 +33,9 @@ interface UseProjectsReturn {
 }
 
 export function useProjects(): UseProjectsReturn {
+  const { currentUser } = useSession();
+  const isAdmin = isAccountAdmin(currentUser?.role);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,13 +45,36 @@ export function useProjects(): UseProjectsReturn {
     setError(null);
     try {
       const { data } = await projectApi.getAll();
-      setProjects(data.result ?? []);
+      let allProjects = data.result ?? [];
+
+      if (!isAdmin && currentUser) {
+        const { data: grpData } = await groupApi.getAll();
+        const groups = grpData.result ?? [];
+        const myGroupIds = new Set(
+          groups
+            .filter((g) => g.members.some((m) => m.accountId === currentUser.accountId))
+            .map((g) => g.id)
+        );
+
+        const participantsPromises = allProjects.map((p) =>
+          projectApi.getParticipants(p.id).catch(() => null)
+        );
+        const participantsResults = await Promise.all(participantsPromises);
+
+        allProjects = allProjects.filter((p, index) => {
+          if (p.managerAccountId === currentUser.accountId) return true;
+          const participants = participantsResults[index]?.data?.result ?? [];
+          return participants.some((part) => myGroupIds.has(part.groupId));
+        });
+      }
+
+      setProjects(allProjects);
     } catch {
       setError(t('common.error'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin, currentUser]);
 
   const createProject = useCallback(async (input: CreateProjectWithGroupsInput) => {
     const { data: projectRes } = await projectApi.create({
@@ -94,7 +121,30 @@ export function useProjects(): UseProjectsReturn {
     (async () => {
       try {
         const { data } = await projectApi.getAll();
-        if (!cancelled) setProjects(data.result ?? []);
+        let allProjects = data.result ?? [];
+
+        if (!isAdmin && currentUser) {
+          const { data: grpData } = await groupApi.getAll();
+          const groups = grpData.result ?? [];
+          const myGroupIds = new Set(
+            groups
+              .filter((g) => g.members.some((m) => m.accountId === currentUser.accountId))
+              .map((g) => g.id)
+          );
+
+          const participantsPromises = allProjects.map((p) =>
+            projectApi.getParticipants(p.id).catch(() => null)
+          );
+          const participantsResults = await Promise.all(participantsPromises);
+
+          allProjects = allProjects.filter((p, index) => {
+            if (p.managerAccountId === currentUser.accountId) return true;
+            const participants = participantsResults[index]?.data?.result ?? [];
+            return participants.some((part) => myGroupIds.has(part.groupId));
+          });
+        }
+
+        if (!cancelled) setProjects(allProjects);
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {
@@ -104,7 +154,7 @@ export function useProjects(): UseProjectsReturn {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAdmin, currentUser]);
 
   return { projects, loading, error, fetchProjects, createProject, assignManager };
 }

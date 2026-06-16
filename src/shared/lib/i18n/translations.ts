@@ -475,6 +475,7 @@ export const translations = {
   // Quản trị dự án — modal redesign (tab) + lọc người đã ở trong nhóm
   'projects.manage.tab.manager': 'Chỉ định quản lý',
   'projects.manage.tab.invite': 'Mời thành viên',
+  'projects.manage.tab.partner': 'Thêm đối tác',
   'projects.manage.manager.desc': 'Chọn một tài khoản làm quản lý dự án.',
   'projects.manage.invite.desc': 'Chọn nhóm, sau đó mời những người chưa thuộc nhóm đó.',
   'projects.assignManager.search': 'Tìm tài khoản theo tên hoặc email...',

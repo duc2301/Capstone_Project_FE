@@ -7,6 +7,7 @@ import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import type { InviteManyInput, InviteManyResult } from '../model/useProjectInvite';
 import { AssignManagerForm } from './AssignManagerForm';
+import { AssignPartnerForm } from './AssignPartnerForm';
 import { InviteMemberForm } from './InviteMemberForm';
 
 interface Props {
@@ -17,13 +18,15 @@ interface Props {
   currentManagerId?: string | null;
   onAssign: (payload: AssignManagerPayload) => Promise<void>;
   onInvite: (input: InviteManyInput) => Promise<InviteManyResult>;
+  onAssignPartner: (groupId: string, organizationId: string) => Promise<void>;
 }
 
-type ManageTab = 'manager' | 'invite';
+type ManageTab = 'manager' | 'invite' | 'partner';
 
 const TABS: { id: ManageTab; key: TranslationKey }[] = [
   { id: 'manager', key: 'projects.manage.tab.manager' },
   { id: 'invite', key: 'projects.manage.tab.invite' },
+  { id: 'partner', key: 'projects.manage.tab.partner' },
 ];
 
 export function ManageProjectPanel({
@@ -34,6 +37,7 @@ export function ManageProjectPanel({
   currentManagerId,
   onAssign,
   onInvite,
+  onAssignPartner,
 }: Props) {
   const [tab, setTab] = useState<ManageTab>('manager');
 
@@ -53,19 +57,27 @@ export function ManageProjectPanel({
         ))}
       </div>
 
-      {tab === 'manager' ? (
+      {tab === 'manager' && (
         <AssignManagerForm
           accounts={accounts}
           currentManagerId={currentManagerId}
           onSubmit={onAssign}
         />
-      ) : (
+      )}
+      {tab === 'invite' && (
         <InviteMemberForm
           projectId={projectId}
           accounts={accounts}
           groups={groups}
           loadingGroups={loadingGroups}
           onSubmit={onInvite}
+        />
+      )}
+      {tab === 'partner' && (
+        <AssignPartnerForm
+          groups={groups}
+          loadingGroups={loadingGroups}
+          onSubmit={onAssignPartner}
         />
       )}
     </div>

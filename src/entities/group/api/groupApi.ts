@@ -8,4 +8,7 @@ export const groupApi = {
 
   create: (payload: CreateGroupPayload) =>
     axiosInstance.post<ApiResponse<Group>>('/groups', payload),
+
+  update: (id: string, payload: Partial<CreateGroupPayload>) =>
+    axiosInstance.put<ApiResponse<Group>>(`/groups/${id}`, payload),
 };

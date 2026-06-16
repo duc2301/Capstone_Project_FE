@@ -235,7 +235,6 @@ function GroupCard({
   isAdminOrManager: boolean;
   onUpdateGroup: (groupId: string, payload: Partial<CreateGroupPayload>) => Promise<void>;
   onShowToast: (msg: string, type?: 'success' | 'error') => void;
-  onOpenInvite: (groupId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false);
@@ -462,8 +461,6 @@ export function ProjectDetailPage() {
 
   const [tab, setTab] = useState<TabId>('info');
   const [manageOpen, setManageOpen] = useState(false);
-  const [manageTab, setManageTab] = useState<'manager' | 'invite' | 'partner'>('manager');
-  const [defaultInviteGroupId, setDefaultInviteGroupId] = useState('');
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -527,11 +524,6 @@ export function ProjectDetailPage() {
     }
   };
 
-  const handleOpenInvite = (groupId: string) => {
-    setDefaultInviteGroupId(groupId);
-    setManageTab('invite');
-    setManageOpen(true);
-  };
 
   /* ── Loading / error / not found ─────────────────────── */
   if (loading) {
@@ -871,8 +863,6 @@ export function ProjectDetailPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setManageTab('manager');
-                    setDefaultInviteGroupId('');
                     setManageOpen(true);
                   }}
                   className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
@@ -916,7 +906,6 @@ export function ProjectDetailPage() {
                   isAdminOrManager={canViewAllTabs}
                   onUpdateGroup={handleUpdateGroup}
                   onShowToast={showToast}
-                  onOpenInvite={handleOpenInvite}
                 />
               ))}
             </div>
@@ -1033,8 +1022,6 @@ export function ProjectDetailPage() {
             onAssign={handleAssign}
             onInvite={handleInvite}
             onAssignPartner={handleAssignPartner}
-            defaultTab={manageTab}
-            defaultGroupId={defaultInviteGroupId}
           />
         </Modal>
       )}

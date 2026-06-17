@@ -19,8 +19,21 @@ export function useOrganizationTypes() {
   }, []);
 
   useEffect(() => {
-    fetchOrgTypes();
-  }, [fetchOrgTypes]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await organizationTypeApi.getAll();
+        if (!cancelled) setOrgTypes(data.result ?? []);
+      } catch {
+        console.error('Failed to fetch organization types');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const createOrgType = useCallback(async (payload: CreateOrganizationTypePayload): Promise<OrganizationType | null> => {
     try {

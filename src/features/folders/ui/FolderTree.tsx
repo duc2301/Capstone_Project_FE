@@ -7,6 +7,7 @@ interface FolderTreeProps {
   tree: FolderTreeNode[];
   selectedId: string | null;
   onSelect: (node: FolderTreeNode) => void;
+  onContextMenu?: (e: React.MouseEvent, node: FolderTreeNode) => void;
 }
 
 /* Icon: folder */
@@ -35,9 +36,10 @@ interface FolderNodeProps {
   depth: number;
   selectedId: string | null;
   onSelect: (node: FolderTreeNode) => void;
+  onContextMenu?: (e: React.MouseEvent, node: FolderTreeNode) => void;
 }
 
-function FolderNode({ node, depth, selectedId, onSelect }: FolderNodeProps) {
+function FolderNode({ node, depth, selectedId, onSelect, onContextMenu }: FolderNodeProps) {
   const hasChildren = node.children.length > 0;
   const isRoot = depth === 0;
   const [open, setOpen] = useState(isRoot); // khu vực gốc mở sẵn
@@ -54,6 +56,7 @@ function FolderNode({ node, depth, selectedId, onSelect }: FolderNodeProps) {
           onSelect(node);
           if (hasChildren) setOpen((v) => !v);
         }}
+        onContextMenu={(e) => onContextMenu?.(e, node)}
         style={{ paddingLeft: 12 + depth * 18 }}
         className={`flex w-full items-center gap-2 rounded-xl py-2 pr-2.5 text-left text-sm transition-colors ${
           isSelected
@@ -71,7 +74,7 @@ function FolderNode({ node, depth, selectedId, onSelect }: FolderNodeProps) {
       {hasChildren && open && (
         <ul className="mt-0.5 space-y-0.5">
           {node.children.map((child) => (
-            <FolderNode key={child.id} node={child} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />
+            <FolderNode key={child.id} node={child} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} onContextMenu={onContextMenu} />
           ))}
         </ul>
       )}
@@ -79,7 +82,7 @@ function FolderNode({ node, depth, selectedId, onSelect }: FolderNodeProps) {
   );
 }
 
-export function FolderTree({ tree, selectedId, onSelect }: FolderTreeProps) {
+export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: FolderTreeProps) {
   return (
     <div className="rounded-(--radius-card) border border-card-border bg-card p-4 shadow-card">
       <div className="mb-3 flex items-center gap-2 px-1">
@@ -94,7 +97,7 @@ export function FolderTree({ tree, selectedId, onSelect }: FolderTreeProps) {
       ) : (
         <ul className="space-y-0.5">
           {tree.map((node) => (
-            <FolderNode key={node.id} node={node} depth={0} selectedId={selectedId} onSelect={onSelect} />
+            <FolderNode key={node.id} node={node} depth={0} selectedId={selectedId} onSelect={onSelect} onContextMenu={onContextMenu} />
           ))}
         </ul>
       )}

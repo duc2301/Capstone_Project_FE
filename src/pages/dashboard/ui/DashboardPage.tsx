@@ -1,7 +1,7 @@
 
-import { useDashboard } from '@/features/dashboard/model/useDashboard';
-import { t } from '@/shared/lib/i18n';
+import { useDashboard } from '@/features/dashboard';
 import type { TranslationKey } from '@/shared/lib/i18n';
+import { t } from '@/shared/lib/i18n';
 
 export function DashboardPage() {
   const { currentUser, unreadCount, loading, stats, greetingKey, todayStr } = useDashboard();

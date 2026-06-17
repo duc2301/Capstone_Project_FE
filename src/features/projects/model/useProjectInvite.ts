@@ -36,6 +36,7 @@ export function useProjectInvite(): UseProjectInviteReturn {
         const accRes = await accountApi.getAll();
         if (!cancelled) setAccounts(accRes.data.result ?? []);
       } catch {
+        console.error('Failed to fetch accounts');
       } finally {
         if (!cancelled) setLoading(false);
       }

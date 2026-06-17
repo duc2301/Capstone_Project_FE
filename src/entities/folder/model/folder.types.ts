@@ -30,3 +30,29 @@ export interface FolderTreeNode {
   permission: EffectivePermission;
   children: FolderTreeNode[];
 }
+
+/* Folder phẳng (response của create/update) */
+export interface Folder {
+  id: string;
+  projectId: string;
+  parentFolderId: string | null;
+  name: string;
+  area: CdeArea;
+  ownerOrganizationId: string | null;
+  ownerGroupId: string | null;
+  isTemplate: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface CreateSubFolderPayload {
+  parentFolderId: string;
+  name: string;
+}
+
+/* PUT /folders/{id} — partial (chỉ field gửi mới đè) */
+export interface UpdateFolderPayload {
+  name?: string;
+  parentFolderId?: string;
+  area?: CdeArea;
+}

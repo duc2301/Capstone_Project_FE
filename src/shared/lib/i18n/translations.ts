@@ -688,6 +688,84 @@ export const translations = {
   'documents.perm.download': 'Tải về',
   'documents.perm.verify': 'Thẩm tra',
   'documents.perm.approve': 'Phê duyệt',
+
+  
+  
+  // Thao tác thư mục (context menu + modal)
+  'documents.menu.createSub': 'Tạo thư mục con',
+  'documents.menu.rename': 'Đổi tên',
+  'documents.menu.move': 'Di chuyển',
+  'documents.menu.delete': 'Xóa',
+  'documents.menu.noActions': 'Không có thao tác khả dụng',
+  'documents.action.createTitle': 'Tạo thư mục con',
+  'documents.action.renameTitle': 'Đổi tên thư mục',
+  'documents.action.moveTitle': 'Di chuyển thư mục',
+  'documents.action.deleteTitle': 'Xóa thư mục',
+  'documents.action.nameLabel': 'Tên thư mục',
+  'documents.action.namePlaceholder': 'Nhập tên thư mục',
+  'documents.action.parentLabel': 'Thư mục cha',
+  'documents.action.moveLabel': 'Thư mục đích (cùng khu vực)',
+  'documents.action.moveEmpty': 'Không có thư mục đích hợp lệ.',
+  'documents.action.deleteWarning': 'Hành động này không thể hoàn tác.',
+  'documents.action.cancel': 'Hủy',
+  'documents.action.save': 'Lưu',
+  'documents.action.create': 'Tạo',
+  'documents.action.confirmMove': 'Di chuyển',
+  'documents.action.confirmDelete': 'Xóa',
+  'documents.selectFolderToCreate': 'Hãy chọn một thư mục bạn có quyền để tạo thư mục con.',
+  'documents.toast.created': 'Đã tạo thư mục',
+  'documents.toast.renamed': 'Đã đổi tên thư mục',
+  'documents.toast.moved': 'Đã di chuyển thư mục',
+  'documents.toast.deleted': 'Đã xóa thư mục',
+  'documents.toast.uploaded': 'Đã tải tệp lên',
+
+
+  // Danh sách tệp trong folder
+  'documents.files.empty': 'Thư mục này chưa có tệp.',
+  'documents.files.colName': 'TÊN TỆP',
+  'documents.files.colVersion': 'PHIÊN BẢN',
+  'documents.files.colStatus': 'TRẠNG THÁI',
+  'documents.files.colModified': 'NGÀY CHỈNH SỬA',
+  'documents.files.colAuthor': 'TÁC GIẢ',
+  'documents.files.colActions': 'THAO TÁC',
+  'documents.status.draft': 'Nháp',
+  'documents.status.pending': 'Đang chờ',
+  'documents.status.approved': 'Đã phê duyệt',
+  'documents.status.rejected': 'Từ chối',
+
+  // Menu chuột phải trên 1 tệp
+  'documents.fileMenu.detail': 'Xem chi tiết',
+  'documents.fileMenu.download': 'Tải về',
+  'documents.fileMenu.versions': 'Quản lý phiên bản',
+  'documents.fileMenu.permission': 'Phân quyền',
+  'documents.fileMenu.transition': 'Chuyển trạng thái',
+  'documents.fileMenu.discuss': 'Thảo luận',
+  'documents.fileMenu.share': 'Chia sẻ',
+  'documents.fileMenu.soon': 'Tính năng đang phát triển.',
+  'documents.toast.downloading': 'Đang tải tệp về…',
+
+  // Modal phiên bản
+  'documents.versions.title': 'Quản lý phiên bản',
+  'documents.versions.empty': 'Chưa có phiên bản.',
+  'documents.versions.size': 'Dung lượng',
+  'documents.versions.uploadedBy': 'Người tải',
+  'documents.versions.uploadedAt': 'Thời điểm',
+  'documents.versions.current': 'Hiện hành',
+
+  // Modal tải tệp lên
+  'documents.uploadModal.title': 'Tải tệp lên',
+  'documents.uploadModal.target': 'Thư mục đích',
+  'documents.uploadModal.dropHere': 'Kéo và thả tệp vào đây',
+  'documents.uploadModal.chooseLead': 'Hoặc ',
+  'documents.uploadModal.choose': 'chọn tệp từ máy tính',
+  'documents.uploadModal.hint': 'Hỗ trợ: PDF, DWG, IFC, RVT, JPG (tối đa 500MB/tệp)',
+  'documents.uploadModal.list': 'Danh sách tệp đang chuẩn bị',
+  'documents.uploadModal.empty': 'Chưa chọn tệp nào.',
+  'documents.uploadModal.done': 'Hoàn tất',
+  'documents.uploadModal.failed': 'Lỗi',
+  'documents.uploadModal.cancel': 'Hủy',
+  'documents.uploadModal.submit': 'Tải lên',
+  'documents.uploadModal.uploading': 'Đang tải lên…',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

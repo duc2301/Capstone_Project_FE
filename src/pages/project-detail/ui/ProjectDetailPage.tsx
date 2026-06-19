@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
 import { groupApi, GroupMemberStatus } from '@/entities/group';
@@ -559,8 +559,11 @@ export function ProjectDetailPage() {
   }, [groups, organizations]);
 
   const { currentUser } = useSession();
+  const [searchParams] = useSearchParams();
 
-  const [tab, setTab] = useState<TabId>('info');
+  // Tab khởi tạo theo ?tab= (để quay lại đúng tab Tài liệu từ trang xem chi tiết file).
+  const initialTab = (TABS.find((x) => x.id === searchParams.get('tab'))?.id ?? 'info') as TabId;
+  const [tab, setTab] = useState<TabId>(initialTab);
   const [manageOpen, setManageOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);

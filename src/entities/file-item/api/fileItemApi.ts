@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { FileListItem, FileVersion } from '../model/fileItem.types';
+import type { FileListItem, FileVersion, FileViewInfo } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Tải tệp lên 1 thư mục (multipart). FormData gồm: file, FolderId, FileType, Name?.
@@ -8,7 +8,7 @@ export const fileItemApi = {
   upload: (formData: FormData, onProgress?: (pct: number) => void) =>
     axiosInstance.post<ApiResponse<unknown>>('/file-items/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 120_000, // file lớn
+      timeout: 0, // file lớn (CAD/BIM tới 500MB) — không đặt timeout, dựa vào tiến độ upload
       onUploadProgress: onProgress
         ? (e) => onProgress(Math.round((e.loaded / (e.total || e.loaded || 1)) * 100))
         : undefined,
@@ -25,4 +25,10 @@ export const fileItemApi = {
   /** Tải nội dung file về (blob, qua server – có kèm token). */
   download: (fileItemId: string) =>
     axiosInstance.get(`/file-items/${fileItemId}/download`, { responseType: 'blob', timeout: 60_000 }),
+
+  /** "Xem chi tiết": BE trả cách hiển thị (model/inline/download).
+   *  Lần đầu với model lớn (.nwd/.rvt) BE phải đẩy file lên APS + convert Office -> có thể mất vài phút.
+   *  Không đặt timeout ở FE; để BE (HttpClient APS timeout 10 phút) quyết định. */
+  getView: (fileItemId: string) =>
+    axiosInstance.get<ApiResponse<FileViewInfo>>(`/file-items/${fileItemId}/view`, { timeout: 0 }),
 };

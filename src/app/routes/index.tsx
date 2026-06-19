@@ -1,6 +1,7 @@
 import { AboutPage } from '@/pages/about';
 import { AccountsPage } from '@/pages/accounts';
 import { DashboardPage } from '@/pages/dashboard';
+import { FileViewPage } from '@/pages/file-view';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
@@ -155,6 +156,16 @@ export const AppRoutes = () => {
         element={
           <RequireAuth>
             <ViewerPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/:projectId/files/:fileId/view"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <FileViewPage />
+            </AdminLayout>
           </RequireAuth>
         }
       />

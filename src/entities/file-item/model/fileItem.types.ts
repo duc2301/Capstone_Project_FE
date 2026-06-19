@@ -35,6 +35,21 @@ export interface FileListItem {
   updatedAt: string | null;
 }
 
+/* Cách FE hiển thị "Xem chi tiết" 1 file (khớp BE FileViewInfoDTO.Kind):
+ *  - 'model'    : file thiết kế (IFC/CAD) -> mở APS ModelViewer bằng urn
+ *  - 'inline'   : xem trực tiếp trên web (PDF/ảnh/text, hoặc Office đã convert sang PDF) bằng url + contentType
+ *  - 'download' : không xem trực tiếp được -> chỉ tải về */
+export type FileViewKind = 'model' | 'inline' | 'download';
+
+export interface FileViewInfo {
+  kind: FileViewKind;
+  urn: string | null;
+  url: string | null;
+  contentType: string | null;
+  fileName: string;
+  format: string | null;
+}
+
 /* 1 phiên bản của file */
 export interface FileVersion {
   id: string;

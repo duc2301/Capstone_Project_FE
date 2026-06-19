@@ -722,6 +722,7 @@ export const translations = {
 
   // Danh sách tệp trong folder
   'documents.files.empty': 'Thư mục này chưa có tệp.',
+  'documents.files.openHint': 'Bấm đúp để xem chi tiết',
   'documents.files.colName': 'TÊN TỆP',
   'documents.files.colVersion': 'PHIÊN BẢN',
   'documents.files.colStatus': 'TRẠNG THÁI',
@@ -743,6 +744,13 @@ export const translations = {
   'documents.fileMenu.share': 'Chia sẻ',
   'documents.fileMenu.soon': 'Tính năng đang phát triển.',
   'documents.toast.downloading': 'Đang tải tệp về…',
+
+  // Trang "Xem chi tiết" file (model 3D/2D, PDF/ảnh/Office xem trực tiếp, hoặc tải về)
+  'fileView.back': 'Quay lại thư mục',
+  'fileView.error': 'Không mở được tài liệu. Vui lòng thử lại.',
+  'fileView.download.title': 'Không xem trực tiếp được định dạng này',
+  'fileView.download.desc': 'Tải tệp về máy để mở bằng phần mềm phù hợp.',
+  'fileView.download.button': 'Tải về',
 
   // Modal phiên bản
   'documents.versions.title': 'Quản lý phiên bản',

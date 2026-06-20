@@ -1,9 +1,12 @@
+import { useCallback } from 'react';
+
 import { t } from '@/shared/lib/i18n';
 
 interface FileContextMenuProps {
   x: number;
   y: number;
   onClose: () => void;
+  onDetail: () => void;
   onDownload: () => void;
   onVersions: () => void;
   onSoon: () => void;
@@ -17,10 +20,19 @@ interface Item {
   icon: React.ReactNode;
 }
 
-export function FileContextMenu({ x, y, onClose, onDownload, onVersions, onSoon }: FileContextMenuProps) {
+export function FileContextMenu({ x, y, onClose, onDetail, onDownload, onVersions, onSoon }: FileContextMenuProps) {
+  // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
+  const clampRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const pad = 8;
+    const { width, height } = el.getBoundingClientRect();
+    el.style.left = `${Math.max(pad, Math.min(x, window.innerWidth - width - pad))}px`;
+    el.style.top = `${Math.max(pad, Math.min(y, window.innerHeight - height - pad))}px`;
+  }, [x, y]);
+
   const items: Item[] = [
     {
-      key: 'detail', label: t('documents.fileMenu.detail'), soon: true, onClick: onSoon,
+      key: 'detail', label: t('documents.fileMenu.detail'), onClick: onDetail,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>,
     },
     {
@@ -52,7 +64,7 @@ export function FileContextMenu({ x, y, onClose, onDownload, onVersions, onSoon 
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose(); }} />
-      <div className="fixed z-50 min-w-52 animate-scale-in rounded-xl border border-card-border bg-card py-1.5 shadow-dropdown" style={{ top: y, left: x }}>
+      <div ref={clampRef} className="fixed z-50 min-w-52 animate-scale-in rounded-xl border border-card-border bg-card py-1.5 shadow-dropdown" style={{ top: y, left: x }}>
         {items.map((it) => (
           <button
             key={it.key}

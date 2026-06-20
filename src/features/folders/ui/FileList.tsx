@@ -8,6 +8,7 @@ interface FileListProps {
   loading: boolean;
   error: string | null;
   onFileMenu: (e: React.MouseEvent, file: FileListItem) => void;
+  onFileOpen: (file: FileListItem) => void;
 }
 
 function FileIcon() {
@@ -35,7 +36,7 @@ function DotsButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   );
 }
 
-export function FileList({ files, loading, error, onFileMenu }: FileListProps) {
+export function FileList({ files, loading, error, onFileMenu, onFileOpen }: FileListProps) {
   if (loading)
     return <p className="py-12 text-center text-sm text-text-muted">{t('common.loading')}</p>;
   if (error)
@@ -63,7 +64,9 @@ export function FileList({ files, loading, error, onFileMenu }: FileListProps) {
               <tr
                 key={f.id}
                 onContextMenu={(e) => onFileMenu(e, f)}
-                className="border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
+                onDoubleClick={() => onFileOpen(f)}
+                title={t('documents.files.openHint')}
+                className="cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
               >
                 <td className="py-3 pr-3">
                   <div className="flex items-center gap-3">

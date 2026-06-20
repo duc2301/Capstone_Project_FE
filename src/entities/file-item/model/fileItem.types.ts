@@ -35,6 +35,38 @@ export interface FileListItem {
   updatedAt: string | null;
 }
 
+/* Cách FE hiển thị "Xem chi tiết" 1 file (khớp BE FileViewInfoDTO.Kind):
+ *  - 'model'    : file thiết kế (IFC/CAD) -> mở APS ModelViewer bằng urn
+ *  - 'inline'   : xem trực tiếp trên web (PDF/ảnh/text, hoặc Office đã convert sang PDF) bằng url + contentType
+ *  - 'download' : không xem trực tiếp được -> chỉ tải về */
+export type FileViewKind = 'model' | 'inline' | 'download';
+
+/* Trạng thái dịch model APS — numeric enum khớp BE (Domain.Enum.File.ModelViewerStatus).
+ *  Dịch chạy ở hàng đợi nền BE (đẩy sẵn lúc upload) nên reload/đóng tab không làm gián đoạn.
+ *  Ready -> mở viewer ngay; Pending/Processing -> hiện "đang xử lý" + poll; Failed -> cho dịch lại;
+ *  None -> file cũ, BE sẽ tự đẩy dịch khi gọi /view. */
+export const ModelViewerStatus = {
+  None: 0,
+  Pending: 1,
+  Processing: 2,
+  Ready: 3,
+  Failed: 4,
+} as const;
+export type ModelViewerStatus = (typeof ModelViewerStatus)[keyof typeof ModelViewerStatus];
+
+export interface FileViewInfo {
+  kind: FileViewKind;
+  urn: string | null;
+  /* Chỉ có khi kind = 'model'. null cho file không phải model. */
+  viewerStatus: ModelViewerStatus | null;
+  /* % tiến độ dịch (vd "75% complete") khi đang Processing. */
+  viewerProgress: string | null;
+  url: string | null;
+  contentType: string | null;
+  fileName: string;
+  format: string | null;
+}
+
 /* 1 phiên bản của file */
 export interface FileVersion {
   id: string;

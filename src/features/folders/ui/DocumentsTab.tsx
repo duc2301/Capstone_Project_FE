@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
@@ -53,10 +54,14 @@ interface ModalState {
 }
 
 export function DocumentsTab({ projectId }: DocumentsTabProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
+  const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -100,6 +105,11 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const handleFileMenu = (e: React.MouseEvent, file: FileListItem) => {
     e.preventDefault();
     setFileMenu({ file, x: e.clientX, y: e.clientY });
+  };
+
+  // "Xem chi tiết" -> điều hướng sang trang xem riêng (BE quyết định model/inline/download).
+  const handleDetail = (file: FileListItem) => {
+    navigate(`/projects/${projectId}/files/${file.id}/view?folder=${file.folderId}`);
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -291,6 +301,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                   loading={filesLoading}
                   error={filesError}
                   onFileMenu={handleFileMenu}
+                  onFileOpen={handleDetail}
                 />
               </div>
             )}
@@ -331,6 +342,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           x={fileMenu.x}
           y={fileMenu.y}
           onClose={() => setFileMenu(null)}
+          onDetail={() => handleDetail(fileMenu.file)}
           onDownload={() => handleDownload(fileMenu.file)}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onSoon={() => showToast(t('documents.fileMenu.soon'))}

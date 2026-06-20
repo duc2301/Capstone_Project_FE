@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 import type { FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
@@ -25,6 +27,15 @@ interface Item {
 export function FolderContextMenu({
   node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onClose,
 }: FolderContextMenuProps) {
+  // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
+  const clampRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const pad = 8;
+    const { width, height } = el.getBoundingClientRect();
+    el.style.left = `${Math.max(pad, Math.min(x, window.innerWidth - width - pad))}px`;
+    el.style.top = `${Math.max(pad, Math.min(y, window.innerHeight - height - pad))}px`;
+  }, [x, y]);
+
   const canEdit = node.permission.canEdit;
   const isRoot = node.parentFolderId === null;
   const hasChildren = node.children.length > 0;
@@ -108,6 +119,7 @@ export function FolderContextMenu({
       {/* Overlay đóng menu khi bấm ra ngoài */}
       <div className="fixed inset-0 z-40" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose(); }} />
       <div
+        ref={clampRef}
         className="fixed z-50 min-w-44 animate-scale-in rounded-xl border border-card-border bg-card py-1.5 shadow-dropdown"
         style={{ top: y, left: x }}
       >

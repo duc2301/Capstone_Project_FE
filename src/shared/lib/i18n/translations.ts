@@ -751,6 +751,14 @@ export const translations = {
   'fileView.download.title': 'Không xem trực tiếp được định dạng này',
   'fileView.download.desc': 'Tải tệp về máy để mở bằng phần mềm phù hợp.',
   'fileView.download.button': 'Tải về',
+  'fileView.model.processing.title': 'Đang dựng mô hình…',
+  'fileView.model.processing.desc':
+    'Hệ thống đang xử lý mô hình để xem trên web. Bạn có thể rời trang — quá trình vẫn chạy ở máy chủ.',
+  'fileView.model.failed.title': 'Dựng mô hình thất bại',
+  'fileView.model.failed.desc':
+    'Không xử lý được mô hình này để xem trên web. Bạn có thể thử dịch lại hoặc tải tệp về.',
+  'fileView.model.failed.retry': 'Dịch lại',
+  'fileView.model.retrying': 'Đang gửi yêu cầu dịch lại…',
 
   // Modal phiên bản
   'documents.versions.title': 'Quản lý phiên bản',

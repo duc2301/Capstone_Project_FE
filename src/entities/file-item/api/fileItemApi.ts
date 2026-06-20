@@ -27,8 +27,12 @@ export const fileItemApi = {
     axiosInstance.get(`/file-items/${fileItemId}/download`, { responseType: 'blob', timeout: 60_000 }),
 
   /** "Xem chi tiết": BE trả cách hiển thị (model/inline/download).
-   *  Lần đầu với model lớn (.nwd/.rvt) BE phải đẩy file lên APS + convert Office -> có thể mất vài phút.
-   *  Không đặt timeout ở FE; để BE (HttpClient APS timeout 10 phút) quyết định. */
+   *  Model IFC/CAD dịch APS chạy nền (đẩy sẵn lúc upload) -> /view không chặn, trả luôn trạng thái dịch
+   *  (viewerStatus + viewerProgress). FE poll lại endpoint này khi đang Pending/Processing. */
   getView: (fileItemId: string) =>
-    axiosInstance.get<ApiResponse<FileViewInfo>>(`/file-items/${fileItemId}/view`, { timeout: 0 }),
+    axiosInstance.get<ApiResponse<FileViewInfo>>(`/file-items/${fileItemId}/view`),
+
+  /** Dịch lại model lên APS (khi trạng thái Failed) — BE reset về Pending rồi xử lý ở hàng đợi nền. */
+  retranslate: (fileItemId: string) =>
+    axiosInstance.post<ApiResponse<unknown>>(`/file-items/${fileItemId}/retranslate`),
 };

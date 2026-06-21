@@ -15,6 +15,9 @@ export const sessionApi = {
   register: (payload: RegisterPayload) =>
     axiosInstance.post<ApiResponse<AuthResult>>('/auth/register', payload),
 
+  googleLogin: (idToken: string) =>
+    axiosInstance.post<ApiResponse<AuthResult>>('/auth/google-login', { idToken }),
+
   refresh: (payload: RefreshPayload) =>
     axiosInstance.post<ApiResponse<AuthResult>>('/auth/refresh', payload),
 

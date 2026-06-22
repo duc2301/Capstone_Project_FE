@@ -1,10 +1,12 @@
 import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { useRegister } from '../model/useRegister';
+import { useGoogleLogin } from '../model/useGoogleLogin';
 
 const INPUT_BASE =
   'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white px-4 font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
@@ -115,6 +117,7 @@ function PasswordField({
 
 export function RegisterForm() {
   const { loading, error, register } = useRegister();
+  const { loading: gLoading, error: gError, handleGoogleCredential, setError: setGError } = useGoogleLogin();
   const [form, setForm] = useState({
     userName: '',
     email: '',
@@ -253,6 +256,46 @@ export function RegisterForm() {
           </button>
         </div>
       </form>
+
+      <div className="flex flex-col items-center gap-3 w-full max-w-[896px]">
+        <div className="relative flex w-full items-center">
+          <div className="flex-1 border-t border-[#C3C9B9]/40" />
+          <span className="mx-3 font-jakarta text-xs text-[#73796B]">hoặc đăng ký nhanh hơn</span>
+          <div className="flex-1 border-t border-[#C3C9B9]/40" />
+        </div>
+
+        {gError && (
+          <div
+            role="alert"
+            className="flex w-full items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+            <span className="font-jakarta text-sm text-red-600">{gError}</span>
+          </div>
+        )}
+
+        <GoogleLogin
+          onSuccess={(credentialResponse) => {
+            if (credentialResponse.credential) {
+              handleGoogleCredential(credentialResponse.credential);
+            } else {
+              setGError('Không nhận được thông tin từ Google.');
+            }
+          }}
+          onError={() => setGError('Đăng ký bằng Google thất bại. Vui lòng thử lại.')}
+          width="448"
+          text="signup_with"
+          shape="rectangular"
+          logo_alignment="left"
+        />
+
+        {gLoading && (
+          <p className="font-jakarta text-xs text-[#73796B]">Đang xử lý...</p>
+        )}
+      </div>
     </div>
   );
 }

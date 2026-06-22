@@ -15,9 +15,18 @@ export const sessionApi = {
   register: (payload: RegisterPayload) =>
     axiosInstance.post<ApiResponse<AuthResult>>('/auth/register', payload),
 
+  googleLogin: (idToken: string) =>
+    axiosInstance.post<ApiResponse<AuthResult>>('/auth/google-login', { idToken }),
+
   refresh: (payload: RefreshPayload) =>
     axiosInstance.post<ApiResponse<AuthResult>>('/auth/refresh', payload),
 
   logout: (payload: LogoutPayload) =>
     axiosInstance.post<ApiResponse<null>>('/auth/logout', payload),
+
+  forgotPassword: (email: string) =>
+    axiosInstance.post<ApiResponse<null>>('/auth/forgot-password', { email }),
+
+  resetPassword: (email: string, token: string, newPassword: string) =>
+    axiosInstance.post<ApiResponse<null>>('/auth/reset-password', { email, token, newPassword }),
 };

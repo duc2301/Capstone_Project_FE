@@ -23,4 +23,10 @@ export const sessionApi = {
 
   logout: (payload: LogoutPayload) =>
     axiosInstance.post<ApiResponse<null>>('/auth/logout', payload),
+
+  forgotPassword: (email: string) =>
+    axiosInstance.post<ApiResponse<null>>('/auth/forgot-password', { email }),
+
+  resetPassword: (email: string, token: string, newPassword: string) =>
+    axiosInstance.post<ApiResponse<null>>('/auth/reset-password', { email, token, newPassword }),
 };

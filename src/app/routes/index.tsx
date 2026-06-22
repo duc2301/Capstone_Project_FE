@@ -2,6 +2,7 @@ import { AboutPage } from '@/pages/about';
 import { AccountsPage } from '@/pages/accounts';
 import { DashboardPage } from '@/pages/dashboard';
 import { FileViewPage } from '@/pages/file-view';
+import { ForgotPasswordPage } from '@/pages/forgot-password';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
@@ -12,6 +13,7 @@ import { ProfilePage } from '@/pages/profile';
 import { ProjectDetailPage } from '@/pages/project-detail';
 import { ProjectsPage } from '@/pages/projects';
 import { RegisterPage } from '@/pages/register';
+import { ResetPasswordPage } from '@/pages/reset-password';
 import { ViewerPage } from '@/pages/viewer';
 import { AdminLayout } from '@/widgets/AdminLayout';
 import { Route, Routes } from 'react-router-dom';
@@ -25,6 +27,8 @@ export const AppRoutes = () => {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/dashboard"
         element={

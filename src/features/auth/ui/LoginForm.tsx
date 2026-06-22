@@ -112,12 +112,12 @@ export function LoginForm() {
               <label htmlFor="login-password" className={LABEL_CLASS}>
                 {t('login.passwordLabel')}
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#406623] transition-colors hover:underline"
               >
                 {t('login.forgotPassword')}
-              </a>
+              </Link>
             </div>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#73796B]">

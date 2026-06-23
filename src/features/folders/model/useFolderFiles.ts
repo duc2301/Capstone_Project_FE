@@ -11,43 +11,43 @@ interface UseFolderFilesReturn {
   refetch: () => Promise<void>;
 }
 
-/* Danh sách file của 1 folder. Component nên đặt key={folderId} để remount khi đổi folder. */
 export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
   const [files, setFiles] = useState<FileListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = useCallback(async () => {
+  const loadFiles = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
     if (!folderId) return;
-    setLoading(true);
+
+    if (showLoading) setLoading(true);
     setError(null);
+
     try {
       const { data } = await fileItemApi.getByFolder(folderId);
-      setFiles(data.result ?? []);
+      if (!isCancelled()) setFiles(data.result ?? []);
     } catch {
-      setError(t('documents.error'));
+      if (!isCancelled()) setError(t('documents.error'));
     } finally {
-      setLoading(false);
+      if (!isCancelled()) setLoading(false);
     }
   }, [folderId]);
 
+  const refetch = useCallback(() => loadFiles(false), [loadFiles]);
+
   useEffect(() => {
-    if (!folderId) return;
+    if (!folderId) {
+      setFiles([]);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await fileItemApi.getByFolder(folderId);
-        if (!cancelled) setFiles(data.result ?? []);
-      } catch {
-        if (!cancelled) setError(t('documents.error'));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    void loadFiles(true, () => cancelled);
+
     return () => {
       cancelled = true;
     };
-  }, [folderId]);
+  }, [folderId, loadFiles]);
 
   return { files, loading, error, refetch };
 }

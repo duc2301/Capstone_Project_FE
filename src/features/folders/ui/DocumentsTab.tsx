@@ -1,21 +1,26 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import { approvalApi, approvalErrorMessage } from '@/entities/approval';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
+import { CdeArea } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
-import { fileItemApi } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus } from '@/entities/file-item';
 
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderFiles } from '../model/useFolderFiles';
 import { useFolderTree } from '../model/useFolderTree';
+import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
 import { FolderTree } from './FolderTree';
+import { PendingApprovalsModal } from './PendingApprovalsModal';
+import { SubmitApprovalModal } from './SubmitApprovalModal';
 import { UploadModal } from './UploadModal';
 
 interface DocumentsTabProps {
@@ -70,6 +75,10 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [uploadFolder, setUploadFolder] = useState<FolderTreeNode | null>(null);
   const [fileMenu, setFileMenu] = useState<{ file: FileListItem; x: number; y: number } | null>(null);
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
+  const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
+  const [approvalBusy, setApprovalBusy] = useState(false);
+  const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
+  const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
 
   const { files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
@@ -155,6 +164,25 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     }
   };
 
+  // Chỉ file Draft trong WIP mới được gửi phê duyệt.
+  const canSubmitApproval = (file: FileListItem) =>
+    selected?.area === CdeArea.Wip && file.status === FileItemStatus.Draft;
+
+  const handleSubmitApproval = async (requiresSignature: boolean) => {
+    if (!submitApprovalFor) return;
+    setApprovalBusy(true);
+    try {
+      await approvalApi.submitApproval(submitApprovalFor.id, requiresSignature);
+      await refetchFiles();
+      showToast(t('approvals.toast.submitted'));
+      setSubmitApprovalFor(null);
+    } catch (err) {
+      showToast(approvalErrorMessage(err, t('common.error')), 'error');
+    } finally {
+      setApprovalBusy(false);
+    }
+  };
+
   const selectedCanManage = !!selected && selected.permission.canEdit && selected.parentFolderId !== null;
 
   return (
@@ -171,6 +199,26 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           {t('projectDetail.tab.documents')}
         </h2>
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPendingApprovalsOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+            {t('approvals.pending.title')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setApprovalHistoryOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            {t('approvals.history.title')}
+          </button>
           <button
             type="button"
             onClick={() => { if (selected) openUpload(selected); else showToast(t('documents.selectFolderToCreate'), 'error'); }}
@@ -346,6 +394,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onDownload={() => handleDownload(fileMenu.file)}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onSoon={() => showToast(t('documents.fileMenu.soon'))}
+          canSubmitApproval={canSubmitApproval(fileMenu.file)}
+          onSubmitApproval={() => setSubmitApprovalFor(fileMenu.file)}
         />
       )}
 
@@ -369,6 +419,29 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
             if (uploadFolder.id === selectedId) void refetchFiles();
           }}
         />
+      )}
+
+      {/* Modal gửi tệp để phê duyệt */}
+      {submitApprovalFor && (
+        <SubmitApprovalModal
+          fileName={submitApprovalFor.name}
+          busy={approvalBusy}
+          onClose={() => setSubmitApprovalFor(null)}
+          onSubmit={handleSubmitApproval}
+        />
+      )}
+
+      {/* Danh sách chờ duyệt */}
+      {pendingApprovalsOpen && (
+        <PendingApprovalsModal
+          onClose={() => setPendingApprovalsOpen(false)}
+          onChanged={() => void refetchFiles()}
+        />
+      )}
+
+      {/* Lịch sử phê duyệt */}
+      {approvalHistoryOpen && (
+        <ApprovalHistoryModal onClose={() => setApprovalHistoryOpen(false)} />
       )}
     </div>
   );

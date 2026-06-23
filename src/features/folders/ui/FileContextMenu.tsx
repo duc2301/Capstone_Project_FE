@@ -10,6 +10,8 @@ interface FileContextMenuProps {
   onDownload: () => void;
   onVersions: () => void;
   onSoon: () => void;
+  canSubmitApproval: boolean;
+  onSubmitApproval: () => void;
 }
 
 interface Item {
@@ -20,7 +22,9 @@ interface Item {
   icon: React.ReactNode;
 }
 
-export function FileContextMenu({ x, y, onClose, onDetail, onDownload, onVersions, onSoon }: FileContextMenuProps) {
+export function FileContextMenu({
+  x, y, onClose, onDetail, onDownload, onVersions, onSoon, canSubmitApproval, onSubmitApproval,
+}: FileContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
@@ -43,6 +47,10 @@ export function FileContextMenu({ x, y, onClose, onDetail, onDownload, onVersion
       key: 'versions', label: t('documents.fileMenu.versions'), onClick: onVersions,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>,
     },
+    ...(canSubmitApproval ? [{
+      key: 'submitApproval', label: t('documents.fileMenu.submitApproval'), onClick: onSubmitApproval,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>,
+    }] : []),
     {
       key: 'permission', label: t('documents.fileMenu.permission'), soon: true, onClick: onSoon,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,

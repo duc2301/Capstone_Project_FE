@@ -13,6 +13,7 @@ import { ProfilePage } from '@/pages/profile';
 import { ProjectDetailPage } from '@/pages/project-detail';
 import { ProjectsPage } from '@/pages/projects';
 import { RegisterPage } from '@/pages/register';
+import { ReturnRequestManagementPage } from '@/pages/return-request-management';
 import { ResetPasswordPage } from '@/pages/reset-password';
 import { ViewerPage } from '@/pages/viewer';
 import { AdminLayout } from '@/widgets/AdminLayout';
@@ -89,6 +90,16 @@ export const AppRoutes = () => {
           <RequireAuth>
             <AdminLayout>
               <ProjectDetailPage />
+            </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/zone-return-requests"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <ReturnRequestManagementPage />
             </AdminLayout>
           </RequireAuth>
         }

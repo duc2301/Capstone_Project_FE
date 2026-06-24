@@ -1,4 +1,5 @@
-import { FileItemStatus } from '@/entities/file-item';
+import type { FileListItem } from '@/entities/file-item';
+import { FileItemStatus, FileReturnRequestStatus } from '@/entities/file-item';
 import { t } from '@/shared/lib/i18n';
 
 /* Bytes -> chuỗi dễ đọc (KB/MB/GB) */
@@ -30,4 +31,29 @@ export function statusBadge(status: FileItemStatus): { label: string; className:
     default:
       return { label: t('documents.status.draft'), className: 'bg-content-bg text-text-secondary' };
   }
+}
+
+/* Trạng thái hiển thị trên bảng file.
+ * Return request là trạng thái phụ của luồng trả về WIP, không ghi đè trạng thái thật của FileItem.
+ */
+export function fileStatusBadge(file: FileListItem): { label: string; className: string } {
+  if (file.status === FileItemStatus.PendingApproval) {
+    return statusBadge(file.status);
+  }
+
+  if (file.returnRequestStatus === FileReturnRequestStatus.Pending) {
+    return {
+      label: t('documents.status.returnPending'),
+      className: 'bg-warning-light text-warning',
+    };
+  }
+
+  if (file.returnRequestStatus === FileReturnRequestStatus.Rejected) {
+    return {
+      label: t('documents.status.returnRejected'),
+      className: 'bg-danger-light text-danger',
+    };
+  }
+
+  return statusBadge(file.status);
 }

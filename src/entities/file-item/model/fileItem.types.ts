@@ -31,6 +31,8 @@ export interface FileListItem {
   format: string | null;
   createdByAccountId: string | null;
   authorName: string | null;
+  requiresSignature?: boolean;
+  isSigned?: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -65,6 +67,8 @@ export interface FileViewInfo {
   contentType: string | null;
   fileName: string;
   format: string | null;
+  requiresSignature?: boolean;
+  isSigned?: boolean;
 }
 
 /* 1 phiên bản của file */

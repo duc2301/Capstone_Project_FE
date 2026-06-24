@@ -4,12 +4,13 @@ import { t } from '@/shared/lib/i18n';
 
 interface SubmitApprovalModalProps {
   fileName: string;
+  canRequireSignature: boolean;
   busy: boolean;
   onClose: () => void;
   onSubmit: (requiresSignature: boolean) => void;
 }
 
-export function SubmitApprovalModal({ fileName, busy, onClose, onSubmit }: SubmitApprovalModalProps) {
+export function SubmitApprovalModal({ fileName, canRequireSignature, busy, onClose, onSubmit }: SubmitApprovalModalProps) {
   const [requiresSignature, setRequiresSignature] = useState(false);
 
   return (
@@ -35,16 +36,18 @@ export function SubmitApprovalModal({ fileName, busy, onClose, onSubmit }: Submi
             />
           </label>
 
-          <label className="flex items-center gap-2.5 rounded-xl border border-card-border px-3.5 py-3">
-            <input
-              type="checkbox"
-              checked={requiresSignature}
-              onChange={(e) => setRequiresSignature(e.target.checked)}
-              disabled={busy}
-              className="h-4 w-4 accent-primary"
-            />
-            <span className="text-sm font-medium text-text">{t('approvals.submitModal.requiresSignature')}</span>
-          </label>
+          {canRequireSignature && (
+            <label className="flex items-center gap-2.5 rounded-xl border border-card-border px-3.5 py-3">
+              <input
+                type="checkbox"
+                checked={requiresSignature}
+                onChange={(e) => setRequiresSignature(e.target.checked)}
+                disabled={busy}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm font-medium text-text">{t('approvals.submitModal.requiresSignature')}</span>
+            </label>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
@@ -54,7 +57,7 @@ export function SubmitApprovalModal({ fileName, busy, onClose, onSubmit }: Submi
           <button
             type="button"
             disabled={busy}
-            onClick={() => onSubmit(requiresSignature)}
+            onClick={() => onSubmit(canRequireSignature && requiresSignature)}
             className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : t('approvals.submitModal.submit')}

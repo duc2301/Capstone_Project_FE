@@ -18,6 +18,13 @@ export const FileItemStatus = {
 } as const;
 export type FileItemStatus = (typeof FileItemStatus)[keyof typeof FileItemStatus];
 
+export const FileReturnRequestStatus = {
+  Pending: 0,
+  Approved: 1,
+  Rejected: 2,
+} as const;
+export type FileReturnRequestStatus = (typeof FileReturnRequestStatus)[keyof typeof FileReturnRequestStatus];
+
 /* 1 dòng file trong danh sách folder */
 export interface FileListItem {
   id: string;
@@ -25,6 +32,8 @@ export interface FileListItem {
   name: string;
   fileType: FileType;
   status: FileItemStatus;
+  returnRequestStatus?: FileReturnRequestStatus | null;
+  returnTargetZone?: string | null;
   currentVersionId: string | null;
   currentVersionNumber: number;
   sizeBytes: number;

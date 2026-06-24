@@ -21,6 +21,10 @@ interface PendingApprovalsModalProps {
   onChanged?: () => void;
 }
 
+function isWipApproval(approval: ApprovalListItem) {
+  return approval.currentZone?.toLowerCase() === 'wip';
+}
+
 export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsModalProps) {
   const { items, loading, error, refetch } = usePendingApprovals();
   const {
@@ -153,7 +157,8 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                         {items.map((it) => {
                           const badge = approvalStatusBadge(it.status);
                           const busy = actionBusyId === it.id;
-                          const approvalLockedBySignature = it.requiresSignature && !it.isSigned;
+                          const canSignWithSmartCa = it.requiresSignature && isWipApproval(it);
+                          const approvalLockedBySignature = canSignWithSmartCa && !it.isSigned;
                           return (
                             <tr key={it.id} className="border-b border-card-border/60">
                               <td className="py-3 pr-3 font-medium text-text">{it.fileName}</td>
@@ -163,7 +168,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                               </td>
                               <td className="px-3 py-3 text-text-secondary">
-                                {it.requiresSignature
+                                {canSignWithSmartCa
                                   ? (it.isSigned ? t('smartca.status.signed') : t('smartca.signature.required'))
                                   : t('approvals.detail.no')}
                               </td>
@@ -176,7 +181,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                                   >
                                     {t('approvals.action.detail')}
                                   </button>
-                                  {it.requiresSignature && (
+                                  {canSignWithSmartCa && (
                                     <button
                                       type="button"
                                       disabled={busy}

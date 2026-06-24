@@ -482,6 +482,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {submitApprovalFor && (
         <SubmitApprovalModal
           fileName={submitApprovalFor.name}
+          canRequireSignature={selected?.area === CdeArea.Wip}
           busy={approvalBusy}
           onClose={() => setSubmitApprovalFor(null)}
           onSubmit={handleSubmitApproval}

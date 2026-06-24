@@ -78,6 +78,10 @@ function getStatusMeta(info: FileViewInfo | null, isModelProcessing: boolean, is
   return { label: t('fileView.status.ready'), className: 'border-primary/20 bg-primary/10 text-primary' };
 }
 
+function isWipApproval(approval: ApprovalListItem) {
+  return approval.currentZone?.toLowerCase() === 'wip';
+}
+
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -245,9 +249,11 @@ export function FileViewPage() {
     [fileApprovals],
   );
   const signableApproval = useMemo(
-    () => signatureApprovals.find((approval) => approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
+    () => signatureApprovals.find((approval) =>
+      approval.status === 'PendingApproval' && !approval.isSigned && isWipApproval(approval)) ?? null,
     [signatureApprovals],
   );
+  const canSignCurrentApproval = Boolean(signableApproval);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -439,10 +445,11 @@ export function FileViewPage() {
                 versions={versions}
               />
             ) : (
-              <SignatureHistoryPanel
-                requiresSignature={requiresSignature}
-                signatureApprovals={signatureApprovals}
-                placementActive={signaturePlacementMode}
+                <SignatureHistoryPanel
+                  requiresSignature={requiresSignature}
+                  canSign={canSignCurrentApproval}
+                  signatureApprovals={signatureApprovals}
+                  placementActive={signaturePlacementMode}
                 placementConfirmed={signaturePlacementConfirmed}
                 onStartPlacement={openSignaturePlacement}
               />
@@ -569,12 +576,14 @@ function FilePropertiesPanel({
 
 function SignatureHistoryPanel({
   requiresSignature,
+  canSign,
   signatureApprovals,
   placementActive,
   placementConfirmed,
   onStartPlacement,
 }: {
   requiresSignature: boolean;
+  canSign: boolean;
   signatureApprovals: ApprovalListItem[];
   placementActive: boolean;
   placementConfirmed: boolean;
@@ -585,7 +594,7 @@ function SignatureHistoryPanel({
       <h2 className="font-heading text-lg font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
       <p className="mt-1 text-sm text-text-muted">{t('fileView.signatureHistory.desc')}</p>
 
-      {requiresSignature && (
+      {requiresSignature && canSign && (
         <button
           type="button"
           onClick={onStartPlacement}

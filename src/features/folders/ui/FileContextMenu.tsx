@@ -12,6 +12,10 @@ interface FileContextMenuProps {
   onSoon: () => void;
   canSubmitApproval: boolean;
   onSubmitApproval: () => void;
+  canTransferZone: boolean;
+  onTransferZone: () => void;
+  canReturnToWip: boolean;
+  onReturnToWip: () => void;
 }
 
 interface Item {
@@ -23,7 +27,19 @@ interface Item {
 }
 
 export function FileContextMenu({
-  x, y, onClose, onDetail, onDownload, onVersions, onSoon, canSubmitApproval, onSubmitApproval,
+  x,
+  y,
+  onClose,
+  onDetail,
+  onDownload,
+  onVersions,
+  onSoon,
+  canSubmitApproval,
+  onSubmitApproval,
+  canTransferZone,
+  onTransferZone,
+  canReturnToWip,
+  onReturnToWip,
 }: FileContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -51,13 +67,17 @@ export function FileContextMenu({
       key: 'submitApproval', label: t('documents.fileMenu.submitApproval'), onClick: onSubmitApproval,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>,
     }] : []),
+    ...(canTransferZone ? [{
+      key: 'transferZone', label: t('documents.fileMenu.transition'), onClick: onTransferZone,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>,
+    }] : []),
+    ...(canReturnToWip ? [{
+      key: 'returnToWip', label: t('documents.fileMenu.returnToWip'), onClick: onReturnToWip,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>,
+    }] : []),
     {
       key: 'permission', label: t('documents.fileMenu.permission'), soon: true, onClick: onSoon,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
-    },
-    {
-      key: 'transition', label: t('documents.fileMenu.transition'), soon: true, onClick: onSoon,
-      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>,
     },
     {
       key: 'discuss', label: t('documents.fileMenu.discuss'), soon: true, onClick: onSoon,

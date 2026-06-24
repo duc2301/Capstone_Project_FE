@@ -1,4 +1,4 @@
 export { fileItemApi } from './api/fileItemApi';
-export { FileItemStatus, FileType, ModelViewerStatus } from './model/fileItem.types';
+export { FileItemStatus, FileReturnRequestStatus, FileType, ModelViewerStatus } from './model/fileItem.types';
 export type { FileListItem, FileVersion, FileViewInfo, FileViewKind } from './model/fileItem.types';
 

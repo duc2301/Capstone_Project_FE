@@ -6,6 +6,8 @@ export interface ApprovalListItem {
   id: string;
   fileItemId: string;
   fileName: string;
+  currentZone?: string | null;
+  targetZone?: string | null;
   projectId?: string | null;
   projectName?: string | null;
   folderId?: string | null;

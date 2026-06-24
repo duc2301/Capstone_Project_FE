@@ -152,6 +152,7 @@ const USER_NAV_ROUTES = new Set([
   '/notifications',
   '/profile',
   '/settings',
+  '/zone-return-requests',
 ]);
 
 const NAV_ITEMS: NavItem[] = [
@@ -162,6 +163,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'admin.nav.teams',          to: '/teams',         icon: IconTeams },
   { labelKey: 'admin.nav.documents',      to: '/documents',     icon: IconDocuments, dividerBefore: true },
   { labelKey: 'admin.nav.approvals',      to: '/approvals',     icon: IconApprovals },
+  { labelKey: 'admin.nav.returnRequests', to: '/zone-return-requests', icon: IconApprovals },
   { labelKey: 'admin.nav.bimModels',      to: '/viewer',        icon: IconBim },
   { labelKey: 'admin.nav.discussions',    to: '/discussions',   icon: IconDiscussions },
   { labelKey: 'admin.nav.auditLog',       to: '/audit-log',     icon: IconAuditLog, dividerBefore: true },

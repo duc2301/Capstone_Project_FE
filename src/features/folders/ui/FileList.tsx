@@ -1,7 +1,7 @@
 import type { FileListItem } from '@/entities/file-item';
 import { t } from '@/shared/lib/i18n';
 
-import { formatDate, formatSize, statusBadge } from '../model/fileFormat';
+import { fileStatusBadge, formatDate, formatSize } from '../model/fileFormat';
 
 interface FileListProps {
   files: FileListItem[];
@@ -59,7 +59,7 @@ export function FileList({ files, loading, error, onFileMenu, onFileOpen }: File
         </thead>
         <tbody>
           {files.map((f) => {
-            const badge = statusBadge(f.status);
+            const badge = fileStatusBadge(f);
             return (
               <tr
                 key={f.id}

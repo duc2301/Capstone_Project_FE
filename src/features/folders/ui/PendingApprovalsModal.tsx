@@ -8,6 +8,7 @@ import { approvalStatusBadge, formatDateTime } from '../model/approvalFormat';
 import { usePendingApprovals } from '../model/usePendingApprovals';
 import { ApprovalDetailModal } from './ApprovalDetailModal';
 import { RejectApprovalModal } from './RejectApprovalModal';
+import { SmartCaSignModal } from './SmartCaSignModal';
 
 interface PendingApprovalsModalProps {
   onClose: () => void;
@@ -21,6 +22,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
   const [detailId, setDetailId] = useState<string | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<ApprovalListItem | null>(null);
   const [rejectFor, setRejectFor] = useState<ApprovalListItem | null>(null);
+  const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -97,6 +99,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                   {items.map((it) => {
                     const badge = approvalStatusBadge(it.status);
                     const busy = actionBusyId === it.id;
+                    const approvalLockedBySignature = it.requiresSignature && !it.isSigned;
                     return (
                       <tr key={it.id} className="border-b border-card-border/60">
                         <td className="py-3 pr-3 font-medium text-text">{it.fileName}</td>
@@ -106,7 +109,9 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                         </td>
                         <td className="px-3 py-3 text-text-secondary">
-                          {it.requiresSignature ? t('approvals.detail.yes') : t('approvals.detail.no')}
+                          {it.requiresSignature
+                            ? (it.isSigned ? t('smartca.status.signed') : t('smartca.signature.required'))
+                            : t('approvals.detail.no')}
                         </td>
                         <td className="px-3 py-3 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -117,9 +122,20 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                             >
                               {t('approvals.action.detail')}
                             </button>
+                            {it.requiresSignature && (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => setSignFor(it)}
+                                className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+                              >
+                                {t('smartca.action.sign')}
+                              </button>
+                            )}
                             <button
                               type="button"
-                              disabled={busy}
+                              disabled={busy || approvalLockedBySignature}
+                              title={approvalLockedBySignature ? t('smartca.error.signatureRequiredBeforeApprove') : undefined}
                               onClick={() => setConfirmApprove(it)}
                               className="rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
                             >
@@ -152,6 +168,18 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
       )}
 
       {detailId && <ApprovalDetailModal approvalId={detailId} onClose={() => setDetailId(null)} />}
+
+      {signFor && (
+        <SmartCaSignModal
+          approval={signFor}
+          onClose={() => setSignFor(null)}
+          onToast={showToast}
+          onSigned={() => {
+            void refetch();
+            onChanged?.();
+          }}
+        />
+      )}
 
       {confirmApprove && (
         <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">

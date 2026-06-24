@@ -1,0 +1,400 @@
+import { useEffect, useMemo, useState } from 'react';
+
+import type { ApprovalListItem } from '@/entities/approval';
+import type { Certificate, SignatureInfo, SignatureTransactionStatus } from '@/entities/smartca';
+import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
+import { t } from '@/shared/lib/i18n';
+
+import { formatDateTime } from '../model/approvalFormat';
+
+interface SmartCaSignModalProps {
+  approval: ApprovalListItem;
+  onClose: () => void;
+  onSigned: () => void;
+  onToast: (message: string, type?: 'success' | 'error') => void;
+}
+
+function statusLabel(status: SignatureTransactionStatus): string {
+  switch (status) {
+    case 'Created':
+      return t('smartca.status.created');
+    case 'WaitingConfirm':
+      return t('smartca.status.waitingConfirm');
+    case 'Signed':
+      return t('smartca.status.signed');
+    case 'Expired':
+      return t('smartca.status.expired');
+    case 'Failed':
+    default:
+      return t('smartca.status.failed');
+  }
+}
+
+function statusClassName(status: SignatureTransactionStatus): string {
+  if (status === 'Signed') return 'bg-success-light text-success';
+  if (status === 'Failed' || status === 'Expired') return 'bg-danger-light text-danger';
+  return 'bg-warning-light text-warning';
+}
+
+export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: SmartCaSignModalProps) {
+  const [userId, setUserId] = useState('');
+  const [pin, setPin] = useState('');
+  const [useCompanyStamp, setUseCompanyStamp] = useState(false);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [certificateSerial, setCertificateSerial] = useState('');
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [transactionStatus, setTransactionStatus] = useState<SignatureTransactionStatus | null>(null);
+  const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
+  const [loadingCertificates, setLoadingCertificates] = useState(false);
+  const [creatingRequest, setCreatingRequest] = useState(false);
+  const [polling, setPolling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedCertificate = useMemo(
+    () => certificates.find((item) => item.serialNumber === certificateSerial) ?? null,
+    [certificateSerial, certificates],
+  );
+
+  const fetchSignatureInfo = async () => {
+    try {
+      const info = await smartcaApi.getSignatureInfo(approval.id);
+      setSignatureInfo(info);
+      setTransactionId(info.transactionId);
+      setTransactionStatus(info.status);
+      if (info.status === 'Signed') onSigned();
+    } catch {
+      setSignatureInfo(null);
+    }
+  };
+
+  useEffect(() => {
+    void fetchSignatureInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approval.id]);
+
+  useEffect(() => {
+    if (!transactionId || transactionStatus === 'Signed' || transactionStatus === 'Failed' || transactionStatus === 'Expired') {
+      setPolling(false);
+      return;
+    }
+
+    setPolling(true);
+    const timer = window.setInterval(async () => {
+      try {
+        const data = await smartcaApi.getTransactionStatus(approval.id, transactionId);
+        setTransactionStatus(data.status);
+
+        if (data.status === 'Signed') {
+          window.clearInterval(timer);
+          setPolling(false);
+          onToast(t('smartca.toast.signed'));
+          await fetchSignatureInfo();
+          onSigned();
+        }
+
+        if (data.status === 'Failed' || data.status === 'Expired') {
+          window.clearInterval(timer);
+          setPolling(false);
+          onToast(t('smartca.toast.signFailed'), 'error');
+        }
+      } catch (err) {
+        window.clearInterval(timer);
+        setPolling(false);
+        setError(smartcaErrorMessage(err, t('smartca.error.status')));
+      }
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approval.id, transactionId, transactionStatus]);
+
+  const handleGetCertificates = async () => {
+    const trimmedUserId = userId.trim();
+    if (!trimmedUserId) {
+      setError(t('smartca.error.userIdRequired'));
+      return;
+    }
+
+    setLoadingCertificates(true);
+    setError(null);
+    try {
+      const data = await smartcaApi.getCertificates(approval.id, trimmedUserId);
+      setCertificates(data);
+      setCertificateSerial(data[0]?.serialNumber ?? '');
+      if (data.length === 0) setError(t('smartca.error.noCertificates'));
+    } catch (err) {
+      setError(smartcaErrorMessage(err, t('smartca.error.certificates')));
+    } finally {
+      setLoadingCertificates(false);
+    }
+  };
+
+  const handleCreateSignRequest = async () => {
+    const trimmedUserId = userId.trim();
+    if (!trimmedUserId) {
+      setError(t('smartca.error.userIdRequired'));
+      return;
+    }
+    if (!certificateSerial) {
+      setError(t('smartca.error.certificateRequired'));
+      return;
+    }
+
+    setCreatingRequest(true);
+    setError(null);
+    try {
+      const data = await smartcaApi.createSignRequest(approval.id, trimmedUserId, certificateSerial);
+      setTransactionId(data.transactionId);
+      setTransactionStatus(data.status);
+      onToast(t('smartca.toast.requestCreated'));
+    } catch (err) {
+      setError(smartcaErrorMessage(err, t('smartca.error.signRequest')));
+    } finally {
+      setCreatingRequest(false);
+    }
+  };
+
+  const hasSignedSuccessfully = transactionStatus === 'Signed' || signatureInfo?.status === 'Signed';
+  const canCreateSignRequest = !!userId.trim() && !!certificateSerial && !creatingRequest;
+
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-[#dcdad2]/60 p-4 backdrop-blur-sm">
+      <div className="absolute inset-0 animate-fade-in" onClick={creatingRequest ? undefined : onClose} />
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[600px] animate-scale-in flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-modal">
+        <div className="border-b border-card-border/70 px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="font-display text-2xl font-semibold text-text">{t('smartca.signModal.title')}</h2>
+            <button type="button" onClick={onClose} disabled={creatingRequest} className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
+          {hasSignedSuccessfully ? (
+            <SmartCaSuccessView approval={approval} signatureInfo={signatureInfo} />
+          ) : (
+            <>
+              <section className="space-y-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.document')}</p>
+                <p className="truncate text-base font-medium text-primary">{approval.fileName}</p>
+              </section>
+
+              <section className="grid gap-4 sm:grid-cols-2">
+                <InfoBlock label={t('smartca.signModal.approvalStep')} value={t('smartca.signModal.defaultApprovalStep')} />
+                <InfoBlock label={t('smartca.signModal.signer')} value={approval.approvedByName ?? t('smartca.signModal.currentLeader')} />
+              </section>
+
+              <section className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.signMethod')}</p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <MethodButton active label={t('smartca.signModal.methodSmartCa')} />
+                  <MethodButton label={t('smartca.signModal.methodUsbToken')} />
+                  <MethodButton label={t('smartca.signModal.methodHsm')} />
+                </div>
+              </section>
+
+              <section className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.userId')}</span>
+                  <input
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    placeholder={t('smartca.signModal.userIdPlaceholder')}
+                    className="h-11 rounded-lg border border-input-border bg-input-bg px-3 text-sm text-text outline-none focus:border-input-focus"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={loadingCertificates}
+                  onClick={handleGetCertificates}
+                  className="self-end rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loadingCertificates ? t('common.loading') : t('smartca.signModal.getCertificates')}
+                </button>
+              </section>
+
+              <section className="space-y-4">
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.certificate')}</span>
+                  <select
+                    value={certificateSerial}
+                    onChange={(e) => setCertificateSerial(e.target.value)}
+                    disabled={certificates.length === 0}
+                    className="h-11 rounded-lg border border-input-border bg-input-bg px-3 text-sm font-semibold text-text outline-none focus:border-input-focus disabled:opacity-60"
+                  >
+                    <option value="">{t('smartca.signModal.selectCertificate')}</option>
+                    {certificates.map((certificate) => (
+                      <option key={certificate.serialNumber} value={certificate.serialNumber}>
+                        {certificate.subject ? `${certificate.subject} - ${certificate.serialNumber}` : certificate.serialNumber}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {selectedCertificate && (
+                  <div className="rounded-xl border border-card-border bg-[#f6f4ec] p-4 text-xs text-text-secondary">
+                    <p className="font-semibold text-text">{selectedCertificate.subject ?? selectedCertificate.serialNumber}</p>
+                    <p className="mt-1">{t('smartca.signModal.validTo')}: {formatDateTime(selectedCertificate.validTo)}</p>
+                    <p className="mt-1">{t('smartca.signModal.certificateStatus')}: {selectedCertificate.status ?? '-'}</p>
+                  </div>
+                )}
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.pin')}</span>
+                  <input
+                    type="password"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder={t('smartca.signModal.pinPlaceholder')}
+                    className="h-11 rounded-lg border border-input-border bg-card px-3 text-sm text-text outline-none focus:border-input-focus"
+                  />
+                </label>
+              </section>
+
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={useCompanyStamp}
+                  onChange={(e) => setUseCompanyStamp(e.target.checked)}
+                  className="h-5 w-5 rounded border-card-border accent-primary"
+                />
+                <span className="text-sm font-semibold text-text-secondary">{t('smartca.signModal.companyStamp')}</span>
+              </label>
+
+              {(transactionId || transactionStatus) && (
+                <div className="rounded-xl border border-card-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-text">{t('smartca.signModal.transactionStatus')}</p>
+                    {transactionStatus && (
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClassName(transactionStatus)}`}>
+                        {statusLabel(transactionStatus)}
+                      </span>
+                    )}
+                  </div>
+                  {transactionId && <p className="mt-2 break-all text-xs text-text-muted">{transactionId}</p>}
+                  {polling && <p className="mt-2 text-sm text-warning">{t('smartca.signModal.waitingConfirm')}</p>}
+                </div>
+              )}
+
+              <SignatureInfoPanel signatureInfo={signatureInfo} />
+
+              {error && (
+                <div className="rounded-xl border border-danger/30 bg-danger-light px-4 py-3">
+                  <p className="text-sm font-medium text-danger">{error}</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-3 border-t border-card-border bg-[#f6f4ec]/70 p-6">
+          {!hasSignedSuccessfully && (
+            <button
+              type="button"
+              disabled={!canCreateSignRequest}
+              onClick={handleCreateSignRequest}
+              className="h-12 flex-1 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {creatingRequest ? t('common.loading') : t('smartca.signModal.signAndApprove')}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={creatingRequest}
+            className={`${hasSignedSuccessfully ? 'flex-1 bg-primary text-white hover:bg-primary-hover' : 'border border-card-border text-text-secondary hover:bg-content-bg'} h-12 rounded-xl px-6 text-base font-medium transition-colors disabled:opacity-40`}
+          >
+            {hasSignedSuccessfully ? t('smartca.success.close') : t('smartca.signModal.cancel')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SmartCaSuccessView({
+  approval,
+  signatureInfo,
+}: {
+  approval: ApprovalListItem;
+  signatureInfo: SignatureInfo | null;
+}) {
+  const signerName = signatureInfo?.signedBy ?? approval.approvedByName ?? t('smartca.signModal.currentLeader');
+
+  return (
+    <section className="flex flex-col items-center text-center">
+      <div className="relative mt-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-primary/20 bg-[#f6f4ec] text-primary">
+        <span className="absolute -inset-6 rounded-full bg-primary/10" />
+        <svg className="relative z-10" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </div>
+
+      <h3 className="mt-8 font-display text-2xl font-semibold text-primary">{t('smartca.success.title')}</h3>
+      <p className="mt-2 max-w-md text-base text-text-secondary">{t('smartca.success.desc')}</p>
+
+      <div className="mt-8 w-full rounded-2xl border border-card-border bg-[#f6f4ec] p-5 text-left">
+        <InfoRow label={t('smartca.success.fileName')} value={approval.fileName} />
+        <div className="my-3 h-px bg-card-border/70" />
+        <InfoRow label={t('smartca.success.signedAt')} value={formatDateTime(signatureInfo?.signedAt)} />
+        <div className="my-3 h-px bg-card-border/70" />
+        <InfoRow label={t('smartca.success.signedBy')} value={signerName} />
+      </div>
+    </section>
+  );
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
+      <p className="text-sm font-semibold text-text">{value}</p>
+    </div>
+  );
+}
+
+function MethodButton({ label, active = false }: { label: string; active?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={`h-10 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+        active
+          ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+          : 'border-card-border text-text-secondary hover:bg-content-bg'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function SignatureInfoPanel({ signatureInfo }: { signatureInfo: SignatureInfo | null }) {
+  if (!signatureInfo) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-card-border bg-content-bg/40 p-4">
+      <p className="text-sm font-semibold text-text">{t('smartca.signature.title')}</p>
+      <div className="mt-3 space-y-2 text-sm">
+        <InfoRow label={t('smartca.signature.transactionId')} value={signatureInfo.transactionId} />
+        <InfoRow label={t('smartca.signature.certificateSerial')} value={signatureInfo.certificateSerial ?? '-'} />
+        <InfoRow label={t('smartca.signature.signedBy')} value={signatureInfo.signedBy ?? '-'} />
+        <InfoRow label={t('smartca.signature.signedAt')} value={formatDateTime(signatureInfo.signedAt)} />
+        <InfoRow label={t('smartca.signature.status')} value={statusLabel(signatureInfo.status)} />
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1 md:grid-cols-[160px_1fr]">
+      <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</span>
+      <span className="break-all text-text-secondary">{value}</span>
+    </div>
+  );
+}

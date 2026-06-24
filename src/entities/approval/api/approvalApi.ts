@@ -21,6 +21,7 @@ interface RawApprovalItem {
   approvedByName?: string | null;
   status: number | string;
   requiresSignature?: boolean | null;
+  isSigned?: boolean | null;
   createdAt: string;
   approvedAt?: string | null;
   rejectReason?: string | null;
@@ -50,6 +51,7 @@ function mapApprovalItem(item: RawApprovalItem): ApprovalListItem {
     requestedByName: item.requestedByName ?? '',
     status: normalizeApprovalStatus(item.status),
     requiresSignature: Boolean(item.requiresSignature),
+    isSigned: Boolean(item.isSigned),
     createdAt: item.createdAt,
     approvedByAccountId: item.approverId ?? item.approvedByAccountId ?? null,
     approvedByName: item.approverName ?? item.approvedByName ?? null,

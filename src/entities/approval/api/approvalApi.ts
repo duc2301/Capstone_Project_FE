@@ -8,6 +8,8 @@ interface RawApprovalItem {
   fileItemId: string;
   fileItemName?: string | null;
   fileName?: string | null;
+  currentZone?: string | null;
+  targetZone?: string | null;
   projectId?: string | null;
   projectName?: string | null;
   folderId?: string | null;
@@ -43,6 +45,8 @@ function mapApprovalItem(item: RawApprovalItem): ApprovalListItem {
     id: item.id,
     fileItemId: item.fileItemId,
     fileName: item.fileItemName ?? item.fileName ?? '',
+    currentZone: item.currentZone ?? null,
+    targetZone: item.targetZone ?? null,
     projectId: item.projectId ?? null,
     projectName: item.projectName ?? null,
     folderId: item.folderId ?? null,

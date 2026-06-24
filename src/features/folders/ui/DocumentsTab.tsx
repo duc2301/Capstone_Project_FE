@@ -7,11 +7,13 @@ import { CdeArea } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileReturnRequestStatus } from '@/entities/file-item';
+import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderFiles } from '../model/useFolderFiles';
 import { useFolderTree } from '../model/useFolderTree';
+import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
@@ -20,6 +22,7 @@ import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
 import { FolderTree } from './FolderTree';
 import { PendingApprovalsModal } from './PendingApprovalsModal';
+import { ReturnRequestModal } from './ReturnRequestModal';
 import { SubmitApprovalModal } from './SubmitApprovalModal';
 import { UploadModal } from './UploadModal';
 
@@ -58,6 +61,10 @@ interface ModalState {
   node: FolderTreeNode;
 }
 
+function canStartApprovalFromArea(area: CdeArea) {
+  return area === CdeArea.Wip || area === CdeArea.Shared || area === CdeArea.Published;
+}
+
 export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -79,6 +86,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [approvalBusy, setApprovalBusy] = useState(false);
   const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
+  const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
+  const [returnRequestBusy, setReturnRequestBusy] = useState(false);
 
   const { files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
@@ -164,9 +173,13 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     }
   };
 
-  // Chỉ file Draft trong WIP mới được gửi phê duyệt.
+  // File ở WIP/Shared/Published có thể gửi duyệt để BE approve và chuyển sang vùng kế tiếp.
   const canSubmitApproval = (file: FileListItem) =>
-    selected?.area === CdeArea.Wip && file.status === FileItemStatus.Draft;
+    !!selected
+    && canStartApprovalFromArea(selected.area)
+    && file.status !== FileItemStatus.PendingApproval
+    && file.status !== FileItemStatus.Rejected
+    && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
 
   const handleSubmitApproval = async (requiresSignature: boolean) => {
     if (!submitApprovalFor) return;
@@ -180,6 +193,35 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       showToast(approvalErrorMessage(err, t('common.error')), 'error');
     } finally {
       setApprovalBusy(false);
+    }
+  };
+
+  // Leader vẫn thấy "Chuyển trạng thái", nhưng thao tác này tạo approval request.
+  // BE chỉ chuyển vùng thật sự khi Leader approve request đó.
+  const canTransferZone = (file: FileListItem) =>
+    !!selected
+    && selected.permission.canApprove
+    && canStartApprovalFromArea(selected.area)
+    && file.status === FileItemStatus.Approved
+    && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
+  const canReturnToWip = (file: FileListItem) =>
+    !!selected
+    && selected.area !== CdeArea.Wip
+    && file.status !== FileItemStatus.PendingApproval
+    && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
+
+  const handleReturnRequest = async (reason: string) => {
+    if (!returnRequestFor) return;
+    setReturnRequestBusy(true);
+    try {
+      await zoneTransferApi.createReturnRequest(returnRequestFor.id, reason);
+      await refetchFiles();
+      showToast(t('returnRequests.toast.submitted'));
+      setReturnRequestFor(null);
+    } catch (err) {
+      showToast(zoneTransferErrorMessage(err, t('common.error')), 'error');
+    } finally {
+      setReturnRequestBusy(false);
     }
   };
 
@@ -396,6 +438,21 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onSoon={() => showToast(t('documents.fileMenu.soon'))}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
           onSubmitApproval={() => setSubmitApprovalFor(fileMenu.file)}
+          canTransferZone={canTransferZone(fileMenu.file)}
+          onTransferZone={() => setSubmitApprovalFor(fileMenu.file)}
+          canReturnToWip={canReturnToWip(fileMenu.file)}
+          onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
+        />
+      )}
+
+      {/* Modal yêu cầu trả tài liệu về WIP */}
+      {returnRequestFor && selected && (
+        <ReturnRequestModal
+          fileName={returnRequestFor.name}
+          currentZone={zoneNameFromArea(selected.area)}
+          busy={returnRequestBusy}
+          onClose={() => setReturnRequestFor(null)}
+          onSubmit={handleReturnRequest}
         />
       )}
 
@@ -435,7 +492,10 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {pendingApprovalsOpen && (
         <PendingApprovalsModal
           onClose={() => setPendingApprovalsOpen(false)}
-          onChanged={() => void refetchFiles()}
+          onChanged={() => {
+            void refetchFiles();
+            void refetch();
+          }}
         />
       )}
 

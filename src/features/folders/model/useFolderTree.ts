@@ -16,41 +16,42 @@ export function useFolderTree(projectId: string | undefined): UseFolderTreeRetur
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Dùng cho làm mới thủ công (gọi từ event handler, không phải trong effect).
-  const refetch = useCallback(async () => {
+  const loadTree = useCallback(async (
+    showLoading: boolean,
+    isCancelled: () => boolean = () => false,
+  ) => {
     if (!projectId) return;
-    setLoading(true);
+
+    if (showLoading) setLoading(true);
     setError(null);
+
     try {
       const { data } = await folderApi.getTree(projectId);
-      setTree(data.result ?? []);
+      if (!isCancelled()) setTree(data.result ?? []);
     } catch {
-      setError(t('documents.error'));
+      if (!isCancelled()) setError(t('documents.error'));
     } finally {
-      setLoading(false);
+      if (!isCancelled()) setLoading(false);
     }
   }, [projectId]);
 
-  // Tải lần đầu / khi đổi dự án — setState chỉ chạy sau await để tránh cascading render.
-  useEffect(() => {
-    if (!projectId) return;
-    let cancelled = false;
+  // Manual refresh keeps the current tree visible to avoid flashing the whole Documents tab.
+  const refetch = useCallback(() => loadTree(false), [loadTree]);
 
-    (async () => {
-      try {
-        const { data } = await folderApi.getTree(projectId);
-        if (!cancelled) setTree(data.result ?? []);
-      } catch {
-        if (!cancelled) setError(t('documents.error'));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+  useEffect(() => {
+    if (!projectId) {
+      setTree([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    void loadTree(true, () => cancelled);
 
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, loadTree]);
 
   return { tree, loading, error, refetch };
 }

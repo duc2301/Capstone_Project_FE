@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import type { FileViewInfo } from '@/entities/file-item';
+import { approvalApi } from '@/entities/approval';
+import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
+import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
+import { formatSize } from '@/features/folders/model/fileFormat';
+import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
@@ -17,24 +21,73 @@ function Spinner() {
   );
 }
 
-/* Nội dung xem trực tiếp: ảnh dùng <img>, còn lại (PDF/text) nhúng <iframe> */
+function FileIcon({ danger = false }: { danger?: boolean }) {
+  return (
+    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${danger ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+    </span>
+  );
+}
+
 function InlineContent({ info }: { info: FileViewInfo }) {
   if (!info.url) return null;
+
   if (info.contentType?.startsWith('image/')) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center overflow-auto bg-content-bg p-6">
-        <img src={info.url} alt={info.fileName} className="max-h-full max-w-full object-contain" />
+      <div className="flex h-full items-center justify-center overflow-auto bg-[#dcdad2] p-8">
+        <img src={info.url} alt={info.fileName} className="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
       </div>
     );
   }
+
   return (
     <iframe
       src={info.url}
       title={info.fileName}
-      className="absolute inset-0 h-full w-full border-0 bg-white"
+      className="h-full w-full border-0 bg-white"
     />
   );
 }
+
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getStatusMeta(info: FileViewInfo | null, isModelProcessing: boolean, isModelFailed: boolean) {
+  if (isModelFailed) {
+    return { label: t('fileView.status.failed'), className: 'border-danger/20 bg-danger-light text-danger' };
+  }
+  if (isModelProcessing) {
+    return { label: t('fileView.status.processing'), className: 'border-warning/20 bg-warning-light text-warning' };
+  }
+  if (!info || info.kind === 'download') {
+    return { label: t('fileView.status.downloadOnly'), className: 'border-card-border bg-content-bg text-text-secondary' };
+  }
+  return { label: t('fileView.status.ready'), className: 'border-primary/20 bg-primary/10 text-primary' };
+}
+
+function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
+      <div className="break-words text-sm font-medium text-text">{value}</div>
+    </div>
+  );
+}
+
+type FilePanelTab = 'properties' | 'signatureHistory';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -43,9 +96,19 @@ export function FileViewPage() {
   const folderId = searchParams.get('folder');
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
+  const [versions, setVersions] = useState<FileVersion[]>([]);
+  const [fileListItem, setFileListItem] = useState<FileListItem | null>(null);
+  const [fileApprovals, setFileApprovals] = useState<ApprovalListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>('properties');
+  const [signaturePlacementMode, setSignaturePlacementMode] = useState(false);
+  const [signaturePlacementConfirmed, setSignaturePlacementConfirmed] = useState(false);
+  const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const latestVersion = versions[0] ?? null;
 
   const fetchView = useCallback(async (): Promise<FileViewInfo> => {
     const { data } = await fileItemApi.getView(fileId!);
@@ -53,26 +116,48 @@ export function FileViewPage() {
     throw new Error(data.message || t('fileView.error'));
   }, [fileId]);
 
-  // Tải trạng thái lần đầu.
   useEffect(() => {
     if (!fileId) return;
+
     let cancelled = false;
     (async () => {
       try {
-        const result = await fetchView();
-        if (!cancelled) setInfo(result);
+        const currentFilePromise = folderId
+          ? fileItemApi
+              .getByFolder(folderId)
+              .then((res) => res.data.result?.find((file) => file.id === fileId) ?? null)
+              .catch(() => null)
+          : Promise.resolve(null);
+        const fileApprovalsPromise = approvalApi
+          .getApprovals()
+          .then((items) => items.filter((item) => item.fileItemId === fileId))
+          .catch(() => []);
+
+        const [viewResult, versionsResult, currentFileResult, fileApprovalsResult] = await Promise.all([
+          fetchView(),
+          fileItemApi.getVersions(fileId),
+          currentFilePromise,
+          fileApprovalsPromise,
+        ]);
+
+        if (!cancelled) {
+          setInfo(viewResult);
+          setVersions(versionsResult.data.result ?? []);
+          setFileListItem(currentFileResult);
+          setFileApprovals(fileApprovalsResult);
+        }
       } catch {
         if (!cancelled) setError(t('fileView.error'));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [fileId, fetchView]);
+  }, [fileId, folderId, fetchView]);
 
-  // Model đang dịch (Pending/Processing/None): poll /view tới khi Ready hoặc Failed.
   const status = info?.kind === 'model' ? info.viewerStatus : null;
   const isModelProcessing =
     status === ModelViewerStatus.Pending ||
@@ -81,15 +166,17 @@ export function FileViewPage() {
 
   useEffect(() => {
     if (!fileId || !isModelProcessing) return;
+
     let cancelled = false;
     const timer = setInterval(async () => {
       try {
         const result = await fetchView();
         if (!cancelled) setInfo(result);
       } catch {
-        /* lỗi tạm thời khi poll -> giữ trạng thái hiện tại, thử lại ở nhịp sau */
+        // Transient polling errors keep the current viewer state.
       }
     }, POLL_INTERVAL_MS);
+
     return () => {
       cancelled = true;
       clearInterval(timer);
@@ -101,12 +188,14 @@ export function FileViewPage() {
       navigate('/projects');
       return;
     }
+
     const folderQuery = folderId ? `&folder=${folderId}` : '';
     navigate(`/projects/${projectId}?tab=documents${folderQuery}`);
   }, [navigate, projectId, folderId]);
 
   const handleDownload = useCallback(async () => {
     if (!fileId || !info) return;
+
     try {
       const res = await fileItemApi.download(fileId);
       const blobUrl = URL.createObjectURL(res.data as Blob);
@@ -122,9 +211,9 @@ export function FileViewPage() {
     }
   }, [fileId, info]);
 
-  // Dịch lại model khi Failed: gọi BE reset + lấy lại trạng thái (chuyển sang Pending -> poll tự chạy lại).
   const handleRetranslate = useCallback(async () => {
     if (!fileId) return;
+
     setRetrying(true);
     try {
       await fileItemApi.retranslate(fileId);
@@ -141,105 +230,609 @@ export function FileViewPage() {
     info?.kind === 'model' && status === ModelViewerStatus.Ready && !!info.urn;
   const isModelFailed = info?.kind === 'model' && status === ModelViewerStatus.Failed;
 
-  return (
-    <div className="space-y-5">
-      {/* Tiêu đề: nút Quay lại + tên tệp */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <button
-            type="button"
-            onClick={goBack}
-            className="flex shrink-0 items-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-            </svg>
-            {t('fileView.back')}
-          </button>
-          <h2 className="truncate font-display text-xl font-semibold text-text">
-            {info?.fileName ?? ''}
-          </h2>
-        </div>
-      </div>
+  const statusMeta = useMemo(
+    () => getStatusMeta(info, isModelProcessing, isModelFailed),
+    [info, isModelProcessing, isModelFailed],
+  );
 
-      {/* Khung nội dung */}
-      <div className="relative h-[calc(100vh-220px)] min-h-[480px] overflow-hidden rounded-(--radius-card) border border-card-border bg-card shadow-card">
-        {loading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-            <Spinner />
-            <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
-          </div>
-        ) : error ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-            <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
-          </div>
-        ) : isModelReady ? (
-          <ModelViewer urn={info!.urn!} className="absolute inset-0" />
-        ) : isModelProcessing ? (
-          /* Model đang dịch nền: hiện tiến độ + poll. Rời trang vẫn dịch tiếp ở máy chủ. */
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <Spinner />
-            <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
-            <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
-            {info?.viewerProgress ? (
-              <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
-            ) : null}
-          </div>
-        ) : isModelFailed ? (
-          /* Dịch thất bại: cho dịch lại hoặc tải về. */
-          <div className="absolute inset-0 flex items-center justify-center px-6">
-            <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-danger/10 text-danger">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
+  const fileTitle = info?.fileName ?? t('fileView.untitled');
+  const format = (info?.format ?? latestVersion?.format ?? '').toUpperCase() || '-';
+  const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
+  const uploadedBy = latestVersion?.uploadedByName ?? '-';
+  const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
+  const signatureApprovals = useMemo(
+    () => fileApprovals.filter((approval) => approval.requiresSignature),
+    [fileApprovals],
+  );
+  const signableApproval = useMemo(
+    () => signatureApprovals.find((approval) => approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
+    [signatureApprovals],
+  );
+  const requiresSignature = Boolean(
+    info?.requiresSignature ||
+    fileListItem?.requiresSignature ||
+    signatureApprovals.length > 0,
+  );
+  const isSigned = Boolean(
+    info?.isSigned ||
+    fileListItem?.isSigned ||
+    signatureApprovals.some((approval) => approval.isSigned),
+  );
+
+  const openSignaturePlacement = useCallback(() => {
+    if (!requiresSignature) return;
+    if (!signableApproval) {
+      setToast({ msg: t('fileView.signatureHistory.noPendingSignature'), type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    setActivePanelTab('signatureHistory');
+    setSignaturePlacementMode(true);
+  }, [requiresSignature, signableApproval]);
+
+  const refreshFileApprovals = useCallback(async () => {
+    if (!fileId) return;
+    const items = await approvalApi.getApprovals();
+    setFileApprovals(items.filter((item) => item.fileItemId === fileId));
+  }, [fileId]);
+
+  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const handleConfirmSignaturePlacement = useCallback(() => {
+    if (!signableApproval) {
+      showToast(t('fileView.signatureHistory.noPendingSignature'), 'error');
+      return;
+    }
+
+    setSignaturePlacementConfirmed(true);
+    setSignaturePlacementMode(false);
+    setSignFor(signableApproval);
+  }, [showToast, signableApproval]);
+
+  useEffect(() => {
+    if (requiresSignature) return;
+    setSignaturePlacementMode(false);
+  }, [requiresSignature]);
+
+  return (
+    <div className="min-h-[calc(100vh-96px)] bg-[#fbf9f1] px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
+        <main className="min-w-0 flex-1 space-y-5">
+          <header className="flex flex-col gap-4 rounded-3xl border border-card-border/70 bg-card/80 px-5 py-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <FileIcon danger={format === 'PDF'} />
+              <div className="min-w-0">
+                <h1 className="truncate font-display text-2xl font-semibold text-text sm:text-3xl">{fileTitle}</h1>
+                <p className="mt-1 text-sm text-text-muted">
+                  {format} {latestVersion ? `- V${latestVersion.versionNumber}` : ''}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
+                {statusMeta.label}
               </span>
-              <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.failed.title')}</h3>
-              <p className="font-jakarta text-sm text-text-muted">{t('fileView.model.failed.desc')}</p>
-              <div className="mt-1 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleRetranslate}
+              <button
+                type="button"
+                onClick={goBack}
+                className="rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
+              >
+                {t('fileView.back')}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={!info}
+                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('fileView.download.button')}
+              </button>
+            </div>
+          </header>
+
+          <section className="relative h-[calc(100vh-250px)] min-h-[560px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
+            <div className="absolute inset-0 bg-[#dcdad2]" />
+
+            {loading ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <Spinner />
+                <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
+              </div>
+            ) : error ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
+              </div>
+            ) : isModelReady ? (
+              <div className="absolute inset-0 bg-card">
+                <ModelViewer urn={info!.urn!} className="h-full w-full" />
+              </div>
+            ) : isModelProcessing ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+                <Spinner />
+                <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
+                <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
+                {info?.viewerProgress ? (
+                  <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
+                ) : null}
+              </div>
+            ) : isModelFailed ? (
+              <div className="absolute inset-0 flex items-center justify-center px-6">
+                <EmptyViewerState
+                  danger
+                  title={t('fileView.model.failed.title')}
+                  desc={t('fileView.model.failed.desc')}
+                  primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
+                  onPrimary={handleRetranslate}
+                  secondaryLabel={t('fileView.download.button')}
+                  onSecondary={handleDownload}
                   disabled={retrying}
-                  className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
-                >
-                  {retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  className="flex items-center gap-2 rounded-xl border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-                >
+                />
+              </div>
+            ) : info && info.kind === 'inline' && info.url ? (
+              <div className="absolute inset-0 p-5">
+                <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
+                  <InlineContent info={info} />
+                </div>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center px-6">
+                <EmptyViewerState
+                  title={t('fileView.download.title')}
+                  desc={t('fileView.download.desc')}
+                  primaryLabel={t('fileView.download.button')}
+                  onPrimary={handleDownload}
+                />
+              </div>
+            )}
+
+            {requiresSignature && signaturePlacementMode && (
+              <SignaturePlacementOverlay
+                fileName={fileTitle}
+                confirmed={signaturePlacementConfirmed}
+                onConfirm={handleConfirmSignaturePlacement}
+                onClose={() => setSignaturePlacementMode(false)}
+              />
+            )}
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
+              <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
+                <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">-</button>
+                <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
+                <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">+</button>
+                <span className="h-4 w-px bg-card-border" />
+                <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
                   {t('fileView.download.button')}
                 </button>
               </div>
             </div>
+          </section>
+        </main>
+
+        <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
+          <div className="grid grid-cols-2 border-b border-card-border">
+            <PanelTabButton
+              active={activePanelTab === 'properties'}
+              label={t('fileView.tabs.properties')}
+              onClick={() => setActivePanelTab('properties')}
+            />
+            <PanelTabButton
+              active={activePanelTab === 'signatureHistory'}
+              label={t('fileView.tabs.signatureHistory')}
+              badge={requiresSignature && !isSigned ? '0' : undefined}
+              onClick={() => setActivePanelTab('signatureHistory')}
+            />
           </div>
-        ) : info && info.kind === 'inline' && info.url ? (
-          <InlineContent info={info} />
-        ) : (
-          /* download / không xem trực tiếp được */
-          <div className="absolute inset-0 flex items-center justify-center px-6">
-            <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                </svg>
+
+          <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
+            {activePanelTab === 'properties' ? (
+              <FilePropertiesPanel
+                format={format}
+                fileSize={fileSize}
+                uploadedBy={uploadedBy}
+                uploadedAt={uploadedAt}
+                statusMeta={statusMeta}
+                versions={versions}
+              />
+            ) : (
+              <SignatureHistoryPanel
+                requiresSignature={requiresSignature}
+                signatureApprovals={signatureApprovals}
+                placementActive={signaturePlacementMode}
+                placementConfirmed={signaturePlacementConfirmed}
+                onStartPlacement={openSignaturePlacement}
+              />
+            )}
+          </div>
+        </aside>
+      </div>
+
+      {toast && (
+        <div className={`fixed right-6 top-20 z-[80] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
+          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
+        </div>
+      )}
+
+      {signFor && (
+        <SmartCaSignModal
+          approval={signFor}
+          onClose={() => setSignFor(null)}
+          onToast={showToast}
+          onSigned={() => {
+            void refreshFileApprovals();
+            void fetchView().then(setInfo).catch(() => undefined);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PanelTabButton({
+  active,
+  label,
+  badge,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  badge?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex h-14 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+        active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
+      }`}
+    >
+      {label}
+      {badge ? (
+        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? 'bg-primary text-white' : 'bg-danger text-white'}`}>
+          {badge}
+        </span>
+      ) : null}
+      {active && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />}
+    </button>
+  );
+}
+
+function FilePropertiesPanel({
+  format,
+  fileSize,
+  uploadedBy,
+  uploadedAt,
+  statusMeta,
+  versions,
+}: {
+  format: string;
+  fileSize: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  statusMeta: { label: string; className: string };
+  versions: FileVersion[];
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-heading text-lg font-bold text-text">{t('fileView.details.title')}</h2>
+        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>{statusMeta.label}</span>
+      </div>
+
+      <div className="mt-6 space-y-5">
+        <DetailItem label={t('fileView.details.format')} value={format} />
+        <DetailItem label={t('fileView.details.size')} value={fileSize} />
+        <DetailItem
+          label={t('fileView.details.owner')}
+          value={
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                {uploadedBy !== '-' ? uploadedBy.slice(0, 2).toUpperCase() : 'NA'}
               </span>
-              <h3 className="font-display text-lg font-semibold text-text">{t('fileView.download.title')}</h3>
-              <p className="font-jakarta text-sm text-text-muted">{t('fileView.download.desc')}</p>
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="mt-1 flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                {t('fileView.download.button')}
-              </button>
+              <span>{uploadedBy}</span>
             </div>
+          }
+        />
+        <DetailItem label={t('fileView.details.uploadedAt')} value={uploadedAt} />
+      </div>
+
+      <div className="mt-6 border-t border-card-border/70 pt-5">
+        <h3 className="text-sm font-bold text-text">{t('fileView.details.history')}</h3>
+        <div className="mt-4 space-y-4">
+          {versions.slice(0, 4).map((version, index) => (
+            <div key={version.id} className="flex gap-3">
+              <span className={`mt-0.5 h-9 w-1 rounded-full ${index === 0 ? 'bg-primary' : 'bg-card-border'}`} />
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-text">
+                  V{version.versionNumber} - {version.format.toUpperCase()}
+                </p>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  {version.uploadedByName ?? '-'} - {formatDateTime(version.uploadedAt)}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {versions.length === 0 && (
+            <p className="text-sm text-text-muted">{t('fileView.details.noHistory')}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SignatureHistoryPanel({
+  requiresSignature,
+  signatureApprovals,
+  placementActive,
+  placementConfirmed,
+  onStartPlacement,
+}: {
+  requiresSignature: boolean;
+  signatureApprovals: ApprovalListItem[];
+  placementActive: boolean;
+  placementConfirmed: boolean;
+  onStartPlacement: () => void;
+}) {
+  return (
+    <div>
+      <h2 className="font-heading text-lg font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
+      <p className="mt-1 text-sm text-text-muted">{t('fileView.signatureHistory.desc')}</p>
+
+      {requiresSignature && (
+        <button
+          type="button"
+          onClick={onStartPlacement}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#8a5100] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#744500]"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </svg>
+          {placementActive ? t('fileView.signatureHistory.signing') : t('fileView.signatureHistory.signNow')}
+        </button>
+      )}
+
+      <div className="relative mt-6 space-y-5">
+        <div className="absolute bottom-12 left-4 top-4 w-0.5 bg-card-border/70" />
+        {signatureApprovals.length > 0 ? (
+          signatureApprovals.map((approval) => (
+            <SignatureApprovalTimelineItem key={approval.id} approval={approval} />
+          ))
+        ) : (
+          <SignatureTimelineItem
+            title={placementConfirmed ? t('fileView.signatureHistory.placementConfirmed') : t('fileView.signatureHistory.waitingTitle')}
+            body={placementConfirmed ? t('fileView.signatureHistory.placementConfirmedDesc') : t('fileView.signatureHistory.waitingDesc')}
+            muted={!placementConfirmed}
+          />
+        )}
+
+        <div className="flex flex-col items-center pt-4 text-center opacity-60">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-card-border text-text-muted">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </span>
+          <p className="mt-3 text-xs font-bold uppercase tracking-wider text-text-muted">
+            {t('fileView.signatureHistory.nextWaiting')}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function approvalStatusLabel(status: ApprovalStatus): string {
+  if (status === 'Approved') return t('documents.status.approved');
+  if (status === 'Rejected') return t('documents.status.rejected');
+  return t('documents.status.pending');
+}
+
+function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListItem }) {
+  const isSigned = approval.isSigned;
+  const isRejected = approval.status === 'Rejected';
+  const title = isSigned
+    ? t('fileView.signatureHistory.signedApprovalTitle')
+    : isRejected
+      ? t('fileView.signatureHistory.rejectedApprovalTitle')
+      : t('fileView.signatureHistory.pendingApprovalTitle');
+  const body = isSigned
+    ? t('fileView.signatureHistory.signedApprovalDesc')
+    : isRejected
+      ? approval.rejectReason || t('fileView.signatureHistory.rejectedApprovalDesc')
+      : t('fileView.signatureHistory.pendingApprovalDesc');
+  const toneClass = isSigned
+    ? 'bg-success-light text-success'
+    : isRejected
+      ? 'bg-danger-light text-danger'
+      : 'bg-warning-light text-warning';
+
+  return (
+    <div className="relative flex gap-4">
+      <span className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm ${isSigned ? 'bg-primary/10 text-primary' : 'bg-content-bg text-text-muted'}`}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <div className="flex-1 rounded-2xl border border-card-border bg-white/80 p-4 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-sm font-bold text-text">{title}</h3>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${toneClass}`}>
+            {approvalStatusLabel(approval.status)}
+          </span>
+        </div>
+        <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
+        <div className="mt-3 space-y-1 border-t border-card-border/60 pt-3 text-xs text-text-muted">
+          <p>{t('approvals.detail.requestedBy')}: {approval.requestedByName || '-'}</p>
+          <p>{t('approvals.detail.createdAt')}: {formatDateTime(approval.createdAt)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SignaturePlacementOverlay({
+  fileName,
+  confirmed,
+  onConfirm,
+  onClose,
+}: {
+  fileName: string;
+  confirmed: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-20 overflow-hidden bg-[#dcdad2]/95">
+      <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-4 rounded-2xl border border-white/60 bg-card/80 px-5 py-3 shadow-dropdown backdrop-blur">
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{t('smartca.placement.toolbarLabel')}</span>
+        <SignatureToolButton label={t('smartca.placement.insertSignature')} />
+        <SignatureToolButton label={t('smartca.placement.addStamp')} />
+        <SignatureToolButton label={t('smartca.placement.signatureField')} />
+        <button
+          type="button"
+          onClick={onClose}
+          className="ml-auto rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+        >
+          {t('smartca.signModal.cancel')}
+        </button>
+      </div>
+
+      <div className="absolute inset-0 flex justify-center overflow-auto px-8 pb-8 pt-24">
+        <div className="relative min-h-[760px] w-full max-w-[850px] bg-white shadow-card">
+          <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-[#fbf9f1]/90 px-5 py-3 shadow-sm backdrop-blur">
+            <div className="min-w-0">
+              <p className="truncate font-display text-base font-bold text-primary">{fileName}</p>
+              <p className="text-xs text-text-muted">{t('smartca.placement.previewDocument')}</p>
+            </div>
+            <span className="rounded-full bg-success-light px-3 py-1 text-xs font-semibold text-success">
+              {confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.pending')}
+            </span>
           </div>
+
+          <div className="absolute left-10 right-32 top-36 h-[560px] rounded-xl bg-[#f6f4ec] p-8">
+            <div className="mb-8 h-5 w-52 rounded bg-primary/20" />
+            <div className="space-y-4">
+              <div className="h-3 w-full rounded bg-card-border/70" />
+              <div className="h-3 w-11/12 rounded bg-card-border/60" />
+              <div className="h-3 w-4/5 rounded bg-card-border/60" />
+              <div className="h-3 w-full rounded bg-card-border/50" />
+            </div>
+            <div className="mt-12 h-56 rounded-xl border border-card-border/70 bg-white/80" />
+          </div>
+
+          <div className="absolute right-8 top-[38%] flex h-28 w-52 items-center justify-center border-2 border-dashed border-primary bg-primary/5 text-center backdrop-blur-sm">
+            <span className="absolute -left-4 -top-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-card">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+            <p className="text-base font-bold tracking-wide text-primary">{t('smartca.placement.positionLabel')}</p>
+            <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-sm bg-primary" />
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-8 right-8 z-30 w-[288px] rounded-3xl border border-white bg-white/75 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
+        <h3 className="font-display text-lg font-semibold text-text">{t('smartca.placement.confirmTitle')}</h3>
+        <p className="mt-2 text-xs font-medium leading-5 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover"
+          >
+            {confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.confirmPosition')}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-xl border border-card-border px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+          >
+            {t('smartca.signModal.cancel')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SignatureToolButton({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className="rounded-lg px-3 py-1.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
+    >
+      {label}
+    </button>
+  );
+}
+
+function SignatureTimelineItem({ title, body, muted = false }: { title: string; body: string; muted?: boolean }) {
+  return (
+    <div className="relative flex gap-4">
+      <span className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm ${muted ? 'bg-content-bg text-text-muted' : 'bg-primary/10 text-primary'}`}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <div className="flex-1 rounded-2xl border border-card-border bg-white/80 p-4 shadow-sm">
+        <h3 className="text-sm font-bold text-text">{title}</h3>
+        <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+interface EmptyViewerStateProps {
+  title: string;
+  desc: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+}
+
+function EmptyViewerState({
+  title,
+  desc,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+  danger = false,
+  disabled = false,
+}: EmptyViewerStateProps) {
+  return (
+    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-3xl bg-card/90 p-8 text-center shadow-card">
+      <FileIcon danger={danger} />
+      <h3 className="font-display text-lg font-semibold text-text">{title}</h3>
+      <p className="font-jakarta text-sm text-text-muted">{desc}</p>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={onPrimary}
+          disabled={disabled}
+          className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
+        >
+          {primaryLabel}
+        </button>
+        {secondaryLabel && onSecondary && (
+          <button
+            type="button"
+            onClick={onSecondary}
+            className="rounded-full border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+          >
+            {secondaryLabel}
+          </button>
         )}
       </div>
     </div>

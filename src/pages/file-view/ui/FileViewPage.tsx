@@ -1,16 +1,49 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { approvalApi } from '@/entities/approval';
 import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
+import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
+// Fallback khi chua lay duoc kich thuoc trang PDF thuc te (A4). Dung kich thuoc thuc te
+// (smartcaApi.getPdfPageInfo) de tinh ty le dat vi tri ky, tranh lech vi tri tren cac trang khong phai A4/landscape.
+const FALLBACK_PDF_PAGE_SIZE: PdfPageSize = {
+  width: 595,
+  height: 842,
+};
+
+interface PdfPageSize {
+  width: number;
+  height: number;
+}
+
+interface SignaturePlacementValue {
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// Vi tri mac dinh ty le theo kich thuoc trang thuc te (goc duoi-phai trang), thay vi toa do tuyet doi co dinh theo A4.
+function getDefaultSignaturePosition(pageSize: PdfPageSize): SignaturePlacementValue {
+  const width = Math.round(pageSize.width * 0.27);
+  const height = Math.round(pageSize.height * 0.083);
+  return {
+    pageNumber: 1,
+    x: Math.round(pageSize.width * 0.605),
+    y: Math.round(pageSize.height * 0.808),
+    width,
+    height,
+  };
+}
 
 function Spinner() {
   return (
@@ -109,6 +142,12 @@ export function FileViewPage() {
   const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>('properties');
   const [signaturePlacementMode, setSignaturePlacementMode] = useState(false);
   const [signaturePlacementConfirmed, setSignaturePlacementConfirmed] = useState(false);
+  const [savingSignaturePosition, setSavingSignaturePosition] = useState(false);
+  const [pdfPageSize, setPdfPageSize] = useState<PdfPageSize>(FALLBACK_PDF_PAGE_SIZE);
+  const [pdfPageCount, setPdfPageCount] = useState(1);
+  const [signaturePosition, setSignaturePosition] = useState<SignaturePlacementValue>(
+    getDefaultSignaturePosition(FALLBACK_PDF_PAGE_SIZE),
+  );
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -241,6 +280,7 @@ export function FileViewPage() {
 
   const fileTitle = info?.fileName ?? t('fileView.untitled');
   const format = (info?.format ?? latestVersion?.format ?? '').toUpperCase() || '-';
+  const isPdfFile = format === 'PDF';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -253,7 +293,7 @@ export function FileViewPage() {
       approval.status === 'PendingApproval' && !approval.isSigned && isWipApproval(approval)) ?? null,
     [signatureApprovals],
   );
-  const canSignCurrentApproval = Boolean(signableApproval);
+  const canSignCurrentApproval = Boolean(signableApproval && isPdfFile);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -265,17 +305,55 @@ export function FileViewPage() {
     signatureApprovals.some((approval) => approval.isSigned),
   );
 
-  const openSignaturePlacement = useCallback(() => {
+  const openSignaturePlacement = useCallback(async () => {
     if (!requiresSignature) return;
+    if (!isPdfFile) {
+      setToast({ msg: t('smartca.error.pdfOnly'), type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     if (!signableApproval) {
       setToast({ msg: t('fileView.signatureHistory.noPendingSignature'), type: 'error' });
       setTimeout(() => setToast(null), 3000);
       return;
     }
 
+    try {
+      const pageInfo = await smartcaApi.getPdfPageInfo(signableApproval.fileItemId, 1);
+      const realPageSize: PdfPageSize = { width: pageInfo.width, height: pageInfo.height };
+      setPdfPageSize(realPageSize);
+      setPdfPageCount(Math.max(1, pageInfo.pageCount));
+      if (!signaturePlacementConfirmed) {
+        setSignaturePosition(getDefaultSignaturePosition(realPageSize));
+      }
+    } catch {
+      // Khong lay duoc kich thuoc trang thuc -> giu fallback A4, van cho dat vi tri (se duoc BE validate boundary lai).
+    }
+
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
-  }, [requiresSignature, signableApproval]);
+  }, [requiresSignature, signableApproval, isPdfFile, signaturePlacementConfirmed]);
+
+  // Chuyen trang khi dat vi tri ky: tai lai kich thuoc trang moi (co the khac trang dau) va giu vi tri trong bien trang moi.
+  const handleSignaturePageChange = useCallback(async (nextPage: number) => {
+    if (!signableApproval) return;
+    const clamped = Math.max(1, Math.min(pdfPageCount, nextPage));
+    if (clamped === signaturePosition.pageNumber) return;
+
+    try {
+      const pageInfo = await smartcaApi.getPdfPageInfo(signableApproval.fileItemId, clamped);
+      const newSize: PdfPageSize = { width: pageInfo.width, height: pageInfo.height };
+      setPdfPageSize(newSize);
+      setSignaturePosition((prev) => ({
+        ...prev,
+        pageNumber: clamped,
+        x: Math.max(0, Math.min(newSize.width - prev.width, prev.x)),
+        y: Math.max(0, Math.min(newSize.height - prev.height, prev.y)),
+      }));
+    } catch {
+      setSignaturePosition((prev) => ({ ...prev, pageNumber: clamped }));
+    }
+  }, [signableApproval, pdfPageCount, signaturePosition.pageNumber]);
 
   const refreshFileApprovals = useCallback(async () => {
     if (!fileId) return;
@@ -288,15 +366,25 @@ export function FileViewPage() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const handleConfirmSignaturePlacement = useCallback(() => {
+  const handleConfirmSignaturePlacement = useCallback(async (position: SignaturePlacementValue) => {
     if (!signableApproval) {
       showToast(t('fileView.signatureHistory.noPendingSignature'), 'error');
       return;
     }
 
-    setSignaturePlacementConfirmed(true);
-    setSignaturePlacementMode(false);
-    setSignFor(signableApproval);
+    setSavingSignaturePosition(true);
+    try {
+      await smartcaApi.saveSignaturePosition(signableApproval.fileItemId, position);
+      setSignaturePosition(position);
+      setSignaturePlacementConfirmed(true);
+      setSignaturePlacementMode(false);
+      setSignFor(signableApproval);
+      showToast(t('smartca.toast.positionSaved'));
+    } catch (err) {
+      showToast(smartcaErrorMessage(err, t('smartca.error.placementSave')), 'error');
+    } finally {
+      setSavingSignaturePosition(false);
+    }
   }, [showToast, signableApproval]);
 
   useEffect(() => {
@@ -399,7 +487,14 @@ export function FileViewPage() {
             {requiresSignature && signaturePlacementMode && (
               <SignaturePlacementOverlay
                 fileName={fileTitle}
+                pdfUrl={info?.url ?? null}
+                pageSize={pdfPageSize}
+                pageCount={pdfPageCount}
                 confirmed={signaturePlacementConfirmed}
+                busy={savingSignaturePosition}
+                value={signaturePosition}
+                onChange={setSignaturePosition}
+                onChangePage={handleSignaturePageChange}
                 onConfirm={handleConfirmSignaturePlacement}
                 onClose={() => setSignaturePlacementMode(false)}
               />
@@ -472,6 +567,9 @@ export function FileViewPage() {
           onSigned={() => {
             void refreshFileApprovals();
             void fetchView().then(setInfo).catch(() => undefined);
+            if (fileId) {
+              void fileItemApi.getVersions(fileId).then((res) => setVersions(res.data.result ?? [])).catch(() => undefined);
+            }
           }}
         />
       )}
@@ -688,25 +786,128 @@ function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListIte
 
 function SignaturePlacementOverlay({
   fileName,
+  pdfUrl,
+  pageSize,
+  pageCount,
   confirmed,
+  busy,
+  value,
+  onChange,
+  onChangePage,
   onConfirm,
   onClose,
 }: {
   fileName: string;
+  pdfUrl: string | null;
+  pageSize: PdfPageSize;
+  pageCount: number;
   confirmed: boolean;
-  onConfirm: () => void;
+  busy: boolean;
+  value: SignaturePlacementValue;
+  onChange: (value: SignaturePlacementValue) => void;
+  onChangePage: (page: number) => void;
+  onConfirm: (value: SignaturePlacementValue) => void;
   onClose: () => void;
 }) {
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
+
+  const boxStyle = {
+    left: `${(value.x / pageSize.width) * 100}%`,
+    top: `${(value.y / pageSize.height) * 100}%`,
+    width: `${(value.width / pageSize.width) * 100}%`,
+    height: `${(value.height / pageSize.height) * 100}%`,
+  };
+
+  const clampPosition = useCallback((next: SignaturePlacementValue): SignaturePlacementValue => ({
+    ...next,
+    x: Math.max(0, Math.min(pageSize.width - next.width, next.x)),
+    y: Math.max(0, Math.min(pageSize.height - next.height, next.y)),
+  }), [pageSize]);
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (busy) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startX: value.x,
+      startY: value.y,
+    };
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const page = pageRef.current;
+    if (!drag || !page || drag.pointerId !== event.pointerId) return;
+
+    const rect = page.getBoundingClientRect();
+    const deltaX = ((event.clientX - drag.startClientX) / rect.width) * pageSize.width;
+    const deltaY = ((event.clientY - drag.startClientY) / rect.height) * pageSize.height;
+    onChange(clampPosition({
+      ...value,
+      x: Math.round(drag.startX + deltaX),
+      y: Math.round(drag.startY + deltaY),
+    }));
+  };
+
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragRef.current?.pointerId === event.pointerId) {
+      dragRef.current = null;
+    }
+  };
+
   return (
     <div className="absolute inset-0 z-20 overflow-hidden bg-[#dcdad2]/95">
       <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-4 rounded-2xl border border-white/60 bg-card/80 px-5 py-3 shadow-dropdown backdrop-blur">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{t('smartca.placement.toolbarLabel')}</span>
         <SignatureToolButton label={t('smartca.placement.insertSignature')} />
-        <SignatureToolButton label={t('smartca.placement.addStamp')} />
-        <SignatureToolButton label={t('smartca.placement.signatureField')} />
+        <SignatureToolButton
+          label={t('smartca.placement.resetPosition')}
+          onClick={() => onChange(getDefaultSignaturePosition(pageSize))}
+        />
+
+        {pageCount > 1 && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-card-border bg-content-bg/60 px-2 py-1">
+            <button
+              type="button"
+              disabled={busy || value.pageNumber <= 1}
+              onClick={() => onChangePage(value.pageNumber - 1)}
+              aria-label={t('smartca.placement.prevPage')}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <span className="min-w-16 text-center text-xs font-semibold text-text">
+              {t('smartca.placement.page')} {value.pageNumber}/{pageCount}
+            </span>
+            <button
+              type="button"
+              disabled={busy || value.pageNumber >= pageCount}
+              onClick={() => onChangePage(value.pageNumber + 1)}
+              aria-label={t('smartca.placement.nextPage')}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={onClose}
+          disabled={busy}
           className="ml-auto rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
         >
           {t('smartca.signModal.cancel')}
@@ -714,7 +915,11 @@ function SignaturePlacementOverlay({
       </div>
 
       <div className="absolute inset-0 flex justify-center overflow-auto px-8 pb-8 pt-24">
-        <div className="relative min-h-[760px] w-full max-w-[850px] bg-white shadow-card">
+        <div
+          ref={pageRef}
+          style={{ aspectRatio: `${pageSize.width} / ${pageSize.height}` }}
+          className="relative h-[calc(100vh-170px)] min-h-[760px] max-h-[1040px] bg-white shadow-card"
+        >
           <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-[#fbf9f1]/90 px-5 py-3 shadow-sm backdrop-blur">
             <div className="min-w-0">
               <p className="truncate font-display text-base font-bold text-primary">{fileName}</p>
@@ -725,18 +930,29 @@ function SignaturePlacementOverlay({
             </span>
           </div>
 
-          <div className="absolute left-10 right-32 top-36 h-[560px] rounded-xl bg-[#f6f4ec] p-8">
-            <div className="mb-8 h-5 w-52 rounded bg-primary/20" />
-            <div className="space-y-4">
-              <div className="h-3 w-full rounded bg-card-border/70" />
-              <div className="h-3 w-11/12 rounded bg-card-border/60" />
-              <div className="h-3 w-4/5 rounded bg-card-border/60" />
-              <div className="h-3 w-full rounded bg-card-border/50" />
+          {pdfUrl ? (
+            <iframe
+              key={value.pageNumber}
+              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&page=${value.pageNumber}&view=FitH`}
+              title={fileName}
+              className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
+            />
+          ) : (
+            <div className="absolute inset-10 flex items-center justify-center rounded-2xl border border-card-border bg-[#f6f4ec] text-sm font-semibold text-text-muted">
+              {t('smartca.placement.noPreview')}
             </div>
-            <div className="mt-12 h-56 rounded-xl border border-card-border/70 bg-white/80" />
-          </div>
+          )}
 
-          <div className="absolute right-8 top-[38%] flex h-28 w-52 items-center justify-center border-2 border-dashed border-primary bg-primary/5 text-center backdrop-blur-sm">
+          <div
+            role="button"
+            tabIndex={0}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            className="absolute flex touch-none cursor-grab select-none items-center justify-center border-2 border-dashed border-primary bg-primary/5 text-center backdrop-blur-sm active:cursor-grabbing"
+            style={boxStyle}
+          >
             <span className="absolute -left-4 -top-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-card">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6 9 17l-5-5" />
@@ -754,14 +970,16 @@ function SignaturePlacementOverlay({
         <div className="mt-6 space-y-3">
           <button
             type="button"
-            onClick={onConfirm}
-            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover"
+            onClick={() => onConfirm(value)}
+            disabled={busy}
+            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.confirmPosition')}
+            {busy ? t('common.loading') : confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.confirmPosition')}
           </button>
           <button
             type="button"
             onClick={onClose}
+            disabled={busy}
             className="w-full rounded-xl border border-card-border px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
           >
             {t('smartca.signModal.cancel')}
@@ -772,10 +990,11 @@ function SignaturePlacementOverlay({
   );
 }
 
-function SignatureToolButton({ label }: { label: string }) {
+function SignatureToolButton({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="rounded-lg px-3 py-1.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
     >
       {label}

@@ -17,6 +17,7 @@ export interface ApprovalListItem {
   status: ApprovalStatus;
   requiresSignature: boolean;
   isSigned: boolean;
+  signedVersionId?: string | null;
   createdAt: string;
   approvedByAccountId?: string | null;
   approvedByName?: string | null;

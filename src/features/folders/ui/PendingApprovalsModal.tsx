@@ -158,6 +158,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                           const badge = approvalStatusBadge(it.status);
                           const busy = actionBusyId === it.id;
                           const canSignWithSmartCa = it.requiresSignature && isWipApproval(it);
+                          const canOpenSmartCa = canSignWithSmartCa && !it.isSigned;
                           const approvalLockedBySignature = canSignWithSmartCa && !it.isSigned;
                           return (
                             <tr key={it.id} className="border-b border-card-border/60">
@@ -181,7 +182,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                                   >
                                     {t('approvals.action.detail')}
                                   </button>
-                                  {canSignWithSmartCa && (
+                                  {canOpenSmartCa && (
                                     <button
                                       type="button"
                                       disabled={busy}

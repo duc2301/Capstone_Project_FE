@@ -42,6 +42,7 @@ export interface FileListItem {
   authorName: string | null;
   requiresSignature?: boolean;
   isSigned?: boolean;
+  signedVersionId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -78,6 +79,7 @@ export interface FileViewInfo {
   format: string | null;
   requiresSignature?: boolean;
   isSigned?: boolean;
+  signedVersionId?: string | null;
 }
 
 /* 1 phiên bản của file */
@@ -93,4 +95,8 @@ export interface FileVersion {
   uploadedByAccountId: string | null;
   uploadedByName: string | null;
   uploadedAt: string | null;
+  isSigned?: boolean;
+  signedAt?: string | null;
+  signedBy?: string | null;
+  certificateSerial?: string | null;
 }

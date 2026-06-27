@@ -3,8 +3,12 @@ import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 
 import type {
   Certificate,
+  PdfPageInfo,
+  SaveSignaturePositionPayload,
   SignatureInfo,
+  SignaturePosition,
   SignatureTransactionStatus,
+  SignedFileInfo,
   SignRequestResult,
   TransactionStatusInfo,
 } from '../model/smartca.types';
@@ -43,6 +47,20 @@ interface RawSignatureInfo {
   status: number | string;
 }
 
+type RawSignaturePosition = SignaturePosition;
+interface RawSignedFileInfo {
+  fileItemId: string;
+  fileName?: string | null;
+  signedVersionId: string;
+  versionNumber: number;
+  storagePath?: string | null;
+  url?: string | null;
+  signedAt?: string | null;
+  signedBy?: string | null;
+  certificateSerial?: string | null;
+  transactionId?: string | null;
+}
+
 function unwrap<T>(data: ApiResponse<T>): T {
   if (!data.isSuccess) throw new Error(data.message || 'Co loi xay ra.');
   return data.result as T;
@@ -79,10 +97,11 @@ function mapSignRequest(item: RawSignRequestResult): SignRequestResult {
   };
 }
 
-function mapTransactionStatus(item: RawTransactionStatusInfo): TransactionStatusInfo {
+function mapTransactionStatus(item: RawTransactionStatusInfo, message?: string | null): TransactionStatusInfo {
   return {
     transactionId: item.transactionId,
     status: normalizeStatus(item.status),
+    message: message ?? null,
     rawResponse: item.rawResponse ?? null,
   };
 }
@@ -96,6 +115,21 @@ function mapSignatureInfo(item: RawSignatureInfo): SignatureInfo {
     signedBy: item.signedBy ?? null,
     signedAt: item.signedAt ?? null,
     status: normalizeStatus(item.status),
+  };
+}
+
+function mapSignedFileInfo(item: RawSignedFileInfo): SignedFileInfo {
+  return {
+    fileItemId: item.fileItemId,
+    fileName: item.fileName ?? null,
+    signedVersionId: item.signedVersionId,
+    versionNumber: item.versionNumber,
+    storagePath: item.storagePath ?? null,
+    url: item.url ?? null,
+    signedAt: item.signedAt ?? null,
+    signedBy: item.signedBy ?? null,
+    certificateSerial: item.certificateSerial ?? null,
+    transactionId: item.transactionId ?? null,
   };
 }
 
@@ -134,7 +168,7 @@ export const smartcaApi = {
       `/approvals/${approvalId}/vnpt-smartca/transaction-status/${transactionId}`,
     );
 
-    return mapTransactionStatus(unwrap(data));
+    return mapTransactionStatus(unwrap(data), data.message);
   },
 
   getSignatureInfo: async (approvalId: string): Promise<SignatureInfo> => {
@@ -143,6 +177,51 @@ export const smartcaApi = {
     );
 
     return mapSignatureInfo(unwrap(data));
+  },
+
+  saveSignaturePosition: async (
+    fileId: string,
+    payload: SaveSignaturePositionPayload,
+  ): Promise<SignaturePosition> => {
+    const { data } = await axiosInstance.post<ApiResponse<RawSignaturePosition>>(
+      `/file-items/${fileId}/signature-position`,
+      payload,
+    );
+
+    return unwrap(data);
+  },
+
+  getSignaturePosition: async (fileId: string): Promise<SignaturePosition> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawSignaturePosition>>(
+      `/file-items/${fileId}/signature-position`,
+    );
+
+    return unwrap(data);
+  },
+
+  getPdfPageInfo: async (fileId: string, pageNumber = 1): Promise<PdfPageInfo> => {
+    const { data } = await axiosInstance.get<ApiResponse<PdfPageInfo>>(
+      `/file-items/${fileId}/pdf-page-info`,
+      { params: { pageNumber } },
+    );
+
+    return unwrap(data);
+  },
+
+  generateSignedPdf: async (approvalId: string): Promise<SignedFileInfo> => {
+    const { data } = await axiosInstance.post<ApiResponse<RawSignedFileInfo>>(
+      `/approvals/${approvalId}/generate-signed-pdf`,
+    );
+
+    return mapSignedFileInfo(unwrap(data));
+  },
+
+  getSignedFile: async (fileId: string): Promise<SignedFileInfo> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawSignedFileInfo>>(
+      `/file-items/${fileId}/signed-file`,
+    );
+
+    return mapSignedFileInfo(unwrap(data));
   },
 };
 

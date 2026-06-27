@@ -24,6 +24,7 @@ interface RawApprovalItem {
   status: number | string;
   requiresSignature?: boolean | null;
   isSigned?: boolean | null;
+  signedVersionId?: string | null;
   createdAt: string;
   approvedAt?: string | null;
   rejectReason?: string | null;
@@ -56,6 +57,7 @@ function mapApprovalItem(item: RawApprovalItem): ApprovalListItem {
     status: normalizeApprovalStatus(item.status),
     requiresSignature: Boolean(item.requiresSignature),
     isSigned: Boolean(item.isSigned),
+    signedVersionId: item.signedVersionId ?? null,
     createdAt: item.createdAt,
     approvedByAccountId: item.approverId ?? item.approvedByAccountId ?? null,
     approvedByName: item.approverName ?? item.approvedByName ?? null,
@@ -109,6 +111,10 @@ export function approvalErrorMessage(err: unknown, fallback: string): string {
 function formatApprovalErrorMessage(message: string): string {
   if (message.includes('requires successful VNPT SmartCA digital signature')) {
     return 'Tài liệu này cần ký số VNPT SmartCA thành công trước khi phê duyệt.';
+  }
+
+  if (message.includes('Signed PDF must be generated before approval')) {
+    return 'Tài liệu cần tạo PDF đã ký trước khi phê duyệt.';
   }
 
   return message;

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ApprovalListItem } from '@/entities/approval';
-import type { Certificate, SignatureInfo, SignatureTransactionStatus } from '@/entities/smartca';
+import type { Certificate, SignatureInfo, SignatureTransactionStatus, SignedFileInfo, TransactionStatusInfo } from '@/entities/smartca';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { t } from '@/shared/lib/i18n';
 
@@ -36,6 +36,10 @@ function statusClassName(status: SignatureTransactionStatus): string {
   return 'bg-warning-light text-warning';
 }
 
+function isSignedPdfGeneratedMessage(message?: string | null): boolean {
+  return message?.trim().toLowerCase().startsWith('signed pdf generated') ?? false;
+}
+
 export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: SmartCaSignModalProps) {
   const [userId, setUserId] = useState('');
   const [pin, setPin] = useState('');
@@ -45,29 +49,68 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [transactionStatus, setTransactionStatus] = useState<SignatureTransactionStatus | null>(null);
   const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
+  const [signedFile, setSignedFile] = useState<SignedFileInfo | null>(null);
+  const [signedPdfReady, setSignedPdfReady] = useState(Boolean(approval.signedVersionId));
   const [loadingCertificates, setLoadingCertificates] = useState(false);
   const [creatingRequest, setCreatingRequest] = useState(false);
+  const [generatingSignedPdf, setGeneratingSignedPdf] = useState(false);
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const generatingSignedPdfRef = useRef(false);
 
   const selectedCertificate = useMemo(
     () => certificates.find((item) => item.serialNumber === certificateSerial) ?? null,
     [certificateSerial, certificates],
   );
 
-  const fetchSignatureInfo = async () => {
+  const finalizeSignedTransaction = async (statusInfo?: TransactionStatusInfo) => {
+    if (generatingSignedPdfRef.current) return;
+
+    generatingSignedPdfRef.current = true;
+    setGeneratingSignedPdf(true);
+    try {
+      let file: SignedFileInfo | null = null;
+
+      if (statusInfo && isSignedPdfGeneratedMessage(statusInfo.message) && approval.signedVersionId) {
+        file = await smartcaApi.getSignedFile(approval.fileItemId).catch(() => null);
+      } else {
+        file = await smartcaApi.generateSignedPdf(approval.id);
+      }
+
+      setSignedFile(file);
+      setSignedPdfReady(true);
+      setTransactionStatus('Signed');
+      onToast(t('smartca.toast.signed'));
+      await fetchSignatureInfo(false);
+      onSigned();
+    } finally {
+      generatingSignedPdfRef.current = false;
+      setGeneratingSignedPdf(false);
+    }
+  };
+
+  const fetchSignatureInfo = async (autoGenerateSignedPdf = true) => {
     try {
       const info = await smartcaApi.getSignatureInfo(approval.id);
       setSignatureInfo(info);
       setTransactionId(info.transactionId);
       setTransactionStatus(info.status);
-      if (info.status === 'Signed') onSigned();
+      if (info.status === 'Signed') {
+        if (approval.signedVersionId) {
+          setSignedFile(await smartcaApi.getSignedFile(approval.fileItemId).catch(() => null));
+          setSignedPdfReady(true);
+          onSigned();
+        } else if (autoGenerateSignedPdf) {
+          await finalizeSignedTransaction();
+        }
+      }
     } catch {
       setSignatureInfo(null);
     }
   };
 
   useEffect(() => {
+    setSignedPdfReady(Boolean(approval.signedVersionId));
     void fetchSignatureInfo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approval.id]);
@@ -82,14 +125,14 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
     const timer = window.setInterval(async () => {
       try {
         const data = await smartcaApi.getTransactionStatus(approval.id, transactionId);
-        setTransactionStatus(data.status);
+        const completed = data.status === 'Signed' || isSignedPdfGeneratedMessage(data.message);
 
-        if (data.status === 'Signed') {
+        if (completed) {
           window.clearInterval(timer);
           setPolling(false);
-          onToast(t('smartca.toast.signed'));
-          await fetchSignatureInfo();
-          onSigned();
+          await finalizeSignedTransaction(data);
+        } else {
+          setTransactionStatus(data.status);
         }
 
         if (data.status === 'Failed' || data.status === 'Expired') {
@@ -154,8 +197,11 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
     }
   };
 
-  const hasSignedSuccessfully = transactionStatus === 'Signed' || signatureInfo?.status === 'Signed';
-  const canCreateSignRequest = !!userId.trim() && !!certificateSerial && !creatingRequest;
+  const hasSignedSuccessfully =
+    Boolean(signedFile) ||
+    signedPdfReady ||
+    Boolean(approval.signedVersionId && (transactionStatus === 'Signed' || signatureInfo?.status === 'Signed'));
+  const canCreateSignRequest = !!userId.trim() && !!certificateSerial && !creatingRequest && !generatingSignedPdf;
 
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center bg-[#dcdad2]/60 p-4 backdrop-blur-sm">
@@ -174,7 +220,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {hasSignedSuccessfully ? (
-            <SmartCaSuccessView approval={approval} signatureInfo={signatureInfo} />
+            <SmartCaSuccessView approval={approval} signatureInfo={signatureInfo} signedFile={signedFile} />
           ) : (
             <>
               <section className="space-y-1">
@@ -191,8 +237,8 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                 <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.signMethod')}</p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <MethodButton active label={t('smartca.signModal.methodSmartCa')} />
-                  <MethodButton label={t('smartca.signModal.methodUsbToken')} />
-                  <MethodButton label={t('smartca.signModal.methodHsm')} />
+                  <MethodButton disabled label={t('smartca.signModal.methodUsbToken')} />
+                  <MethodButton disabled label={t('smartca.signModal.methodHsm')} />
                 </div>
               </section>
 
@@ -275,7 +321,11 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                     )}
                   </div>
                   {transactionId && <p className="mt-2 break-all text-xs text-text-muted">{transactionId}</p>}
-                  {polling && <p className="mt-2 text-sm text-warning">{t('smartca.signModal.waitingConfirm')}</p>}
+                  {(polling || generatingSignedPdf) && (
+                    <p className="mt-2 text-sm text-warning">
+                      {generatingSignedPdf ? t('smartca.signModal.generatingSignedPdf') : t('smartca.signModal.waitingConfirm')}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -298,7 +348,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
               onClick={handleCreateSignRequest}
               className="h-12 flex-1 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {creatingRequest ? t('common.loading') : t('smartca.signModal.signAndApprove')}
+              {creatingRequest || generatingSignedPdf ? t('common.loading') : t('smartca.signModal.createSignRequest')}
             </button>
           )}
           <button
@@ -318,9 +368,11 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
 function SmartCaSuccessView({
   approval,
   signatureInfo,
+  signedFile,
 }: {
   approval: ApprovalListItem;
   signatureInfo: SignatureInfo | null;
+  signedFile: SignedFileInfo | null;
 }) {
   const signerName = signatureInfo?.signedBy ?? approval.approvedByName ?? t('smartca.signModal.currentLeader');
 
@@ -338,6 +390,15 @@ function SmartCaSuccessView({
 
       <div className="mt-8 w-full rounded-2xl border border-card-border bg-[#f6f4ec] p-5 text-left">
         <InfoRow label={t('smartca.success.fileName')} value={approval.fileName} />
+        {signedFile && (
+          <>
+            <div className="my-3 h-px bg-card-border/70" />
+            <InfoRow
+              label={t('smartca.success.signedFile')}
+              value={signedFile.fileName ?? `V${signedFile.versionNumber} - ${signedFile.signedVersionId}`}
+            />
+          </>
+        )}
         <div className="my-3 h-px bg-card-border/70" />
         <InfoRow label={t('smartca.success.signedAt')} value={formatDateTime(signatureInfo?.signedAt)} />
         <div className="my-3 h-px bg-card-border/70" />
@@ -356,15 +417,16 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MethodButton({ label, active = false }: { label: string; active?: boolean }) {
+function MethodButton({ label, active = false, disabled = false }: { label: string; active?: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       className={`h-10 rounded-lg border px-3 text-sm font-semibold transition-colors ${
         active
           ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
           : 'border-card-border text-text-secondary hover:bg-content-bg'
-      }`}
+      } disabled:cursor-not-allowed disabled:opacity-45`}
     >
       {label}
     </button>

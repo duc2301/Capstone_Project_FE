@@ -1,7 +1,7 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 
-import type { ApprovalDetail, ApprovalListItem, ApprovalStatus } from '../model/approval.types';
+import type { ApprovalDetail, ApprovalListItem, ApprovalStatus, SubmitApprovalPayload } from '../model/approval.types';
 
 interface RawApprovalItem {
   id: string;
@@ -67,10 +67,15 @@ function mapApprovalItem(item: RawApprovalItem): ApprovalListItem {
 }
 
 export const approvalApi = {
-  submitApproval: async (fileId: string, requiresSignature: boolean): Promise<unknown> => {
+  submitApproval: async (fileId: string, payload: SubmitApprovalPayload): Promise<unknown> => {
     const { data } = await axiosInstance.post<ApiResponse<unknown>>(
       `/file-items/${fileId}/submit-approval`,
-      { requiresSignature },
+      {
+        targetZone: payload.targetZone ?? null,
+        requiresSignature: payload.requiresSignature,
+        signerAccountIds: payload.signerAccountIds ?? [],
+        signerGroupIds: payload.signerGroupIds ?? [],
+      },
     );
     return unwrapResult(data);
   },

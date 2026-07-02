@@ -3,6 +3,7 @@ export type {
   ApprovalDetail,
   ApprovalListItem,
   ApprovalStatus,
+  ApprovalTargetZone,
   RejectApprovalPayload,
   SubmitApprovalPayload,
 } from './model/approval.types';

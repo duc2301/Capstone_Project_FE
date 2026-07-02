@@ -2,8 +2,12 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { approvalApi, approvalErrorMessage } from '@/entities/approval';
+import type { ApprovalTargetZone, SubmitApprovalPayload } from '@/entities/approval';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
+import type { Group } from '@/entities/group';
+import { groupApi } from '@/entities/group';
+import { projectApi, ProjectParticipantStatus } from '@/entities/project';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -13,7 +17,7 @@ import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-trans
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderFiles } from '../model/useFolderFiles';
 import { useFolderTree } from '../model/useFolderTree';
-import { zoneNameFromArea } from '../model/zoneTransferFormat';
+import { zoneLabel, zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
@@ -65,6 +69,23 @@ function canStartApprovalFromArea(area: CdeArea) {
   return area === CdeArea.Wip || area === CdeArea.Shared || area === CdeArea.Published;
 }
 
+function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
+  if (area === CdeArea.Wip) return 'Shared';
+  if (area === CdeArea.Shared) return 'Published';
+  if (area === CdeArea.Published) return 'Archived';
+  return null;
+}
+
+function activeProjectGroups(participants: { groupId: string; status: number }[], groups: Group[]): Group[] {
+  const activeGroupIds = new Set(
+    participants
+      .filter((participant) => participant.status === ProjectParticipantStatus.Active)
+      .map((participant) => participant.groupId),
+  );
+
+  return groups.filter((group) => activeGroupIds.has(group.id));
+}
+
 export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,6 +105,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
   const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
   const [approvalBusy, setApprovalBusy] = useState(false);
+  const [signerGroups, setSignerGroups] = useState<Group[]>([]);
+  const [signerGroupsLoading, setSignerGroupsLoading] = useState(false);
   const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
@@ -128,6 +151,30 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   // "Xem chi tiết" -> điều hướng sang trang xem riêng (BE quyết định model/inline/download).
   const handleDetail = (file: FileListItem) => {
     navigate(`/projects/${projectId}/files/${file.id}/view?folder=${file.folderId}`);
+  };
+
+  const loadSignerGroups = async () => {
+    setSignerGroupsLoading(true);
+    try {
+      const [participantsResponse, groupsResponse] = await Promise.all([
+        projectApi.getParticipants(projectId),
+        groupApi.getAll(),
+      ]);
+      setSignerGroups(activeProjectGroups(
+        participantsResponse.data.result ?? [],
+        groupsResponse.data.result ?? [],
+      ));
+    } catch {
+      setSignerGroups([]);
+      showToast(t('common.error'), 'error');
+    } finally {
+      setSignerGroupsLoading(false);
+    }
+  };
+
+  const openSubmitApproval = (file: FileListItem) => {
+    setSubmitApprovalFor(file);
+    void loadSignerGroups();
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -181,11 +228,11 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     && file.status !== FileItemStatus.Rejected
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
 
-  const handleSubmitApproval = async (requiresSignature: boolean) => {
+  const handleSubmitApproval = async (payload: SubmitApprovalPayload) => {
     if (!submitApprovalFor) return;
     setApprovalBusy(true);
     try {
-      await approvalApi.submitApproval(submitApprovalFor.id, requiresSignature);
+      await approvalApi.submitApproval(submitApprovalFor.id, payload);
       await refetchFiles();
       showToast(t('approvals.toast.submitted'));
       setSubmitApprovalFor(null);
@@ -437,9 +484,9 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onVersions={() => setVersionsFor(fileMenu.file)}
           onSoon={() => showToast(t('documents.fileMenu.soon'))}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
-          onSubmitApproval={() => setSubmitApprovalFor(fileMenu.file)}
+          onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
           canTransferZone={canTransferZone(fileMenu.file)}
-          onTransferZone={() => setSubmitApprovalFor(fileMenu.file)}
+          onTransferZone={() => openSubmitApproval(fileMenu.file)}
           canReturnToWip={canReturnToWip(fileMenu.file)}
           onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
         />
@@ -482,7 +529,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {submitApprovalFor && (
         <SubmitApprovalModal
           fileName={submitApprovalFor.name}
-          canRequireSignature={selected?.area === CdeArea.Wip}
+          currentZone={selected ? zoneLabel(zoneNameFromArea(selected.area)) : ''}
+          targetZone={nextApprovalTargetZone(selected?.area ?? CdeArea.Archived) ?? 'Shared'}
+          canRequireSignature={!!selected && nextApprovalTargetZone(selected.area) !== null}
+          mustRequireSignature={selected?.area === CdeArea.Shared}
+          signerGroups={signerGroups}
+          loadingSigners={signerGroupsLoading}
           busy={approvalBusy}
           onClose={() => setSubmitApprovalFor(null)}
           onSubmit={handleSubmitApproval}

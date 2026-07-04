@@ -12,6 +12,7 @@ interface UseApsViewerReturn {
   containerRef: React.RefObject<HTMLDivElement | null>;
   status: ViewerStatus;
   error: string | null;
+  viewer: Autodesk.Viewing.GuiViewer3D | null;
 }
 
 const POLL_INTERVAL_MS = 3000;
@@ -23,6 +24,7 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
   const viewerRef = useRef<Autodesk.Viewing.GuiViewer3D | null>(null);
   const [status, setStatus] = useState<ViewerStatus>('loading');
   const [error, setError] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -108,7 +110,10 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
             viewer
               .loadDocumentNode(doc, defaultModel)
               .then(() => {
-                if (!cancelled) setStatus('ready');
+                if (!cancelled) {
+                  setStatus('ready');
+                  setViewer(viewer);
+                }
               })
               .catch(() => fail(t('viewer.error.load')));
           },
@@ -123,6 +128,7 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
 
     return () => {
       cancelled = true;
+      setViewer(null);
       if (viewerRef.current) {
         viewerRef.current.finish();
         viewerRef.current = null;
@@ -131,5 +137,5 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
     };
   }, [urn]);
 
-  return { containerRef, status, error };
+  return { containerRef, status, error, viewer };
 }

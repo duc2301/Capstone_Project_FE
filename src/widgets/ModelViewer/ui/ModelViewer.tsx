@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
+
 import { t } from '@/shared/lib/i18n';
 import { useApsViewer } from '../model/useApsViewer';
 
 interface Props {
   urn: string;
   className?: string;
+  onViewerReady?: (viewer: Autodesk.Viewing.GuiViewer3D | null) => void;
 }
 
 function Spinner() {
@@ -26,8 +29,12 @@ function Spinner() {
   );
 }
 
-export function ModelViewer({ urn, className }: Props) {
-  const { containerRef, status, error } = useApsViewer(urn);
+export function ModelViewer({ urn, className, onViewerReady }: Props) {
+  const { containerRef, status, error, viewer } = useApsViewer(urn);
+
+  useEffect(() => {
+    onViewerReady?.(viewer);
+  }, [viewer, onViewerReady]);
 
   return (
     <div className={`relative h-full w-full overflow-hidden bg-[#2b2b2b] ${className ?? ''}`}>

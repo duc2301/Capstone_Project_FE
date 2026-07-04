@@ -39,11 +39,11 @@ export function NotificationBell({ variant = 'admin' }: Props) {
   }, [open]);
 
   const toggle = () => {
-    setOpen((prev) => {
-      const next = !prev;
-      if (next) void refresh();
-      return next;
-    });
+    const next = !open;
+    setOpen(next);
+    // Side-effect tách khỏi updater của setState (updater phải thuần) — tránh cảnh báo
+    // "Cannot update NotificationProvider while rendering NotificationBell".
+    if (next) void refresh();
   };
 
   return (

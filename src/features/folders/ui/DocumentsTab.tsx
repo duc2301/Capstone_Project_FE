@@ -352,7 +352,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="rounded-(--radius-card) border border-card-border bg-card p-6 shadow-card">
+          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-6 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>

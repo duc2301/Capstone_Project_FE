@@ -21,10 +21,6 @@ interface PendingApprovalsModalProps {
   onChanged?: () => void;
 }
 
-function isWipApproval(approval: ApprovalListItem) {
-  return approval.currentZone?.toLowerCase() === 'wip';
-}
-
 export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsModalProps) {
   const { items, loading, error, refetch } = usePendingApprovals();
   const {
@@ -157,7 +153,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                         {items.map((it) => {
                           const badge = approvalStatusBadge(it.status);
                           const busy = actionBusyId === it.id;
-                          const canSignWithSmartCa = it.requiresSignature && isWipApproval(it);
+                          const canSignWithSmartCa = it.requiresSignature;
                           const canOpenSmartCa = canSignWithSmartCa && !it.isSigned;
                           const approvalLockedBySignature = canSignWithSmartCa && !it.isSigned;
                           return (

@@ -111,8 +111,8 @@ function getStatusMeta(info: FileViewInfo | null, isModelProcessing: boolean, is
   return { label: t('fileView.status.ready'), className: 'border-primary/20 bg-primary/10 text-primary' };
 }
 
-function isWipApproval(approval: ApprovalListItem) {
-  return approval.currentZone?.toLowerCase() === 'wip';
+function isWordFormat(format: string) {
+  return format === 'DOC' || format === 'DOCX';
 }
 
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
@@ -281,6 +281,8 @@ export function FileViewPage() {
   const fileTitle = info?.fileName ?? t('fileView.untitled');
   const format = (info?.format ?? latestVersion?.format ?? '').toUpperCase() || '-';
   const isPdfFile = format === 'PDF';
+  const isWordFile = isWordFormat(format);
+  const isVisualSignableFile = isPdfFile || isWordFile;
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -290,10 +292,10 @@ export function FileViewPage() {
   );
   const signableApproval = useMemo(
     () => signatureApprovals.find((approval) =>
-      approval.status === 'PendingApproval' && !approval.isSigned && isWipApproval(approval)) ?? null,
+      approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
     [signatureApprovals],
   );
-  const canSignCurrentApproval = Boolean(signableApproval && isPdfFile);
+  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -307,7 +309,7 @@ export function FileViewPage() {
 
   const openSignaturePlacement = useCallback(async () => {
     if (!requiresSignature) return;
-    if (!isPdfFile) {
+    if (!isVisualSignableFile) {
       setToast({ msg: t('smartca.error.pdfOnly'), type: 'error' });
       setTimeout(() => setToast(null), 3000);
       return;
@@ -332,7 +334,7 @@ export function FileViewPage() {
 
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
-  }, [requiresSignature, signableApproval, isPdfFile, signaturePlacementConfirmed]);
+  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed]);
 
   // Chuyen trang khi dat vi tri ky: tai lai kich thuoc trang moi (co the khac trang dau) va giu vi tri trong bien trang moi.
   const handleSignaturePageChange = useCallback(async (nextPage: number) => {

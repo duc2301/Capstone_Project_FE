@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { approvalApi, approvalErrorMessage } from '@/entities/approval';
+import { approvalApi, approvalErrorMessage, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
+import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -65,12 +66,20 @@ function canStartApprovalFromArea(area: CdeArea) {
   return area === CdeArea.Wip || area === CdeArea.Shared || area === CdeArea.Published;
 }
 
+function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
+  if (area === CdeArea.Wip) return 'Shared';
+  if (area === CdeArea.Shared) return 'Published';
+  if (area === CdeArea.Published) return 'Archived';
+  return null;
+}
+
 export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
+  const { groups: signerGroups, loading: signerGroupsLoading } = useProjectGroups(projectId);
 
   // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
@@ -92,6 +101,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const { files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
   const selected = findNode(tree, selectedId);
+  const selectedTargetZone = selected ? nextApprovalTargetZone(selected.area) : null;
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -181,11 +191,11 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     && file.status !== FileItemStatus.Rejected
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
 
-  const handleSubmitApproval = async (requiresSignature: boolean) => {
+  const handleSubmitApproval = async (payload: SubmitApprovalPayload) => {
     if (!submitApprovalFor) return;
     setApprovalBusy(true);
     try {
-      await approvalApi.submitApproval(submitApprovalFor.id, requiresSignature);
+      await approvalApi.submitApproval(submitApprovalFor.id, payload);
       await refetchFiles();
       showToast(t('approvals.toast.submitted'));
       setSubmitApprovalFor(null);
@@ -482,7 +492,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {submitApprovalFor && (
         <SubmitApprovalModal
           fileName={submitApprovalFor.name}
-          canRequireSignature={selected?.area === CdeArea.Wip}
+          currentZone={selected ? zoneNameFromArea(selected.area) : 'Wip'}
+          targetZone={selectedTargetZone}
+          canRequireSignature={!!selectedTargetZone}
+          mustRequireSignature={selected?.area === CdeArea.Shared && selectedTargetZone === 'Published'}
+          signerGroups={signerGroups}
+          loadingSigners={signerGroupsLoading}
           busy={approvalBusy}
           onClose={() => setSubmitApprovalFor(null)}
           onSubmit={handleSubmitApproval}

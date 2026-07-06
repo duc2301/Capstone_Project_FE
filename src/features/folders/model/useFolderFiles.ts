@@ -1,17 +1,42 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { FileListItem } from '@/entities/file-item';
-import { fileItemApi } from '@/entities/file-item';
+import type { FileListItem, FileItemStatus, FileType } from '@/entities/file-item';
+import type { FolderContentsFileDto, FolderTreeNode } from '@/entities/folder';
+import { folderApi, toFolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 interface UseFolderFilesReturn {
+  subfolders: FolderTreeNode[];
   files: FileListItem[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
+/* API /folder-tree/folders/{id}/contents chưa trả size/format/version/author —
+ * tạm điền mặc định để FileList hiện tại render được. Sẽ gỡ khi BE trả đủ. */
+function toFileListItem(dto: FolderContentsFileDto): FileListItem {
+  return {
+    id: dto.id,
+    folderId: dto.folderId,
+    name: dto.name,
+    fileType: dto.fileType as FileType,
+    status: dto.status as FileItemStatus,
+    returnRequestStatus: null,
+    returnTargetZone: null,
+    currentVersionId: dto.currentVersionId,
+    currentVersionNumber: 1,
+    sizeBytes: 0,
+    format: null,
+    createdByAccountId: null,
+    authorName: null,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  };
+}
+
 export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
+  const [subfolders, setSubfolders] = useState<FolderTreeNode[]>([]);
   const [files, setFiles] = useState<FileListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +48,11 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
     setError(null);
 
     try {
-      const { data } = await fileItemApi.getByFolder(folderId);
-      if (!isCancelled()) setFiles(data.result ?? []);
+      const { data } = await folderApi.getContents(folderId);
+      if (!isCancelled()) {
+        setSubfolders((data.result?.subfolders ?? []).map(toFolderTreeNode));
+        setFiles((data.result?.files ?? []).map(toFileListItem));
+      }
     } catch {
       if (!isCancelled()) setError(t('documents.error'));
     } finally {
@@ -36,6 +64,7 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
 
   useEffect(() => {
     if (!folderId) {
+      setSubfolders([]);
       setFiles([]);
       setLoading(false);
       return;
@@ -49,5 +78,5 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
     };
   }, [folderId, loadFiles]);
 
-  return { files, loading, error, refetch };
+  return { subfolders, files, loading, error, refetch };
 }

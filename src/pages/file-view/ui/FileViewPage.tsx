@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { approvalApi } from '@/entities/approval';
 import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
+import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
-import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
+import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
@@ -124,7 +125,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'markup';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -150,6 +151,11 @@ export function FileViewPage() {
   );
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [modelViewer, setModelViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
+  const handleViewerReady = useCallback(
+    (v: Autodesk.Viewing.GuiViewer3D | null) => setModelViewer(v),
+    [],
+  );
 
   const latestVersion = versions[0] ?? null;
 
@@ -167,9 +173,9 @@ export function FileViewPage() {
       try {
         const currentFilePromise = folderId
           ? fileItemApi
-              .getByFolder(folderId)
-              .then((res) => res.data.result?.find((file) => file.id === fileId) ?? null)
-              .catch(() => null)
+            .getByFolder(folderId)
+            .then((res) => res.data.result?.find((file) => file.id === fileId) ?? null)
+            .catch(() => null)
           : Promise.resolve(null);
         const fileApprovalsPromise = approvalApi
           .getApprovals()
@@ -272,6 +278,8 @@ export function FileViewPage() {
   const isModelReady =
     info?.kind === 'model' && status === ModelViewerStatus.Ready && !!info.urn;
   const isModelFailed = info?.kind === 'model' && status === ModelViewerStatus.Failed;
+
+  const canMarkup = Boolean(info?.kind === 'model' && isModelReady);
 
   const statusMeta = useMemo(
     () => getStatusMeta(info, isModelProcessing, isModelFailed),
@@ -445,7 +453,11 @@ export function FileViewPage() {
               </div>
             ) : isModelReady ? (
               <div className="absolute inset-0 bg-card">
-                <ModelViewer urn={info!.urn!} className="h-full w-full" />
+                <ModelViewer
+                  urn={info!.urn!}
+                  className="h-full w-full"
+                  onViewerReady={handleViewerReady}
+                />
               </div>
             ) : isModelProcessing ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
@@ -502,6 +514,7 @@ export function FileViewPage() {
               />
             )}
 
+
             <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
               <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
                 <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">-</button>
@@ -517,7 +530,7 @@ export function FileViewPage() {
         </main>
 
         <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-          <div className="grid grid-cols-2 border-b border-card-border">
+          <div className={`grid ${canMarkup && info?.kind === 'model' ? 'grid-cols-3' : 'grid-cols-2'} border-b border-card-border`}>
             <PanelTabButton
               active={activePanelTab === 'properties'}
               label={t('fileView.tabs.properties')}
@@ -529,11 +542,21 @@ export function FileViewPage() {
               badge={requiresSignature && !isSigned ? '0' : undefined}
               onClick={() => setActivePanelTab('signatureHistory')}
             />
+            {canMarkup && info?.kind === 'model' && (
+              <PanelTabButton
+                active={activePanelTab === 'markup'}
+                label={t('markup.model.tabLabel')}
+                onClick={() => setActivePanelTab('markup')}
+              />
+            )}
           </div>
 
           <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
             {activePanelTab === 'properties' ? (
               <FilePropertiesPanel
+                info={info}
+                fileListItem={fileListItem}
+                latestVersion={latestVersion}
                 format={format}
                 fileSize={fileSize}
                 uploadedBy={uploadedBy}
@@ -541,12 +564,22 @@ export function FileViewPage() {
                 statusMeta={statusMeta}
                 versions={versions}
               />
+            ) : activePanelTab === 'markup' ? (
+              modelViewer && fileId ? (
+                <ModelCommentsPanel
+                  viewer={modelViewer}
+                  fileItemId={fileId}
+                  fileVersionId={fileListItem?.currentVersionId ?? null}
+                />
+              ) : (
+                <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
+              )
             ) : (
-                <SignatureHistoryPanel
-                  requiresSignature={requiresSignature}
-                  canSign={canSignCurrentApproval}
-                  signatureApprovals={signatureApprovals}
-                  placementActive={signaturePlacementMode}
+              <SignatureHistoryPanel
+                requiresSignature={requiresSignature}
+                canSign={canSignCurrentApproval}
+                signatureApprovals={signatureApprovals}
+                placementActive={signaturePlacementMode}
                 placementConfirmed={signaturePlacementConfirmed}
                 onStartPlacement={openSignaturePlacement}
               />
@@ -594,9 +627,8 @@ function PanelTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex h-14 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
-        active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
-      }`}
+      className={`relative flex h-14 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
+        }`}
     >
       {label}
       {badge ? (
@@ -609,7 +641,34 @@ function PanelTabButton({
   );
 }
 
+function fileTypeLabel(type: FileType | undefined): string {
+  switch (type) {
+    case FileType.Pdf: return t('fileView.fileType.pdf');
+    case FileType.Ifc: return t('fileView.fileType.ifc');
+    case FileType.Image: return t('fileView.fileType.image');
+    case FileType.Cad: return t('fileView.fileType.cad');
+    case FileType.Office: return t('fileView.fileType.office');
+    default: return t('fileView.fileType.other');
+  }
+}
+
+function itemStatusMeta(status: FileItemStatus | undefined): { label: string; className: string } {
+  switch (status) {
+    case FileItemStatus.Approved:
+      return { label: t('fileView.itemStatus.approved'), className: 'bg-success-light text-success' };
+    case FileItemStatus.Rejected:
+      return { label: t('fileView.itemStatus.rejected'), className: 'bg-danger-light text-danger' };
+    case FileItemStatus.PendingApproval:
+      return { label: t('fileView.itemStatus.pending'), className: 'bg-warning-light text-warning' };
+    default:
+      return { label: t('fileView.itemStatus.draft'), className: 'bg-content-bg text-text-secondary' };
+  }
+}
+
 function FilePropertiesPanel({
+  info,
+  fileListItem,
+  latestVersion,
   format,
   fileSize,
   uploadedBy,
@@ -617,6 +676,9 @@ function FilePropertiesPanel({
   statusMeta,
   versions,
 }: {
+  info: FileViewInfo | null;
+  fileListItem: FileListItem | null;
+  latestVersion: FileVersion | null;
   format: string;
   fileSize: string;
   uploadedBy: string;
@@ -624,6 +686,15 @@ function FilePropertiesPanel({
   statusMeta: { label: string; className: string };
   versions: FileVersion[];
 }) {
+  const name = info?.fileName ?? fileListItem?.name ?? '-';
+  const currentVersionNumber = fileListItem?.currentVersionNumber ?? latestVersion?.versionNumber ?? 0;
+  const updatedAt = formatDateTime(fileListItem?.updatedAt);
+  const requiresSignature = Boolean(info?.requiresSignature || fileListItem?.requiresSignature);
+  const isSigned = Boolean(info?.isSigned || fileListItem?.isSigned);
+  const checksum = latestVersion?.checksum ?? null;
+  const status = itemStatusMeta(fileListItem?.status);
+  const yesNo = (v: boolean) => (v ? t('fileView.info.yes') : t('fileView.info.no'));
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
@@ -632,8 +703,16 @@ function FilePropertiesPanel({
       </div>
 
       <div className="mt-6 space-y-5">
+        <DetailItem label={t('fileView.info.name')} value={<span className="break-all">{name}</span>} />
+        <DetailItem label={t('fileView.info.type')} value={fileTypeLabel(fileListItem?.fileType)} />
         <DetailItem label={t('fileView.details.format')} value={format} />
         <DetailItem label={t('fileView.details.size')} value={fileSize} />
+        <DetailItem
+          label={t('fileView.info.status')}
+          value={<span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}>{status.label}</span>}
+        />
+        <DetailItem label={t('fileView.info.currentVersion')} value={currentVersionNumber ? `V${currentVersionNumber}` : '-'} />
+        <DetailItem label={t('fileView.info.versionCount')} value={String(versions.length)} />
         <DetailItem
           label={t('fileView.details.owner')}
           value={
@@ -646,6 +725,13 @@ function FilePropertiesPanel({
           }
         />
         <DetailItem label={t('fileView.details.uploadedAt')} value={uploadedAt} />
+        <DetailItem label={t('fileView.info.updatedAt')} value={updatedAt} />
+        <DetailItem label={t('fileView.info.requiresSignature')} value={yesNo(requiresSignature)} />
+        <DetailItem
+          label={t('fileView.info.isSigned')}
+          value={<span className={isSigned ? 'font-semibold text-success' : ''}>{yesNo(isSigned)}</span>}
+        />
+        {checksum && <DetailItem label={t('fileView.info.checksum')} value={<span className="break-all text-xs text-text-secondary">{checksum}</span>} />}
       </div>
 
       <div className="mt-6 border-t border-card-border/70 pt-5">

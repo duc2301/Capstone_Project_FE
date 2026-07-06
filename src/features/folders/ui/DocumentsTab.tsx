@@ -98,7 +98,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
 
-  const { files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
+  const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
   const selected = findNode(tree, selectedId);
   const selectedTargetZone = selected ? nextApprovalTargetZone(selected.area) : null;
@@ -138,6 +138,10 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   // "Xem chi tiết" -> điều hướng sang trang xem riêng (BE quyết định model/inline/download).
   const handleDetail = (file: FileListItem) => {
     navigate(`/projects/${projectId}/files/${file.id}/view?folder=${file.folderId}`);
+  };
+
+  const openSubmitApproval = (file: FileListItem) => {
+    setSubmitApprovalFor(file);
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -315,7 +319,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="rounded-(--radius-card) border border-card-border bg-card p-6 shadow-card">
+          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-6 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>
@@ -395,11 +399,14 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                   </div>
                 </div>
 
-                {/* Danh sách tệp trong thư mục — chuột phải / nút ⋮ để mở menu thao tác */}
+                {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
                 <FileList
+                  subfolders={subfolders}
                   files={files}
                   loading={filesLoading}
                   error={filesError}
+                  onFolderOpen={(n) => setSelectedId(n.id)}
+                  onFolderMenu={handleContextMenu}
                   onFileMenu={handleFileMenu}
                   onFileOpen={handleDetail}
                 />
@@ -447,9 +454,9 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onVersions={() => setVersionsFor(fileMenu.file)}
           onSoon={() => showToast(t('documents.fileMenu.soon'))}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
-          onSubmitApproval={() => setSubmitApprovalFor(fileMenu.file)}
+          onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
           canTransferZone={canTransferZone(fileMenu.file)}
-          onTransferZone={() => setSubmitApprovalFor(fileMenu.file)}
+          onTransferZone={() => openSubmitApproval(fileMenu.file)}
           canReturnToWip={canReturnToWip(fileMenu.file)}
           onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
         />

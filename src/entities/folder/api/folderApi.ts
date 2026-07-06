@@ -4,7 +4,7 @@ import type {
   CdeArea,
   CreateSubFolderPayload,
   Folder,
-  FolderTreeNode,
+  FolderTreeNodeDto,
   UpdateFolderPayload,
 } from '../model/folder.types';
 
@@ -12,7 +12,7 @@ export const folderApi = {
   /** Cây thư mục CDE của 1 dự án, đã lọc theo quyền View của người gọi.
    *  Lọc theo khu vực nếu truyền `area`. */
   getTree: (projectId: string, area?: CdeArea) =>
-    axiosInstance.get<ApiResponse<FolderTreeNode[]>>('/folders/tree', {
+    axiosInstance.get<ApiResponse<FolderTreeNodeDto[]>>('/folder-tree/tree', {
       params: { projectId, area },
     }),
 

@@ -18,6 +18,17 @@ export interface EffectivePermission {
   canApprove: boolean;
 }
 
+/* Node thô từ GET /folder-tree/tree — BE hiện chưa trả owner/permission,
+ * FE tự điền mặc định (xem toFolderTreeNode). */
+export interface FolderTreeNodeDto {
+  id: string;
+  projectId: string;
+  parentFolderId: string | null;
+  name: string;
+  area: CdeArea;
+  children: FolderTreeNodeDto[];
+}
+
 /* 1 nút trong cây thư mục CDE (đã lọc theo quyền ở BE) */
 export interface FolderTreeNode {
   id: string;

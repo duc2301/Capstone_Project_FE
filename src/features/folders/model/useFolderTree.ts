@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
-import { folderApi } from '@/entities/folder';
+import { folderApi, toFolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 interface UseFolderTreeReturn {
@@ -27,7 +27,7 @@ export function useFolderTree(projectId: string | undefined): UseFolderTreeRetur
 
     try {
       const { data } = await folderApi.getTree(projectId);
-      if (!isCancelled()) setTree(data.result ?? []);
+      if (!isCancelled()) setTree((data.result ?? []).map(toFolderTreeNode));
     } catch {
       if (!isCancelled()) setError(t('documents.error'));
     } finally {

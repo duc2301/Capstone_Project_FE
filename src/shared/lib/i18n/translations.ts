@@ -724,6 +724,8 @@ export const translations = {
   // Danh sách tệp trong folder
   'documents.files.empty': 'Thư mục này chưa có tệp.',
   'documents.files.openHint': 'Bấm đúp để xem chi tiết',
+  'documents.files.folderOpenHint': 'Bấm để mở thư mục',
+  'documents.files.folderBadge': 'Thư mục',
   'documents.files.colName': 'TÊN TỆP',
   'documents.files.colVersion': 'PHIÊN BẢN',
   'documents.files.colStatus': 'TRẠNG THÁI',

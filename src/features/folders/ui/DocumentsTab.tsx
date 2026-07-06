@@ -112,7 +112,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
 
-  const { files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
+  const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
   const selected = findNode(tree, selectedId);
 
@@ -432,11 +432,14 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                   </div>
                 </div>
 
-                {/* Danh sách tệp trong thư mục — chuột phải / nút ⋮ để mở menu thao tác */}
+                {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
                 <FileList
+                  subfolders={subfolders}
                   files={files}
                   loading={filesLoading}
                   error={filesError}
+                  onFolderOpen={(n) => setSelectedId(n.id)}
+                  onFolderMenu={handleContextMenu}
                   onFileMenu={handleFileMenu}
                   onFileOpen={handleDetail}
                 />

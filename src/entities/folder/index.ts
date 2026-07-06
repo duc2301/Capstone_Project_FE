@@ -5,6 +5,8 @@ export type {
   CreateSubFolderPayload,
   EffectivePermission,
   Folder,
+  FolderContentsDto,
+  FolderContentsFileDto,
   FolderTreeNode,
   FolderTreeNodeDto,
   UpdateFolderPayload,

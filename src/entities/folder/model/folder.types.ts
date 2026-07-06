@@ -29,6 +29,26 @@ export interface FolderTreeNodeDto {
   children: FolderTreeNodeDto[];
 }
 
+/* 1 file trong response GET /folder-tree/folders/{id}/contents —
+ * BE chỉ trả các field cơ bản (chưa có size/format/version/author). */
+export interface FolderContentsFileDto {
+  id: string;
+  folderId: string;
+  name: string;
+  fileType: number;
+  status: number;
+  currentVersionId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+/* Nội dung 1 folder: subfolder + file (GET /folder-tree/folders/{id}/contents) */
+export interface FolderContentsDto {
+  id: string;
+  subfolders: FolderTreeNodeDto[];
+  files: FolderContentsFileDto[];
+}
+
 /* 1 nút trong cây thư mục CDE (đã lọc theo quyền ở BE) */
 export interface FolderTreeNode {
   id: string;

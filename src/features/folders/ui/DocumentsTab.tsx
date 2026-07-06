@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { approvalApi, approvalErrorMessage } from '@/entities/approval';
-import type { ApprovalTargetZone, SubmitApprovalPayload } from '@/entities/approval';
+import { approvalApi, approvalErrorMessage, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
-import type { Group } from '@/entities/group';
-import { groupApi } from '@/entities/group';
-import { projectApi, ProjectParticipantStatus } from '@/entities/project';
+import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -17,7 +14,7 @@ import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-trans
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderFiles } from '../model/useFolderFiles';
 import { useFolderTree } from '../model/useFolderTree';
-import { zoneLabel, zoneNameFromArea } from '../model/zoneTransferFormat';
+import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
@@ -76,22 +73,13 @@ function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
   return null;
 }
 
-function activeProjectGroups(participants: { groupId: string; status: number }[], groups: Group[]): Group[] {
-  const activeGroupIds = new Set(
-    participants
-      .filter((participant) => participant.status === ProjectParticipantStatus.Active)
-      .map((participant) => participant.groupId),
-  );
-
-  return groups.filter((group) => activeGroupIds.has(group.id));
-}
-
 export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
+  const { groups: signerGroups, loading: signerGroupsLoading } = useProjectGroups(projectId);
 
   // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
@@ -105,8 +93,6 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
   const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
   const [approvalBusy, setApprovalBusy] = useState(false);
-  const [signerGroups, setSignerGroups] = useState<Group[]>([]);
-  const [signerGroupsLoading, setSignerGroupsLoading] = useState(false);
   const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
@@ -115,6 +101,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
   const selected = findNode(tree, selectedId);
+  const selectedTargetZone = selected ? nextApprovalTargetZone(selected.area) : null;
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -153,28 +140,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     navigate(`/projects/${projectId}/files/${file.id}/view?folder=${file.folderId}`);
   };
 
-  const loadSignerGroups = async () => {
-    setSignerGroupsLoading(true);
-    try {
-      const [participantsResponse, groupsResponse] = await Promise.all([
-        projectApi.getParticipants(projectId),
-        groupApi.getAll(),
-      ]);
-      setSignerGroups(activeProjectGroups(
-        participantsResponse.data.result ?? [],
-        groupsResponse.data.result ?? [],
-      ));
-    } catch {
-      setSignerGroups([]);
-      showToast(t('common.error'), 'error');
-    } finally {
-      setSignerGroupsLoading(false);
-    }
-  };
-
   const openSubmitApproval = (file: FileListItem) => {
     setSubmitApprovalFor(file);
-    void loadSignerGroups();
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -532,10 +499,10 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {submitApprovalFor && (
         <SubmitApprovalModal
           fileName={submitApprovalFor.name}
-          currentZone={selected ? zoneLabel(zoneNameFromArea(selected.area)) : ''}
-          targetZone={nextApprovalTargetZone(selected?.area ?? CdeArea.Archived) ?? 'Shared'}
-          canRequireSignature={!!selected && nextApprovalTargetZone(selected.area) !== null}
-          mustRequireSignature={selected?.area === CdeArea.Shared}
+          currentZone={selected ? zoneNameFromArea(selected.area) : 'Wip'}
+          targetZone={selectedTargetZone}
+          canRequireSignature={!!selectedTargetZone}
+          mustRequireSignature={selected?.area === CdeArea.Shared && selectedTargetZone === 'Published'}
           signerGroups={signerGroups}
           loadingSigners={signerGroupsLoading}
           busy={approvalBusy}

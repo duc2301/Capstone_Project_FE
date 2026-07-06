@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { ApprovalTargetZone, SubmitApprovalPayload } from '@/entities/approval';
 import type { Group } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
+import type { ZoneName } from '@/entities/zone-transfer';
 import { t } from '@/shared/lib/i18n';
 
 interface SubmitApprovalModalProps {
   fileName: string;
-  currentZone: string;
-  targetZone: ApprovalTargetZone;
+  currentZone: ZoneName;
+  targetZone: ApprovalTargetZone | null;
   canRequireSignature: boolean;
   mustRequireSignature: boolean;
   signerGroups: Group[];
@@ -16,6 +17,37 @@ interface SubmitApprovalModalProps {
   busy: boolean;
   onClose: () => void;
   onSubmit: (payload: SubmitApprovalPayload) => void;
+}
+
+interface GroupSelectAllRowProps {
+  groupName: string;
+  checked: boolean;
+  indeterminate: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+}
+
+function GroupSelectAllRow({ groupName, checked, indeterminate, disabled, onToggle }: GroupSelectAllRowProps) {
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (checkboxRef.current) checkboxRef.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  return (
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-content-bg">
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={onToggle}
+        className="h-4 w-4 accent-primary"
+      />
+      <span className="min-w-0 flex-1 truncate text-sm font-bold text-text">{groupName}</span>
+      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Nhóm</span>
+    </label>
+  );
 }
 
 export function SubmitApprovalModal({
@@ -30,7 +62,7 @@ export function SubmitApprovalModal({
   onClose,
   onSubmit,
 }: SubmitApprovalModalProps) {
-  const [requiresSignature, setRequiresSignature] = useState(false);
+  const [requiresSignature, setRequiresSignature] = useState(mustRequireSignature);
   const [signerAccountIds, setSignerAccountIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,21 +71,11 @@ export function SubmitApprovalModal({
   }, [mustRequireSignature]);
 
   const effectiveRequiresSignature = mustRequireSignature || (canRequireSignature && requiresSignature);
+  const mustAssignSigners = currentZone === 'Shared' && targetZone === 'Published';
 
-  const handleSubmit = () => {
-    if (effectiveRequiresSignature && signerAccountIds.length === 0) {
-      setError('Vui lòng nhập ít nhất một người ký hoặc nhóm ký.');
-      return;
-    }
-
-    setError(null);
-    onSubmit({
-      targetZone,
-      requiresSignature: effectiveRequiresSignature,
-      signerAccountIds,
-      signerGroupIds: [],
-    });
-  };
+  useEffect(() => {
+    if (!mustAssignSigners) setSignerAccountIds([]);
+  }, [mustAssignSigners]);
 
   const toggleAccount = (accountId: string) => {
     setSignerAccountIds((current) =>
@@ -68,19 +90,37 @@ export function SubmitApprovalModal({
       const currentSet = new Set(current);
       const allSelected = memberIds.every((id) => currentSet.has(id));
 
-      if (allSelected) {
-        return current.filter((id) => !memberIds.includes(id));
-      }
+      if (allSelected) return current.filter((id) => !memberIds.includes(id));
 
       memberIds.forEach((id) => currentSet.add(id));
       return [...currentSet];
     });
   };
 
+  const handleSubmit = () => {
+    if (!targetZone) {
+      setError('Không xác định được vùng chuyển đến.');
+      return;
+    }
+
+    if (effectiveRequiresSignature && mustAssignSigners && signerAccountIds.length === 0) {
+      setError('Vui lòng chọn ít nhất một người ký.');
+      return;
+    }
+
+    setError(null);
+    onSubmit({
+      targetZone,
+      requiresSignature: effectiveRequiresSignature,
+      signerAccountIds: mustAssignSigners ? signerAccountIds : [],
+      signerGroupIds: [],
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className="relative z-10 w-full max-w-lg animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-lg flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <h2 className="font-heading text-lg font-bold text-text">{t('approvals.submitModal.title')}</h2>
           <button type="button" onClick={onClose} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
@@ -90,7 +130,7 @@ export function SubmitApprovalModal({
           </button>
         </div>
 
-        <div className="space-y-4 px-6 py-5">
+        <div className="space-y-4 overflow-y-auto px-6 py-5">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('approvals.submitModal.fileName')}</span>
             <input
@@ -113,13 +153,13 @@ export function SubmitApprovalModal({
               <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Vùng chuyển đến</span>
               <input
                 readOnly
-                value={targetZone}
+                value={targetZone ?? ''}
                 className="rounded-(--radius-input) border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
               />
             </label>
           </div>
 
-          {(canRequireSignature || mustRequireSignature) && (
+          {canRequireSignature && (
             <label className="flex items-center gap-2.5 rounded-xl border border-card-border px-3.5 py-3">
               <input
                 type="checkbox"
@@ -130,14 +170,14 @@ export function SubmitApprovalModal({
               />
               <span className="text-sm font-medium text-text">{t('approvals.submitModal.requiresSignature')}</span>
               {mustRequireSignature && (
-                <span className="ml-auto rounded-full bg-warning-light px-2.5 py-1 text-xs font-semibold text-warning">
+                <span className="ml-auto rounded-full bg-warning-light px-2.5 py-0.5 text-xs font-bold text-warning">
                   Bắt buộc
                 </span>
               )}
             </label>
           )}
 
-          {effectiveRequiresSignature && (
+          {effectiveRequiresSignature && mustAssignSigners && (
             <div className="space-y-3 rounded-xl border border-card-border bg-content-bg/40 p-3.5">
               <p className="text-sm font-semibold text-text">Người ký bắt buộc</p>
               <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
@@ -155,6 +195,7 @@ export function SubmitApprovalModal({
                   const selectedMemberCount = activeMemberIds.filter((id) => signerAccountIds.includes(id)).length;
                   const allGroupMembersSelected = activeMemberIds.length > 0 && selectedMemberCount === activeMemberIds.length;
                   const hasPartialSelection = selectedMemberCount > 0 && selectedMemberCount < activeMemberIds.length;
+
                   return (
                     <div key={group.id} className="rounded-xl border border-card-border bg-card p-3">
                       <GroupSelectAllRow
@@ -216,40 +257,5 @@ export function SubmitApprovalModal({
         </div>
       </div>
     </div>
-  );
-}
-
-interface GroupSelectAllRowProps {
-  groupName: string;
-  checked: boolean;
-  indeterminate: boolean;
-  disabled: boolean;
-  onToggle: () => void;
-}
-
-function GroupSelectAllRow({ groupName, checked, indeterminate, disabled, onToggle }: GroupSelectAllRowProps) {
-  const checkboxRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (checkboxRef.current) {
-      checkboxRef.current.indeterminate = indeterminate;
-    }
-  }, [indeterminate]);
-
-  return (
-    <label className="flex items-center gap-2.5">
-      <input
-        ref={checkboxRef}
-        type="checkbox"
-        checked={checked}
-        onChange={onToggle}
-        disabled={disabled}
-        className="h-4 w-4 accent-primary"
-      />
-      <span className="font-semibold text-text">{groupName}</span>
-      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-        Chọn nhóm
-      </span>
-    </label>
   );
 }

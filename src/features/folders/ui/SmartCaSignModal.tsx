@@ -36,8 +36,10 @@ function statusClassName(status: SignatureTransactionStatus): string {
   return 'bg-warning-light text-warning';
 }
 
-function isSignedPdfGeneratedMessage(message?: string | null): boolean {
-  return message?.trim().toLowerCase().startsWith('signed pdf generated') ?? false;
+function isSignedFileGeneratedMessage(message?: string | null): boolean {
+  const normalized = message?.trim().toLowerCase() ?? '';
+  return normalized.startsWith('signed file generated')
+    || normalized.startsWith('signed pdf generated');
 }
 
 export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: SmartCaSignModalProps) {
@@ -68,13 +70,25 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
 
     generatingSignedPdfRef.current = true;
     setGeneratingSignedPdf(true);
+    setError(null);
     try {
       let file: SignedFileInfo | null = null;
+      let latestStatusInfo = statusInfo;
+      const signedTransactionId = statusInfo?.transactionId ?? transactionId ?? signatureInfo?.transactionId;
 
-      if (statusInfo && isSignedPdfGeneratedMessage(statusInfo.message) && approval.signedVersionId) {
+      if (
+        signedTransactionId
+        && (!latestStatusInfo
+          || (latestStatusInfo.status === 'Signed' && !isSignedFileGeneratedMessage(latestStatusInfo.message)))
+      ) {
+        latestStatusInfo = await smartcaApi.getTransactionStatus(approval.id, signedTransactionId);
+      }
+
+      if (latestStatusInfo && isSignedFileGeneratedMessage(latestStatusInfo.message)) {
         file = await smartcaApi.getSignedFile(approval.fileItemId).catch(() => null);
       } else {
-        file = await smartcaApi.generateSignedPdf(approval.id);
+        file = await smartcaApi.getSignedFile(approval.fileItemId).catch(() => null);
+        if (!file) file = await smartcaApi.generateSignedPdf(approval.id);
       }
 
       setSignedFile(file);
@@ -83,6 +97,8 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
       onToast(t('smartca.toast.signed'));
       await fetchSignatureInfo(false);
       onSigned();
+    } catch (err) {
+      setError(smartcaErrorMessage(err, t('smartca.error.status')));
     } finally {
       generatingSignedPdfRef.current = false;
       setGeneratingSignedPdf(false);
@@ -101,7 +117,12 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
           setSignedPdfReady(true);
           onSigned();
         } else if (autoGenerateSignedPdf) {
-          await finalizeSignedTransaction();
+          await finalizeSignedTransaction({
+            transactionId: info.transactionId,
+            status: info.status,
+            message: null,
+            rawResponse: null,
+          });
         }
       }
     } catch {
@@ -125,7 +146,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
     const timer = window.setInterval(async () => {
       try {
         const data = await smartcaApi.getTransactionStatus(approval.id, transactionId);
-        const completed = data.status === 'Signed' || isSignedPdfGeneratedMessage(data.message);
+        const completed = data.status === 'Signed' || isSignedFileGeneratedMessage(data.message);
 
         if (completed) {
           window.clearInterval(timer);

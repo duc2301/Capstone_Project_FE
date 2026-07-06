@@ -31,7 +31,7 @@ export type ApprovalDetail = ApprovalListItem;
 export type ApprovalTargetZone = 'Shared' | 'Published' | 'Archived';
 
 export interface SubmitApprovalPayload {
-  targetZone?: ApprovalTargetZone;
+  targetZone?: ApprovalTargetZone | null;
   requiresSignature: boolean;
   signerAccountIds?: string[];
   signerGroupIds?: string[];

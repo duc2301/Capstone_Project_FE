@@ -37,13 +37,25 @@ export function useRegister(): UseRegisterReturn {
           return;
         }
 
+        if (!data.result.accessToken) {
+          // Gửi email thành công nhưng cần xác thực OTP
+          navigate(`/verify-otp?email=${encodeURIComponent(payload.email)}`, { replace: true });
+          return;
+        }
+
         signIn(data.result);
         navigate(getPostLoginPath(data.result.role), { replace: true });
       } catch (err) {
         const axiosError = err as AxiosError<ApiResponse>;
-        setError(
-          axiosError.response?.data?.message || t('register.error.generic'),
-        );
+        const errorMessage = axiosError.response?.data?.message || t('register.error.generic');
+        
+        // Nếu email đã tồn tại nhưng chưa xác thực, tự động chuyển sang trang xác thực
+        if (axiosError.response?.status === 409 && errorMessage.includes('chưa xác thực')) {
+          navigate(`/verify-otp?email=${encodeURIComponent(payload.email)}`);
+          return;
+        }
+
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

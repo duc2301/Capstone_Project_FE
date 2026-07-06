@@ -15,6 +15,7 @@ import { ProjectsPage } from '@/pages/projects';
 import { RegisterPage } from '@/pages/register';
 import { ReturnRequestManagementPage } from '@/pages/return-request-management';
 import { ResetPasswordPage } from '@/pages/reset-password';
+import { VerifyOtpPage } from '@/pages/verify-otp';
 import { ViewerPage } from '@/pages/viewer';
 import { AdminLayout } from '@/widgets/AdminLayout';
 import { Route, Routes } from 'react-router-dom';
@@ -30,6 +31,7 @@ export const AppRoutes = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route
         path="/dashboard"
         element={

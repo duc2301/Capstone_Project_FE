@@ -40,6 +40,8 @@ export function useLogin(): UseLoginReturn {
 
         if (axiosError.response?.status === 401) {
           setError(t('login.error.invalidCredentials'));
+        } else if (axiosError.response?.status === 403 && axiosError.response?.data?.message?.includes('xác thực')) {
+          navigate(`/verify-otp?email=${encodeURIComponent(payload.email)}`);
         } else {
           setError(
             axiosError.response?.data?.message || t('login.error.generic'),

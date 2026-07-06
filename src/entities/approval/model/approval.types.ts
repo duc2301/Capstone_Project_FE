@@ -28,8 +28,13 @@ export interface ApprovalListItem {
 /* Chi tiết 1 yêu cầu phê duyệt — cùng hình dạng với danh sách */
 export type ApprovalDetail = ApprovalListItem;
 
+export type ApprovalTargetZone = 'Shared' | 'Published' | 'Archived';
+
 export interface SubmitApprovalPayload {
+  targetZone?: ApprovalTargetZone | null;
   requiresSignature: boolean;
+  signerAccountIds?: string[];
+  signerGroupIds?: string[];
 }
 
 export interface RejectApprovalPayload {

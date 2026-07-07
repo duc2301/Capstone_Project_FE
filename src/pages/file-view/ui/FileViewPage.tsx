@@ -116,6 +116,10 @@ function isWordFormat(format: string) {
   return format === 'DOC' || format === 'DOCX';
 }
 
+function isExcelFormat(format: string) {
+  return format === 'XLS' || format === 'XLSX';
+}
+
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -290,7 +294,8 @@ export function FileViewPage() {
   const format = (info?.format ?? latestVersion?.format ?? '').toUpperCase() || '-';
   const isPdfFile = format === 'PDF';
   const isWordFile = isWordFormat(format);
-  const isVisualSignableFile = isPdfFile || isWordFile;
+  const isExcelFile = isExcelFormat(format);
+  const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile;
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -1021,9 +1026,9 @@ function SignaturePlacementOverlay({
           {pdfUrl ? (
             <iframe
               key={value.pageNumber}
-              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&page=${value.pageNumber}&view=FitH`}
+              src={`${pdfUrl}#toolbar=0&navpanes=0&page=${value.pageNumber}&view=FitH`}
               title={fileName}
-              className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
+              className="absolute inset-0 h-full w-full border-0 bg-white"
             />
           ) : (
             <div className="absolute inset-10 flex items-center justify-center rounded-2xl border border-card-border bg-[#f6f4ec] text-sm font-semibold text-text-muted">

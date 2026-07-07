@@ -3,12 +3,11 @@ import { axiosInstance } from '@/shared/api';
 import type { FileListItem, FileVersion, FileViewInfo } from '../model/fileItem.types';
 
 export const fileItemApi = {
-  /** Tải tệp lên 1 thư mục (multipart). FormData gồm: file, FolderId, FileType, Name?.
-   *  onProgress: % hoàn tất (0-100) cho thanh tiến độ. */
+  /** Bắn file lên server */
   upload: (formData: FormData, onProgress?: (pct: number) => void) =>
     axiosInstance.post<ApiResponse<unknown>>('/file-items/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 0, // file lớn (CAD/BIM tới 500MB) — không đặt timeout, dựa vào tiến độ upload
+      timeout: 0, // Kệ nó cho upload tẹt ga, không set timeout vì file nặng lắm
       onUploadProgress: onProgress
         ? (e) => onProgress(Math.round((e.loaded / (e.total || e.loaded || 1)) * 100))
         : undefined,
@@ -26,13 +25,18 @@ export const fileItemApi = {
   download: (fileItemId: string) =>
     axiosInstance.get(`/file-items/${fileItemId}/download`, { responseType: 'blob', timeout: 60_000 }),
 
-  /** "Xem chi tiết": BE trả cách hiển thị (model/inline/download).
-   *  Model IFC/CAD dịch APS chạy nền (đẩy sẵn lúc upload) -> /view không chặn, trả luôn trạng thái dịch
-   *  (viewerStatus + viewerProgress). FE poll lại endpoint này khi đang Pending/Processing. */
+  /** Lấy cục PDF về để vẽ 2D lên */
+  getViewPdf: (fileItemId: string) =>
+    axiosInstance.get<ArrayBuffer>(`/file-items/${fileItemId}/view-pdf`, {
+      responseType: 'arraybuffer',
+      timeout: 60_000,
+    }),
+
+  /** Hỏi xem file này mở kiểu gì (ảnh, 3D hay tải về) */
   getView: (fileItemId: string) =>
     axiosInstance.get<ApiResponse<FileViewInfo>>(`/file-items/${fileItemId}/view`),
 
-  /** Dịch lại model lên APS (khi trạng thái Failed) — BE reset về Pending rồi xử lý ở hàng đợi nền. */
+  /** Kêu server dịch lại cái file 3D */
   retranslate: (fileItemId: string) =>
     axiosInstance.post<ApiResponse<unknown>>(`/file-items/${fileItemId}/retranslate`),
 };

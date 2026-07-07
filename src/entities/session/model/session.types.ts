@@ -36,3 +36,12 @@ export interface RefreshPayload {
 }
 
 export type LogoutPayload = RefreshPayload;
+
+export interface VerifyOtpPayload {
+  email: string;
+  otp: string;
+}
+
+export interface ResendOtpPayload {
+  email: string;
+}

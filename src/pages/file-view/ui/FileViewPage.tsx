@@ -8,13 +8,13 @@ import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/enti
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
+import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
-// Fallback khi chua lay duoc kich thuoc trang PDF thuc te (A4). Dung kich thuoc thuc te
-// (smartcaApi.getPdfPageInfo) de tinh ty le dat vi tri ky, tranh lech vi tri tren cac trang khong phai A4/landscape.
+// Chữa cháy: lỡ không lấy được kích thước thật thì dùng tạm A4
 const FALLBACK_PDF_PAGE_SIZE: PdfPageSize = {
   width: 595,
   height: 842,
@@ -33,7 +33,7 @@ interface SignaturePlacementValue {
   height: number;
 }
 
-// Vi tri mac dinh ty le theo kich thuoc trang thuc te (goc duoi-phai trang), thay vi toa do tuyet doi co dinh theo A4.
+// Chỗ mặc định để thả chữ ký vào (góc dưới bên phải)
 function getDefaultSignaturePosition(pageSize: PdfPageSize): SignaturePlacementValue {
   const width = Math.round(pageSize.width * 0.27);
   const height = Math.round(pageSize.height * 0.083);
@@ -284,6 +284,13 @@ export function FileViewPage() {
   const isModelFailed = info?.kind === 'model' && status === ModelViewerStatus.Failed;
 
   const canMarkup = Boolean(info?.kind === 'model' && isModelReady);
+  // Hiển thị phần vẽ vời 2D cho mấy file xem trực tiếp được
+  const canMarkupInline = Boolean(
+    info?.kind === 'inline' &&
+    ((info.contentType ?? '').startsWith('image/') || info.contentType === 'application/pdf'),
+  );
+  const showMarkupTab = (canMarkup && info?.kind === 'model') || canMarkupInline;
+  const inlineVersionId = fileListItem?.currentVersionId ?? latestVersion?.id ?? null;
 
   const statusMeta = useMemo(
     () => getStatusMeta(info, isModelProcessing, isModelFailed),
@@ -342,14 +349,14 @@ export function FileViewPage() {
         setSignaturePosition(getDefaultSignaturePosition(realPageSize));
       }
     } catch {
-      // Khong lay duoc kich thuoc trang thuc -> giu fallback A4, van cho dat vi tri (se duoc BE validate boundary lai).
+      // Lỗi thì cứ đè A4 ra mà xài tạm
     }
 
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
   }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed]);
 
-  // Chuyen trang khi dat vi tri ky: tai lai kich thuoc trang moi (co the khac trang dau) va giu vi tri trong bien trang moi.
+  // Đổi trang thì nhớ check lại kích thước trang mới để không bị lọt chữ ký ra ngoài
   const handleSignaturePageChange = useCallback(async (nextPage: number) => {
     if (!signableApproval) return;
     const clamped = Math.max(1, Math.min(pdfPageCount, nextPage));
@@ -409,189 +416,208 @@ export function FileViewPage() {
 
   return (
     <div className="min-h-[calc(100vh-96px)] bg-[#fbf9f1] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
-        <main className="min-w-0 flex-1 space-y-5">
-          <header className="flex flex-col gap-4 rounded-3xl border border-card-border/70 bg-card/80 px-5 py-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <FileIcon danger={format === 'PDF'} />
-              <div className="min-w-0">
-                <h1 className="truncate font-display text-2xl font-semibold text-text sm:text-3xl">{fileTitle}</h1>
-                <p className="mt-1 text-sm text-text-muted">
-                  {format} {latestVersion ? `- V${latestVersion.versionNumber}` : ''}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
-                {statusMeta.label}
-              </span>
-              <button
-                type="button"
-                onClick={goBack}
-                className="rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
-              >
-                {t('fileView.back')}
-              </button>
-              <button
-                type="button"
-                onClick={handleDownload}
-                disabled={!info}
-                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {t('fileView.download.button')}
-              </button>
-            </div>
-          </header>
-
-          <section className="relative h-[calc(100vh-250px)] min-h-[560px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
-            <div className="absolute inset-0 bg-[#dcdad2]" />
-
-            {loading ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                <Spinner />
-                <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
-              </div>
-            ) : error ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
-              </div>
-            ) : isModelReady ? (
-              <div className="absolute inset-0 bg-card">
-                <ModelViewer
-                  urn={info!.urn!}
-                  className="h-full w-full"
-                  onViewerReady={handleViewerReady}
-                />
-              </div>
-            ) : isModelProcessing ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-                <Spinner />
-                <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
-                <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
-                {info?.viewerProgress ? (
-                  <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
-                ) : null}
-              </div>
-            ) : isModelFailed ? (
-              <div className="absolute inset-0 flex items-center justify-center px-6">
-                <EmptyViewerState
-                  danger
-                  title={t('fileView.model.failed.title')}
-                  desc={t('fileView.model.failed.desc')}
-                  primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
-                  onPrimary={handleRetranslate}
-                  secondaryLabel={t('fileView.download.button')}
-                  onSecondary={handleDownload}
-                  disabled={retrying}
-                />
-              </div>
-            ) : info && info.kind === 'inline' && info.url ? (
-              <div className="absolute inset-0 p-5">
-                <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
-                  <InlineContent info={info} />
+      <InlineMarkupProvider
+        fileItemId={fileId ?? ''}
+        fileVersionId={inlineVersionId}
+        fileName={fileTitle}
+        url={info?.url ?? null}
+        contentType={info?.contentType ?? null}
+        enabled={canMarkupInline}
+      >
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
+          <main className="min-w-0 flex-1 space-y-5">
+            <header className="flex flex-col gap-4 rounded-3xl border border-card-border/70 bg-card/80 px-5 py-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
+                <FileIcon danger={format === 'PDF'} />
+                <div className="min-w-0">
+                  <h1 className="truncate font-display text-2xl font-semibold text-text sm:text-3xl">{fileTitle}</h1>
+                  <p className="mt-1 text-sm text-text-muted">
+                    {format} {latestVersion ? `- V${latestVersion.versionNumber}` : ''}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center px-6">
-                <EmptyViewerState
-                  title={t('fileView.download.title')}
-                  desc={t('fileView.download.desc')}
-                  primaryLabel={t('fileView.download.button')}
-                  onPrimary={handleDownload}
-                />
-              </div>
-            )}
 
-            {requiresSignature && signaturePlacementMode && (
-              <SignaturePlacementOverlay
-                fileName={fileTitle}
-                pdfUrl={info?.url ?? null}
-                pageSize={pdfPageSize}
-                pageCount={pdfPageCount}
-                confirmed={signaturePlacementConfirmed}
-                busy={savingSignaturePosition}
-                value={signaturePosition}
-                onChange={setSignaturePosition}
-                onChangePage={handleSignaturePageChange}
-                onConfirm={handleConfirmSignaturePlacement}
-                onClose={() => setSignaturePlacementMode(false)}
-              />
-            )}
-
-
-            <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
-              <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
-                <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">-</button>
-                <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
-                <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">+</button>
-                <span className="h-4 w-px bg-card-border" />
-                <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
+                  {statusMeta.label}
+                </span>
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
+                >
+                  {t('fileView.back')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={!info}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   {t('fileView.download.button')}
                 </button>
               </div>
-            </div>
-          </section>
-        </main>
+            </header>
 
-        <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-          <div className={`grid ${canMarkup && info?.kind === 'model' ? 'grid-cols-3' : 'grid-cols-2'} border-b border-card-border`}>
-            <PanelTabButton
-              active={activePanelTab === 'properties'}
-              label={t('fileView.tabs.properties')}
-              onClick={() => setActivePanelTab('properties')}
-            />
-            <PanelTabButton
-              active={activePanelTab === 'signatureHistory'}
-              label={t('fileView.tabs.signatureHistory')}
-              badge={requiresSignature && !isSigned ? '0' : undefined}
-              onClick={() => setActivePanelTab('signatureHistory')}
-            />
-            {canMarkup && info?.kind === 'model' && (
-              <PanelTabButton
-                active={activePanelTab === 'markup'}
-                label={t('markup.model.tabLabel')}
-                onClick={() => setActivePanelTab('markup')}
-              />
-            )}
-          </div>
+            <section className="relative h-[calc(100vh-250px)] min-h-[560px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
+              <div className="absolute inset-0 bg-[#dcdad2]" />
 
-          <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
-            {activePanelTab === 'properties' ? (
-              <FilePropertiesPanel
-                info={info}
-                fileListItem={fileListItem}
-                latestVersion={latestVersion}
-                format={format}
-                fileSize={fileSize}
-                uploadedBy={uploadedBy}
-                uploadedAt={uploadedAt}
-                statusMeta={statusMeta}
-                versions={versions}
-              />
-            ) : activePanelTab === 'markup' ? (
-              modelViewer && fileId ? (
-                <ModelCommentsPanel
-                  viewer={modelViewer}
-                  fileItemId={fileId}
-                  fileVersionId={fileListItem?.currentVersionId ?? null}
-                />
+              {loading ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                  <Spinner />
+                  <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
+                </div>
+              ) : error ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                  <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
+                </div>
+              ) : isModelReady ? (
+                <div className="absolute inset-0 bg-card">
+                  <ModelViewer
+                    urn={info!.urn!}
+                    className="h-full w-full"
+                    onViewerReady={handleViewerReady}
+                  />
+                </div>
+              ) : isModelProcessing ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+                  <Spinner />
+                  <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
+                  <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
+                  {info?.viewerProgress ? (
+                    <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
+                  ) : null}
+                </div>
+              ) : isModelFailed ? (
+                <div className="absolute inset-0 flex items-center justify-center px-6">
+                  <EmptyViewerState
+                    danger
+                    title={t('fileView.model.failed.title')}
+                    desc={t('fileView.model.failed.desc')}
+                    primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
+                    onPrimary={handleRetranslate}
+                    secondaryLabel={t('fileView.download.button')}
+                    onSecondary={handleDownload}
+                    disabled={retrying}
+                  />
+                </div>
+              ) : info && info.kind === 'inline' && info.url ? (
+                canMarkupInline ? (
+                  <InlineMarkupStage />
+                ) : (
+                  <div className="absolute inset-0 p-5">
+                    <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
+                      <InlineContent info={info} />
+                    </div>
+                  </div>
+                )
               ) : (
-                <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
-              )
-            ) : (
-              <SignatureHistoryPanel
-                requiresSignature={requiresSignature}
-                canSign={canSignCurrentApproval}
-                signatureApprovals={signatureApprovals}
-                placementActive={signaturePlacementMode}
-                placementConfirmed={signaturePlacementConfirmed}
-                onStartPlacement={openSignaturePlacement}
+                <div className="absolute inset-0 flex items-center justify-center px-6">
+                  <EmptyViewerState
+                    title={t('fileView.download.title')}
+                    desc={t('fileView.download.desc')}
+                    primaryLabel={t('fileView.download.button')}
+                    onPrimary={handleDownload}
+                  />
+                </div>
+              )}
+
+              {requiresSignature && signaturePlacementMode && (
+                <SignaturePlacementOverlay
+                  fileName={fileTitle}
+                  pdfUrl={info?.url ?? null}
+                  pageSize={pdfPageSize}
+                  pageCount={pdfPageCount}
+                  confirmed={signaturePlacementConfirmed}
+                  busy={savingSignaturePosition}
+                  value={signaturePosition}
+                  onChange={setSignaturePosition}
+                  onChangePage={handleSignaturePageChange}
+                  onConfirm={handleConfirmSignaturePlacement}
+                  onClose={() => setSignaturePlacementMode(false)}
+                />
+              )}
+
+
+              {!canMarkupInline && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
+                  <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
+                    <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">-</button>
+                    <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
+                    <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">+</button>
+                    <span className="h-4 w-px bg-card-border" />
+                    <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
+                      {t('fileView.download.button')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          </main>
+
+          <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
+            <div className={`grid ${showMarkupTab ? 'grid-cols-3' : 'grid-cols-2'} border-b border-card-border`}>
+              <PanelTabButton
+                active={activePanelTab === 'properties'}
+                label={t('fileView.tabs.properties')}
+                onClick={() => setActivePanelTab('properties')}
               />
-            )}
-          </div>
-        </aside>
-      </div>
+              <PanelTabButton
+                active={activePanelTab === 'signatureHistory'}
+                label={t('fileView.tabs.signatureHistory')}
+                badge={requiresSignature && !isSigned ? '0' : undefined}
+                onClick={() => setActivePanelTab('signatureHistory')}
+              />
+              {showMarkupTab && (
+                <PanelTabButton
+                  active={activePanelTab === 'markup'}
+                  label={t('markup.inline.tab')}
+                  onClick={() => setActivePanelTab('markup')}
+                />
+              )}
+            </div>
+
+            <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
+              {activePanelTab === 'properties' ? (
+                <FilePropertiesPanel
+                  info={info}
+                  fileListItem={fileListItem}
+                  latestVersion={latestVersion}
+                  format={format}
+                  fileSize={fileSize}
+                  uploadedBy={uploadedBy}
+                  uploadedAt={uploadedAt}
+                  statusMeta={statusMeta}
+                  versions={versions}
+                />
+              ) : activePanelTab === 'markup' ? (
+                info?.kind === 'model' ? (
+                  modelViewer && fileId ? (
+                    <ModelCommentsPanel
+                      viewer={modelViewer}
+                      fileItemId={fileId}
+                      fileVersionId={fileListItem?.currentVersionId ?? null}
+                    />
+                  ) : (
+                    <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
+                  )
+                ) : (
+                  <InlineCommentsPanel />
+                )
+              ) : (
+                <SignatureHistoryPanel
+                  requiresSignature={requiresSignature}
+                  canSign={canSignCurrentApproval}
+                  signatureApprovals={signatureApprovals}
+                  placementActive={signaturePlacementMode}
+                  placementConfirmed={signaturePlacementConfirmed}
+                  onStartPlacement={openSignaturePlacement}
+                />
+              )}
+            </div>
+          </aside>
+        </div>
+      </InlineMarkupProvider>
 
       {toast && (
         <div className={`fixed right-6 top-20 z-[80] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>

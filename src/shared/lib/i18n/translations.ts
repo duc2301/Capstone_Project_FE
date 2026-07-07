@@ -151,6 +151,24 @@ export const translations = {
   'register.error.passwordMismatch': 'Mật khẩu xác nhận không khớp.',
   'register.error.generic': 'Đăng ký thất bại. Vui lòng thử lại.',
 
+  // Verify OTP
+  'verifyOtp.title': 'Xác thực Email',
+  'verifyOtp.subtitle': 'Chúng tôi đã gửi mã xác thực gồm 6 chữ số đến email',
+  'verifyOtp.enterCode': 'Nhập mã xác thực của bạn',
+  'verifyOtp.verifying': 'Đang xác thực...',
+  'verifyOtp.submit': 'Xác nhận mã',
+  'verifyOtp.noCode': 'Không nhận được mã?',
+  'verifyOtp.resendIn': 'Gửi lại mã sau',
+  'verifyOtp.resendBtn': 'Gửi lại mã OTP',
+  'verifyOtp.resending': 'Đang gửi lại...',
+  'verifyOtp.backToLogin': 'Quay lại đăng nhập',
+  'verifyOtp.missingEmail': 'Không tìm thấy Email',
+  'verifyOtp.missingEmailDesc': 'Vui lòng thực hiện đăng ký tài khoản trước khi truy cập trang này.',
+  'verifyOtp.goToRegister': 'Đăng ký tài khoản mới',
+  'verifyOtp.resendSuccess': 'Đã gửi lại mã OTP. Vui lòng kiểm tra email.',
+  'verifyOtp.error.generic': 'Xác thực thất bại. Vui lòng kiểm tra lại mã.',
+  'verifyOtp.error.resendFailed': 'Không thể gửi lại mã lúc này. Vui lòng thử lại sau.',
+
   // Register - thẻ trang trí BIM phía dưới form
   'register.visual.card1.title': '3D Visualization',
   'register.visual.card1.desc':
@@ -690,8 +708,8 @@ export const translations = {
   'documents.perm.verify': 'Thẩm tra',
   'documents.perm.approve': 'Phê duyệt',
 
-  
-  
+
+
   // Thao tác thư mục (context menu + modal)
   'documents.menu.createSub': 'Tạo thư mục con',
   'documents.menu.rename': 'Đổi tên',
@@ -1037,7 +1055,7 @@ export const translations = {
   'markup.error.load': 'Không tải được ghi chú markup.',
   'markup.error.save': 'Không lưu được ghi chú. Vui lòng thử lại.',
 
-  // Markup file thiết kế (APS viewer) — kiểu "Comments" của Autodesk
+  // Khu vực dịch cho phần 3D markup (dùng tool của APS)
   'markup.model.title': 'Ghi chú (Comments)',
   'markup.model.addNote': 'Thêm ghi chú',
   'markup.model.drawHint': 'Dùng thanh công cụ markup để vẽ (mũi tên, khung, chữ…), rồi nhập nội dung và Lưu.',
@@ -1051,6 +1069,45 @@ export const translations = {
   'markup.model.closeMarkup': 'Đóng markup',
   'markup.model.tabLabel': 'Ghi chú',
   'markup.model.viewerLoading': 'Đang tải trình xem…',
+
+  // Mấy cái tool vẽ bậy 2D (khung, chữ, hình...)
+  'markup.tool.select': 'Chọn',
+  'markup.tool.rectangle': 'Khung chữ nhật',
+  'markup.tool.ellipse': 'Hình elip',
+  'markup.tool.arrow': 'Mũi tên',
+  'markup.tool.polyline': 'Đường gấp khúc',
+  'markup.tool.freehand': 'Bút vẽ tay',
+  'markup.tool.text': 'Chữ',
+  'markup.tool.callout': 'Chú thích (callout)',
+  'markup.tool.cloud': 'Vòng mây (revision)',
+
+  // Phần giao diện nổi lúc vẽ 2D
+  'markup.inline.tabLabel': 'Ghi chú',
+  'markup.inline.open': 'Ghi chú (Markup)',
+  'markup.inline.title': 'Ghi chú trên file',
+  'markup.inline.notes': 'Danh sách ghi chú',
+  'markup.inline.empty': 'Chưa có ghi chú. Chọn công cụ và vẽ lên file.',
+  'markup.inline.close': 'Đóng',
+  'markup.inline.done': 'Xong',
+  'markup.inline.color': 'Màu',
+  'markup.inline.width': 'Độ dày nét',
+  'markup.inline.zoomIn': 'Phóng to',
+  'markup.inline.zoomOut': 'Thu nhỏ',
+  'markup.inline.zoomReset': 'Vừa khung',
+  'markup.inline.page': 'Trang',
+  'markup.inline.prevPage': 'Trang trước',
+  'markup.inline.nextPage': 'Trang sau',
+  'markup.inline.imageLabel': 'Ảnh',
+  'markup.inline.toggleNotes': 'Ẩn/hiện danh sách',
+  'markup.inline.jumpHint': 'Bấm để tới vị trí ghi chú',
+  'markup.inline.polylineHint': 'Bấm để thêm điểm, nhấp đúp để kết thúc.',
+  'markup.inline.hint': 'Kéo để vẽ; công cụ "Chọn" để di chuyển/đổi kích thước; Delete để xoá.',
+  'markup.inline.saving': 'Đang lưu…',
+  'markup.inline.enable': 'Ghi chú (Markup)',
+  'markup.inline.tab': 'Ghi chú',
+  'markup.inline.panelHint': 'Dùng thanh công cụ trên khung xem để vẽ. Bấm 1 ghi chú để tới đúng trang/vị trí.',
+  'markup.inline.fullscreen': 'Toàn màn hình',
+  'markup.inline.exitFullscreen': 'Thoát toàn màn',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -7,7 +7,9 @@ export type {
   LoginPayload,
   LogoutPayload,
   RefreshPayload,
-  RegisterPayload
+  RegisterPayload,
+  ResendOtpPayload,
+  VerifyOtpPayload
 } from './model/session.types';
 export { SessionProvider } from './model/SessionProvider';
 export { useSession } from './model/useSession';

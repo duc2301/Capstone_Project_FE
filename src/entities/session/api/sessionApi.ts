@@ -6,6 +6,8 @@ import type {
   LogoutPayload,
   RefreshPayload,
   RegisterPayload,
+  ResendOtpPayload,
+  VerifyOtpPayload,
 } from '../model/session.types';
 
 export const sessionApi = {
@@ -29,4 +31,10 @@ export const sessionApi = {
 
   resetPassword: (email: string, token: string, newPassword: string) =>
     axiosInstance.post<ApiResponse<null>>('/auth/reset-password', { email, token, newPassword }),
+
+  verifyOtp: (payload: VerifyOtpPayload) =>
+    axiosInstance.post<ApiResponse<AuthResult>>('/auth/verify-otp', payload),
+
+  resendOtp: (payload: ResendOtpPayload) =>
+    axiosInstance.post<ApiResponse<null>>('/auth/resend-otp', payload),
 };

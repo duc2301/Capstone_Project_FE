@@ -151,6 +151,24 @@ export const translations = {
   'register.error.passwordMismatch': 'Mật khẩu xác nhận không khớp.',
   'register.error.generic': 'Đăng ký thất bại. Vui lòng thử lại.',
 
+  // Verify OTP
+  'verifyOtp.title': 'Xác thực Email',
+  'verifyOtp.subtitle': 'Chúng tôi đã gửi mã xác thực gồm 6 chữ số đến email',
+  'verifyOtp.enterCode': 'Nhập mã xác thực của bạn',
+  'verifyOtp.verifying': 'Đang xác thực...',
+  'verifyOtp.submit': 'Xác nhận mã',
+  'verifyOtp.noCode': 'Không nhận được mã?',
+  'verifyOtp.resendIn': 'Gửi lại mã sau',
+  'verifyOtp.resendBtn': 'Gửi lại mã OTP',
+  'verifyOtp.resending': 'Đang gửi lại...',
+  'verifyOtp.backToLogin': 'Quay lại đăng nhập',
+  'verifyOtp.missingEmail': 'Không tìm thấy Email',
+  'verifyOtp.missingEmailDesc': 'Vui lòng thực hiện đăng ký tài khoản trước khi truy cập trang này.',
+  'verifyOtp.goToRegister': 'Đăng ký tài khoản mới',
+  'verifyOtp.resendSuccess': 'Đã gửi lại mã OTP. Vui lòng kiểm tra email.',
+  'verifyOtp.error.generic': 'Xác thực thất bại. Vui lòng kiểm tra lại mã.',
+  'verifyOtp.error.resendFailed': 'Không thể gửi lại mã lúc này. Vui lòng thử lại sau.',
+
   // Register - thẻ trang trí BIM phía dưới form
   'register.visual.card1.title': '3D Visualization',
   'register.visual.card1.desc':

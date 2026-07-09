@@ -62,6 +62,7 @@ export interface PdfPageInfo {
   pageCount: number;
   width: number;
   height: number;
+  previewUrl: string | null;
 }
 
 export interface SignedFileInfo {

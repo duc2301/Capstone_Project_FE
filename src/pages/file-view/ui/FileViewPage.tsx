@@ -602,19 +602,24 @@ export function FileViewPage() {
                   versions={versions}
                 />
               ) : activePanelTab === 'markup' ? (
-                info?.kind === 'model' ? (
-                  modelViewer && fileId ? (
-                    <ModelCommentsPanel
-                      viewer={modelViewer}
-                      fileItemId={fileId}
-                      fileVersionId={fileListItem?.currentVersionId ?? null}
-                    />
+                <>
+                  {fileListItem?.warnning && fileListItem.warnningMessage && (
+                    <AiCheckerWarningCard message={fileListItem.warnningMessage} />
+                  )}
+                  {info?.kind === 'model' ? (
+                    modelViewer && fileId ? (
+                      <ModelCommentsPanel
+                        viewer={modelViewer}
+                        fileItemId={fileId}
+                        fileVersionId={fileListItem?.currentVersionId ?? null}
+                      />
+                    ) : (
+                      <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
+                    )
                   ) : (
-                    <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
-                  )
-                ) : (
-                  <InlineCommentsPanel />
-                )
+                    <InlineCommentsPanel />
+                  )}
+                </>
               ) : (
                 <SignatureHistoryPanel
                   requiresSignature={requiresSignature}
@@ -650,6 +655,27 @@ export function FileViewPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function AiCheckerWarningCard({ message }: { message: string }) {
+  return (
+    <div className="mb-4 rounded-xl border border-danger/30 bg-danger-light p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-danger/15 text-danger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-bold text-danger">{t('fileWarn.title')}</p>
+          <p className="text-xs text-text-muted">{t('fileWarn.sender')}</p>
+        </div>
+      </div>
+      <p className="mt-2.5 text-sm leading-relaxed text-text">{message}</p>
     </div>
   );
 }

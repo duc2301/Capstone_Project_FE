@@ -1044,6 +1044,12 @@ export const translations = {
   'documents.uploadModal.submit': 'Tải lên',
   'documents.uploadModal.uploading': 'Đang tải lên…',
 
+  // Cảnh báo AI check tên file vs nội dung (advisory)
+  'fileWarn.title': 'Cảnh báo: tên file có thể không khớp nội dung',
+  'fileWarn.sender': 'Người gửi: AI Checker',
+  'fileWarn.tooltip': 'AI cảnh báo: tên file có thể không khớp nội dung. Mở file để xem chi tiết ở tab Ghi chú.',
+  'fileWarn.folderTooltip': 'Thư mục này chứa file bị AI cảnh báo tên không khớp nội dung.',
+
   // Markup — dùng chung
   'markup.action.reopen': 'Mở lại',
   'markup.action.cancel': 'Hủy',

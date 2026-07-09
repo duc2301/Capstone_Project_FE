@@ -36,6 +36,21 @@ function FolderRowIcon() {
   );
 }
 
+function WarningIcon({ message }: { message?: string | null }) {
+  return (
+    <span
+      title={message ?? t('fileWarn.tooltip')}
+      className="inline-flex shrink-0 items-center text-danger"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    </span>
+  );
+}
+
 function DotsButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
@@ -116,7 +131,10 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   <div className="flex items-center gap-3">
                     <FileIcon />
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-text">{f.name}</p>
+                      <p className="flex items-center gap-1.5 truncate font-medium text-text">
+                        <span className="truncate">{f.name}</span>
+                        {f.warnning && <WarningIcon message={f.warnningMessage} />}
+                      </p>
                       <p className="text-xs text-text-muted">
                         {formatSize(f.sizeBytes)}{f.format ? ` · ${f.format.toUpperCase()}` : ''}
                       </p>

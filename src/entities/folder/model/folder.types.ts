@@ -26,6 +26,7 @@ export interface FolderTreeNodeDto {
   parentFolderId: string | null;
   name: string;
   area: CdeArea;
+  hasWarning?: boolean;
   children: FolderTreeNodeDto[];
 }
 
@@ -58,6 +59,7 @@ export interface FolderTreeNode {
   area: CdeArea;
   ownerOrganizationId: string | null;
   ownerGroupId: string | null;
+  hasWarning: boolean;
   permission: EffectivePermission;
   children: FolderTreeNode[];
 }

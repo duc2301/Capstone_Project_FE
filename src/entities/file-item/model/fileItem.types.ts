@@ -45,6 +45,8 @@ export interface FileListItem {
   signedVersionId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  warnning?: boolean | null;
+  warnningMessage?: string | null;
 }
 
 /* Cách FE hiển thị "Xem chi tiết" 1 file (khớp BE FileViewInfoDTO.Kind):

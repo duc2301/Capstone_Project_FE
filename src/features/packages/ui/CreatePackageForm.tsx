@@ -188,22 +188,22 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
         projectId: initialData?.projectId ?? '', // will be overridden by parent if new
         code: initialData?.code ?? '',
         name,
-        description: description || undefined,
+        description: description,
         contractValue: contractValue ? Number(contractValue) : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         status: initialData?.status ?? 1, // Keep status or default to Pending
         isDefault: initialData?.isDefault ?? false,
         workTypes: selectedWorkTypes.join(','),
-        scopeDescription: scopeDescription || undefined,
+        scopeDescription: scopeDescription,
         taxRate: taxRate,
         currency,
-        notes: notes || undefined,
+        notes: notes,
         contractorOrganizationId: contractorOrgId || undefined,
         representativeAccountId: representativeId || undefined,
-        contractNumber: contractNumber || undefined,
+        contractNumber: contractNumber,
         contractSignDate: contractSignDate || undefined,
-        contractJobTitle: contractJobTitle || undefined,
+        contractJobTitle: contractJobTitle,
       }, selectedFiles);
     } finally {
       setLoading(false);

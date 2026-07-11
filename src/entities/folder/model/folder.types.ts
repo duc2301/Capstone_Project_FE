@@ -109,6 +109,26 @@ export interface FolderPermissionUiDto {
   selectedPermissions: FolderPermissionEntry[];
 }
 
+/* POST /api/folder-permissions/add-group — cập nhật phân quyền nhóm trên folder */
+export interface FolderGroupPermissionInput {
+  projectParticipantId: string;
+  canView: boolean;
+  canEdit: boolean;
+  canUpdate: boolean;
+  canDownload: boolean;
+  canVerify: boolean;
+  canApprove: boolean;
+}
+
+export interface UpdateFolderGroupPermissionsPayload {
+  /** folderId */
+  id: string;
+  /** Toàn bộ nhóm ở panel "Nhóm được chọn" kèm cờ quyền mong muốn */
+  groupsPermission: FolderGroupPermissionInput[];
+  /** projectParticipantId của các nhóm bị gỡ quyền (chuyển về "Nhóm hữu dụng") */
+  removeParticipantIds: string[];
+}
+
 export interface CreateSubFolderPayload {
   parentFolderId: string;
   name: string;

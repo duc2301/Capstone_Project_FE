@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
-import type { FolderPermissionEntry, FolderTreeNode } from '@/entities/folder';
+import type { FolderPermissionUiDto, FolderTreeNode } from '@/entities/folder';
+import { folderApi } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 import { useFolderPermissionUi } from '../model/useFolderPermissionUi';
@@ -8,18 +9,29 @@ import { useFolderPermissionUi } from '../model/useFolderPermissionUi';
 interface FolderPermissionModalProps {
   node: FolderTreeNode;
   onClose: () => void;
+  /** Gọi sau khi lưu thành công — modal vẫn mở, caller hiển thị thông báo. */
+  onSaved?: () => void;
 }
 
-/* 1 dòng ở panel trái: nhóm chưa gán quyền (availableGroups)
- * hoặc nhóm từng có quyền nhưng đã gỡ (selectedPermissions.status === 1). */
-interface AvailableItem {
-  key: string;
+type PermissionFlagKey = 'canView' | 'canEdit' | 'canUpdate' | 'canDownload' | 'canVerify' | 'canApprove';
+
+/* 1 nhóm trong modal — di chuyển giữa 2 panel, giữ nguyên cờ quyền khi di chuyển */
+interface PermissionItem {
+  projectParticipantId: string;
   groupName: string;
   organizationName: string | null;
+  canView: boolean;
+  canEdit: boolean;
+  canUpdate: boolean;
+  canDownload: boolean;
+  canVerify: boolean;
+  canApprove: boolean;
+  /** Đang có quyền trên BE (status === 0) — nếu kết thúc ở panel trái thì đưa vào removeParticipantIds */
+  wasSelected: boolean;
 }
 
 /* Các cột quyền ở panel phải (theo thứ tự hiển thị) */
-const PERMISSION_FLAGS: { key: keyof Pick<FolderPermissionEntry, 'canView' | 'canEdit' | 'canUpdate' | 'canDownload' | 'canVerify' | 'canApprove'>; label: () => string }[] = [
+const PERMISSION_FLAGS: { key: PermissionFlagKey; label: () => string }[] = [
   { key: 'canView', label: () => t('folderPermission.col.view') },
   { key: 'canEdit', label: () => t('folderPermission.col.edit') },
   { key: 'canUpdate', label: () => t('folderPermission.col.update') },
@@ -28,23 +40,85 @@ const PERMISSION_FLAGS: { key: keyof Pick<FolderPermissionEntry, 'canView' | 'ca
   { key: 'canApprove', label: () => t('folderPermission.col.approve') },
 ];
 
-/* Lưới 1 dòng panel phải: tên nhóm + 6 cột quyền thẳng hàng với header */
-const SELECTED_ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_repeat(6,2.75rem)] items-center gap-x-1';
+const EMPTY_FLAGS = {
+  canView: false,
+  canEdit: false,
+  canUpdate: false,
+  canDownload: false,
+  canVerify: false,
+  canApprove: false,
+};
 
-/* Ô tick chỉ đọc: xanh có ✓ khi được cấp, ô xám rỗng khi không */
-function PermissionTick({ granted }: { granted: boolean }) {
+/* Panel trái ban đầu: nhóm chưa gán quyền + nhóm đã gỡ quyền (status === 1) */
+function buildInitialAvailable(data: FolderPermissionUiDto): PermissionItem[] {
+  return [
+    ...data.availableGroups.map((g) => ({
+      projectParticipantId: g.projectParticipantId,
+      groupName: g.groupName,
+      organizationName: g.organizationName,
+      ...EMPTY_FLAGS,
+      wasSelected: false,
+    })),
+    ...data.selectedPermissions
+      .filter((p) => p.status === 1)
+      .map((p) => ({
+        projectParticipantId: p.projectParticipantId,
+        groupName: p.groupParticipantName,
+        organizationName: null,
+        ...EMPTY_FLAGS,
+        wasSelected: false,
+      })),
+  ];
+}
+
+/* Panel phải ban đầu: nhóm đang được gán quyền (status === 0) */
+function buildInitialSelected(data: FolderPermissionUiDto): PermissionItem[] {
+  return data.selectedPermissions
+    .filter((p) => p.status === 0)
+    .map((p) => ({
+      projectParticipantId: p.projectParticipantId,
+      groupName: p.groupParticipantName,
+      organizationName: null,
+      canView: p.canView,
+      canEdit: p.canEdit,
+      canUpdate: p.canUpdate,
+      canDownload: p.canDownload,
+      canVerify: p.canVerify,
+      canApprove: p.canApprove,
+      wasSelected: true,
+    }));
+}
+
+/* Lưới 1 dòng panel phải: ô chọn + tên nhóm + 6 cột quyền thẳng hàng với header */
+const SELECTED_ROW_GRID = 'grid grid-cols-[1.5rem_minmax(0,1fr)_repeat(6,2.75rem)] items-center gap-x-1';
+
+/* Ô đánh dấu chọn nhóm (để di chuyển giữa 2 panel) */
+function SelectBox({ checked }: { checked: boolean }) {
+  return checked ? (
+    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-primary text-white">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+  ) : (
+    <span className="h-5 w-5 shrink-0 rounded-md border-2 border-card-border bg-card" />
+  );
+}
+
+/* Ô tick quyền: bấm để cấp/gỡ quyền của nhóm ở panel phải */
+function PermissionTick({ granted, onToggle }: { granted: boolean; onToggle: () => void }) {
   return (
-    <span className="flex justify-center">
+    <button type="button" onClick={onToggle} className="group flex justify-center">
       {granted ? (
-        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-success text-white">
+        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-success text-white transition-opacity group-hover:opacity-80">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </span>
       ) : (
-        <span className="h-5 w-5 rounded-md border-2 border-card-border bg-card" />
+        <span className="h-5 w-5 rounded-md border-2 border-card-border bg-card transition-colors group-hover:border-success" />
       )}
-    </span>
+    </button>
   );
 }
 
@@ -66,53 +140,260 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
-export function FolderPermissionModal({ node, onClose }: FolderPermissionModalProps) {
-  const { data, loading, error } = useFolderPermissionUi(node.id);
+function matchesQuery(item: PermissionItem, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    item.groupName.toLowerCase().includes(q) ||
+    (item.organizationName ?? '').toLowerCase().includes(q)
+  );
+}
 
+function toggleInSet(set: Set<string>, id: string): Set<string> {
+  const next = new Set(set);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  return next;
+}
+
+interface PermissionEditorProps {
+  folderId: string;
+  data: FolderPermissionUiDto;
+  onClose: () => void;
+  onSaved?: () => void;
+}
+
+/* Phần thân + footer của modal khi đã có dữ liệu — mount 1 lần nên khởi tạo state từ data. */
+function PermissionEditor({ folderId, data, onClose, onSaved }: PermissionEditorProps) {
+  const [available, setAvailable] = useState<PermissionItem[]>(() => buildInitialAvailable(data));
+  const [selected, setSelected] = useState<PermissionItem[]>(() => buildInitialSelected(data));
+  const [availableChecked, setAvailableChecked] = useState<Set<string>>(new Set());
+  const [selectedChecked, setSelectedChecked] = useState<Set<string>>(new Set());
   const [availableSearch, setAvailableSearch] = useState('');
   const [selectedSearch, setSelectedSearch] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Panel trái: nhóm chưa gán quyền + nhóm đã gỡ quyền (status === 1)
-  const availableItems = useMemo<AvailableItem[]>(() => {
-    if (!data) return [];
-    return [
-      ...data.availableGroups.map((g) => ({
-        key: g.projectParticipantId,
-        groupName: g.groupName,
-        organizationName: g.organizationName,
-      })),
-      ...data.selectedPermissions
-        .filter((p) => p.status === 1)
-        .map((p) => ({
-          key: p.id,
-          groupName: p.groupParticipantName,
-          organizationName: null,
-        })),
-    ];
-  }, [data]);
-
-  // Panel phải: nhóm đang được gán quyền (status === 0)
-  const selectedItems = useMemo(
-    () => (data?.selectedPermissions ?? []).filter((p) => p.status === 0),
-    [data],
+  const filteredAvailable = useMemo(
+    () => available.filter((it) => matchesQuery(it, availableSearch)),
+    [available, availableSearch],
+  );
+  const filteredSelected = useMemo(
+    () => selected.filter((it) => matchesQuery(it, selectedSearch)),
+    [selected, selectedSearch],
   );
 
-  // Lọc client-side theo tên nhóm / tên tổ chức
-  const filteredAvailable = useMemo(() => {
-    const q = availableSearch.trim().toLowerCase();
-    if (!q) return availableItems;
-    return availableItems.filter(
-      (it) =>
-        it.groupName.toLowerCase().includes(q) ||
-        (it.organizationName ?? '').toLowerCase().includes(q),
-    );
-  }, [availableItems, availableSearch]);
+  // Chuyển các nhóm đã đánh dấu ở panel trái sang "Nhóm được chọn"
+  const moveToSelected = () => {
+    if (availableChecked.size === 0) return;
+    setSelected((prev) => [...prev, ...available.filter((it) => availableChecked.has(it.projectParticipantId))]);
+    setAvailable((prev) => prev.filter((it) => !availableChecked.has(it.projectParticipantId)));
+    setAvailableChecked(new Set());
+  };
 
-  const filteredSelected = useMemo(() => {
-    const q = selectedSearch.trim().toLowerCase();
-    if (!q) return selectedItems;
-    return selectedItems.filter((p) => p.groupParticipantName.toLowerCase().includes(q));
-  }, [selectedItems, selectedSearch]);
+  // Chuyển các nhóm đã đánh dấu ở panel phải về "Nhóm hữu dụng"
+  const moveToAvailable = () => {
+    if (selectedChecked.size === 0) return;
+    setAvailable((prev) => [...prev, ...selected.filter((it) => selectedChecked.has(it.projectParticipantId))]);
+    setSelected((prev) => prev.filter((it) => !selectedChecked.has(it.projectParticipantId)));
+    setSelectedChecked(new Set());
+  };
+
+  const togglePermission = (participantId: string, key: PermissionFlagKey) => {
+    setSelected((prev) =>
+      prev.map((it) =>
+        it.projectParticipantId === participantId ? { ...it, [key]: !it[key] } : it,
+      ),
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await folderApi.updateGroupPermissions({
+        id: folderId,
+        groupsPermission: selected.map((it) => ({
+          projectParticipantId: it.projectParticipantId,
+          canView: it.canView,
+          canEdit: it.canEdit,
+          canUpdate: it.canUpdate,
+          canDownload: it.canDownload,
+          canVerify: it.canVerify,
+          canApprove: it.canApprove,
+        })),
+        removeParticipantIds: available
+          .filter((it) => it.wasSelected)
+          .map((it) => it.projectParticipantId),
+      });
+      // Modal giữ nguyên sau khi lưu — chốt lại trạng thái vừa lưu làm mốc mới,
+      // để lần "Cập nhật" kế tiếp không gửi lại removeParticipantIds cũ.
+      // Nhóm bị gỡ quyền đã bị BE reset toàn bộ cờ về false, nên xoá cờ cũ
+      // ở panel trái để khi thêm lại các ô quyền đều trống.
+      setSelected((prev) => prev.map((it) => ({ ...it, wasSelected: true })));
+      setAvailable((prev) => prev.map((it) => ({ ...it, ...EMPTY_FLAGS, wasSelected: false })));
+      onSaved?.();
+    } catch {
+      setSaveError(t('folderPermission.saveError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto_1.4fr]">
+          {/* Panel trái: Nhóm hữu dụng */}
+          <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
+            <h3 className="text-sm font-bold text-text">{t('folderPermission.available.title')}</h3>
+            <p className="mb-3 text-xs text-text-muted">
+              {t('folderPermission.chosen')} {availableChecked.size}/{available.length}
+            </p>
+            <SearchInput value={availableSearch} onChange={setAvailableSearch} />
+            <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+              {filteredAvailable.length === 0 ? (
+                <p className="py-8 text-center text-sm text-text-muted">
+                  {t('folderPermission.available.empty')}
+                </p>
+              ) : (
+                filteredAvailable.map((it) => {
+                  const checked = availableChecked.has(it.projectParticipantId);
+                  return (
+                    <button
+                      key={it.projectParticipantId}
+                      type="button"
+                      onClick={() => setAvailableChecked((prev) => toggleInSet(prev, it.projectParticipantId))}
+                      className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left shadow-card transition-colors ${
+                        checked ? 'border-primary bg-primary-light' : 'border-card-border bg-card hover:bg-content-bg'
+                      }`}
+                    >
+                      <SelectBox checked={checked} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-text">{it.groupName}</span>
+                        {it.organizationName && (
+                          <span className="block truncate text-xs text-text-muted">{it.organizationName}</span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          {/* Nút mũi tên di chuyển nhóm giữa 2 panel */}
+          <div className="flex items-center justify-center gap-3 md:flex-col">
+            <button
+              type="button"
+              disabled={availableChecked.size === 0}
+              onClick={moveToSelected}
+              title={t('folderPermission.moveRight')}
+              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+                availableChecked.size > 0
+                  ? 'border-primary bg-primary text-white hover:bg-primary-hover'
+                  : 'cursor-not-allowed border-card-border text-text-muted opacity-50'
+              }`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 md:rotate-0">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              disabled={selectedChecked.size === 0}
+              onClick={moveToAvailable}
+              title={t('folderPermission.moveLeft')}
+              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+                selectedChecked.size > 0
+                  ? 'border-primary bg-primary text-white hover:bg-primary-hover'
+                  : 'cursor-not-allowed border-card-border text-text-muted opacity-50'
+              }`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 md:rotate-0">
+                <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Panel phải: Nhóm được chọn */}
+          <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
+            <h3 className="text-sm font-bold text-text">{t('folderPermission.selected.title')}</h3>
+            <p className="mb-3 text-xs text-text-muted">
+              {t('folderPermission.chosen')} {selectedChecked.size}/{selected.length}
+            </p>
+            <SearchInput value={selectedSearch} onChange={setSelectedSearch} />
+            <div className="mt-3 max-h-80 overflow-y-auto pr-1">
+              {filteredSelected.length === 0 ? (
+                <p className="py-8 text-center text-sm text-text-muted">
+                  {t('folderPermission.selected.empty')}
+                </p>
+              ) : (
+                <>
+                  {/* Hàng tiêu đề cột quyền */}
+                  <div className={`${SELECTED_ROW_GRID} border-b border-card-border pb-2`}>
+                    <span />
+                    <span />
+                    {PERMISSION_FLAGS.map((f) => (
+                      <span key={f.key} className="text-center text-[10px] font-bold leading-tight text-text-muted">
+                        {f.label()}
+                      </span>
+                    ))}
+                  </div>
+                  {filteredSelected.map((it) => {
+                    const checked = selectedChecked.has(it.projectParticipantId);
+                    return (
+                      <div key={it.projectParticipantId} className={`${SELECTED_ROW_GRID} border-b border-card-border/60 py-2.5`}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedChecked((prev) => toggleInSet(prev, it.projectParticipantId))}
+                          className="flex justify-center"
+                        >
+                          <SelectBox checked={checked} />
+                        </button>
+                        <p className="truncate pr-2 text-sm font-semibold text-text">{it.groupName}</p>
+                        {PERMISSION_FLAGS.map((f) => (
+                          <PermissionTick
+                            key={f.key}
+                            granted={it[f.key]}
+                            onToggle={() => togglePermission(it.projectParticipantId, f.key)}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-end gap-3 border-t border-card-border px-6 py-4">
+        {saveError && <p className="mr-auto text-sm text-danger">{saveError}</p>}
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+        >
+          {t('documents.action.cancel')}
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={handleSave}
+          className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? t('folderPermission.saving') : t('folderPermission.update')}
+        </button>
+      </div>
+    </>
+  );
+}
+
+export function FolderPermissionModal({ node, onClose, onSaved }: FolderPermissionModalProps) {
+  const { data, loading, error } = useFolderPermissionUi(node.id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -131,108 +412,24 @@ export function FolderPermissionModal({ node, onClose }: FolderPermissionModalPr
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          {loading ? (
-            <p className="py-16 text-center text-sm text-text-muted">{t('common.loading')}</p>
-          ) : error ? (
-            <p className="py-16 text-center text-sm text-danger">{error}</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto_1.4fr]">
-              {/* Panel trái: Nhóm hữu dụng */}
-              <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
-                <h3 className="text-sm font-bold text-text">{t('folderPermission.available.title')}</h3>
-                <p className="mb-3 text-xs text-text-muted">
-                  {t('folderPermission.chosen')} 0/{availableItems.length}
-                </p>
-                <SearchInput value={availableSearch} onChange={setAvailableSearch} />
-                <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
-                  {filteredAvailable.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-text-muted">
-                      {t('folderPermission.available.empty')}
-                    </p>
-                  ) : (
-                    filteredAvailable.map((it) => (
-                      <div key={it.key} className="rounded-xl border border-card-border bg-card px-3.5 py-2.5 shadow-card">
-                        <p className="truncate text-sm font-semibold text-text">{it.groupName}</p>
-                        {it.organizationName && (
-                          <p className="truncate text-xs text-text-muted">{it.organizationName}</p>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </section>
-
-              {/* Nút mũi tên ở giữa — placeholder, chưa có chức năng chuyển nhóm */}
-              <div className="flex items-center justify-center gap-3 md:flex-col">
-                <button
-                  type="button"
-                  disabled
-                  title={t('documents.fileMenu.soon')}
-                  className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full border border-card-border text-text-muted opacity-50"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 md:rotate-0">
-                    <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  title={t('documents.fileMenu.soon')}
-                  className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full border border-card-border text-text-muted opacity-50"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 md:rotate-0">
-                    <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Panel phải: Nhóm được chọn */}
-              <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
-                <h3 className="text-sm font-bold text-text">{t('folderPermission.selected.title')}</h3>
-                <p className="mb-3 text-xs text-text-muted">
-                  {t('folderPermission.chosen')} {selectedItems.length}
-                </p>
-                <SearchInput value={selectedSearch} onChange={setSelectedSearch} />
-                <div className="mt-3 max-h-80 overflow-y-auto pr-1">
-                  {filteredSelected.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-text-muted">
-                      {t('folderPermission.selected.empty')}
-                    </p>
-                  ) : (
-                    <>
-                      {/* Hàng tiêu đề cột quyền */}
-                      <div className={`${SELECTED_ROW_GRID} border-b border-card-border pb-2`}>
-                        <span />
-                        {PERMISSION_FLAGS.map((f) => (
-                          <span key={f.key} className="text-center text-[10px] font-bold leading-tight text-text-muted">
-                            {f.label()}
-                          </span>
-                        ))}
-                      </div>
-                      {filteredSelected.map((p) => (
-                        <div key={p.id} className={`${SELECTED_ROW_GRID} border-b border-card-border/60 py-2.5`}>
-                          <p className="truncate pr-2 text-sm font-semibold text-text">{p.groupParticipantName}</p>
-                          {PERMISSION_FLAGS.map((f) => (
-                            <PermissionTick key={f.key} granted={p[f.key]} />
-                          ))}
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </section>
+        {loading || error || !data ? (
+          <>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {loading ? (
+                <p className="py-16 text-center text-sm text-text-muted">{t('common.loading')}</p>
+              ) : (
+                <p className="py-16 text-center text-sm text-danger">{error ?? t('folderPermission.error')}</p>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
-            {t('documents.action.cancel')}
-          </button>
-        </div>
+            <div className="flex justify-end border-t border-card-border px-6 py-4">
+              <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
+                {t('documents.action.cancel')}
+              </button>
+            </div>
+          </>
+        ) : (
+          <PermissionEditor folderId={node.id} data={data} onClose={onClose} onSaved={onSaved} />
+        )}
       </div>
     </div>
   );

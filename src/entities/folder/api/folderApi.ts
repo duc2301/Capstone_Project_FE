@@ -5,8 +5,10 @@ import type {
   CreateSubFolderPayload,
   Folder,
   FolderContentsDto,
+  FolderPermissionEntry,
   FolderPermissionUiDto,
   FolderTreeNodeDto,
+  UpdateFolderGroupPermissionsPayload,
   UpdateFolderPayload,
 } from "../model/folder.types";
 
@@ -39,5 +41,12 @@ export const folderApi = {
   getGroupUi: (folderId: string) =>
     axiosInstance.get<ApiResponse<FolderPermissionUiDto>>(
       `/folder-permissions/${folderId}/group-ui`,
+    ),
+
+  /** Cập nhật phân quyền nhóm trên folder: gán/sửa quyền + gỡ quyền trong 1 lần gọi. */
+  updateGroupPermissions: (payload: UpdateFolderGroupPermissionsPayload) =>
+    axiosInstance.post<ApiResponse<FolderPermissionEntry[]>>(
+      "/folder-permissions/add-group",
+      payload,
     ),
 };

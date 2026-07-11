@@ -434,11 +434,15 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
         />
       )}
 
-      {/* Modal phân quyền thư mục (chỉ xem) */}
+      {/* Modal phân quyền thư mục */}
       {permissionFor && (
         <FolderPermissionModal
           node={permissionFor}
           onClose={() => setPermissionFor(null)}
+          onSaved={() => {
+            showToast(t('folderPermission.toast.updated'));
+            void refetch();
+          }}
         />
       )}
 

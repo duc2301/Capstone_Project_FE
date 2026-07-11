@@ -116,6 +116,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     setMenu({ node, x: e.clientX, y: e.clientY });
   };
 
+  // Menu từ nút ⋮ / chuột phải trên hàng thư mục con: chỉ mở menu, không mở thư mục.
+  const handleFolderRowMenu = (e: React.MouseEvent, node: FolderTreeNode) => {
+    e.preventDefault();
+    setMenu({ node, x: e.clientX, y: e.clientY });
+  };
+
   const handleNewFolderClick = () => {
     if (selected && selected.permission.canEdit) {
       setModal({ action: 'create', node: selected });
@@ -408,7 +414,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                   loading={filesLoading}
                   error={filesError}
                   onFolderOpen={(n) => setSelectedId(n.id)}
-                  onFolderMenu={handleContextMenu}
+                  onFolderMenu={handleFolderRowMenu}
                   onFileMenu={handleFileMenu}
                   onFileOpen={handleDetail}
                 />

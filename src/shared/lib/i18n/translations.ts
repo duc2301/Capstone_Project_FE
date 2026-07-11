@@ -710,6 +710,10 @@ export const translations = {
 
 
 
+  // Cây thư mục
+  'documents.tree.expand': 'Mở rộng',
+  'documents.tree.collapse': 'Thu gọn',
+
   // Thao tác thư mục (context menu + modal)
   'documents.menu.createSub': 'Tạo thư mục con',
   'documents.menu.rename': 'Đổi tên',

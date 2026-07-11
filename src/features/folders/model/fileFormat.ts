@@ -35,8 +35,14 @@ export function statusBadge(status: FileItemStatus): { label: string; className:
 
 /* Trạng thái hiển thị trên bảng file.
  * Return request là trạng thái phụ của luồng trả về WIP, không ghi đè trạng thái thật của FileItem.
+ * File đang có issue mở thì badge này thay thế hẳn trạng thái phê duyệt (ưu tiên cao nhất) —
+ * cần chú ý ngay, không chỉ hiện thêm 1 chip phụ bên cạnh.
  */
 export function fileStatusBadge(file: FileListItem): { label: string; className: string } {
+  if (file.hasOpenIssue) {
+    return { label: t('documents.status.openIssue'), className: 'bg-danger-light text-danger' };
+  }
+
   if (file.status === FileItemStatus.PendingApproval) {
     return statusBadge(file.status);
   }

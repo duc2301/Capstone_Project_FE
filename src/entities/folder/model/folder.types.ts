@@ -78,6 +78,37 @@ export interface Folder {
   updatedAt: string | null;
 }
 
+/* ── GET /folders/{id}/group-ui — dữ liệu màn hình phân quyền thư mục ── */
+
+/* Nhóm trong dự án chưa từng được gán quyền trên folder */
+export interface FolderPermissionAvailableGroup {
+  projectParticipantId: string;
+  groupId: string;
+  groupName: string;
+  organizationId: string;
+  organizationName: string;
+}
+
+/* 1 bản ghi quyền của nhóm trên folder.
+ * status: 0 = đang hiệu lực, 1 = từng có quyền nhưng đã gỡ (inactive). */
+export interface FolderPermissionEntry {
+  id: string;
+  projectParticipantId: string;
+  groupParticipantName: string;
+  canView: boolean;
+  canEdit: boolean;
+  canUpdate: boolean;
+  canDownload: boolean;
+  canVerify: boolean;
+  canApprove: boolean;
+  status: number;
+}
+
+export interface FolderPermissionUiDto {
+  availableGroups: FolderPermissionAvailableGroup[];
+  selectedPermissions: FolderPermissionEntry[];
+}
+
 export interface CreateSubFolderPayload {
   parentFolderId: string;
   name: string;

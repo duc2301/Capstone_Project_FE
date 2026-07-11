@@ -21,6 +21,7 @@ import { FileList } from './FileList';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
+import { FolderPermissionModal } from './FolderPermissionModal';
 import { FolderTree } from './FolderTree';
 import { PendingApprovalsModal } from './PendingApprovalsModal';
 import { ReturnRequestModal } from './ReturnRequestModal';
@@ -97,6 +98,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
+  const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
@@ -428,6 +430,15 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onRename={() => setModal({ action: 'rename', node: menu.node })}
           onMove={() => setModal({ action: 'move', node: menu.node })}
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
+          onPermission={() => setPermissionFor(menu.node)}
+        />
+      )}
+
+      {/* Modal phân quyền thư mục (chỉ xem) */}
+      {permissionFor && (
+        <FolderPermissionModal
+          node={permissionFor}
+          onClose={() => setPermissionFor(null)}
         />
       )}
 

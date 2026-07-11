@@ -13,6 +13,7 @@ interface FolderContextMenuProps {
   onRename: () => void;
   onMove: () => void;
   onDelete: () => void;
+  onPermission: () => void;
   onClose: () => void;
 }
 
@@ -25,7 +26,7 @@ interface Item {
 }
 
 export function FolderContextMenu({
-  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onClose,
+  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onPermission, onClose,
 }: FolderContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -46,6 +47,18 @@ export function FolderContextMenu({
     (node.permission.canEdit || node.permission.canUpdate);
 
   const items: Item[] = [];
+
+  // Phân quyền: có trên mọi thư mục (màn hình chỉ xem).
+  items.push({
+    key: 'permission',
+    label: t('documents.menu.permission'),
+    onClick: onPermission,
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+  });
 
   if (canUpload) {
     items.push({

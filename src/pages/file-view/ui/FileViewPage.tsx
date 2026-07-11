@@ -121,6 +121,11 @@ function isExcelFormat(format: string) {
   return format === 'XLS' || format === 'XLSX';
 }
 
+// Ban ve CAD 2D duoc convert sang PDF (qua ConvertAPI) de ho tro ky so truc quan.
+function isCad2DFormat(format: string) {
+  return format === 'DWG' || format === 'DWGX';
+}
+
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -155,6 +160,8 @@ export function FileViewPage() {
     getDefaultSignaturePosition(FALLBACK_PDF_PAGE_SIZE),
   );
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
+  // File model (CAD 2D) khong co info.url (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
+  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [modelViewer, setModelViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
   const handleViewerReady = useCallback(
@@ -303,7 +310,8 @@ export function FileViewPage() {
   const isPdfFile = format === 'PDF';
   const isWordFile = isWordFormat(format);
   const isExcelFile = isExcelFormat(format);
-  const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile;
+  const isCad2DFile = isCad2DFormat(format);
+  const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -328,6 +336,11 @@ export function FileViewPage() {
     signatureApprovals.some((approval) => approval.isSigned),
   );
 
+  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
   const openSignaturePlacement = useCallback(async () => {
     if (!requiresSignature) return;
     if (!isVisualSignableFile) {
@@ -346,16 +359,18 @@ export function FileViewPage() {
       const realPageSize: PdfPageSize = { width: pageInfo.width, height: pageInfo.height };
       setPdfPageSize(realPageSize);
       setPdfPageCount(Math.max(1, pageInfo.pageCount));
+      setSignaturePreviewUrl(pageInfo.previewUrl ?? null);
       if (!signaturePlacementConfirmed) {
         setSignaturePosition(getDefaultSignaturePosition(realPageSize));
       }
-    } catch {
-      // Lỗi thì cứ đè A4 ra mà xài tạm
+    } catch (err) {
+      showToast(smartcaErrorMessage(err, t('smartca.error.placementSave')), 'error');
+      return;
     }
 
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
-  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed]);
+  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast]);
 
   // Đổi trang thì nhớ check lại kích thước trang mới để không bị lọt chữ ký ra ngoài
   const handleSignaturePageChange = useCallback(async (nextPage: number) => {
@@ -367,6 +382,7 @@ export function FileViewPage() {
       const pageInfo = await smartcaApi.getPdfPageInfo(signableApproval.fileItemId, clamped);
       const newSize: PdfPageSize = { width: pageInfo.width, height: pageInfo.height };
       setPdfPageSize(newSize);
+      setSignaturePreviewUrl(pageInfo.previewUrl ?? null);
       setSignaturePosition((prev) => ({
         ...prev,
         pageNumber: clamped,
@@ -383,11 +399,6 @@ export function FileViewPage() {
     const items = await approvalApi.getApprovals();
     setFileApprovals(items.filter((item) => item.fileItemId === fileId));
   }, [fileId]);
-
-  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  }, []);
 
   const handleConfirmSignaturePlacement = useCallback(async (position: SignaturePlacementValue) => {
     if (!signableApproval) {
@@ -526,7 +537,7 @@ export function FileViewPage() {
               {requiresSignature && signaturePlacementMode && (
                 <SignaturePlacementOverlay
                   fileName={fileTitle}
-                  pdfUrl={info?.url ?? null}
+                  pdfUrl={signaturePreviewUrl ?? info?.url ?? null}
                   pageSize={pdfPageSize}
                   pageCount={pdfPageCount}
                   confirmed={signaturePlacementConfirmed}
@@ -970,6 +981,7 @@ function SignaturePlacementOverlay({
   onClose: () => void;
 }) {
   const pageRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
     pointerId: number;
     startClientX: number;
@@ -977,6 +989,36 @@ function SignaturePlacementOverlay({
     startX: number;
     startY: number;
   } | null>(null);
+
+  // Cac con cua trang (iframe, header, khung ky) deu la position:absolute -> div trang khong co kich
+  // thuoc noi tai de tu tinh theo aspect-ratio/max-w/max-h thuan CSS -> phai tu do khong gian kha dung
+  // va tinh kich thuoc vua khit (giu dung ty le trang) bang JS cho chac chan.
+  const [fittedSize, setFittedSize] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const recompute = () => {
+      const availableWidth = container.clientWidth;
+      const availableHeight = container.clientHeight;
+      if (availableWidth <= 0 || availableHeight <= 0) return;
+
+      const ratio = pageSize.width / pageSize.height;
+      let width = availableWidth;
+      let height = width / ratio;
+      if (height > availableHeight) {
+        height = availableHeight;
+        width = height * ratio;
+      }
+      setFittedSize({ width, height });
+    };
+
+    recompute();
+    const observer = new ResizeObserver(recompute);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [pageSize]);
 
   const boxStyle = {
     left: `${(value.x / pageSize.width) * 100}%`,
@@ -1074,11 +1116,15 @@ function SignaturePlacementOverlay({
         </button>
       </div>
 
-      <div className="absolute inset-0 flex justify-center overflow-auto px-8 pb-8 pt-24">
+      <div ref={containerRef} className="absolute inset-0 flex items-center justify-center px-8 pb-8 pt-24">
         <div
           ref={pageRef}
-          style={{ aspectRatio: `${pageSize.width} / ${pageSize.height}` }}
-          className="relative h-[calc(100vh-170px)] min-h-[760px] max-h-[1040px] bg-white shadow-card"
+          style={
+            fittedSize
+              ? { width: fittedSize.width, height: fittedSize.height }
+              : { aspectRatio: `${pageSize.width} / ${pageSize.height}` }
+          }
+          className="relative max-h-full max-w-full bg-white shadow-card"
         >
           <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-[#fbf9f1]/90 px-5 py-3 shadow-sm backdrop-blur">
             <div className="min-w-0">

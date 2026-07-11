@@ -9,6 +9,7 @@ import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
+import { IssuesPanel } from '@/features/issues';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -134,7 +135,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'markup';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -567,7 +568,7 @@ export function FileViewPage() {
           </main>
 
           <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-            <div className={`grid ${showMarkupTab ? 'grid-cols-3' : 'grid-cols-2'} border-b border-card-border`}>
+            <div className={`grid ${showMarkupTab ? 'grid-cols-4' : 'grid-cols-3'} border-b border-card-border`}>
               <PanelTabButton
                 active={activePanelTab === 'properties'}
                 label={t('fileView.tabs.properties')}
@@ -586,6 +587,11 @@ export function FileViewPage() {
                   onClick={() => setActivePanelTab('markup')}
                 />
               )}
+              <PanelTabButton
+                active={activePanelTab === 'issues'}
+                label={t('issues.panel.tab')}
+                onClick={() => setActivePanelTab('issues')}
+              />
             </div>
 
             <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
@@ -620,6 +626,10 @@ export function FileViewPage() {
                     <InlineCommentsPanel />
                   )}
                 </>
+              ) : activePanelTab === 'issues' ? (
+                projectId && fileId ? (
+                  <IssuesPanel projectId={projectId} fileItemId={fileId} onToast={showToast} />
+                ) : null
               ) : (
                 <SignatureHistoryPanel
                   requiresSignature={requiresSignature}
@@ -720,7 +730,12 @@ function fileTypeLabel(type: FileType | undefined): string {
   }
 }
 
-function itemStatusMeta(status: FileItemStatus | undefined): { label: string; className: string } {
+function itemStatusMeta(status: FileItemStatus | undefined, hasOpenIssue?: boolean): { label: string; className: string } {
+  // File dang co issue mo thi thay the han trang thai duyet (uu tien cao nhat), giong FileList.tsx.
+  if (hasOpenIssue) {
+    return { label: t('documents.status.openIssue'), className: 'bg-danger-light text-danger' };
+  }
+
   switch (status) {
     case FileItemStatus.Approved:
       return { label: t('fileView.itemStatus.approved'), className: 'bg-success-light text-success' };
@@ -760,7 +775,7 @@ function FilePropertiesPanel({
   const requiresSignature = Boolean(info?.requiresSignature || fileListItem?.requiresSignature);
   const isSigned = Boolean(info?.isSigned || fileListItem?.isSigned);
   const checksum = latestVersion?.checksum ?? null;
-  const status = itemStatusMeta(fileListItem?.status);
+  const status = itemStatusMeta(fileListItem?.status, fileListItem?.hasOpenIssue);
   const yesNo = (v: boolean) => (v ? t('fileView.info.yes') : t('fileView.info.no'));
 
   return (

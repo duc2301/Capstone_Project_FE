@@ -1,4 +1,3 @@
-import React from 'react';
 import { Modal } from '@/shared/components/modal';
 import { CreatePackageForm } from './CreatePackageForm';
 import { contractPackageApi } from '@/entities/contractPackage';
@@ -41,8 +40,8 @@ export function PackageFormModal({
   if (!isOpen) return null;
 
   return (
-    <Modal 
-      title={initialData ? "Chỉnh sửa gói thầu" : "Thêm gói thầu mới"} 
+    <Modal
+      title={initialData ? "Chỉnh sửa gói thầu" : "Thêm gói thầu mới"}
       onClose={onClose}
       maxWidth="max-w-4xl"
     >
@@ -64,8 +63,8 @@ export function PackageFormModal({
 
             // If we don't have a folder yet, create one
             if (!documentFolderId) {
-              const folderName = initialData?.code 
-                ? `Tài liệu gói thầu ${initialData.code}` 
+              const folderName = initialData?.code
+                ? `Tài liệu gói thầu ${initialData.code}`
                 : `Tài liệu gói thầu ${payload.name}`;
 
               try {
@@ -103,7 +102,7 @@ export function PackageFormModal({
                 formData.append('file', file);
                 return fileItemApi.upload(formData);
               });
-              
+
               await Promise.all(uploadPromises);
             }
 

@@ -5,7 +5,6 @@ import type { ContractPackage } from '@/entities/contractPackage';
 import { PackageFormModal } from '@/features/packages';
 import { useAccounts } from '@/features/accounts';
 import { fileItemApi } from '@/entities/file-item';
-import { CdeArea } from '@/entities/folder';
 
 /* ── Status mapping ── */
 const STATUS_MAP: Record<number, { label: string; cls: string }> = {
@@ -214,7 +213,7 @@ export default function PackageDetailPage() {
             </svg>
             Xuất báo cáo
           </button>
-          <button 
+          <button
             onClick={() => setIsEditModalOpen(true)}
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
           >
@@ -240,7 +239,7 @@ export default function PackageDetailPage() {
               </svg>
               <h2 className="text-lg font-bold text-text">Thông tin chi tiết</h2>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-6 mb-6">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">MÃ GÓI THẦU</span>
@@ -273,7 +272,7 @@ export default function PackageDetailPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {pkg.scopeDescription && (
                   <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#F8F7F4] p-4">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted mt-0.5 shrink-0">
@@ -302,7 +301,7 @@ export default function PackageDetailPage() {
               </svg>
               <h3 className="text-xl font-bold">Giá trị hợp đồng</h3>
             </div>
-            
+
             <div className="space-y-4 text-[15px] mt-8">
               <div className="flex justify-between items-center border-b border-white/20 pb-4">
                 <span className="text-white/80">Giá trị gốc ({pkg.currency ?? 'VND'})</span>
@@ -338,7 +337,7 @@ export default function PackageDetailPage() {
               </div>
               <span className="text-sm font-bold text-primary">Hoàn thành: {progressPct}%</span>
             </div>
-            
+
             <div className="relative h-10 w-full overflow-hidden rounded-full bg-content-bg">
               <div
                 className="absolute inset-y-0 left-0 flex items-center justify-center rounded-full bg-primary transition-all duration-500"
@@ -349,7 +348,7 @@ export default function PackageDetailPage() {
                 </span>
               </div>
             </div>
-            
+
             <div className="mt-6 flex justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-content-bg">
@@ -406,7 +405,7 @@ export default function PackageDetailPage() {
               </svg>
               <h3 className="text-lg font-bold text-text">Đơn vị thi công</h3>
             </div>
-            
+
             {pkg.assignments && pkg.assignments.length > 0 ? (
               <div className="flex flex-col flex-1 h-full">
                 <div className="mb-6">
@@ -477,120 +476,120 @@ export default function PackageDetailPage() {
           </div>
         </div>
 
-      {/* ── Bottom Full Width: Ghi chú kỹ thuật & Attachments ── */}
-      <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        {pkg.notes && (
-          <div className="flex flex-col h-full rounded-2xl border border-card-border bg-card p-6 shadow-card">
-            <div className="flex items-center gap-2 mb-4">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-              <h3 className="text-lg font-bold text-text">Ghi chú kỹ thuật</h3>
-            </div>
-            <div className="flex-1 rounded-2xl border border-dashed border-card-border bg-content-bg p-5">
-              <p className="text-[13px] text-text leading-relaxed whitespace-pre-wrap break-words">
-                {pkg.notes}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* CDE Attachment */}
-        <div className={`rounded-2xl border border-card-border bg-card p-6 shadow-card ${!pkg.notes ? 'md:col-span-2' : ''}`}>
-          <div className="flex items-center gap-2 mb-4">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-              <polyline points="13 2 13 9 20 9" />
-            </svg>
-            <h3 className="text-lg font-bold text-text">Tài liệu đính kèm</h3>
-          </div>
-          {docFiles && docFiles.length > 0 ? (
-            <div className="space-y-3">
-              {docFiles.map((file, idx) => (
-                <div key={idx} className="rounded-2xl border border-card-border bg-content-bg p-5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-text line-clamp-1">{file.name}</p>
-                      <p className="text-xs text-text-muted mt-0.5">
-                        Tệp đính kèm
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Xem trực tiếp */}
-                    <button
-                      onClick={async () => {
-                        try {
-                          const res = await fileItemApi.download(file.id);
-                          const blobType = file.fileType === 0 ? 'application/pdf' :
-                                           file.fileType === 2 ? 'image/png' :
-                                           (res.headers?.['content-type'] as string) || 'application/pdf';
-                          const blob = new Blob([res.data as Blob], { type: blobType });
-                          const viewUrl = window.URL.createObjectURL(blob);
-                          setViewFileUrl({ url: viewUrl, name: file.name || 'document', type: blobType });
-                        } catch (err) {
-                          console.error("Xem file thất bại", err);
-                          alert("Xem file thất bại");
-                        }
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                      Xem
-                    </button>
-                    {/* Tải xuống */}
-                    <button
-                      onClick={async () => {
-                        try {
-                          const res = await fileItemApi.download(file.id);
-                          const blob = res.data as Blob;
-                          const downloadUrl = window.URL.createObjectURL(blob);
-                          const link = document.createElement('a');
-                          link.href = downloadUrl;
-                          link.download = file.name || 'document';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                          window.URL.revokeObjectURL(downloadUrl);
-                        } catch (err) {
-                          console.error("Tải file thất bại", err);
-                          alert("Tải file thất bại");
-                        }
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-text border border-card-border shadow-sm hover:bg-gray-50 transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
-                      Tải xuống
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-card-border bg-content-bg p-5 flex flex-col items-center justify-center text-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-placeholder mb-2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-              </svg>
-              <p className="text-sm font-semibold text-text-muted">Chưa có tài liệu</p>
+        {/* ── Bottom Full Width: Ghi chú kỹ thuật & Attachments ── */}
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {pkg.notes && (
+            <div className="flex flex-col h-full rounded-2xl border border-card-border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 mb-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                <h3 className="text-lg font-bold text-text">Ghi chú kỹ thuật</h3>
+              </div>
+              <div className="flex-1 rounded-2xl border border-dashed border-card-border bg-content-bg p-5">
+                <p className="text-[13px] text-text leading-relaxed whitespace-pre-wrap break-words">
+                  {pkg.notes}
+                </p>
+              </div>
             </div>
           )}
+
+          {/* CDE Attachment */}
+          <div className={`rounded-2xl border border-card-border bg-card p-6 shadow-card ${!pkg.notes ? 'md:col-span-2' : ''}`}>
+            <div className="flex items-center gap-2 mb-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                <polyline points="13 2 13 9 20 9" />
+              </svg>
+              <h3 className="text-lg font-bold text-text">Tài liệu đính kèm</h3>
+            </div>
+            {docFiles && docFiles.length > 0 ? (
+              <div className="space-y-3">
+                {docFiles.map((file, idx) => (
+                  <div key={idx} className="rounded-2xl border border-card-border bg-content-bg p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-text line-clamp-1">{file.name}</p>
+                        <p className="text-xs text-text-muted mt-0.5">
+                          Tệp đính kèm
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Xem trực tiếp */}
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fileItemApi.download(file.id);
+                            const blobType = file.fileType === 0 ? 'application/pdf' :
+                              file.fileType === 2 ? 'image/png' :
+                                (res.headers?.['content-type'] as string) || 'application/pdf';
+                            const blob = new Blob([res.data as Blob], { type: blobType });
+                            const viewUrl = window.URL.createObjectURL(blob);
+                            setViewFileUrl({ url: viewUrl, name: file.name || 'document', type: blobType });
+                          } catch (err) {
+                            console.error("Xem file thất bại", err);
+                            alert("Xem file thất bại");
+                          }
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        Xem
+                      </button>
+                      {/* Tải xuống */}
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fileItemApi.download(file.id);
+                            const blob = res.data as Blob;
+                            const downloadUrl = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = downloadUrl;
+                            link.download = file.name || 'document';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(downloadUrl);
+                          } catch (err) {
+                            console.error("Tải file thất bại", err);
+                            alert("Tải file thất bại");
+                          }
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-text border border-card-border shadow-sm hover:bg-gray-50 transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Tải xuống
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-card-border bg-content-bg p-5 flex flex-col items-center justify-center text-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-placeholder mb-2">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                </svg>
+                <p className="text-sm font-semibold text-text-muted">Chưa có tài liệu</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
 
       {/* ── Edit Modal ── */}
@@ -621,7 +620,7 @@ export default function PackageDetailPage() {
           <div className="bg-content-bg w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-4 border-b border-card-border bg-white">
               <h3 className="font-bold text-lg text-text truncate pr-4">{viewFileUrl.name}</h3>
-              <button 
+              <button
                 onClick={() => {
                   window.URL.revokeObjectURL(viewFileUrl.url);
                   setViewFileUrl(null);
@@ -636,10 +635,10 @@ export default function PackageDetailPage() {
               {viewFileUrl.type.startsWith('image/') ? (
                 <img src={viewFileUrl.url} alt={viewFileUrl.name} className="max-w-full max-h-full object-contain shadow-sm" />
               ) : (
-                <object 
-                  data={viewFileUrl.url} 
+                <object
+                  data={viewFileUrl.url}
                   type={viewFileUrl.type}
-                  className="absolute inset-0 w-full h-full border-0" 
+                  className="absolute inset-0 w-full h-full border-0"
                   title={viewFileUrl.name}
                 >
                   <div className="flex flex-col items-center justify-center h-full space-y-4">

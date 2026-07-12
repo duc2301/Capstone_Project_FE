@@ -160,7 +160,7 @@ export function FileViewPage() {
     getDefaultSignaturePosition(FALLBACK_PDF_PAGE_SIZE),
   );
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
-  // File model (CAD 2D) khong co info.url (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
+  // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [modelViewer, setModelViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);

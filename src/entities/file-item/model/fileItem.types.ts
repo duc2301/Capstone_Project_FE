@@ -47,6 +47,7 @@ export interface FileListItem {
   updatedAt: string | null;
   warnning?: boolean | null;
   warnningMessage?: string | null;
+  hasOpenIssue?: boolean;
 }
 
 /* Cách FE hiển thị "Xem chi tiết" 1 file (khớp BE FileViewInfoDTO.Kind):

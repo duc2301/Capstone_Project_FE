@@ -9,6 +9,7 @@ import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
+import { LoiCheckPanel } from '@/features/loi-check';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -134,7 +135,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'markup';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'loi';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -311,6 +312,11 @@ export function FileViewPage() {
   const isExcelFile = isExcelFormat(format);
   const isCad2DFile = isCad2DFormat(format);
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
+  // Tab "Kiểm LOI" chỉ hiện với file mô hình .ifc (cùng dải tab với markup).
+  const showLoiTab = format === 'IFC';
+  const panelTabCount = 2 + (showMarkupTab ? 1 : 0) + (showLoiTab ? 1 : 0);
+  const panelTabGridClass =
+    panelTabCount >= 4 ? 'grid-cols-4' : panelTabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -567,7 +573,7 @@ export function FileViewPage() {
           </main>
 
           <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-            <div className={`grid ${showMarkupTab ? 'grid-cols-3' : 'grid-cols-2'} border-b border-card-border`}>
+            <div className={`grid ${panelTabGridClass} border-b border-card-border`}>
               <PanelTabButton
                 active={activePanelTab === 'properties'}
                 label={t('fileView.tabs.properties')}
@@ -584,6 +590,13 @@ export function FileViewPage() {
                   active={activePanelTab === 'markup'}
                   label={t('markup.inline.tab')}
                   onClick={() => setActivePanelTab('markup')}
+                />
+              )}
+              {showLoiTab && (
+                <PanelTabButton
+                  active={activePanelTab === 'loi'}
+                  label={t('loi.tab')}
+                  onClick={() => setActivePanelTab('loi')}
                 />
               )}
             </div>
@@ -620,6 +633,8 @@ export function FileViewPage() {
                     <InlineCommentsPanel />
                   )}
                 </>
+              ) : activePanelTab === 'loi' ? (
+                <LoiCheckPanel fileItemId={fileId ?? ''} />
               ) : (
                 <SignatureHistoryPanel
                   requiresSignature={requiresSignature}

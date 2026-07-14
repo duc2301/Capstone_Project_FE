@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { isAccountAdmin, useSession } from '@/entities/session';
-import { CreateProjectForm, useProjectInvite, useProjects } from '@/features/projects';
+import { CreateProjectStepper, useProjectInvite, useProjects } from '@/features/projects';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -30,7 +30,7 @@ function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+      <div className="relative z-10 w-full max-w-5xl animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-7 py-5">
           <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
           <button
@@ -44,7 +44,7 @@ function Modal({ title, onClose, children }: ModalProps) {
             </svg>
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-7 py-6">{children}</div>
+        <div className="max-h-[80vh] overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -53,7 +53,7 @@ function Modal({ title, onClose, children }: ModalProps) {
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
   const navigate = useNavigate();
-  const { projects, loading, error, createProject } = useProjects();
+  const { projects, loading, error, fetchProjects } = useProjects();
   const { accounts } = useProjectInvite();
   const { currentUser } = useSession();
   const isAdmin = isAccountAdmin(currentUser?.role);
@@ -72,14 +72,10 @@ export function ProjectsPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleCreate = async (payload: Parameters<typeof createProject>[0]) => {
-    try {
-      await createProject(payload);
-      setCreating(false);
-      showToast(t('projects.toast.created'));
-    } catch {
-      showToast(t('common.error'), 'error');
-    }
+  const handleStepperComplete = () => {
+    setCreating(false);
+    showToast(t('projects.toast.created'));
+    fetchProjects();
   };
 
   return (
@@ -188,7 +184,7 @@ export function ProjectsPage() {
       {/* Create modal */}
       {creating && (
         <Modal title={t('projects.modal.createTitle')} onClose={() => setCreating(false)}>
-          <CreateProjectForm onSubmit={handleCreate} onCancel={() => setCreating(false)} />
+          <CreateProjectStepper onComplete={handleStepperComplete} onCancel={() => setCreating(false)} />
         </Modal>
       )}
     </div>

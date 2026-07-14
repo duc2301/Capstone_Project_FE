@@ -32,13 +32,6 @@ const IconProjects = () => (
   </svg>
 );
 
-const IconPackages = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-    <line x1="12" y1="22.08" x2="12" y2="12" />
-  </svg>
-);
 
 const IconTeams = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -159,7 +152,6 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'admin.nav.overview',       to: '/dashboard',     icon: IconOverview },
   { labelKey: 'admin.nav.organizations',  to: '/organizations', icon: IconOrganization },
   { labelKey: 'admin.nav.projects',       to: '/projects',      icon: IconProjects },
-  { labelKey: 'admin.nav.packages',       to: '/packages',      icon: IconPackages },
   { labelKey: 'admin.nav.teams',          to: '/teams',         icon: IconTeams },
   { labelKey: 'admin.nav.documents',      to: '/documents',     icon: IconDocuments, dividerBefore: true },
   { labelKey: 'admin.nav.approvals',      to: '/approvals',     icon: IconApprovals },

@@ -3,6 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
 import { groupApi, GroupMemberStatus } from '@/entities/group';
+import { contractPackageApi } from '@/entities/contractPackage';
+import { usePackages, PackageFormModal } from '@/features/packages';
 import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
@@ -61,12 +63,13 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  maxWidth?: string;
 }
-function Modal({ title, onClose, children }: ModalProps) {
+function Modal({ title, onClose, children, maxWidth = 'max-w-2xl' }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+      <div className={`relative z-10 w-full ${maxWidth} animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal`}>
         <div className="flex items-center justify-between border-b border-card-border px-7 py-5">
           <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
           <button
@@ -566,7 +569,11 @@ export function ProjectDetailPage() {
   const [tab, setTab] = useState<TabId>(initialTab);
   const [manageOpen, setManageOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
+  const [createPackageOpen, setCreatePackageOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<any>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const { packages, loading: pkgLoading } = usePackages(projectId);
 
   const managerName = useMemo(() => {
     if (!project?.managerAccountId) return null;
@@ -1148,8 +1155,98 @@ export function ProjectDetailPage() {
       )}
 
       {/* ── Tabs chưa triển khai ──────────────────────── */}
-      {(tab === 'packages' || tab === 'settings') && (
+      {tab === 'settings' && (
         <ComingSoon />
+      )}
+
+      {/* ── Tab: Packages ───────────── */}
+      {tab === 'packages' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-2xl font-semibold text-primary">Danh sách gói thầu</h2>
+            <button
+              onClick={() => {
+                setEditingPackage(null);
+                setCreatePackageOpen(true);
+              }}
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover shadow-button"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Tạo gói thầu
+            </button>
+          </div>
+          
+          <div className={`${cardClass} overflow-x-auto`}>
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-card-border text-text-muted">
+                  <th className="pb-3 font-semibold">Tên gói thầu</th>
+                  <th className="pb-3 font-semibold">Mã gói</th>
+                  <th className="pb-3 font-semibold">Đơn vị thực hiện</th>
+                  <th className="pb-3 font-semibold">Ngày bắt đầu</th>
+                  <th className="pb-3 font-semibold">Ngày kết thúc</th>
+                  <th className="pb-3 font-semibold">Trạng thái</th>
+                  <th className="pb-3 font-semibold text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-card-border text-text">
+                {pkgLoading ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-text-muted italic">Đang tải...</td>
+                  </tr>
+                ) : packages.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-text-muted italic">Chưa có gói thầu nào.</td>
+                  </tr>
+                ) : packages.map(p => {
+                  const mainContractor = p.assignments?.find(a => a.role === 0);
+                  const partnerName = mainContractor 
+                    ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
+                    : 'Chưa phân công';
+                  return (
+                    <tr key={p.id} className="hover:bg-card-hover transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}/packages/${p.id}`)}>
+                      <td className="py-4 font-medium text-primary max-w-[200px] truncate" title={p.name}>
+                        <span className="hover:underline">{p.name}</span>
+                        {p.isDefault && <span className="ml-2 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success uppercase">Mặc định</span>}
+                      </td>
+                      <td className="py-4 font-bold text-primary">{p.code}</td>
+                      <td className="py-4 text-text-muted">{partnerName}</td>
+                      <td className="py-4">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${p.status === 3 || p.status === 4 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                          {p.status === 0 ? 'Khởi tạo' : p.status === 1 ? 'Đang thực hiện' : p.status === 3 ? 'Hoàn thành' : 'Đóng'}
+                        </span>
+                      </td>
+                      <td className="py-4 text-center">
+                        <button 
+                          className="text-primary hover:underline font-semibold"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const res = await contractPackageApi.getById(p.id);
+                              if (res.data?.result) {
+                                setEditingPackage(res.data.result);
+                                setCreatePackageOpen(true);
+                              }
+                            } catch (error) {
+                              console.error('Failed to fetch package details', error);
+                            }
+                          }}
+                        >
+                          Sửa
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* ── Modal: Quản trị dự án (chỉ định + mời) ─────── */}
@@ -1174,6 +1271,23 @@ export function ProjectDetailPage() {
           <CreateGroupForm onSubmit={handleAddGroup} onCancel={() => setAddGroupOpen(false)} />
         </Modal>
       )}
+
+      {/* Modal: Tạo / Sửa gói thầu */}
+      <PackageFormModal
+        isOpen={createPackageOpen}
+        onClose={() => {
+          setCreatePackageOpen(false);
+          setEditingPackage(null);
+        }}
+        projectId={project.id}
+        initialData={editingPackage || undefined}
+        accounts={accounts}
+        onSuccess={(msg) => {
+          setToast({ msg, type: 'success' });
+          window.location.reload();
+        }}
+        onError={(msg) => setToast({ msg, type: 'error' })}
+      />
     </div>
   );
 }

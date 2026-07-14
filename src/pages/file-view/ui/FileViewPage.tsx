@@ -10,6 +10,7 @@ import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { IssuesPanel } from '@/features/issues';
+import { LoiCheckPanel } from '@/features/loi-check';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -135,7 +136,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues' | 'loi';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -160,7 +161,7 @@ export function FileViewPage() {
     getDefaultSignaturePosition(FALLBACK_PDF_PAGE_SIZE),
   );
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
-  // File model (CAD 2D) khong co info.url (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
+  // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [modelViewer, setModelViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
@@ -312,6 +313,12 @@ export function FileViewPage() {
   const isExcelFile = isExcelFormat(format);
   const isCad2DFile = isCad2DFormat(format);
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
+  // Tab "Kiểm LOI" chỉ hiện với file mô hình .ifc (cùng dải tab với markup).
+  const showLoiTab = format === 'IFC';
+  // 3 tab luôn có (Thông tin / Ký số / Issue) + markup (nếu xem được) + LOI (nếu file .ifc).
+  const panelTabCount = 3 + (showMarkupTab ? 1 : 0) + (showLoiTab ? 1 : 0);
+  const panelTabGridClass =
+    panelTabCount >= 5 ? 'grid-cols-5' : panelTabCount === 4 ? 'grid-cols-4' : 'grid-cols-3';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -568,7 +575,7 @@ export function FileViewPage() {
           </main>
 
           <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-            <div className={`grid ${showMarkupTab ? 'grid-cols-4' : 'grid-cols-3'} border-b border-card-border`}>
+            <div className={`grid ${panelTabGridClass} border-b border-card-border`}>
               <PanelTabButton
                 active={activePanelTab === 'properties'}
                 label={t('fileView.tabs.properties')}
@@ -592,6 +599,13 @@ export function FileViewPage() {
                 label={t('issues.panel.tab')}
                 onClick={() => setActivePanelTab('issues')}
               />
+              {showLoiTab && (
+                <PanelTabButton
+                  active={activePanelTab === 'loi'}
+                  label={t('loi.tab')}
+                  onClick={() => setActivePanelTab('loi')}
+                />
+              )}
             </div>
 
             <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
@@ -630,6 +644,8 @@ export function FileViewPage() {
                 projectId && fileId ? (
                   <IssuesPanel projectId={projectId} fileItemId={fileId} onToast={showToast} />
                 ) : null
+              ) : activePanelTab === 'loi' ? (
+                <LoiCheckPanel fileItemId={fileId ?? ''} />
               ) : (
                 <SignatureHistoryPanel
                   requiresSignature={requiresSignature}

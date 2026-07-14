@@ -11,6 +11,7 @@ import { OrganizationsPage } from '@/pages/organizations';
 import { PlaceholderPage } from '@/pages/placeholder';
 import { ProfilePage } from '@/pages/profile';
 import { ProjectDetailPage } from '@/pages/project-detail';
+import PackageDetailPage from '@/pages/package-detail/ui/PackageDetailPage';
 import { ProjectsPage } from '@/pages/projects';
 import { RegisterPage } from '@/pages/register';
 import { ReturnRequestManagementPage } from '@/pages/return-request-management';
@@ -92,6 +93,16 @@ export const AppRoutes = () => {
           <RequireAuth>
             <AdminLayout>
               <ProjectDetailPage />
+            </AdminLayout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/:projectId/packages/:packageId"
+        element={
+          <RequireAuth>
+            <AdminLayout>
+              <PackageDetailPage />
             </AdminLayout>
           </RequireAuth>
         }

@@ -62,10 +62,10 @@ export const zoneTransferApi = {
     return unwrapResult(data);
   },
 
-  createReturnRequest: async (fileId: string, reason: string): Promise<unknown> => {
+  createReturnRequest: async (fileId: string, reason: string, issueId?: string): Promise<unknown> => {
     const { data } = await axiosInstance.post<ApiResponse<unknown>>(
       `/file-items/${fileId}/return-requests`,
-      { reason },
+      { reason, issueId },
     );
     return unwrapResult(data);
   },

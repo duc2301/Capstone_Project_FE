@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { approvalApi, approvalErrorMessage, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
+import type { DocumentSearchResult } from '@/entities/document-search';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
 import { useProjectGroups } from '@/features/projects';
@@ -25,6 +26,7 @@ import { FolderPermissionModal } from './FolderPermissionModal';
 import { FolderTree } from './FolderTree';
 import { PendingApprovalsModal } from './PendingApprovalsModal';
 import { ReturnRequestModal } from './ReturnRequestModal';
+import { SemanticSearchPanel } from './SemanticSearchPanel';
 import { SubmitApprovalModal } from './SubmitApprovalModal';
 import { UploadModal } from './UploadModal';
 
@@ -147,6 +149,15 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const handleDetail = (file: FileListItem) => {
     navigate(`/projects/${projectId}/files/${file.id}/view?folder=${file.folderId}`);
   };
+
+  // Bấm 1 kết quả tìm kiếm ngữ nghĩa -> mở đúng trang xem chi tiết của file đó.
+  const handleOpenSearchResult = (result: DocumentSearchResult) => {
+    navigate(`/projects/${projectId}/files/${result.fileItemId}/view?folder=${result.folderId}`);
+  };
+
+  // Tài liệu chỉ được index vào RAG khi đã phát hành -> chỉ tra cứu ngữ nghĩa ở Published/Archived.
+  const showSemanticSearch =
+    !!selected && (selected.area === CdeArea.Published || selected.area === CdeArea.Archived);
 
   const openSubmitApproval = (file: FileListItem) => {
     setSubmitApprovalFor(file);
@@ -406,6 +417,11 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                     ))}
                   </div>
                 </div>
+
+                {/* Tra cứu tài liệu theo ngữ nghĩa (RAG) — chỉ ở Published/Archived */}
+                {showSemanticSearch && projectId && (
+                  <SemanticSearchPanel projectId={projectId} onOpenFile={handleOpenSearchResult} />
+                )}
 
                 {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
                 <FileList

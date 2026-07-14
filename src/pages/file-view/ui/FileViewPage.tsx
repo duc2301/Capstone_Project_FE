@@ -9,6 +9,8 @@ import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
+import { IssuesPanel } from '@/features/issues';
+import { LoiCheckPanel } from '@/features/loi-check';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -134,7 +136,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'markup';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues' | 'loi';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -159,7 +161,7 @@ export function FileViewPage() {
     getDefaultSignaturePosition(FALLBACK_PDF_PAGE_SIZE),
   );
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
-  // File model (CAD 2D) khong co info.url (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
+  // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [modelViewer, setModelViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
@@ -311,6 +313,12 @@ export function FileViewPage() {
   const isExcelFile = isExcelFormat(format);
   const isCad2DFile = isCad2DFormat(format);
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
+  // Tab "Kiểm LOI" chỉ hiện với file mô hình .ifc (cùng dải tab với markup).
+  const showLoiTab = format === 'IFC';
+  // 3 tab luôn có (Thông tin / Ký số / Issue) + markup (nếu xem được) + LOI (nếu file .ifc).
+  const panelTabCount = 3 + (showMarkupTab ? 1 : 0) + (showLoiTab ? 1 : 0);
+  const panelTabGridClass =
+    panelTabCount >= 5 ? 'grid-cols-5' : panelTabCount === 4 ? 'grid-cols-4' : 'grid-cols-3';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = latestVersion?.uploadedByName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
@@ -567,7 +575,7 @@ export function FileViewPage() {
           </main>
 
           <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-            <div className={`grid ${showMarkupTab ? 'grid-cols-3' : 'grid-cols-2'} border-b border-card-border`}>
+            <div className={`grid ${panelTabGridClass} border-b border-card-border`}>
               <PanelTabButton
                 active={activePanelTab === 'properties'}
                 label={t('fileView.tabs.properties')}
@@ -584,6 +592,18 @@ export function FileViewPage() {
                   active={activePanelTab === 'markup'}
                   label={t('markup.inline.tab')}
                   onClick={() => setActivePanelTab('markup')}
+                />
+              )}
+              <PanelTabButton
+                active={activePanelTab === 'issues'}
+                label={t('issues.panel.tab')}
+                onClick={() => setActivePanelTab('issues')}
+              />
+              {showLoiTab && (
+                <PanelTabButton
+                  active={activePanelTab === 'loi'}
+                  label={t('loi.tab')}
+                  onClick={() => setActivePanelTab('loi')}
                 />
               )}
             </div>
@@ -620,6 +640,12 @@ export function FileViewPage() {
                     <InlineCommentsPanel />
                   )}
                 </>
+              ) : activePanelTab === 'issues' ? (
+                projectId && fileId ? (
+                  <IssuesPanel projectId={projectId} fileItemId={fileId} onToast={showToast} />
+                ) : null
+              ) : activePanelTab === 'loi' ? (
+                <LoiCheckPanel fileItemId={fileId ?? ''} />
               ) : (
                 <SignatureHistoryPanel
                   requiresSignature={requiresSignature}
@@ -720,7 +746,12 @@ function fileTypeLabel(type: FileType | undefined): string {
   }
 }
 
-function itemStatusMeta(status: FileItemStatus | undefined): { label: string; className: string } {
+function itemStatusMeta(status: FileItemStatus | undefined, hasOpenIssue?: boolean): { label: string; className: string } {
+  // File dang co issue mo thi thay the han trang thai duyet (uu tien cao nhat), giong FileList.tsx.
+  if (hasOpenIssue) {
+    return { label: t('documents.status.openIssue'), className: 'bg-danger-light text-danger' };
+  }
+
   switch (status) {
     case FileItemStatus.Approved:
       return { label: t('fileView.itemStatus.approved'), className: 'bg-success-light text-success' };
@@ -760,7 +791,7 @@ function FilePropertiesPanel({
   const requiresSignature = Boolean(info?.requiresSignature || fileListItem?.requiresSignature);
   const isSigned = Boolean(info?.isSigned || fileListItem?.isSigned);
   const checksum = latestVersion?.checksum ?? null;
-  const status = itemStatusMeta(fileListItem?.status);
+  const status = itemStatusMeta(fileListItem?.status, fileListItem?.hasOpenIssue);
   const yesNo = (v: boolean) => (v ? t('fileView.info.yes') : t('fileView.info.no'));
 
   return (

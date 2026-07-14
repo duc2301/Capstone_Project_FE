@@ -39,4 +39,7 @@ export const fileItemApi = {
   /** Kêu server dịch lại cái file 3D */
   retranslate: (fileItemId: string) =>
     axiosInstance.post<ApiResponse<unknown>>(`/file-items/${fileItemId}/retranslate`),
+
+  /** Xóa file */
+  delete: (fileItemId: string) => axiosInstance.delete<ApiResponse<unknown>>(`/file-items/${fileItemId}`),
 };

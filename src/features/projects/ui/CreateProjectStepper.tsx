@@ -415,8 +415,7 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
           isDefault: true,
           documentFolderId: documentFolderId,
         };
-        const { data: pkgRes } = await contractPackageApi.create(pkgPayload);
-        const createdPkg = pkgRes.result;
+        await contractPackageApi.create(pkgPayload);
 
         if (documentFolderId && state.packageFiles.length > 0) {
           setSubmitProgress('Đang tải lên hồ sơ gói thầu...');

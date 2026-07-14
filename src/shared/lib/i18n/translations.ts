@@ -1044,6 +1044,20 @@ export const translations = {
   'documents.uploadModal.submit': 'Tải lên',
   'documents.uploadModal.uploading': 'Đang tải lên…',
 
+  // Tra cứu tài liệu theo ngữ nghĩa (RAG) — chỉ ở vùng Published/Archived
+  'docSearch.title': 'Tra cứu tài liệu theo nội dung',
+  'docSearch.hint': 'Mô tả nội dung cần tìm — hệ thống tìm theo ngữ nghĩa, không cần đúng từ khoá. (Các tài liệu vừa mới tải lên hoặc update có thể cần vài phút để hệ thống cập nhật )',
+  'docSearch.placeholder': 'VD: Hợp đồng khảo sát...',
+  'docSearch.submit': 'Tìm kiếm',
+  'docSearch.searching': 'Đang tìm…',
+  'docSearch.clear': 'Xoá',
+  'docSearch.empty': 'Không tìm thấy tài liệu nào khớp. Thử diễn đạt theo cách khác.',
+  'docSearch.error': 'Không tìm kiếm được. Vui lòng thử lại.',
+  'docSearch.resultCount': 'tài liệu khớp',
+  'docSearch.match': 'khớp',
+  'docSearch.passages': 'đoạn khớp trong tài liệu',
+  'docSearch.openHint': 'Bấm để mở xem chi tiết tài liệu',
+
   // Cảnh báo AI check tên file vs nội dung (advisory)
   'fileWarn.title': 'Cảnh báo: tên file có thể không khớp nội dung',
   'fileWarn.sender': 'Người gửi: AI Checker',

@@ -22,6 +22,7 @@ import { FileList } from './FileList';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
+import { FolderPermissionModal } from './FolderPermissionModal';
 import { FolderTree } from './FolderTree';
 import { PendingApprovalsModal } from './PendingApprovalsModal';
 import { ReturnRequestModal } from './ReturnRequestModal';
@@ -99,6 +100,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
+  const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
@@ -113,6 +115,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const handleContextMenu = (e: React.MouseEvent, node: FolderTreeNode) => {
     e.preventDefault();
     setSelectedId(node.id);
+    setMenu({ node, x: e.clientX, y: e.clientY });
+  };
+
+  // Menu từ nút ⋮ / chuột phải trên hàng thư mục con: chỉ mở menu, không mở thư mục.
+  const handleFolderRowMenu = (e: React.MouseEvent, node: FolderTreeNode) => {
+    e.preventDefault();
     setMenu({ node, x: e.clientX, y: e.clientY });
   };
 
@@ -422,7 +430,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                   loading={filesLoading}
                   error={filesError}
                   onFolderOpen={(n) => setSelectedId(n.id)}
-                  onFolderMenu={handleContextMenu}
+                  onFolderMenu={handleFolderRowMenu}
                   onFileMenu={handleFileMenu}
                   onFileOpen={handleDetail}
                 />
@@ -444,6 +452,19 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onRename={() => setModal({ action: 'rename', node: menu.node })}
           onMove={() => setModal({ action: 'move', node: menu.node })}
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
+          onPermission={() => setPermissionFor(menu.node)}
+        />
+      )}
+
+      {/* Modal phân quyền thư mục */}
+      {permissionFor && (
+        <FolderPermissionModal
+          node={permissionFor}
+          onClose={() => setPermissionFor(null)}
+          onSaved={() => {
+            showToast(t('folderPermission.toast.updated'));
+            void refetch();
+          }}
         />
       )}
 

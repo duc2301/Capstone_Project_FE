@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
@@ -35,14 +35,16 @@ interface FolderNodeProps {
   node: FolderTreeNode;
   depth: number;
   selectedId: string | null;
+  expandedIds: Set<string>;
+  onToggleExpand: (id: string) => void;
   onSelect: (node: FolderTreeNode) => void;
   onContextMenu?: (e: React.MouseEvent, node: FolderTreeNode) => void;
 }
 
-function FolderNode({ node, depth, selectedId, onSelect, onContextMenu }: FolderNodeProps) {
+function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSelect, onContextMenu }: FolderNodeProps) {
   const hasChildren = node.children.length > 0;
   const isRoot = depth === 0;
-  const [open, setOpen] = useState(isRoot); // khu vực gốc mở sẵn
+  const open = expandedIds.has(node.id);
   const isSelected = node.id === selectedId;
 
   // Khu vực gốc hiển thị "01 WIP / 02 Shared / …"
@@ -50,15 +52,10 @@ function FolderNode({ node, depth, selectedId, onSelect, onContextMenu }: Folder
 
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => {
-          onSelect(node);
-          if (hasChildren) setOpen((v) => !v);
-        }}
+      <div
         onContextMenu={(e) => onContextMenu?.(e, node)}
         style={{ paddingLeft: 12 + depth * 18 }}
-        className={`flex w-full items-center gap-2 rounded-xl py-2 pr-2.5 text-left text-sm transition-colors ${
+        className={`flex w-full items-center gap-2 rounded-xl pr-2.5 text-sm transition-colors ${
           isSelected
             ? 'bg-primary-light font-semibold text-primary'
             : isRoot
@@ -66,24 +63,51 @@ function FolderNode({ node, depth, selectedId, onSelect, onContextMenu }: Folder
               : 'font-medium text-text-secondary hover:bg-content-bg'
         }`}
       >
-        <span className="w-3.5 shrink-0">{hasChildren ? <Chevron open={open} /> : null}</span>
-        <FolderIcon className={isSelected ? 'text-primary' : isRoot ? 'text-primary/80' : 'text-text-muted'} />
-        <span className="truncate">{label}</span>
-        {node.hasWarning && (
-          <span title={t('fileWarn.folderTooltip')} className="ml-auto shrink-0 text-danger">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          </span>
+        {/* Chỉ bấm mũi tên mới đóng/mở nhánh — bấm tên folder chỉ chọn folder */}
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => onToggleExpand(node.id)}
+            aria-label={open ? t('documents.tree.collapse') : t('documents.tree.expand')}
+            className="flex h-6 w-3.5 shrink-0 items-center justify-center text-text-muted transition-colors hover:text-text"
+          >
+            <Chevron open={open} />
+          </button>
+        ) : (
+          <span className="w-3.5 shrink-0" />
         )}
-      </button>
+        <button
+          type="button"
+          onClick={() => onSelect(node)}
+          className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left"
+        >
+          <FolderIcon className={isSelected ? 'text-primary' : isRoot ? 'text-primary/80' : 'text-text-muted'} />
+          <span className="truncate">{label}</span>
+          {node.hasWarning && (
+            <span title={t('fileWarn.folderTooltip')} className="ml-auto shrink-0 text-danger">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </span>
+          )}
+        </button>
+      </div>
 
       {hasChildren && open && (
         <ul className="mt-0.5 space-y-0.5">
           {node.children.map((child) => (
-            <FolderNode key={child.id} node={child} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} onContextMenu={onContextMenu} />
+            <FolderNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              selectedId={selectedId}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
+              onSelect={onSelect}
+              onContextMenu={onContextMenu}
+            />
           ))}
         </ul>
       )}
@@ -92,6 +116,53 @@ function FolderNode({ node, depth, selectedId, onSelect, onContextMenu }: Folder
 }
 
 export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: FolderTreeProps) {
+  // id -> parentFolderId, để tìm chuỗi tổ tiên của folder đang chọn
+  const parentById = useMemo(() => {
+    const map = new Map<string, string | null>();
+    const walk = (nodes: FolderTreeNode[]) => {
+      for (const n of nodes) {
+        map.set(n.id, n.parentFolderId);
+        walk(n.children);
+      }
+    };
+    walk(tree);
+    return map;
+  }, [tree]);
+
+  // Khu vực gốc mở sẵn; các nhánh khác đóng/mở bằng nút mũi tên
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.map((n) => n.id)));
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Khi folder được chọn từ nơi khác (vd: bấm thư mục con trong panel nội dung),
+  // mở sẵn chuỗi tổ tiên để folder đó hiện ra trên cây.
+  const [revealedId, setRevealedId] = useState<string | null>(null);
+  if (selectedId !== revealedId) {
+    setRevealedId(selectedId);
+    if (selectedId) {
+      const ancestors: string[] = [];
+      let cur = parentById.get(selectedId) ?? null;
+      while (cur) {
+        ancestors.push(cur);
+        cur = parentById.get(cur) ?? null;
+      }
+      if (ancestors.some((id) => !expandedIds.has(id))) {
+        setExpandedIds((prev) => {
+          const next = new Set(prev);
+          ancestors.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+    }
+  }
+
   return (
     <div className="rounded-(--radius-card) border border-card-border bg-card p-4 shadow-card">
       <div className="mb-3 flex items-center gap-2 px-1">
@@ -106,7 +177,16 @@ export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: Folder
       ) : (
         <ul className="space-y-0.5">
           {tree.map((node) => (
-            <FolderNode key={node.id} node={node} depth={0} selectedId={selectedId} onSelect={onSelect} onContextMenu={onContextMenu} />
+            <FolderNode
+              key={node.id}
+              node={node}
+              depth={0}
+              selectedId={selectedId}
+              expandedIds={expandedIds}
+              onToggleExpand={toggleExpand}
+              onSelect={onSelect}
+              onContextMenu={onContextMenu}
+            />
           ))}
         </ul>
       )}

@@ -710,12 +710,39 @@ export const translations = {
 
 
 
+  // Cây thư mục
+  'documents.tree.expand': 'Mở rộng',
+  'documents.tree.collapse': 'Thu gọn',
+
   // Thao tác thư mục (context menu + modal)
   'documents.menu.createSub': 'Tạo thư mục con',
   'documents.menu.rename': 'Đổi tên',
   'documents.menu.move': 'Di chuyển',
   'documents.menu.delete': 'Xóa',
   'documents.menu.noActions': 'Không có thao tác khả dụng',
+  'documents.menu.permission': 'Phân quyền',
+
+  // Modal phân quyền thư mục (chỉ xem)
+  'folderPermission.title': 'Phân quyền truy cập tài liệu',
+  'folderPermission.available.title': 'Nhóm hữu dụng',
+  'folderPermission.available.empty': 'Không còn nhóm khả dụng',
+  'folderPermission.selected.title': 'Nhóm được chọn',
+  'folderPermission.selected.empty': 'Chưa có nhóm nào được phân quyền',
+  'folderPermission.chosen': 'Đã chọn',
+  'folderPermission.col.view': 'Xem',
+  'folderPermission.col.edit': 'Sửa',
+  'folderPermission.col.update': 'Cập nhật',
+  'folderPermission.col.download': 'Tải về',
+  'folderPermission.col.verify': 'Thẩm tra',
+  'folderPermission.col.approve': 'Duyệt',
+  'folderPermission.searchPlaceholder': 'Tìm theo tên nhóm, tổ chức...',
+  'folderPermission.error': 'Không tải được dữ liệu phân quyền.',
+  'folderPermission.update': 'Cập nhật',
+  'folderPermission.saving': 'Đang lưu...',
+  'folderPermission.saveError': 'Cập nhật phân quyền thất bại. Vui lòng thử lại.',
+  'folderPermission.toast.updated': 'Đã cập nhật phân quyền',
+  'folderPermission.moveRight': 'Chuyển sang "Nhóm được chọn"',
+  'folderPermission.moveLeft': 'Chuyển về "Nhóm hữu dụng"',
   'documents.action.createTitle': 'Tạo thư mục con',
   'documents.action.renameTitle': 'Đổi tên thư mục',
   'documents.action.moveTitle': 'Di chuyển thư mục',
@@ -1044,6 +1071,20 @@ export const translations = {
   'documents.uploadModal.cancel': 'Hủy',
   'documents.uploadModal.submit': 'Tải lên',
   'documents.uploadModal.uploading': 'Đang tải lên…',
+
+  // Tra cứu tài liệu theo ngữ nghĩa (RAG) — chỉ ở vùng Published/Archived
+  'docSearch.title': 'Tra cứu tài liệu theo nội dung',
+  'docSearch.hint': 'Mô tả nội dung cần tìm — hệ thống tìm theo ngữ nghĩa, không cần đúng từ khoá. (Các tài liệu vừa mới tải lên hoặc update có thể cần vài phút để hệ thống cập nhật )',
+  'docSearch.placeholder': 'VD: Hợp đồng khảo sát...',
+  'docSearch.submit': 'Tìm kiếm',
+  'docSearch.searching': 'Đang tìm…',
+  'docSearch.clear': 'Xoá',
+  'docSearch.empty': 'Không tìm thấy tài liệu nào khớp. Thử diễn đạt theo cách khác.',
+  'docSearch.error': 'Không tìm kiếm được. Vui lòng thử lại.',
+  'docSearch.resultCount': 'tài liệu khớp',
+  'docSearch.match': 'khớp',
+  'docSearch.passages': 'đoạn khớp trong tài liệu',
+  'docSearch.openHint': 'Bấm để mở xem chi tiết tài liệu',
 
   // Cảnh báo AI check tên file vs nội dung (advisory)
   'fileWarn.title': 'Cảnh báo: tên file có thể không khớp nội dung',

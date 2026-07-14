@@ -4,7 +4,7 @@ import type { IssuePriority, IssueType } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
-import { useProjectMembers } from '../model/useProjectMembers';
+import { useAssignableMembers } from '../model/useAssignableMembers';
 
 const MAX_ATTACHMENT_SIZE_BYTES = 20 * 1024 * 1024;
 
@@ -32,7 +32,12 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { members: projectMembers, loading: membersLoading } = useProjectMembers(projectId);
+  const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(fileItemId);
+
+  useEffect(() => {
+    if (membersError) onToast(membersError, 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membersError]);
 
   const canSubmit = title.trim().length > 0 && !busy;
 
@@ -165,8 +170,8 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
             >
               <option value="">{t('issues.create.assigneePlaceholder')}</option>
-              {projectMembers.map((m) => (
-                <option key={`${m.accountId}-${m.groupId}`} value={m.accountId}>{m.userName} — {m.groupName}</option>
+              {assignableMembers.map((m) => (
+                <option key={`${m.accountId}-${m.groupId}`} value={m.accountId}>{m.name} — {m.groupName}</option>
               ))}
             </select>
           </label>

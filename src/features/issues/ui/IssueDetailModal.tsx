@@ -9,7 +9,7 @@ import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-trans
 import { t } from '@/shared/lib/i18n';
 
 import { useIssueDiscussion } from '../model/useIssueDiscussion';
-import { useProjectMembers } from '../model/useProjectMembers';
+import { useAssignableMembers } from '../model/useAssignableMembers';
 import { formatIssueDateTime, isImageUrl, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
 import { AttachExistingFilePicker } from './AttachExistingFilePicker';
 
@@ -41,8 +41,13 @@ export function IssueDetailModal({ issueId, projectId, onClose, onChanged, onToa
   const [returnReason, setReturnReason] = useState('');
 
   const { messages, loading: messagesLoading, posting, postMessage } = useIssueDiscussion(issue?.discussionId);
-  const { members: projectMembers, loading: membersLoading } = useProjectMembers(projectId);
+  const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(issue?.linkedFileItemId);
   const { currentUser } = useSession();
+
+  useEffect(() => {
+    if (membersError) onToast(membersError, 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membersError]);
 
   const loadIssue = async () => {
     setLoading(true);
@@ -163,19 +168,19 @@ export function IssueDetailModal({ issueId, projectId, onClose, onChanged, onToa
   const participantCandidates = useMemo(() => {
     const existingIds = new Set((issue?.participants ?? []).map((p) => p.accountId));
     const query = participantQuery.trim().toLowerCase();
-    const filtered = projectMembers.filter((m) =>
+    const filtered = assignableMembers.filter((m) =>
       !existingIds.has(m.accountId)
-      && (!query || m.userName.toLowerCase().includes(query) || m.email?.toLowerCase().includes(query)),
+      && (!query || m.name.toLowerCase().includes(query) || m.email?.toLowerCase().includes(query)),
     );
 
     const byAccount = new Map<string, { userName: string; email?: string | null; groupNames: string[] }>();
     for (const m of filtered) {
       const existing = byAccount.get(m.accountId);
       if (existing) existing.groupNames.push(m.groupName);
-      else byAccount.set(m.accountId, { userName: m.userName, email: m.email, groupNames: [m.groupName] });
+      else byAccount.set(m.accountId, { userName: m.name, email: m.email, groupNames: [m.groupName] });
     }
     return Array.from(byAccount.entries());
-  }, [issue?.participants, projectMembers, participantQuery]);
+  }, [issue?.participants, assignableMembers, participantQuery]);
 
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">

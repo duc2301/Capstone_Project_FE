@@ -5,6 +5,7 @@ import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
 import type {
+  AssignableMember,
   CreateIssuePayload,
   IssueAttachment,
   IssueItem,
@@ -17,6 +18,14 @@ import type {
 interface RawIssueParticipant {
   accountId: string;
   name?: string | null;
+}
+
+interface RawAssignableMember {
+  accountId: string;
+  name: string;
+  email?: string | null;
+  groupId: string;
+  groupName: string;
 }
 
 interface RawIssueAttachment {
@@ -77,6 +86,16 @@ function mapParticipant(item: RawIssueParticipant): IssueParticipant {
 
 function mapAttachment(item: RawIssueAttachment): IssueAttachment {
   return { id: item.id, url: item.url ?? null, fileVersionId: item.fileVersionId ?? null };
+}
+
+function mapAssignableMember(item: RawAssignableMember): AssignableMember {
+  return {
+    accountId: item.accountId,
+    name: item.name,
+    email: item.email ?? null,
+    groupId: item.groupId,
+    groupName: item.groupName,
+  };
 }
 
 const IssueTypeValue: Record<IssueType, number> = { Issue: 0, Rfi: 1 };
@@ -161,8 +180,6 @@ export const issueApi = {
     return mapAttachment(unwrap(data));
   },
 
-  // Dung de FE tu ghep co "Dang xu ly issue" vao cac bang danh sach file khac (vd DocumentsTab) ma
-  // khong can BE cua trang do phai biet ve Issue.
   getOpenIssueFileIds: async (fileItemIds: string[]): Promise<string[]> => {
     if (fileItemIds.length === 0) return [];
     const { data } = await axiosInstance.post<ApiResponse<string[]>>(
@@ -170,6 +187,12 @@ export const issueApi = {
       { fileItemIds },
     );
     return unwrap(data) ?? [];
+  },
+  getAssignableMembers: async (fileItemId: string): Promise<AssignableMember[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawAssignableMember[]>>(
+      `/issues/assignable-members/${fileItemId}`,
+    );
+    return (unwrap(data) ?? []).map(mapAssignableMember);
   },
 };
 

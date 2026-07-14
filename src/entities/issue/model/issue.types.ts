@@ -36,6 +36,16 @@ export interface IssueItem {
   attachments: IssueAttachment[];
 }
 
+/* Ung vien co the chon lam nguoi thuc hien/tham gia issue cua 1 file — BE tu gioi han theo nhom
+ * so huu file neu file dang o vung WIP. */
+export interface AssignableMember {
+  accountId: string;
+  name: string;
+  email: string | null;
+  groupId: string;
+  groupName: string;
+}
+
 export interface CreateIssuePayload {
   projectId: string;
   type: IssueType;

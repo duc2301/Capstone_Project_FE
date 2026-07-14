@@ -1,5 +1,6 @@
 export { issueApi, issueErrorMessage } from './api/issueApi';
 export type {
+  AssignableMember,
   CreateIssuePayload,
   IssueAttachment,
   IssueItem,

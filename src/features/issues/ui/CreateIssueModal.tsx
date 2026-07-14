@@ -32,7 +32,12 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { members: assignableMembers, loading: membersLoading } = useAssignableMembers(fileItemId);
+  const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(fileItemId);
+
+  useEffect(() => {
+    if (membersError) onToast(membersError, 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membersError]);
 
   const canSubmit = title.trim().length > 0 && !busy;
 

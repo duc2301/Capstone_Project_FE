@@ -41,8 +41,13 @@ export function IssueDetailModal({ issueId, projectId, onClose, onChanged, onToa
   const [returnReason, setReturnReason] = useState('');
 
   const { messages, loading: messagesLoading, posting, postMessage } = useIssueDiscussion(issue?.discussionId);
-  const { members: assignableMembers, loading: membersLoading } = useAssignableMembers(issue?.linkedFileItemId);
+  const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(issue?.linkedFileItemId);
   const { currentUser } = useSession();
+
+  useEffect(() => {
+    if (membersError) onToast(membersError, 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membersError]);
 
   const loadIssue = async () => {
     setLoading(true);

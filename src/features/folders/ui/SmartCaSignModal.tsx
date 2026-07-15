@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { ApprovalListItem } from '@/entities/approval';
+import type { ApprovalListItem, ApprovalSigner } from '@/entities/approval';
 import type { Certificate, SignatureInfo, SignatureTransactionStatus, SignedFileInfo, TransactionStatusInfo } from '@/entities/smartca';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { t } from '@/shared/lib/i18n';
@@ -42,6 +42,14 @@ function isSignedFileGeneratedMessage(message?: string | null): boolean {
     || normalized.startsWith('signed pdf generated');
 }
 
+// BE tra loi nay khi nguoi dung hien tai da ky xong nhung ho so can nhieu nguoi ky (explicit signer)
+// va nhung nguoi con lai chua ky - day khong phai loi that, chi la trang thai dang cho, can hien thi
+// khac voi 1 loi thuc su (vd sai PIN, mat ket noi VNPT...).
+function isWaitingForOtherSignersMessage(message?: string | null): boolean {
+  const normalized = message?.trim().toLowerCase() ?? '';
+  return normalized.includes('all required digital signers must sign');
+}
+
 export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: SmartCaSignModalProps) {
   const [userId, setUserId] = useState('');
   const [pin, setPin] = useState('');
@@ -58,6 +66,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
   const [generatingSignedPdf, setGeneratingSignedPdf] = useState(false);
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [waitingForOtherSigners, setWaitingForOtherSigners] = useState(false);
   const generatingSignedPdfRef = useRef(false);
 
   const selectedCertificate = useMemo(
@@ -71,6 +80,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
     generatingSignedPdfRef.current = true;
     setGeneratingSignedPdf(true);
     setError(null);
+    setWaitingForOtherSigners(false);
     try {
       let file: SignedFileInfo | null = null;
       let latestStatusInfo = statusInfo;
@@ -98,7 +108,15 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
       await fetchSignatureInfo(false);
       onSigned();
     } catch (err) {
-      setError(smartcaErrorMessage(err, t('smartca.error.status')));
+      const message = smartcaErrorMessage(err, t('smartca.error.status'));
+      if (isWaitingForOtherSignersMessage(message)) {
+        // Ban than nguoi dung hien tai da ky xong roi - chi la ho so can nhieu nguoi ky, chua du nguoi.
+        // Khong phai loi, hien banner thong tin thay vi banner do.
+        setWaitingForOtherSigners(true);
+        setTransactionStatus('Signed');
+      } else {
+        setError(message);
+      }
     } finally {
       generatingSignedPdfRef.current = false;
       setGeneratingSignedPdf(false);
@@ -350,7 +368,15 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                 </div>
               )}
 
+              {approval.signers.length > 1 && <SignersListPanel signers={approval.signers} />}
+
               <SignatureInfoPanel signatureInfo={signatureInfo} />
+
+              {waitingForOtherSigners && (
+                <div className="rounded-xl border border-info/30 bg-info-light px-4 py-3">
+                  <p className="text-sm font-medium text-info">{t('smartca.signModal.waitingOtherSigners')}</p>
+                </div>
+              )}
 
               {error && (
                 <div className="rounded-xl border border-danger/30 bg-danger-light px-4 py-3">
@@ -451,6 +477,35 @@ function MethodButton({ label, active = false, disabled = false }: { label: stri
     >
       {label}
     </button>
+  );
+}
+
+function SignersListPanel({ signers }: { signers: ApprovalSigner[] }) {
+  const signedCount = signers.filter((s) => s.status === 'Signed').length;
+
+  return (
+    <div className="rounded-xl border border-card-border bg-content-bg/40 p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-text">{t('smartca.signers.title')}</p>
+        <span className="text-xs font-semibold text-text-muted">{signedCount}/{signers.length}</span>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {signers.map((signer) => (
+          <li key={signer.id} className="flex items-center justify-between gap-3 text-sm">
+            <span className="truncate text-text">
+              {signer.signerAccountName ?? signer.signerGroupName ?? '-'}
+            </span>
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                signer.status === 'Signed' ? 'bg-success-light text-success' : 'bg-warning-light text-warning'
+              }`}
+            >
+              {signer.status === 'Signed' ? t('smartca.signers.signed') : t('smartca.signers.pending')}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

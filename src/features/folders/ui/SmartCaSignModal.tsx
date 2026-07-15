@@ -480,6 +480,7 @@ function MethodButton({ label, active = false, disabled = false }: { label: stri
   );
 }
 
+// Hien danh sach nguoi ky bat buoc + trang thai tung nguoi, chi hien khi approval can nhieu hon 1 nguoi ky.
 function SignersListPanel({ signers }: { signers: ApprovalSigner[] }) {
   const signedCount = signers.filter((s) => s.status === 'Signed').length;
 

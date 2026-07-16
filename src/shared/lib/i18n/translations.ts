@@ -986,6 +986,7 @@ export const translations = {
   // Trang "Xem chi tiết" file (model 3D/2D, PDF/ảnh/Office xem trực tiếp, hoặc tải về)
   'fileView.back': 'Quay lại thư mục',
   'fileView.error': 'Không mở được tài liệu. Vui lòng thử lại.',
+  'fileView.switching': 'Đang mở tài liệu…',
   'fileView.download.title': 'Không xem trực tiếp được định dạng này',
   'fileView.download.desc': 'Tải tệp về máy để mở bằng phần mềm phù hợp.',
   'fileView.download.button': 'Tải về',
@@ -1156,6 +1157,8 @@ export const translations = {
   'markup.inline.panelHint': 'Dùng thanh công cụ trên khung xem để vẽ. Bấm 1 ghi chú để tới đúng trang/vị trí.',
   'markup.inline.fullscreen': 'Toàn màn hình',
   'markup.inline.exitFullscreen': 'Thoát toàn màn',
+  'markup.inline.enter': 'Ghi chú (Markup)',
+  'markup.inline.exit': 'Xem bình thường',
 
   // --- Kiểm LOI (thông tin phi hình học, BXD 347/QĐ-BXD) ---
   'loi.tab': 'Kiểm LOI',
@@ -1188,6 +1191,34 @@ export const translations = {
   'loi.group.hinhHoc': 'Tham số hình học',
   'loi.group.quyCach': 'Quy cách kỹ thuật',
   'loi.group.vatLieu': 'Tham số vật liệu',
+
+  // --- Tệp liên quan (file links) ---
+  'relatedFiles.tab': 'Tệp liên quan',
+  'relatedFiles.error': 'Không tải được danh sách tệp liên quan.',
+  'relatedFiles.addError': 'Không thêm được liên kết.',
+  'relatedFiles.removeError': 'Không gỡ được liên kết.',
+  'relatedFiles.pickerError': 'Không tải được danh sách tệp có thể liên kết.',
+  'relatedFiles.panel.title': 'Tệp liên quan',
+  'relatedFiles.panel.add': 'Thêm liên kết',
+  'relatedFiles.panel.loading': 'Đang tải tệp liên quan…',
+  'relatedFiles.panel.empty': 'Tệp này chưa liên kết với tệp nào.',
+  'relatedFiles.panel.emptyHint': 'Liên kết giúp mở nhanh các tài liệu đi kèm, ví dụ bản vẽ và thuyết minh của nó.',
+  'relatedFiles.panel.linkedAt': 'Liên kết ngày',
+  'relatedFiles.panel.unlink': 'Gỡ liên kết',
+  'relatedFiles.panel.unlinkConfirm': 'Gỡ liên kết này? Tệp kia cũng sẽ không còn thấy tệp hiện tại nữa.',
+  'relatedFiles.panel.cancel': 'Hủy',
+  'relatedFiles.picker.title': 'Chọn tệp liên quan',
+  'relatedFiles.picker.scopeHint': 'Chỉ chọn được tệp trong thư mục của nhóm ở cùng khu vực và bạn có quyền xem.',
+  'relatedFiles.picker.search': 'Tìm theo tên tệp hoặc thư mục…',
+  'relatedFiles.picker.loading': 'Đang tải danh sách tệp…',
+  'relatedFiles.picker.empty': 'Không có tệp nào để liên kết trong phạm vi này.',
+  'relatedFiles.picker.noMatch': 'Không tìm thấy tệp nào khớp.',
+  'relatedFiles.picker.alreadyLinked': 'Đã liên kết',
+  'relatedFiles.picker.selected': 'Đã chọn',
+  'relatedFiles.picker.cancel': 'Hủy',
+  'relatedFiles.picker.confirm': 'Xong',
+  'relatedFiles.upload.link': 'Liên kết tệp',
+  'relatedFiles.upload.linked': 'Đã liên kết',
 
   // --- Issue workflow ---
   'issues.panel.tab': 'Issue',

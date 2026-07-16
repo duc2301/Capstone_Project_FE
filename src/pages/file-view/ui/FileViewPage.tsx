@@ -6,6 +6,7 @@ import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
+import { RelatedFilesPanel } from '@/features/folders';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
@@ -136,7 +137,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues' | 'loi';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues' | 'loi' | 'related';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -148,7 +149,11 @@ export function FileViewPage() {
   const [versions, setVersions] = useState<FileVersion[]>([]);
   const [fileListItem, setFileListItem] = useState<FileListItem | null>(null);
   const [fileApprovals, setFileApprovals] = useState<ApprovalListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // File đã nạp xong dữ liệu. Suy ra `loading` từ đây thay vì giữ cờ riêng: đổi file (bấm 1 tệp
+  // liên quan) là id lệch ngay -> loading bật tức thì, không cần setState trong effect.
+  // Trước đây cờ loading chỉ được bật lúc khởi tạo rồi tắt vĩnh viễn -> chuyển file KHÔNG hiện
+  // loading và trang vẫn bày dữ liệu của file CŨ như thể đã tải xong.
+  const [loadedFileId, setLoadedFileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>('properties');
@@ -171,6 +176,11 @@ export function FileViewPage() {
   );
 
   const latestVersion = versions[0] ?? null;
+
+  const loading = Boolean(fileId) && loadedFileId !== fileId;
+  // Đang ĐỔI sang file khác (đã có nội dung file cũ trên màn) — khác với lần tải đầu (màn còn trống).
+  // Lúc này màn vẫn bày dữ liệu file cũ nên phải chặn thao tác, tránh bấm nhầm ghi chú/ký số của file cũ.
+  const switchingFile = loading && info !== null;
 
   const fetchView = useCallback(async (): Promise<FileViewInfo> => {
     const { data } = await fileItemApi.getView(fileId!);
@@ -203,6 +213,7 @@ export function FileViewPage() {
         ]);
 
         if (!cancelled) {
+          setError(null);   // xoá lỗi còn sót của file trước khi chuyển sang file mới
           setInfo(viewResult);
           setVersions(versionsResult.data.result ?? []);
           setFileListItem(currentFileResult);
@@ -211,7 +222,7 @@ export function FileViewPage() {
       } catch {
         if (!cancelled) setError(t('fileView.error'));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadedFileId(fileId);
       }
     })();
 
@@ -293,11 +304,19 @@ export function FileViewPage() {
   const isModelFailed = info?.kind === 'model' && status === ModelViewerStatus.Failed;
 
   const canMarkup = Boolean(info?.kind === 'model' && isModelReady);
-  // Hiển thị phần vẽ vời 2D cho mấy file xem trực tiếp được
+  // File xem trực tiếp được (ảnh/PDF/Office đã convert) thì VẼ VỜI được — đây là "có khả năng
+  // markup", KHÔNG phải "đang ở chế độ markup" (xem inlineMarkupMode).
   const canMarkupInline = Boolean(
     info?.kind === 'inline' &&
     ((info.contentType ?? '').startsWith('image/') || info.contentType === 'application/pdf'),
   );
+  // Mặc định MỞ FILE LÀ ĐỌC BÌNH THƯỜNG (cuộn/zoom/tìm kiếm bằng trình xem của trình duyệt);
+  // chỉ khi bấm "Ghi chú (Markup)" mới sang layout markup.
+  // Neo theo fileId để chuyển sang file khác là tự về chế độ đọc — khỏi cần effect reset.
+  const [markupModeFileId, setMarkupModeFileId] = useState<string | null>(null);
+  const inlineMarkupMode = canMarkupInline && markupModeFileId === fileId;
+  const enterInlineMarkup = useCallback(() => setMarkupModeFileId(fileId ?? null), [fileId]);
+
   const showMarkupTab = (canMarkup && info?.kind === 'model') || canMarkupInline;
   const inlineVersionId = fileListItem?.currentVersionId ?? latestVersion?.id ?? null;
 
@@ -435,6 +454,21 @@ export function FileViewPage() {
 
   return (
     <div className="min-h-[calc(100vh-96px)] bg-[#fbf9f1] px-4 py-5 sm:px-6 lg:px-8">
+      {/* Chặn tương tác trong lúc đổi sang file khác: màn vẫn đang bày dữ liệu file CŨ, để bấm được
+          thì ghi chú / ký số / phê duyệt sẽ chạy nhầm trên file cũ. z cao hơn mọi modal (60). */}
+      {switchingFile && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/25 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-card px-8 py-6 shadow-modal">
+            <Spinner />
+            <p className="font-jakarta text-sm font-medium text-text">{t('fileView.switching')}</p>
+          </div>
+        </div>
+      )}
+
       <InlineMarkupProvider
         fileItemId={fileId ?? ''}
         fileVersionId={inlineVersionId}
@@ -482,10 +516,13 @@ export function FileViewPage() {
               <div className="absolute inset-0 bg-[#dcdad2]" />
 
               {loading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                  <Spinner />
-                  <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
-                </div>
+                // Đang chuyển file thì overlay chặn ở trên đã báo rồi -> khỏi spinner thứ hai lấp ló dưới lớp mờ.
+                switchingFile ? null : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <Spinner />
+                    <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
+                  </div>
+                )
               ) : error ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
                   <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
@@ -521,8 +558,8 @@ export function FileViewPage() {
                   />
                 </div>
               ) : info && info.kind === 'inline' && info.url ? (
-                canMarkupInline ? (
-                  <InlineMarkupStage />
+                inlineMarkupMode ? (
+                  <InlineMarkupStage onExitMarkup={() => setMarkupModeFileId(null)} />
                 ) : (
                   <div className="absolute inset-0 p-5">
                     <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -558,16 +595,30 @@ export function FileViewPage() {
               )}
 
 
-              {!canMarkupInline && (
+              {/* Thanh dưới của CHẾ ĐỘ ĐỌC. Ở layout markup thì stage có toolbar riêng nên ẩn đi. */}
+              {!inlineMarkupMode && (
                 <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
                   <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
-                    <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">-</button>
                     <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
-                    <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">+</button>
                     <span className="h-4 w-px bg-card-border" />
                     <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
                       {t('fileView.download.button')}
                     </button>
+                    {canMarkupInline && (
+                      <>
+                        <span className="h-4 w-px bg-card-border" />
+                        <button
+                          type="button"
+                          onClick={enterInlineMarkup}
+                          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" />
+                          </svg>
+                          {t('markup.inline.enter')}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -598,6 +649,11 @@ export function FileViewPage() {
                 active={activePanelTab === 'issues'}
                 label={t('issues.panel.tab')}
                 onClick={() => setActivePanelTab('issues')}
+              />
+              <PanelTabButton
+                active={activePanelTab === 'related'}
+                label={t('relatedFiles.tab')}
+                onClick={() => setActivePanelTab('related')}
               />
               {showLoiTab && (
                 <PanelTabButton
@@ -637,12 +693,21 @@ export function FileViewPage() {
                       <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
                     )
                   ) : (
-                    <InlineCommentsPanel />
+                    <InlineCommentsPanel onJumpToNote={enterInlineMarkup} />
                   )}
                 </>
               ) : activePanelTab === 'issues' ? (
                 projectId && fileId ? (
                   <IssuesPanel projectId={projectId} fileItemId={fileId} onToast={showToast} />
+                ) : null
+              ) : activePanelTab === 'related' ? (
+                projectId && fileId ? (
+                  <RelatedFilesPanel
+                    projectId={projectId}
+                    fileItemId={fileId}
+                    // ?folder= có thể vắng (vào thẳng bằng link) -> lấy folder thật của file làm mốc phạm vi.
+                    folderId={fileListItem?.folderId ?? folderId}
+                  />
                 ) : null
               ) : activePanelTab === 'loi' ? (
                 <LoiCheckPanel fileItemId={fileId ?? ''} />

@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 
 import { FileType, fileItemApi } from '@/entities/file-item';
 
-/* Suy ra FileType từ đuôi tệp (khớp ràng buộc đuôi↔loại ở BE) */
 function inferFileType(fileName: string): FileType {
   const ext = (fileName.split('.').pop() ?? '').toLowerCase();
   if (ext === 'pdf') return FileType.Pdf;
@@ -15,11 +14,17 @@ function inferFileType(fileName: string): FileType {
 
 export function useFileUpload() {
   const uploadToFolder = useCallback(
-    (folderId: string, file: File, onProgress?: (pct: number) => void) => {
+    (
+      folderId: string,
+      file: File,
+      onProgress?: (pct: number) => void,
+      relatedFileItemIds: string[] = [],
+    ) => {
       const form = new FormData();
       form.append('file', file);
       form.append('FolderId', folderId);
       form.append('FileType', String(inferFileType(file.name)));
+      for (const id of relatedFileItemIds) form.append('RelatedFileItemIds', id);
       return fileItemApi.upload(form, onProgress);
     },
     [],

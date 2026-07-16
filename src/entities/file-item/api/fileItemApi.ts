@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { FileListItem, FileVersion, FileViewInfo } from '../model/fileItem.types';
+import type { FileListItem, FileVersion, FileViewInfo, LinkableFile, RelatedFilesResult } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
@@ -42,4 +42,22 @@ export const fileItemApi = {
 
   /** Xóa file */
   delete: (fileItemId: string) => axiosInstance.delete<ApiResponse<unknown>>(`/file-items/${fileItemId}`),
+
+  getRelatedFiles: (fileItemId: string) =>
+    axiosInstance.get<ApiResponse<RelatedFilesResult>>(`/file-items/${fileItemId}/related-files`),
+
+  addRelatedFiles: (fileItemId: string, relatedFileItemIds: string[]) =>
+    axiosInstance.post<ApiResponse<RelatedFilesResult>>(`/file-items/${fileItemId}/related-files`, {
+      relatedFileItemIds,
+    }),
+
+  removeRelatedFile: (fileItemId: string, linkedFileItemId: string) =>
+    axiosInstance.delete<ApiResponse<unknown>>(
+      `/file-items/${fileItemId}/related-files/${linkedFileItemId}`,
+    ),
+
+  getLinkableFiles: (folderId: string, excludeFileItemId?: string) =>
+    axiosInstance.get<ApiResponse<LinkableFile[]>>('/file-items/linkable', {
+      params: { folderId, excludeFileItemId },
+    }),
 };

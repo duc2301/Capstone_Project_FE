@@ -112,6 +112,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [fileMenu, setFileMenu] = useState<{ file: FileListItem; x: number; y: number } | null>(null);
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
   const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
+  const [submitApprovalError, setSubmitApprovalError] = useState<string | null>(null);
   const [approvalBusy, setApprovalBusy] = useState(false);
   const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
@@ -179,6 +180,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
 
   const openSubmitApproval = (file: FileListItem) => {
     setSubmitApprovalFor(file);
+    setSubmitApprovalError(null);
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -235,13 +237,14 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const handleSubmitApproval = async (payload: SubmitApprovalPayload) => {
     if (!submitApprovalFor) return;
     setApprovalBusy(true);
+    setSubmitApprovalError(null);
     try {
       await approvalApi.submitApproval(submitApprovalFor.id, payload);
       await refetchFiles();
       showToast(t('approvals.toast.submitted'));
       setSubmitApprovalFor(null);
     } catch (err) {
-      showToast(approvalErrorMessage(err, t('common.error')), 'error');
+      setSubmitApprovalError(approvalErrorMessage(err, t('common.error')));
     } finally {
       setApprovalBusy(false);
     }
@@ -579,7 +582,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           signerGroups={signerGroups}
           loadingSigners={signerGroupsLoading}
           busy={approvalBusy}
-          onClose={() => setSubmitApprovalFor(null)}
+          submitError={submitApprovalError}
+          onClose={() => { setSubmitApprovalFor(null); setSubmitApprovalError(null); }}
           onSubmit={handleSubmitApproval}
         />
       )}

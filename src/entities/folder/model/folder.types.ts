@@ -30,8 +30,7 @@ export interface FolderTreeNodeDto {
   children: FolderTreeNodeDto[];
 }
 
-/* 1 file trong response GET /folder-tree/folders/{id}/contents —
- * BE chỉ trả các field cơ bản (chưa có size/format/version/author). */
+/* 1 file trong response GET /folder-tree/folders/{id}/contents */
 export interface FolderContentsFileDto {
   id: string;
   folderId: string;
@@ -39,8 +38,15 @@ export interface FolderContentsFileDto {
   fileType: number;
   status: number;
   currentVersionId: string | null;
+  /* Nhãn phiên bản BE dựng sẵn, vd "P03.01", "C01" */
+  displayVersion: string | null;
+  uploaderEmail: string | null;
+  fileSizeBytes: number;
   createdAt: string | null;
   updatedAt: string | null;
+  warnning?: boolean | null;
+  warnningMessage?: string | null;
+  hasOpenIssue?: boolean;
 }
 
 /* Nội dung 1 folder: subfolder + file (GET /folder-tree/folders/{id}/contents) */

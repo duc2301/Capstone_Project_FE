@@ -36,6 +36,8 @@ export interface FileListItem {
   returnTargetZone?: string | null;
   currentVersionId: string | null;
   currentVersionNumber: number;
+  /* Nhãn phiên bản BE dựng sẵn (vd "P03.01") — null với endpoint cũ chưa trả */
+  displayVersion?: string | null;
   sizeBytes: number;
   format: string | null;
   createdByAccountId: string | null;
@@ -111,6 +113,8 @@ export interface RelatedFile {
   folderName: string;
   area: RelatedFileArea;
   currentVersionNumber: number;
+  /* Chuỗi version theo hệ mới, vd "P01.02" / "C01" (null nếu file chưa có version state). */
+  displayVersion: string | null;
   format: string | null;
   sizeBytes: number;
   /* Thông tin của chính liên kết, không phải của file */
@@ -134,6 +138,8 @@ export interface LinkableFile {
   folderId: string;
   folderName: string;
   currentVersionNumber: number;
+  /* Chuỗi version theo hệ mới, vd "P01.02" / "C01" (null nếu file chưa có version state). */
+  displayVersion: string | null;
   format: string | null;
   sizeBytes: number;
   updatedAt: string | null;
@@ -141,21 +147,22 @@ export interface LinkableFile {
   alreadyLinked: boolean;
 }
 
-/* 1 phiên bản của file */
+/* 1 phiên bản của file — khớp BE /file-versions/{fileItemId}/history */
 export interface FileVersion {
   id: string;
   fileItemId: string;
-  versionNumber: number;
+  isCurrent: boolean;
+  /* 0 = Work In Progress (P..), 1 = Shared/Published (C..) — khớp BE Domain.Enum.File.VersionStage */
+  stage: number;
+  workingRevision: number;
+  workingVersion: number;
+  publishedRevision: number;
+  /* Nhãn hiển thị BE đã dựng sẵn, vd "P03.01", "C01" */
+  displayVersion: string;
+  fileName: string;
   storagePath: string;
   fileSizeBytes: number;
   format: string;
   checksum: string | null;
-  isHidden: boolean;
-  uploadedByAccountId: string | null;
-  uploadedByName: string | null;
-  uploadedAt: string | null;
-  isSigned?: boolean;
-  signedAt?: string | null;
-  signedBy?: string | null;
-  certificateSerial?: string | null;
+  createdAt: string | null;
 }

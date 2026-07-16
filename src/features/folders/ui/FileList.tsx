@@ -2,7 +2,7 @@ import type { FileListItem } from '@/entities/file-item';
 import type { FolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
-import { fileStatusBadge, formatDate, formatSize } from '../model/fileFormat';
+import { formatDate, formatSize } from '../model/fileFormat';
 
 interface FileListProps {
   subfolders: FolderTreeNode[];
@@ -51,12 +51,13 @@ function WarningIcon({ message }: { message?: string | null }) {
   );
 }
 
+/* Nút 3 chấm — ẩn mặc định, hiện khi hover lên dòng (tr có class "group") */
 function DotsButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-content-bg hover:text-text"
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted opacity-0 transition-all hover:bg-content-bg hover:text-text focus-visible:opacity-100 group-hover:opacity-100"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" />
@@ -80,10 +81,9 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
           <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
             <th className="py-2.5 pr-3 font-bold">{t('documents.files.colName')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colVersion')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colStatus')}</th>
+            <th className="px-3 py-2.5 font-bold">{t('documents.files.colSize')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colModified')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colAuthor')}</th>
-            <th className="px-3 py-2.5 text-right font-bold">{t('documents.files.colActions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -94,7 +94,7 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               onClick={() => onFolderOpen(folder)}
               onContextMenu={(e) => onFolderMenu?.(e, folder)}
               title={t('documents.files.folderOpenHint')}
-              className="cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
+              className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
               <td className="py-3 pr-3">
                 <div className="flex items-center gap-3">
@@ -102,61 +102,51 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   <p className="truncate font-medium text-text">{folder.name}</p>
                 </div>
               </td>
+              <td className="px-3 py-3 text-text-muted">—</td>
+              <td className="px-3 py-3 text-text-muted">—</td>
+              <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3">
-                <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
-                  {t('documents.files.folderBadge')}
-                </span>
-              </td>
-              <td className="px-3 py-3 text-text-muted">—</td>
-              <td className="px-3 py-3 text-text-muted">—</td>
-              <td className="px-3 py-3 text-text-muted">—</td>
-              <td className="px-3 py-3 text-right">
-                {onFolderMenu && (
-                  <DotsButton onClick={(e) => { e.stopPropagation(); onFolderMenu(e, folder); }} />
-                )}
+                <div className="flex items-center justify-between gap-2 text-text-muted">
+                  <span>—</span>
+                  {onFolderMenu && (
+                    <DotsButton onClick={(e) => { e.stopPropagation(); onFolderMenu(e, folder); }} />
+                  )}
+                </div>
               </td>
             </tr>
           ))}
-          {files.map((f) => {
-            const badge = fileStatusBadge(f);
-            return (
-              <tr
-                key={f.id}
-                onContextMenu={(e) => onFileMenu(e, f)}
-                onDoubleClick={() => onFileOpen(f)}
-                title={t('documents.files.openHint')}
-                className="cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
-              >
-                <td className="py-3 pr-3">
-                  <div className="flex items-center gap-3">
-                    <FileIcon />
-                    <div className="min-w-0">
-                      <p className="flex items-center gap-1.5 truncate font-medium text-text">
-                        <span className="truncate">{f.name}</span>
-                        {f.warnning && <WarningIcon message={f.warnningMessage} />}
-                      </p>
-                      <p className="text-xs text-text-muted">
-                        {formatSize(f.sizeBytes)}{f.format ? ` · ${f.format.toUpperCase()}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-3">
-                  <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
-                    V{f.currentVersionNumber}
-                  </span>
-                </td>
-                <td className="px-3 py-3">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
-                </td>
-                <td className="px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
-                <td className="px-3 py-3 text-text-secondary">{f.authorName ?? '—'}</td>
-                <td className="px-3 py-3 text-right">
-                  <DotsButton onClick={(e) => onFileMenu(e, f)} />
-                </td>
-              </tr>
-            );
-          })}
+          {files.map((f) => (
+            <tr
+              key={f.id}
+              onContextMenu={(e) => onFileMenu(e, f)}
+              onDoubleClick={() => onFileOpen(f)}
+              title={t('documents.files.openHint')}
+              className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
+            >
+              <td className="py-3 pr-3">
+                <div className="flex items-center gap-3">
+                  <FileIcon />
+                  <p className="flex min-w-0 items-center gap-1.5 truncate font-medium text-text">
+                    <span className="truncate">{f.name}</span>
+                    {f.warnning && <WarningIcon message={f.warnningMessage} />}
+                  </p>
+                </div>
+              </td>
+              <td className="px-3 py-3">
+                <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
+                  {f.displayVersion ?? `V${f.currentVersionNumber}`}
+                </span>
+              </td>
+              <td className="px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
+              <td className="px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
+              <td className="px-3 py-3">
+                <div className="flex items-center justify-between gap-2 text-text-secondary">
+                  <span className="truncate">{f.authorName ?? '—'}</span>
+                  <DotsButton onClick={(e) => { e.stopPropagation(); onFileMenu(e, f); }} />
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

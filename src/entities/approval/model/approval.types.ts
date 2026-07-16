@@ -1,6 +1,20 @@
 /* Trạng thái phê duyệt — khớp BE (chuỗi enum) */
 export type ApprovalStatus = 'PendingApproval' | 'Approved' | 'Rejected';
 
+/* Trạng thái ký của 1 signer bắt buộc trong approval cần nhiều người ký */
+export type ApprovalSignerStatus = 'Pending' | 'Signed';
+
+export interface ApprovalSigner {
+  id: string;
+  signerAccountId?: string | null;
+  signerAccountName?: string | null;
+  signerGroupId?: string | null;
+  signerGroupName?: string | null;
+  status: ApprovalSignerStatus;
+  signedAt?: string | null;
+  certificateSerial?: string | null;
+}
+
 /* 1 dòng trong danh sách chờ duyệt / lịch sử phê duyệt */
 export interface ApprovalListItem {
   id: string;
@@ -23,6 +37,7 @@ export interface ApprovalListItem {
   approvedByName?: string | null;
   approvedAt?: string | null;
   rejectReason?: string | null;
+  signers: ApprovalSigner[];
 }
 
 /* Chi tiết 1 yêu cầu phê duyệt — cùng hình dạng với danh sách */

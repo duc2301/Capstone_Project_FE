@@ -131,7 +131,7 @@ export function RelatedFilesPicker({
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-text">{file.name}</p>
                           <p className="text-xs text-text-muted">
-                            v{file.currentVersionNumber}
+                            {file.displayVersion ?? `v${file.currentVersionNumber}`}
                             {file.format ? ` · ${file.format.toUpperCase()}` : ''}
                             {file.sizeBytes > 0 ? ` · ${formatSize(file.sizeBytes)}` : ''}
                           </p>

@@ -5,6 +5,10 @@ import { approvalApi, approvalErrorMessage, type ApprovalTargetZone, type Submit
 import type { DocumentSearchResult } from '@/entities/document-search';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
+import { GroupMemberStatus } from '@/entities/group';
+import { GroupMemberRole } from '@/entities/invitation';
+import { isAccountAdmin, useSession } from '@/entities/session';
+import { FolderNamingInfoModal } from '@/features/naming-conventions';
 import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 
@@ -83,6 +87,19 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
   const { groups: signerGroups, loading: signerGroupsLoading } = useProjectGroups(projectId);
+  const { currentUser } = useSession();
+
+  // Gate thô cho nút gán/kế thừa/tùy chỉnh naming: Admin hoặc Leader active của 1 group
+  // trong project. BE check chính xác theo group phụ trách từng folder (403 nếu lách).
+  const canManageNaming =
+    isAccountAdmin(currentUser?.role)
+    || signerGroups.some((g) =>
+      g.members.some(
+        (m) =>
+          m.accountId === currentUser?.accountId
+          && m.role === GroupMemberRole.Leader
+          && m.status === GroupMemberStatus.Active,
+      ));
 
   // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
@@ -101,6 +118,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
   const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
+  const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
@@ -453,6 +471,24 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onMove={() => setModal({ action: 'move', node: menu.node })}
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
           onPermission={() => setPermissionFor(menu.node)}
+          onNaming={() => setNamingFor(menu.node)}
+        />
+      )}
+
+      {/* Modal quy tắc đặt tên của thư mục (+ kế thừa từ thư mục cha) */}
+      {namingFor && (
+        <FolderNamingInfoModal
+          folder={namingFor}
+          canManage={canManageNaming}
+          onClose={() => setNamingFor(null)}
+          onInherited={() => {
+            setNamingFor(null);
+            showToast(t('naming.folder.inherited'));
+          }}
+          onCustomized={() => {
+            setNamingFor(null);
+            showToast(t('naming.folder.customized'));
+          }}
         />
       )}
 

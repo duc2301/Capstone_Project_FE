@@ -84,7 +84,7 @@ export function RelatedFilesPanel({ projectId, fileItemId, folderId }: RelatedFi
                       <span className="text-xs text-text-muted">{file.folderName}</span>
                     </div>
                     <p className="mt-1 text-xs text-text-muted">
-                      v{file.currentVersionNumber}
+                      {file.displayVersion ?? `v${file.currentVersionNumber}`}
                       {file.format ? ` · ${file.format.toUpperCase()}` : ''}
                       {file.sizeBytes > 0 ? ` · ${formatSize(file.sizeBytes)}` : ''}
                     </p>

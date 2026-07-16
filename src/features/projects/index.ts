@@ -9,6 +9,8 @@ export { AddressField } from './ui/AddressField';
 export { AssignManagerForm } from './ui/AssignManagerForm';
 export { CreateGroupForm } from './ui/CreateGroupForm';
 export { CreateProjectForm } from './ui/CreateProjectForm';
+export { CreateProjectStepper } from './ui/CreateProjectStepper';
 export { InviteMemberForm } from './ui/InviteMemberForm';
 export { ManageProjectPanel } from './ui/ManageProjectPanel';
+
 

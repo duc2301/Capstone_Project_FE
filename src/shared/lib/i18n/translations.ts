@@ -773,6 +773,7 @@ export const translations = {
   'documents.files.folderBadge': 'Thư mục',
   'documents.files.colName': 'TÊN TỆP',
   'documents.files.colVersion': 'PHIÊN BẢN',
+  'documents.files.colSize': 'DUNG LƯỢNG',
   'documents.files.colStatus': 'TRẠNG THÁI',
   'documents.files.colModified': 'NGÀY CHỈNH SỬA',
   'documents.files.colAuthor': 'TÁC GIẢ',

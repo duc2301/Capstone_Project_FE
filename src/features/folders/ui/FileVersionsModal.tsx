@@ -58,20 +58,20 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
             <ul className="space-y-2">
               {versions.map((v) => (
                 <li key={v.id} className="flex items-center gap-3 rounded-xl border border-card-border px-4 py-3">
-                  <span className="flex h-9 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                    V{v.versionNumber}
+                  <span className="flex h-9 min-w-16 shrink-0 items-center justify-center rounded-lg bg-primary/10 px-2 text-sm font-bold text-primary">
+                    {v.displayVersion}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-text">
                       {formatSize(v.fileSizeBytes)} · {v.format.toUpperCase()}
-                      {v.id === currentVersionId && (
+                      {(v.isCurrent || v.id === currentVersionId) && (
                         <span className="ml-2 rounded-full bg-success-light px-2 py-0.5 text-[10px] font-semibold text-success">
                           {t('documents.versions.current')}
                         </span>
                       )}
                     </p>
                     <p className="text-xs text-text-muted">
-                      {t('documents.versions.uploadedBy')}: {v.uploadedByName ?? '—'} · {formatDate(v.uploadedAt)}
+                      {t('documents.versions.uploadedAt')}: {formatDate(v.createdAt)}
                     </p>
                   </div>
                 </li>

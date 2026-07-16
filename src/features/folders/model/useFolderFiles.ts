@@ -13,8 +13,6 @@ interface UseFolderFilesReturn {
   refetch: () => Promise<void>;
 }
 
-/* API /folder-tree/folders/{id}/contents chưa trả size/format/version/author —
- * tạm điền mặc định để FileList hiện tại render được. Sẽ gỡ khi BE trả đủ. */
 function toFileListItem(dto: FolderContentsFileDto): FileListItem {
   return {
     id: dto.id,
@@ -26,12 +24,16 @@ function toFileListItem(dto: FolderContentsFileDto): FileListItem {
     returnTargetZone: null,
     currentVersionId: dto.currentVersionId,
     currentVersionNumber: 1,
-    sizeBytes: 0,
+    displayVersion: dto.displayVersion,
+    sizeBytes: dto.fileSizeBytes,
     format: null,
     createdByAccountId: null,
-    authorName: null,
+    authorName: dto.uploaderEmail,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+    warnning: dto.warnning,
+    warnningMessage: dto.warnningMessage,
+    hasOpenIssue: dto.hasOpenIssue,
   };
 }
 

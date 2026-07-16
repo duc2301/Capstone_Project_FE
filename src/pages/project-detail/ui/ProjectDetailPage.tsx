@@ -9,6 +9,7 @@ import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
+import { NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
 import type { AddGroupInput } from '@/features/projects';
 import {
@@ -147,14 +148,6 @@ function DatePoint({ barClass, label, value }: { barClass: string; label: string
         <p className="text-[11px] font-bold uppercase tracking-wide text-text-muted">{label}</p>
         <p className="text-lg font-bold text-text">{value ?? <NotUpdated />}</p>
       </div>
-    </div>
-  );
-}
-
-function ComingSoon() {
-  return (
-    <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
-      <p className="text-sm text-text-muted">{t('projectDetail.comingSoon')}</p>
     </div>
   );
 }
@@ -764,7 +757,9 @@ export function ProjectDetailPage() {
 
       {/* ── Tabs ──────────────────────────────────────── */}
       <nav className="flex gap-1 overflow-x-auto border-b border-card-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {TABS.filter((item) => canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id)).map((item) => (
+        {TABS.filter((item) => (item.id === 'settings'
+          ? isAdmin // cấu hình quy tắc đặt tên: chỉ Admin
+          : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
           <button
             key={item.id}
             type="button"
@@ -1154,9 +1149,9 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Tabs chưa triển khai ──────────────────────── */}
-      {tab === 'settings' && (
-        <ComingSoon />
+      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — chỉ Admin ── */}
+      {tab === 'settings' && isAdmin && (
+        <NamingConventionSettings projectId={project.id} />
       )}
 
       {/* ── Tab: Packages ───────────── */}

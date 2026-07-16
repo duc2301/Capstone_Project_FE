@@ -9,6 +9,7 @@ import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
+import { NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
 import type { AddGroupInput } from '@/features/projects';
 import {
@@ -147,14 +148,6 @@ function DatePoint({ barClass, label, value }: { barClass: string; label: string
         <p className="text-[11px] font-bold uppercase tracking-wide text-text-muted">{label}</p>
         <p className="text-lg font-bold text-text">{value ?? <NotUpdated />}</p>
       </div>
-    </div>
-  );
-}
-
-function ComingSoon() {
-  return (
-    <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
-      <p className="text-sm text-text-muted">{t('projectDetail.comingSoon')}</p>
     </div>
   );
 }
@@ -1154,9 +1147,9 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Tabs chưa triển khai ──────────────────────── */}
+      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) ─────────── */}
       {tab === 'settings' && (
-        <ComingSoon />
+        <NamingConventionSettings projectId={project.id} />
       )}
 
       {/* ── Tab: Packages ───────────── */}

@@ -1,7 +1,18 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 
-import type { ApprovalDetail, ApprovalListItem, ApprovalStatus, SubmitApprovalPayload } from '../model/approval.types';
+import type { ApprovalDetail, ApprovalListItem, ApprovalSigner, ApprovalSignerStatus, ApprovalStatus, SubmitApprovalPayload } from '../model/approval.types';
+
+interface RawApprovalSigner {
+  id: string;
+  signerAccountId?: string | null;
+  signerAccountName?: string | null;
+  signerGroupId?: string | null;
+  signerGroupName?: string | null;
+  status: number | string;
+  signedAt?: string | null;
+  certificateSerial?: string | null;
+}
 
 interface RawApprovalItem {
   id: string;
@@ -28,6 +39,7 @@ interface RawApprovalItem {
   createdAt: string;
   approvedAt?: string | null;
   rejectReason?: string | null;
+  signers?: RawApprovalSigner[] | null;
 }
 
 function unwrapResult<T>(data: ApiResponse<T>): T {
@@ -39,6 +51,24 @@ function normalizeApprovalStatus(status: number | string): ApprovalStatus {
   if (status === 1 || status === 'Approved') return 'Approved';
   if (status === 2 || status === 'Rejected') return 'Rejected';
   return 'PendingApproval';
+}
+
+function normalizeSignerStatus(status: number | string): ApprovalSignerStatus {
+  if (status === 1 || status === 'Signed') return 'Signed';
+  return 'Pending';
+}
+
+function mapApprovalSigner(item: RawApprovalSigner): ApprovalSigner {
+  return {
+    id: item.id,
+    signerAccountId: item.signerAccountId ?? null,
+    signerAccountName: item.signerAccountName ?? null,
+    signerGroupId: item.signerGroupId ?? null,
+    signerGroupName: item.signerGroupName ?? null,
+    status: normalizeSignerStatus(item.status),
+    signedAt: item.signedAt ?? null,
+    certificateSerial: item.certificateSerial ?? null,
+  };
 }
 
 function mapApprovalItem(item: RawApprovalItem): ApprovalListItem {
@@ -63,6 +93,7 @@ function mapApprovalItem(item: RawApprovalItem): ApprovalListItem {
     approvedByName: item.approverName ?? item.approvedByName ?? null,
     approvedAt: item.approvedAt ?? null,
     rejectReason: item.rejectReason ?? null,
+    signers: (item.signers ?? []).map(mapApprovalSigner),
   };
 }
 

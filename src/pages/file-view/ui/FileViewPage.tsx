@@ -682,6 +682,9 @@ export function FileViewPage() {
                   {fileListItem?.warnning && fileListItem.warnningMessage && (
                     <AiCheckerWarningCard message={fileListItem.warnningMessage} />
                   )}
+                  {fileListItem?.description && (
+                    <AiSummaryCard summary={fileListItem.description} />
+                  )}
                   {info?.kind === 'model' ? (
                     modelViewer && fileId ? (
                       <ModelCommentsPanel
@@ -746,6 +749,29 @@ export function FileViewPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/* Tóm tắt nội dung file do AI sinh sau khi upload — hỗ trợ đọc nhanh, chỉ mang tính tham khảo. */
+function AiSummaryCard({ summary }: { summary: string }) {
+  return (
+    <div className="mb-4 rounded-xl border border-primary/25 bg-primary-ghost p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="9" y1="13" x2="15" y2="13" />
+            <line x1="9" y1="17" x2="13" y2="17" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-bold text-primary">{t('fileSummary.title')}</p>
+          <p className="text-xs text-text-muted">{t('fileSummary.sender')}</p>
+        </div>
+      </div>
+      <p className="mt-2.5 whitespace-pre-line text-sm leading-relaxed text-text">{summary}</p>
     </div>
   );
 }
@@ -866,6 +892,14 @@ function FilePropertiesPanel({
         <h2 className="font-heading text-lg font-bold text-text">{t('fileView.details.title')}</h2>
         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>{statusMeta.label}</span>
       </div>
+
+      {/* Tóm tắt nội dung (AI) — khái quát nhanh trước khi đọc chi tiết */}
+      {fileListItem?.description && (
+        <div className="mt-4 rounded-xl border border-primary/20 bg-primary-ghost/60 p-3.5">
+          <p className="text-xs font-bold uppercase tracking-wider text-primary">{t('fileSummary.title')}</p>
+          <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-text">{fileListItem.description}</p>
+        </div>
+      )}
 
       <div className="mt-6 space-y-5">
         <DetailItem label={t('fileView.info.name')} value={<span className="break-all">{name}</span>} />

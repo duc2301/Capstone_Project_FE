@@ -368,7 +368,9 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                 </div>
               )}
 
-              {approval.signers.length > 1 && <SignersListPanel signers={approval.signers} />}
+              {approval.currentZone === 'Shared' &&
+                approval.targetZone === 'Published' &&
+                approval.signers.length > 1 && <SignersListPanel signers={approval.signers} />}
 
               <SignatureInfoPanel signatureInfo={signatureInfo} />
 

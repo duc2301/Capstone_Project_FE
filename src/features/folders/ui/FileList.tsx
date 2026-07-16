@@ -1,8 +1,47 @@
+import { useState } from 'react';
+
 import type { FileListItem } from '@/entities/file-item';
 import type { FolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 import { formatDate, formatSize } from '../model/fileFormat';
+
+/* Tóm tắt AI dưới tên file: mặc định cắt 1 dòng (…), "Xem thêm" mở rộng XUỐNG DƯỚI
+ * (không kéo dài hàng sang phải), "Thu gọn" để đóng lại — kiểu Facebook. */
+function FileDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length > 80; // ngắn thì 1 dòng hiện đủ, khỏi cần nút
+
+  return (
+    <div className="mt-0.5 text-xs text-text-muted" onDoubleClick={(e) => e.stopPropagation()}>
+      {expanded ? (
+        <p className="whitespace-pre-line break-words">
+          {text}{' '}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
+            className="font-semibold text-primary hover:underline"
+          >
+            {t('fileSummary.less')}
+          </button>
+        </p>
+      ) : (
+        <p className="flex items-baseline gap-1">
+          <span className="min-w-0 flex-1 truncate">{text}</span>
+          {isLong && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+              className="shrink-0 font-semibold text-primary hover:underline"
+            >
+              {t('fileSummary.more')}
+            </button>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
 
 interface FileListProps {
   subfolders: FolderTreeNode[];
@@ -123,13 +162,18 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               title={t('documents.files.openHint')}
               className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
-              <td className="py-3 pr-3">
+              {/* w-full + max-w-0: cột tên chiếm phần còn lại và ép truncate,
+                  mô tả dài không banh hàng sang phải */}
+              <td className="w-full max-w-0 py-3 pr-3">
                 <div className="flex items-center gap-3">
                   <FileIcon />
-                  <p className="flex min-w-0 items-center gap-1.5 truncate font-medium text-text">
-                    <span className="truncate">{f.name}</span>
-                    {f.warnning && <WarningIcon message={f.warnningMessage} />}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex min-w-0 items-center gap-1.5 truncate font-medium text-text">
+                      <span className="truncate">{f.name}</span>
+                      {f.warnning && <WarningIcon message={f.warnningMessage} />}
+                    </p>
+                    {f.description && <FileDescription text={f.description} />}
+                  </div>
                 </div>
               </td>
               <td className="px-3 py-3">

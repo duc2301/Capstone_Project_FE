@@ -170,7 +170,7 @@ export function FileViewPage() {
     [],
   );
 
-  const latestVersion = versions[0] ?? null;
+  const latestVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
 
   const fetchView = useCallback(async (): Promise<FileViewInfo> => {
     const { data } = await fileItemApi.getView(fileId!);
@@ -320,8 +320,8 @@ export function FileViewPage() {
   const panelTabGridClass =
     panelTabCount >= 5 ? 'grid-cols-5' : panelTabCount === 4 ? 'grid-cols-4' : 'grid-cols-3';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
-  const uploadedBy = latestVersion?.uploadedByName ?? '-';
-  const uploadedAt = formatDateTime(latestVersion?.uploadedAt);
+  const uploadedBy = fileListItem?.authorName ?? '-';
+  const uploadedAt = formatDateTime(latestVersion?.createdAt);
   const signatureApprovals = useMemo(
     () => fileApprovals.filter((approval) => approval.requiresSignature),
     [fileApprovals],
@@ -451,7 +451,7 @@ export function FileViewPage() {
                 <div className="min-w-0">
                   <h1 className="truncate font-display text-2xl font-semibold text-text sm:text-3xl">{fileTitle}</h1>
                   <p className="mt-1 text-sm text-text-muted">
-                    {format} {latestVersion ? `- V${latestVersion.versionNumber}` : ''}
+                    {format} {latestVersion ? `- ${latestVersion.displayVersion}` : ''}
                   </p>
                 </div>
               </div>
@@ -786,7 +786,8 @@ function FilePropertiesPanel({
   versions: FileVersion[];
 }) {
   const name = info?.fileName ?? fileListItem?.name ?? '-';
-  const currentVersionNumber = fileListItem?.currentVersionNumber ?? latestVersion?.versionNumber ?? 0;
+  const currentVersionLabel = latestVersion?.displayVersion
+    ?? (fileListItem?.currentVersionNumber ? `V${fileListItem.currentVersionNumber}` : '');
   const updatedAt = formatDateTime(fileListItem?.updatedAt);
   const requiresSignature = Boolean(info?.requiresSignature || fileListItem?.requiresSignature);
   const isSigned = Boolean(info?.isSigned || fileListItem?.isSigned);
@@ -810,7 +811,7 @@ function FilePropertiesPanel({
           label={t('fileView.info.status')}
           value={<span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}>{status.label}</span>}
         />
-        <DetailItem label={t('fileView.info.currentVersion')} value={currentVersionNumber ? `V${currentVersionNumber}` : '-'} />
+        <DetailItem label={t('fileView.info.currentVersion')} value={currentVersionLabel || '-'} />
         <DetailItem label={t('fileView.info.versionCount')} value={String(versions.length)} />
         <DetailItem
           label={t('fileView.details.owner')}
@@ -836,15 +837,15 @@ function FilePropertiesPanel({
       <div className="mt-6 border-t border-card-border/70 pt-5">
         <h3 className="text-sm font-bold text-text">{t('fileView.details.history')}</h3>
         <div className="mt-4 space-y-4">
-          {versions.slice(0, 4).map((version, index) => (
+          {versions.slice(0, 4).map((version) => (
             <div key={version.id} className="flex gap-3">
-              <span className={`mt-0.5 h-9 w-1 rounded-full ${index === 0 ? 'bg-primary' : 'bg-card-border'}`} />
+              <span className={`mt-0.5 h-9 w-1 rounded-full ${version.isCurrent ? 'bg-primary' : 'bg-card-border'}`} />
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-text">
-                  V{version.versionNumber} - {version.format.toUpperCase()}
+                  {version.displayVersion} - {version.format.toUpperCase()}
                 </p>
                 <p className="mt-0.5 text-xs text-text-muted">
-                  {version.uploadedByName ?? '-'} - {formatDateTime(version.uploadedAt)}
+                  {formatDateTime(version.createdAt)}
                 </p>
               </div>
             </div>

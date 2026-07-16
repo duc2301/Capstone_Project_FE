@@ -24,7 +24,7 @@ export const translations = {
   'common.backHome': 'Về trang chủ',
 
   // Brand
-  'brand.name': 'BIM-CDE Portal',
+  'brand.name': 'CDE Portal',
 
   // Header
   'header.nav.home': 'Trang chủ',
@@ -41,7 +41,7 @@ export const translations = {
 
   // Hero
   'home.hero.badge': 'Nền tảng Môi trường dữ liệu chung (CDE)',
-  'home.hero.titleLead': 'Chuyển đổi số toàn diện cho',
+  'home.hero.titleLead': 'Chuyển đổi số cho',
   'home.hero.titleAccent': 'Xây dựng dân dụng Việt Nam',
   'home.hero.subtitle':
     'Môi trường Dữ liệu chung (CDE) tuân thủ tiêu chuẩn Việt Nam, tối ưu hóa quy trình làm việc từ thiết kế đến thi công. Quản lý thống nhất BIM mô hình, bảo mật và hiệu quả.',
@@ -49,14 +49,14 @@ export const translations = {
   'home.hero.ctaSecondary': 'Xem demo',
 
   // Why CDE
-  'home.why.title': 'Tại sao cần BIM-CDE?',
+  'home.why.title': 'Tại sao cần CDE?',
   'home.why.subtitle':
     'Sự khác biệt giữa quản lý dự án truyền thống và quản lý với Môi trường Dữ liệu chung.',
   'home.why.without.title': 'Không có CDE',
   'home.why.without.item1': 'Dữ liệu phân tán, khó tìm kiếm và đồng bộ.',
   'home.why.without.item2': 'Giao tiếp qua nhiều kênh (Email, Zalo) gây mất thông tin.',
   'home.why.without.item3': 'Xung đột bản vẽ, làm lại nhiều lần trên công trường.',
-  'home.why.with.title': 'Sử dụng BIM-CDE',
+  'home.why.with.title': 'Sử dụng CDE Portal',
   'home.why.with.item1': 'Một nguồn dữ liệu duy nhất (Single Source of Truth).',
   'home.why.with.item2': 'Quy trình phê duyệt minh bạch, có lịch sử rõ ràng.',
   'home.why.with.item3': 'Phát hiện xung đột sớm, tiết kiệm chi phí thi công.',
@@ -64,7 +64,7 @@ export const translations = {
   // Team
   'home.team.title': 'Đội ngũ phát triển dự án',
   'home.team.subtitle':
-    'Những con người đứng sau dự án BIM-CDE Portal, cam kết mang đến giải pháp quản lý thông tin xây dựng tốt nhất.',
+    'Những con người đứng sau dự án CDE Portal, hướng tới giải pháp quản lý thông tin xây dựng thuận tiện.',
   'home.team.leaderBadge': 'Leader',
   'home.team.member1.name': 'Phạm Văn Đức',
   'home.team.member1.roles': 'PO · Scrum Master · Fullstack Developer · DevOps',
@@ -78,7 +78,7 @@ export const translations = {
   'home.team.member5.roles': 'UI/UX Designer · Fullstack Developer',
 
   // Footer
-  'footer.copyright': '© 2026 BIM-CDE Portal. Tuân thủ QĐ 348/QĐ-BXD và TCVN 14177.',
+  'footer.copyright': '© 2026 CDE Portal.',
   'footer.col.solution': 'Giải pháp',
   'footer.col.solution.product': 'Sản phẩm',
   'footer.col.solution.solution': 'Giải pháp',
@@ -96,9 +96,9 @@ export const translations = {
   'footer.col.support.social': 'Mạng xã hội',
 
   // Auth shell (top nav + footer dùng chung cho Login/Register)
-  'auth.brand': 'BIM-CDE Portal',
+  'auth.brand': 'CDE Portal',
   'auth.footer.copyright':
-    '© 2026 BIM-CDE Portal. Tuân thủ QĐ 348/QĐ-BXD và TCVN 14177.',
+    '© 2026 CDE Portal.',
   'auth.footer.privacy': 'Chính sách bảo mật',
   'auth.footer.terms': 'Điều khoản dịch vụ',
   'auth.footer.support': 'Trung tâm hỗ trợ',
@@ -144,7 +144,7 @@ export const translations = {
   'register.confirmPasswordLabel': 'Xác nhận mật khẩu',
   'register.confirmPasswordPlaceholder': '••••••••',
   'register.agreeTerms':
-    'Tôi đồng ý với Điều khoản Dịch vụ và Chính sách Bảo mật của BIM-CDE Portal.',
+    'Tôi đồng ý với Điều khoản Dịch vụ và Chính sách Bảo mật của CDE Portal.',
   'register.submit': 'Hoàn tất đăng ký',
   'register.haveAccount': 'Đã có tài khoản?',
   'register.signIn': 'Đăng nhập ngay',
@@ -182,7 +182,7 @@ export const translations = {
 
   // About - Hero
   'about.hero.titleLead': 'Nền Tảng Dữ Liệu Chung',
-  'about.hero.titleAccent': '(BIM-CDE Portal)',
+  'about.hero.titleAccent': '(CDE Portal)',
   'about.hero.subtitle':
     'Môi trường dữ liệu chung chuyên nghiệp, minh bạch và an toàn dành cho quản lý vòng đời dự án xây dựng, tuân thủ chặt chẽ các tiêu chuẩn quốc gia.',
 
@@ -248,21 +248,27 @@ export const translations = {
 
   // ── Admin Sidebar ─────────────────────────────────
   'admin.nav.overview': 'Tổng quan',
-  'admin.nav.accounts': 'Quản lý tài khoản',
+  'admin.nav.accounts': 'Quản lý người dùng',
   'admin.nav.organization': 'Tổ chức',
-  'admin.nav.organizations': 'Quản lý tổ chức',
+  'admin.nav.organizations': 'Doanh nghiệp & Đối tác',
   'admin.nav.projects': 'Dự án của tôi',
   'admin.nav.notifications': 'Thông báo',
-  'admin.nav.profile': 'Hồ sơ',
+  'admin.nav.profile': 'Hồ sơ cá nhân',
   'admin.nav.settings': 'Cài đặt',
-  'admin.sidebar.storage': 'TRẠNG THÁI LƯU TRỮ',
-  'admin.sidebar.storageUsed': '1.5 TB / 2.0 TB đã dùng',
+  'admin.section.system': 'Quản trị hệ thống',
+  'admin.section.project': 'Dự án',
+  'admin.section.personal': 'Cá nhân',
   'admin.sidebar.logout': 'Đăng xuất',
+  'admin.sidebar.collapse': 'Thu gọn thanh bên',
+  'admin.sidebar.expand': 'Mở rộng thanh bên',
+  'admin.footer.privacy': 'Chính sách bảo mật',
+  'admin.footer.status': 'Trạng thái hệ thống',
+  'admin.footer.terms': 'Điều khoản',
   'admin.topbar.search': 'Tìm kiếm dự án...',
   'admin.topbar.breadcrumb.home': 'TRANG CHỦ',
 
   // ── Account page enhancements ─────────────────────
-  'account.description': 'Quản lý tất cả tài khoản người dùng trong hệ thống BIM-CDE Portal.',
+  'account.description': 'Quản lý tài khoản người dùng trong hệ thống CDE Portal.',
   'account.search': 'Tìm kiếm tài khoản...',
   'account.stats.total': 'Tổng tài khoản',
   'account.stats.active': 'Đang hoạt động',
@@ -281,7 +287,7 @@ export const translations = {
   'profile.editButton': 'Chỉnh sửa hồ sơ',
   'profile.status.active': 'Đang hoạt động',
   'profile.status.verified': 'Tài khoản xác thực',
-  'profile.status.verifiedDesc': 'Hồ sơ của bạn đã được xác minh bởi quản trị viên hệ thống BIM-CDE.',
+  'profile.status.verifiedDesc': 'Hồ sơ của bạn đã được xác minh bởi quản trị viên hệ thống CDE Portal.',
   'profile.status.viewCert': 'Xem chứng chỉ →',
   'profile.tabs.info': 'Thông tin',
   'profile.tabs.security': 'Bảo mật',
@@ -592,7 +598,7 @@ export const translations = {
   'projectDetail.partners.taxCode': 'MST:',
 
   // ── Sidebar expanded navigation (User/Team Leader) ─
-  'admin.nav.packages': 'Gói thầu',
+  'admin.nav.packages': 'Gói thầu & Hợp đồng',
   'admin.nav.teams': 'Đội ngũ',
   'admin.nav.documents': 'Quản lý tài liệu',
   'admin.nav.approvals': 'Quy trình phê duyệt',
@@ -773,6 +779,7 @@ export const translations = {
   'documents.files.folderBadge': 'Thư mục',
   'documents.files.colName': 'TÊN TỆP',
   'documents.files.colVersion': 'PHIÊN BẢN',
+  'documents.files.colType': 'LOẠI FILE',
   'documents.files.colSize': 'DUNG LƯỢNG',
   'documents.files.colStatus': 'TRẠNG THÁI',
   'documents.files.colModified': 'NGÀY CHỈNH SỬA',

@@ -332,8 +332,8 @@ export function FileViewPage() {
   const isExcelFile = isExcelFormat(format);
   const isCad2DFile = isCad2DFormat(format);
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
-  // Tab "Kiểm LOI" chỉ hiện với file mô hình .ifc (cùng dải tab với markup).
-  const showLoiTab = format === 'IFC';
+  // Tab "Kiểm LOI" TẠM TẮT (chức năng chưa hoàn thiện). Mở lại: đổi về `format === 'IFC'`.
+  const showLoiTab = false;
   // 3 tab luôn có (Thông tin / Ký số / Issue) + markup (nếu xem được) + LOI (nếu file .ifc).
   const panelTabCount = 3 + (showMarkupTab ? 1 : 0) + (showLoiTab ? 1 : 0);
   const panelTabGridClass =

@@ -5,6 +5,7 @@ import type { ContractPackage } from '@/entities/contractPackage';
 import { PackageFormModal } from '@/features/packages';
 import { useAccounts } from '@/features/accounts';
 import { fileItemApi } from '@/entities/file-item';
+import { t } from '@/shared/lib/i18n';
 
 /* ── Status mapping ── */
 const STATUS_MAP: Record<number, { label: string; cls: string }> = {
@@ -135,7 +136,7 @@ export default function PackageDetailPage() {
       {/* ── Breadcrumb ── */}
       <nav className="flex items-center gap-2 text-sm text-text-muted">
         <button onClick={() => navigate('/')} className="hover:text-primary transition-colors">
-          BIM-CDE Portal
+          {t('brand.name')}
         </button>
         <span>/</span>
         <button onClick={() => navigate('/projects')} className="hover:text-primary transition-colors">

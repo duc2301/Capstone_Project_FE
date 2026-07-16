@@ -2,7 +2,7 @@ import type { FileListItem } from '@/entities/file-item';
 import type { FolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
-import { formatDate, formatSize } from '../model/fileFormat';
+import { fileStatusBadge, fileTypeLabel, formatDate, formatSize } from '../model/fileFormat';
 
 interface FileListProps {
   subfolders: FolderTreeNode[];
@@ -81,6 +81,8 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
           <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
             <th className="py-2.5 pr-3 font-bold">{t('documents.files.colName')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colVersion')}</th>
+            <th className="px-3 py-2.5 font-bold">{t('documents.files.colType')}</th>
+            <th className="px-3 py-2.5 font-bold">{t('documents.files.colStatus')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colSize')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colModified')}</th>
             <th className="px-3 py-2.5 font-bold">{t('documents.files.colAuthor')}</th>
@@ -102,6 +104,8 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   <p className="truncate font-medium text-text">{folder.name}</p>
                 </div>
               </td>
+              <td className="px-3 py-3 text-text-muted">—</td>
+              <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
@@ -136,6 +140,17 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                 <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
                   {f.displayVersion ?? `V${f.currentVersionNumber}`}
                 </span>
+              </td>
+              <td className="px-3 py-3 text-text-secondary">{fileTypeLabel(f.fileType)}</td>
+              <td className="px-3 py-3">
+                {(() => {
+                  const badge = fileStatusBadge(f);
+                  return (
+                    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>
+                      {badge.label}
+                    </span>
+                  );
+                })()}
               </td>
               <td className="px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
               <td className="px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>

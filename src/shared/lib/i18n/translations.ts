@@ -1381,6 +1381,12 @@ export const translations = {
   'naming.upload.bypass': 'Tệp ngoại lệ — không áp dụng quy tắc đặt tên',
   'naming.upload.bypassHint': 'Dành cho văn bản hành chính (thông tư, nghị định, nghị quyết...) — giữ nguyên tên tệp gốc.',
   'naming.cancel': 'Hủy',
+
+  /* ── Tóm tắt nội dung file (AI) ── */
+  'fileSummary.title': 'Tóm tắt nội dung',
+  'fileSummary.sender': 'AI tạo tự động sau khi tải lên — chỉ mang tính tham khảo',
+  'fileSummary.more': 'Xem thêm',
+  'fileSummary.less': 'Thu gọn',
 } as const;
 
 export type TranslationKey = keyof typeof translations;

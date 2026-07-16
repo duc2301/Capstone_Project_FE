@@ -38,6 +38,7 @@ function toFileListItem(dto: FolderContentsFileDto): FileListItem {
     updatedAt: dto.updatedAt,
     warnning: dto.warnning,
     warnningMessage: dto.warnningMessage,
+    description: dto.description ?? null,
     hasOpenIssue: dto.hasOpenIssue,
   };
 }

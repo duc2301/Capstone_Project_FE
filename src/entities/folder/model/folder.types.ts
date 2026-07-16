@@ -46,6 +46,8 @@ export interface FolderContentsFileDto {
   updatedAt: string | null;
   warnning?: boolean | null;
   warnningMessage?: string | null;
+  /** Tóm tắt nội dung do AI sinh sau upload (null = chưa tóm tắt / không trích được chữ). */
+  description?: string | null;
   hasOpenIssue?: boolean;
 }
 

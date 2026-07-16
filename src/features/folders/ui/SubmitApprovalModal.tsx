@@ -15,6 +15,8 @@ interface SubmitApprovalModalProps {
   signerGroups: Group[];
   loadingSigners: boolean;
   busy: boolean;
+  /* Lỗi trả về từ API khi submit (BE) — hiển thị trong khung modal thay vì toast ngoài. */
+  submitError?: string | null;
   onClose: () => void;
   onSubmit: (payload: SubmitApprovalPayload) => void;
 }
@@ -59,6 +61,7 @@ export function SubmitApprovalModal({
   signerGroups,
   loadingSigners,
   busy,
+  submitError,
   onClose,
   onSubmit,
 }: SubmitApprovalModalProps) {
@@ -235,9 +238,9 @@ export function SubmitApprovalModal({
             </div>
           )}
 
-          {error && (
+          {(error ?? submitError) && (
             <p className="rounded-xl border border-danger/20 bg-danger-light px-3.5 py-2 text-sm font-medium text-danger">
-              {error}
+              {error ?? submitError}
             </p>
           )}
         </div>

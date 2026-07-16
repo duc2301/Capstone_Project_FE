@@ -4,6 +4,8 @@ import type { IssueItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
+import { useIssueRealtime } from './useIssueRealtime';
+
 interface UseIssuesReturn {
   items: IssueItem[];
   loading: boolean;
@@ -11,10 +13,21 @@ interface UseIssuesReturn {
   refetch: () => Promise<void>;
 }
 
+function upsertIssue(prev: IssueItem[], incoming: IssueItem): IssueItem[] {
+  return prev.some((item) => item.id === incoming.id)
+    ? prev.map((item) => (item.id === incoming.id ? incoming : item))
+    : [incoming, ...prev];
+}
+
 export function useIssues(fileItemId: string | undefined): UseIssuesReturn {
   const [items, setItems] = useState<IssueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useIssueRealtime(fileItemId, {
+    onIssueCreated: (issue) => setItems((prev) => upsertIssue(prev, issue)),
+    onIssueUpdated: (issue) => setItems((prev) => upsertIssue(prev, issue)),
+  });
 
   const loadItems = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
     if (!fileItemId) return;

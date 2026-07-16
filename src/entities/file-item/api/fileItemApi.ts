@@ -17,9 +17,9 @@ export const fileItemApi = {
   getByFolder: (folderId: string) =>
     axiosInstance.get<ApiResponse<FileListItem[]>>(`/file-items/by-folder/${folderId}`),
 
-  /** Tất cả phiên bản của 1 file (mới nhất trước). */
+  /** Lịch sử phiên bản của 1 file (mới nhất trước). */
   getVersions: (fileItemId: string) =>
-    axiosInstance.get<ApiResponse<FileVersion[]>>(`/file-items/${fileItemId}/versions`),
+    axiosInstance.get<ApiResponse<FileVersion[]>>(`/file-versions/${fileItemId}/history`),
 
   /** Tải nội dung file về (blob, qua server – có kèm token). */
   download: (fileItemId: string) =>

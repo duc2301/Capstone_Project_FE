@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
-import type { FileListItem, FileItemStatus, FileType } from '@/entities/file-item';
-import type { FolderContentsFileDto, FolderTreeNode } from '@/entities/folder';
-import { folderApi, toFolderTreeNode } from '@/entities/folder';
-import { t } from '@/shared/lib/i18n';
+import type {
+  FileListItem,
+  FileItemStatus,
+  FileType,
+} from "@/entities/file-item";
+import type { FolderContentsFileDto, FolderTreeNode } from "@/entities/folder";
+import { folderApi, toFolderTreeNode } from "@/entities/folder";
+import { issueApi } from "@/entities/issue";
+import { t } from "@/shared/lib/i18n";
 
 interface UseFolderFilesReturn {
   subfolders: FolderTreeNode[];
@@ -43,24 +48,45 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadFiles = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
-    if (!folderId) return;
+  const loadFiles = useCallback(
+    async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
+      if (!folderId) return;
 
-    if (showLoading) setLoading(true);
-    setError(null);
+      if (showLoading) setLoading(true);
+      setError(null);
 
-    try {
-      const { data } = await folderApi.getContents(folderId);
-      if (!isCancelled()) {
+      try {
+        const { data } = await folderApi.getContents(folderId);
+        if (isCancelled()) return;
+
         setSubfolders((data.result?.subfolders ?? []).map(toFolderTreeNode));
-        setFiles((data.result?.files ?? []).map(toFileListItem));
+        const items = (data.result?.files ?? []).map(toFileListItem);
+        setFiles(items);
+
+        // Ghep co "Dang xu ly issue" bang 1 loi goi rieng (khong dong cham API cua FolderTreeService) —
+        // khong chan render danh sach file, cap nhat sau khi co ket qua.
+        if (items.length > 0) {
+          issueApi
+            .getOpenIssueFileIds(items.map((f) => f.id))
+            .then((openIds) => {
+              if (isCancelled() || openIds.length === 0) return;
+              const openSet = new Set(openIds);
+              setFiles((prev) =>
+                prev.map((f) =>
+                  openSet.has(f.id) ? { ...f, hasOpenIssue: true } : f,
+                ),
+              );
+            })
+            .catch(() => undefined);
+        }
+      } catch {
+        if (!isCancelled()) setError(t("documents.error"));
+      } finally {
+        if (!isCancelled()) setLoading(false);
       }
-    } catch {
-      if (!isCancelled()) setError(t('documents.error'));
-    } finally {
-      if (!isCancelled()) setLoading(false);
-    }
-  }, [folderId]);
+    },
+    [folderId],
+  );
 
   const refetch = useCallback(() => loadFiles(false), [loadFiles]);
 

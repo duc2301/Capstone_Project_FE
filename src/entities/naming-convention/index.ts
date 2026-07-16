@@ -6,6 +6,8 @@ export type {
   CreateNamingConventionPayload,
   CreateNamingFieldPayload,
   CreateNamingValuePayload,
+  FolderFieldOption,
+  FolderFieldSelection,
   FolderNamingConvention,
   ImportedNamingField,
   ImportedNamingValue,

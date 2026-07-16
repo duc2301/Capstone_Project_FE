@@ -6,6 +6,7 @@ import type {
   CreateNamingConventionPayload,
   CreateNamingFieldPayload,
   CreateNamingValuePayload,
+  FolderFieldSelection,
   FolderNamingConvention,
   NamingConvention,
   NamingImportPreview,
@@ -77,6 +78,16 @@ export const namingConventionApi = {
 
   unassignFolder: (folderId: string) =>
     axiosInstance.delete<ApiResponse<unknown>>(`/naming-conventions/folders/${folderId}/assignment`),
+
+  /* ── Tùy chỉnh field theo folder (leader) ──────────── */
+
+  /** Toàn bộ field của convention đang áp cho folder + cờ enabled (bắt buộc/khóa = luôn áp dụng). */
+  getFolderFieldSelection: (folderId: string) =>
+    axiosInstance.get<ApiResponse<FolderFieldSelection>>(`/naming-conventions/folders/${folderId}/field-selection`),
+
+  /** Bật các field KHÔNG bắt buộc áp dụng thêm cho folder — thay thế toàn bộ danh sách đã bật. */
+  setFolderFieldSelection: (folderId: string, fieldIds: string[]) =>
+    axiosInstance.put<ApiResponse<FolderFieldSelection>>(`/naming-conventions/folders/${folderId}/field-selection`, { fieldIds }),
 
   /* ── Dialog upload ─────────────────────────────────── */
 

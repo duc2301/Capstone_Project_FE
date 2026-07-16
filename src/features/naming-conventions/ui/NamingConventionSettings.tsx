@@ -34,7 +34,7 @@ export function NamingConventionSettings({ projectId }: NamingConventionSettings
       const blobUrl = URL.createObjectURL(res.data as Blob);
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = 'naming-convention-template.xlsx';
+      a.download = 'naming-convention-template_ISO-19650.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();

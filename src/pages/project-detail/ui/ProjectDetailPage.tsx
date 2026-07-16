@@ -757,7 +757,9 @@ export function ProjectDetailPage() {
 
       {/* ── Tabs ──────────────────────────────────────── */}
       <nav className="flex gap-1 overflow-x-auto border-b border-card-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {TABS.filter((item) => canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id)).map((item) => (
+        {TABS.filter((item) => (item.id === 'settings'
+          ? isAdmin // cấu hình quy tắc đặt tên: chỉ Admin
+          : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
           <button
             key={item.id}
             type="button"
@@ -1147,8 +1149,8 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) ─────────── */}
-      {tab === 'settings' && (
+      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — chỉ Admin ── */}
+      {tab === 'settings' && isAdmin && (
         <NamingConventionSettings projectId={project.id} />
       )}
 

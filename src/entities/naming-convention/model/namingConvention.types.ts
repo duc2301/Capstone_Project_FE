@@ -71,6 +71,26 @@ export interface FolderNamingConvention {
   fields: UploadNamingField[] | null;
 }
 
+/* ── Tùy chỉnh field theo folder ───────────────────────── */
+
+/** 1 field của convention nhìn từ 1 folder: bắt buộc/khóa = luôn áp dụng; optional = bật/tắt. */
+export interface FolderFieldOption {
+  id: string;
+  code: string;
+  displayName: string;
+  description: string | null;
+  orderIndex: number;
+  isRequired: boolean;
+  isLocked: boolean;
+  enabled: boolean;
+}
+
+export interface FolderFieldSelection {
+  hasNamingConvention: boolean;
+  namingConventionId: string | null;
+  fields: FolderFieldOption[] | null;
+}
+
 /* ── Import xlsx (preview — chưa ghi DB) ───────────────── */
 
 export interface ImportedNamingValue {

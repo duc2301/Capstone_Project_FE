@@ -1,6 +1,20 @@
-import type { FileListItem } from '@/entities/file-item';
-import { FileItemStatus, FileReturnRequestStatus } from '@/entities/file-item';
+import type { FileListItem, FileType } from '@/entities/file-item';
+import { FileItemStatus, FileReturnRequestStatus, FileType as FileTypeEnum } from '@/entities/file-item';
+import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
+
+const FILE_TYPE_KEY: Record<FileType, TranslationKey> = {
+  [FileTypeEnum.Pdf]: 'fileView.fileType.pdf',
+  [FileTypeEnum.Ifc]: 'fileView.fileType.ifc',
+  [FileTypeEnum.Image]: 'fileView.fileType.image',
+  [FileTypeEnum.Cad]: 'fileView.fileType.cad',
+  [FileTypeEnum.Office]: 'fileView.fileType.office',
+  [FileTypeEnum.Other]: 'fileView.fileType.other',
+};
+
+export function fileTypeLabel(fileType: FileType): string {
+  return t(FILE_TYPE_KEY[fileType] ?? 'fileView.fileType.other');
+}
 
 /* Bytes -> chuỗi dễ đọc (KB/MB/GB) */
 export function formatSize(bytes: number): string {

@@ -4,14 +4,18 @@ import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { useInlineMarkupContext } from '../model/inlineMarkupContext';
 
-/** Tab "Ghi chú" nằm ở cột bên phải */
-export function InlineCommentsPanel() {
+interface InlineCommentsPanelProps {
+  onJumpToNote?: () => void;
+}
+
+export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) {
   const c = useInlineMarkupContext();
   const openCount = c.notes.filter((n) => n.status === FileNoteStatus.Open).length;
 
   const jumpTo = (note: FileNote) => {
     if (note.pageNumber) c.setPage(note.pageNumber);
     c.setSelectedId(note.id);
+    onJumpToNote?.();
   };
 
   return (

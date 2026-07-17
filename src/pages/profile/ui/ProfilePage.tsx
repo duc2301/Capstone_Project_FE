@@ -148,7 +148,7 @@ export function ProfilePage() {
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-full bg-content-bg px-3 py-1.5 text-xs font-medium text-text-secondary">
-                  BIM-CDE Portal
+                  {t('brand.name')}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-[#C2E09B] px-3 py-1.5 text-xs font-medium text-primary">
                   {role}

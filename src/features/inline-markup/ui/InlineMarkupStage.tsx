@@ -12,8 +12,11 @@ const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.25;
 
-/** Khung xem file kèm theo toolbar để vẽ vời các thứ */
-export function InlineMarkupStage() {
+interface InlineMarkupStageProps {
+  onExitMarkup?: () => void;
+}
+
+export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
   const c = useInlineMarkupContext();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { isFullscreen, toggle } = useFullscreen(rootRef);
@@ -86,6 +89,19 @@ export function InlineMarkupStage() {
 
         <div className="ml-auto flex items-center gap-2">
           {c.saving && <span className="text-xs font-medium text-text-muted">{t('markup.inline.saving')}</span>}
+          {onExitMarkup && (
+            <button
+              type="button"
+              onClick={onExitMarkup}
+              title={t('markup.inline.exit')}
+              className="flex h-7 items-center gap-1.5 rounded-full border border-card-border px-3 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+              </svg>
+              {t('markup.inline.exit')}
+            </button>
+          )}
           <button
             type="button"
             onClick={toggle}

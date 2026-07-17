@@ -8,6 +8,7 @@ import { t } from '@/shared/lib/i18n';
 
 import { formatSize } from '../model/fileFormat';
 import { useFileUpload } from '../model/useFileUpload';
+import { RelatedFilesPicker } from './RelatedFilesPicker';
 
 type Status = 'pending' | 'uploading' | 'done' | 'error';
 interface UFile {
@@ -15,6 +16,8 @@ interface UFile {
   file: File;
   status: Status;
   progress: number;
+  // "Tệp liên quan" chọn riêng cho TỪNG file trong lô (không dùng chung cả lô).
+  relatedFileItemIds: string[];
   errorMsg?: string;
 }
 
@@ -29,6 +32,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
   const [items, setItems] = useState<UFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Quy tắc đặt tên của folder đích (nếu có): render dropdown thay vì đặt tên tự do.
@@ -87,6 +91,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
       file,
       status: 'pending',
       progress: 0,
+      relatedFileItemIds: [],
     }));
     // Folder có quy tắc đặt tên: 1 bộ giá trị = 1 tên -> mỗi lượt chỉ 1 tệp (tệp mới thay tệp cũ).
     setItems((prev) => (namingEnforced ? [next[next.length - 1]] : [...prev, ...next]));
@@ -118,6 +123,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
           (p) => update(it.id, { progress: p }),
           namingEnforced ? namingSelections : undefined,
           hasConvention && bypass,
+          it.relatedFileItemIds,
         );
         update(it.id, { status: 'done', progress: 100 });
         anyOk = true;
@@ -292,6 +298,22 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-text">{it.file.name}</p>
                       <p className="text-xs text-text-muted">{formatSize(it.file.size)}</p>
+                      {/* Liên kết chọn riêng cho từng file, không áp chung cả lô. */}
+                      {(it.status === 'pending' || it.status === 'error') && !busy && (
+                        <button
+                          type="button"
+                          onClick={() => setPickerFor(it.id)}
+                          className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                          {it.relatedFileItemIds.length > 0
+                            ? `${t('relatedFiles.upload.linked')} (${it.relatedFileItemIds.length})`
+                            : t('relatedFiles.upload.link')}
+                        </button>
+                      )}
                       {it.status === 'uploading' && (
                         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-content-bg">
                           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${it.progress}%` }} />
@@ -336,6 +358,18 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
           </div>
         </div>
       </div>
+
+      {pickerFor && (
+        <RelatedFilesPicker
+          folderId={targetFolder.id}
+          selectedIds={items.find((i) => i.id === pickerFor)?.relatedFileItemIds ?? []}
+          onConfirm={(ids) => {
+            update(pickerFor, { relatedFileItemIds: ids });
+            setPickerFor(null);
+          }}
+          onClose={() => setPickerFor(null)}
+        />
+      )}
     </div>
   );
 }

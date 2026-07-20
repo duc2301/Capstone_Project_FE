@@ -9,13 +9,15 @@ import { CreateConventionModal } from './CreateConventionModal';
 
 interface NamingConventionSettingsProps {
   projectId: string;
+  /** Admin/PM = true (CRUD + áp dụng). Leader = false (xem + tùy chỉnh trường theo folder). */
+  canConfigure: boolean;
 }
 
 const cardClass = 'rounded-[24px] border border-card-border/60 bg-card/70 p-8 shadow-card backdrop-blur-sm';
 
 /* Tab "Cài đặt" của dự án — quản lý các bộ quy tắc đặt tên tệp (kiểu Autodesk Docs):
  * danh sách → chi tiết (fields/values/khóa/gán thư mục), tạo mới bằng import xlsx hoặc tay. */
-export function NamingConventionSettings({ projectId }: NamingConventionSettingsProps) {
+export function NamingConventionSettings({ projectId, canConfigure }: NamingConventionSettingsProps) {
   const { conventions, loading, error, refetch, upsert } = useNamingConventions(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -56,6 +58,7 @@ export function NamingConventionSettings({ projectId }: NamingConventionSettings
         <ConventionDetail
           convention={selected}
           projectId={projectId}
+          canConfigure={canConfigure}
           onBack={() => setSelectedId(null)}
           onMutated={upsert}
           onDeleted={() => setSelectedId(null)}
@@ -68,30 +71,34 @@ export function NamingConventionSettings({ projectId }: NamingConventionSettings
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-display text-2xl font-semibold text-primary">{t('naming.title')}</h2>
-              <p className="mt-1 text-sm text-text-muted">{t('naming.subtitle')}</p>
+              <p className="mt-1 text-sm text-text-muted">
+                {canConfigure ? t('naming.subtitle') : t('naming.leader.subtitle')}
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => void handleDownloadTemplate()}
-                className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                {t('naming.downloadTemplate')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreateOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                {t('naming.create')}
-              </button>
-            </div>
+            {canConfigure && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadTemplate()}
+                  className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  {t('naming.downloadTemplate')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  {t('naming.create')}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Danh sách */}
@@ -113,16 +120,18 @@ export function NamingConventionSettings({ projectId }: NamingConventionSettings
               </span>
               <p className="font-display text-lg font-semibold text-text">{t('naming.empty.title')}</p>
               <p className="mx-auto mt-1 max-w-md text-sm text-text-muted">{t('naming.empty.desc')}</p>
-              <button
-                type="button"
-                onClick={() => setCreateOpen(true)}
-                className="mx-auto mt-5 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                {t('naming.create')}
-              </button>
+              {canConfigure && (
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className="mx-auto mt-5 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  {t('naming.create')}
+                </button>
+              )}
             </div>
           ) : (
             <div className={`${cardClass} overflow-x-auto`}>
@@ -160,12 +169,15 @@ export function NamingConventionSettings({ projectId }: NamingConventionSettings
                           {c.assignedFolders.length === 0 ? (
                             <span className="text-xs text-text-muted">—</span>
                           ) : (
-                            <div className="flex flex-wrap gap-1">
-                              {c.assignedFolders.slice(0, 3).map((f) => (
-                                <span key={f.id} className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold text-primary">{f.name}</span>
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-bold text-primary">
+                                {c.assignedFolders.length} {t('naming.foldersUnit')}
+                              </span>
+                              {c.assignedFolders.slice(0, 2).map((f) => (
+                                <span key={f.id} className="rounded-full bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">{f.name}</span>
                               ))}
-                              {c.assignedFolders.length > 3 && (
-                                <span className="rounded-full bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-muted">+{c.assignedFolders.length - 3}</span>
+                              {c.assignedFolders.length > 2 && (
+                                <span className="text-xs font-semibold text-text-muted">+{c.assignedFolders.length - 2}</span>
                               )}
                             </div>
                           )}

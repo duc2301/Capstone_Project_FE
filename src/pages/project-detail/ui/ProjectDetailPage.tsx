@@ -515,6 +515,14 @@ export function ProjectDetailPage() {
   const isAdmin = isAccountAdmin(currentUser?.role);
   const isManager = project?.managerAccountId === currentUser?.accountId;
   const canViewAllTabs = isAdmin || isManager;
+  // Leader active của ít nhất 1 group trong project — được vào tab Cài đặt (bản rút gọn).
+  const isProjectLeader = groups.some((g) =>
+    g.members.some(
+      (m) =>
+        m.accountId === currentUser?.accountId
+        && m.role === GroupMemberRole.Leader
+        && m.status === GroupMemberStatus.Active,
+    ));
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -672,7 +680,7 @@ export function ProjectDetailPage() {
       {/* ── Tabs ──────────────────────────────────────── */}
       <nav className="flex gap-1 overflow-x-auto border-b border-card-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
-          ? isAdmin // cấu hình quy tắc đặt tên: chỉ Admin
+          ? isAdmin || isManager || isProjectLeader // quy tắc đặt tên: Admin/PM full, Leader bản rút gọn
           : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
           <button
             key={item.id}
@@ -925,9 +933,9 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — chỉ Admin ── */}
-      {tab === 'settings' && isAdmin && (
-        <NamingConventionSettings projectId={project.id} />
+      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
+      {tab === 'settings' && (isAdmin || isManager || isProjectLeader) && (
+        <NamingConventionSettings projectId={project.id} canConfigure={isAdmin || isManager} />
       )}
 
       {/* ── Tab: Packages ───────────── */}

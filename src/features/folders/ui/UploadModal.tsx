@@ -39,6 +39,8 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
   const [naming, setNaming] = useState<FolderNamingConvention | null>(null);
   const [namingLoading, setNamingLoading] = useState(true);
   const [selections, setSelections] = useState<Record<string, string>>({});
+  // Field bắt buộc mà autofill từ tên gốc KHÔNG khớp được — viền đỏ bắt chọn tay.
+  const [mismatchIds, setMismatchIds] = useState<Set<string>>(new Set());
   // Tệp ngoại lệ (văn bản hành chính: thông tư, nghị định...) — bỏ qua quy tắc, giữ tên gốc.
   const [bypass, setBypass] = useState(false);
 
@@ -84,6 +86,42 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
     .join(delimiter);
   const previewExt = items[0] ? `.${items[0].file.name.split('.').pop() ?? ''}` : '';
 
+  /* Autofill từ tên file gốc (tiện cho re-upload file đã đặt tên chuẩn: tải về sửa rồi up lại):
+   * tách tên theo delimiter, khớp mã với value của từng field theo thứ tự.
+   * - Field khóa: khớp thì tiêu thụ segment, lệch cũng bỏ qua (BE tự chèn giá trị khóa).
+   * - Field thường khớp mã -> tự điền; BẮT BUỘC mà không khớp -> đánh dấu đỏ bắt chọn tay.
+   * - Field tùy chọn không khớp -> bỏ qua field, giữ segment cho field sau (tên có thể thiếu nó).
+   * - Không field nào khớp (tên tự do) -> coi như không phải tên chuẩn, không autofill, không đỏ. */
+  const autofillFromName = (fileName: string) => {
+    const base = fileName.replace(/\.[^.]+$/, '');
+    const segments = base.split(delimiter);
+    const next: Record<string, string> = {};
+    const bad = new Set<string>();
+    let si = 0;
+    for (const field of sortedFields) {
+      const seg = segments[si];
+      if (field.locked) {
+        if (seg && field.lockedValue && seg.toUpperCase() === field.lockedValue.code.toUpperCase()) si += 1;
+        continue;
+      }
+      const match = seg ? (field.values ?? []).find((v) => v.code.toUpperCase() === seg.toUpperCase()) : undefined;
+      if (match) {
+        next[field.id] = match.id;
+        si += 1;
+      } else if (field.required) {
+        bad.add(field.id);
+        si += 1;
+      }
+    }
+    if (Object.keys(next).length === 0) {
+      setSelections({});
+      setMismatchIds(new Set());
+      return;
+    }
+    setSelections(next);
+    setMismatchIds(bad);
+  };
+
   const addFiles = (list: FileList | null) => {
     if (!list || list.length === 0) return;
     const next: UFile[] = Array.from(list).map((file) => ({
@@ -95,6 +133,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
     }));
     // Folder có quy tắc đặt tên: 1 bộ giá trị = 1 tên -> mỗi lượt chỉ 1 tệp (tệp mới thay tệp cũ).
     setItems((prev) => (namingEnforced ? [next[next.length - 1]] : [...prev, ...next]));
+    if (namingEnforced) autofillFromName(next[next.length - 1].file.name);
   };
 
   const update = (id: string, patch: Partial<UFile>) =>
@@ -219,17 +258,37 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
                         <span className="truncate text-xs text-text-muted">{field.lockedValue?.displayName}</span>
                       </div>
                     ) : (
-                      <select
-                        value={selections[field.id] ?? ''}
-                        disabled={busy}
-                        onChange={(e) => setSelections((prev) => ({ ...prev, [field.id]: e.target.value }))}
-                        className="w-full rounded-(--radius-input) border border-input-border bg-card px-3 py-2 text-sm text-text outline-none focus:border-input-focus disabled:opacity-50"
-                      >
-                        <option value="">{t('naming.upload.select')}</option>
-                        {(field.values ?? []).map((v) => (
-                          <option key={v.id} value={v.id}>{v.code} — {v.displayName}</option>
-                        ))}
-                      </select>
+                      <>
+                        <select
+                          value={selections[field.id] ?? ''}
+                          disabled={busy}
+                          onChange={(e) => {
+                            const valueId = e.target.value;
+                            setSelections((prev) => ({ ...prev, [field.id]: valueId }));
+                            // User chọn tay -> gỡ cờ đỏ autofill không khớp.
+                            if (valueId)
+                              setMismatchIds((prev) => {
+                                if (!prev.has(field.id)) return prev;
+                                const nextSet = new Set(prev);
+                                nextSet.delete(field.id);
+                                return nextSet;
+                              });
+                          }}
+                          className={`w-full rounded-(--radius-input) border px-3 py-2 text-sm text-text outline-none disabled:opacity-50 ${
+                            mismatchIds.has(field.id)
+                              ? 'border-danger bg-danger-light/30 focus:border-danger'
+                              : 'border-input-border bg-card focus:border-input-focus'
+                          }`}
+                        >
+                          <option value="">{t('naming.upload.select')}</option>
+                          {(field.values ?? []).map((v) => (
+                            <option key={v.id} value={v.id}>{v.code} — {v.displayName}</option>
+                          ))}
+                        </select>
+                        {mismatchIds.has(field.id) && (
+                          <p className="mt-1 text-xs font-medium text-danger">{t('naming.upload.autofillMismatch')}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}

@@ -5,6 +5,7 @@ import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
+import { issueApi } from '@/entities/issue';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { RelatedFilesPanel } from '@/features/folders';
 import { formatSize } from '@/features/folders/model/fileFormat';
@@ -149,6 +150,8 @@ export function FileViewPage() {
   const [versions, setVersions] = useState<FileVersion[]>([]);
   const [fileListItem, setFileListItem] = useState<FileListItem | null>(null);
   const [fileApprovals, setFileApprovals] = useState<ApprovalListItem[]>([]);
+  // Markup chỉ mở khi file ĐANG có issue mở (yêu cầu nghiệp vụ: markup gắn với issue).
+  const [hasOpenIssue, setHasOpenIssue] = useState(false);
   // File đã nạp xong dữ liệu. Suy ra `loading` từ đây thay vì giữ cờ riêng: đổi file (bấm 1 tệp
   // liên quan) là id lệch ngay -> loading bật tức thì, không cần setState trong effect.
   // Trước đây cờ loading chỉ được bật lúc khởi tạo rồi tắt vĩnh viễn -> chuyển file KHÔNG hiện
@@ -204,12 +207,17 @@ export function FileViewPage() {
           .getApprovals()
           .then((items) => items.filter((item) => item.fileItemId === fileId))
           .catch(() => []);
+        const openIssuePromise = issueApi
+          .getOpenIssueFileIds([fileId])
+          .then((ids) => ids.includes(fileId))
+          .catch(() => false);
 
-        const [viewResult, versionsResult, currentFileResult, fileApprovalsResult] = await Promise.all([
+        const [viewResult, versionsResult, currentFileResult, fileApprovalsResult, openIssueResult] = await Promise.all([
           fetchView(),
           fileItemApi.getVersions(fileId),
           currentFilePromise,
           fileApprovalsPromise,
+          openIssuePromise,
         ]);
 
         if (!cancelled) {
@@ -218,6 +226,7 @@ export function FileViewPage() {
           setVersions(versionsResult.data.result ?? []);
           setFileListItem(currentFileResult);
           setFileApprovals(fileApprovalsResult);
+          setHasOpenIssue(openIssueResult);
         }
       } catch {
         if (!cancelled) setError(t('fileView.error'));
@@ -303,12 +312,14 @@ export function FileViewPage() {
     info?.kind === 'model' && status === ModelViewerStatus.Ready && !!info.urn;
   const isModelFailed = info?.kind === 'model' && status === ModelViewerStatus.Failed;
 
-  const canMarkup = Boolean(info?.kind === 'model' && isModelReady);
+  // Markup CHỈ mở khi file đang có issue mở (yêu cầu nghiệp vụ). Model phải đã dịch xong.
+  const canMarkup = Boolean(info?.kind === 'model' && isModelReady && hasOpenIssue);
   // File xem trực tiếp được (ảnh/PDF/Office đã convert) thì VẼ VỜI được — đây là "có khả năng
-  // markup", KHÔNG phải "đang ở chế độ markup" (xem inlineMarkupMode).
+  // markup", KHÔNG phải "đang ở chế độ markup" (xem inlineMarkupMode). Vẫn cần có issue mở.
   const canMarkupInline = Boolean(
     info?.kind === 'inline' &&
-    ((info.contentType ?? '').startsWith('image/') || info.contentType === 'application/pdf'),
+    ((info.contentType ?? '').startsWith('image/') || info.contentType === 'application/pdf') &&
+    hasOpenIssue,
   );
   // Mặc định MỞ FILE LÀ ĐỌC BÌNH THƯỜNG (cuộn/zoom/tìm kiếm bằng trình xem của trình duyệt);
   // chỉ khi bấm "Ghi chú (Markup)" mới sang layout markup.
@@ -318,6 +329,10 @@ export function FileViewPage() {
   const enterInlineMarkup = useCallback(() => setMarkupModeFileId(fileId ?? null), [fileId]);
 
   const showMarkupTab = (canMarkup && info?.kind === 'model') || canMarkupInline;
+  // Tab markup có thể biến mất khi issue vừa đóng hoặc khi chuyển sang file không có issue —
+  // nếu đang đứng ở tab đó thì lùi về "Thông tin" để không hiển thị nội dung markup mồ côi.
+  const effectivePanelTab: FilePanelTab =
+    activePanelTab === 'markup' && !showMarkupTab ? 'properties' : activePanelTab;
   const inlineVersionId = fileListItem?.currentVersionId ?? latestVersion?.id ?? null;
 
   const statusMeta = useMemo(
@@ -424,6 +439,17 @@ export function FileViewPage() {
     if (!fileId) return;
     const items = await approvalApi.getApprovals();
     setFileApprovals(items.filter((item) => item.fileItemId === fileId));
+  }, [fileId]);
+
+  // Cập nhật lại quyền markup khi issue của file thay đổi (tạo mới / giải quyết) từ panel Issue.
+  const refreshOpenIssue = useCallback(async () => {
+    if (!fileId) return;
+    try {
+      const ids = await issueApi.getOpenIssueFileIds([fileId]);
+      setHasOpenIssue(ids.includes(fileId));
+    } catch {
+      // Lỗi tạm thời -> giữ nguyên trạng thái markup hiện tại.
+    }
   }, [fileId]);
 
   const handleConfirmSignaturePlacement = useCallback(async (position: SignaturePlacementValue) => {
@@ -628,36 +654,36 @@ export function FileViewPage() {
           <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
             <div className={`grid ${panelTabGridClass} border-b border-card-border`}>
               <PanelTabButton
-                active={activePanelTab === 'properties'}
+                active={effectivePanelTab === 'properties'}
                 label={t('fileView.tabs.properties')}
                 onClick={() => setActivePanelTab('properties')}
               />
               <PanelTabButton
-                active={activePanelTab === 'signatureHistory'}
+                active={effectivePanelTab === 'signatureHistory'}
                 label={t('fileView.tabs.signatureHistory')}
                 badge={requiresSignature && !isSigned ? '0' : undefined}
                 onClick={() => setActivePanelTab('signatureHistory')}
               />
               {showMarkupTab && (
                 <PanelTabButton
-                  active={activePanelTab === 'markup'}
+                  active={effectivePanelTab === 'markup'}
                   label={t('markup.inline.tab')}
                   onClick={() => setActivePanelTab('markup')}
                 />
               )}
               <PanelTabButton
-                active={activePanelTab === 'issues'}
+                active={effectivePanelTab === 'issues'}
                 label={t('issues.panel.tab')}
                 onClick={() => setActivePanelTab('issues')}
               />
               <PanelTabButton
-                active={activePanelTab === 'related'}
+                active={effectivePanelTab === 'related'}
                 label={t('relatedFiles.tab')}
                 onClick={() => setActivePanelTab('related')}
               />
               {showLoiTab && (
                 <PanelTabButton
-                  active={activePanelTab === 'loi'}
+                  active={effectivePanelTab === 'loi'}
                   label={t('loi.tab')}
                   onClick={() => setActivePanelTab('loi')}
                 />
@@ -665,7 +691,7 @@ export function FileViewPage() {
             </div>
 
             <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
-              {activePanelTab === 'properties' ? (
+              {effectivePanelTab === 'properties' ? (
                 <FilePropertiesPanel
                   info={info}
                   fileListItem={fileListItem}
@@ -677,7 +703,7 @@ export function FileViewPage() {
                   statusMeta={statusMeta}
                   versions={versions}
                 />
-              ) : activePanelTab === 'markup' ? (
+              ) : effectivePanelTab === 'markup' ? (
                 <>
                   {fileListItem?.warnning && fileListItem.warnningMessage && (
                     <AiCheckerWarningCard message={fileListItem.warnningMessage} />
@@ -699,11 +725,16 @@ export function FileViewPage() {
                     <InlineCommentsPanel onJumpToNote={enterInlineMarkup} />
                   )}
                 </>
-              ) : activePanelTab === 'issues' ? (
+              ) : effectivePanelTab === 'issues' ? (
                 projectId && fileId ? (
-                  <IssuesPanel projectId={projectId} fileItemId={fileId} onToast={showToast} />
+                  <IssuesPanel
+                    projectId={projectId}
+                    fileItemId={fileId}
+                    onToast={showToast}
+                    onIssuesChanged={refreshOpenIssue}
+                  />
                 ) : null
-              ) : activePanelTab === 'related' ? (
+              ) : effectivePanelTab === 'related' ? (
                 projectId && fileId ? (
                   <RelatedFilesPanel
                     projectId={projectId}
@@ -712,7 +743,7 @@ export function FileViewPage() {
                     folderId={fileListItem?.folderId ?? folderId}
                   />
                 ) : null
-              ) : activePanelTab === 'loi' ? (
+              ) : effectivePanelTab === 'loi' ? (
                 <LoiCheckPanel fileItemId={fileId ?? ''} />
               ) : (
                 <SignatureHistoryPanel

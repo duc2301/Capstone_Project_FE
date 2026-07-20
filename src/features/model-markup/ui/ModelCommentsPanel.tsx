@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-import { FileNoteStatus } from '@/entities/file-note';
+import { buildMarkupAuthorOptions, FileNoteStatus, filterMarkupNotes } from '@/entities/file-note';
+import { MarkupNoteFilter, type MarkupStatusFilter } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { beginDraw, endDraw, hideMarkups, restoreNote } from '../model/apsMarkup';
 import { useModelMarkup } from '../model/useModelMarkup';
@@ -25,6 +26,11 @@ export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId }: Props)
   const [drawing, setDrawing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [authorId, setAuthorId] = useState('');
+  const [statusFilter, setStatusFilter] = useState<MarkupStatusFilter>('all');
+
+  const authorOptions = buildMarkupAuthorOptions(notes, t('markup.filter.unknownAuthor'));
+  const filteredNotes = filterMarkupNotes(notes, authorId, statusFilter);
 
   const startDraw = async () => {
     setSelectedId(null);
@@ -115,13 +121,27 @@ export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId }: Props)
         </button>
       )}
 
+      {notes.length > 0 && (
+        <MarkupNoteFilter
+          authors={authorOptions}
+          authorId={authorId}
+          onAuthorChange={setAuthorId}
+          status={statusFilter}
+          onStatusChange={setStatusFilter}
+          total={notes.length}
+          shown={filteredNotes.length}
+        />
+      )}
+
       {loading ? (
         <p className="py-8 text-center text-sm text-text-muted">{t('common.loading')}</p>
       ) : notes.length === 0 ? (
         <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.empty')}</p>
+      ) : filteredNotes.length === 0 ? (
+        <p className="py-8 text-center text-sm text-text-muted">{t('markup.filter.noMatch')}</p>
       ) : (
         <ul className="space-y-3">
-          {notes.map((note) => {
+          {filteredNotes.map((note) => {
             const resolved = note.status === FileNoteStatus.Resolved;
             const selected = note.id === selectedId;
             return (

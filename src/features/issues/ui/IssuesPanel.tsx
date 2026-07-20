@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 import { t } from '@/shared/lib/i18n';
 
-import { useIssues } from '../model/useIssues';
 import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
+import { useIssues } from '../model/useIssues';
 import { CreateIssueModal } from './CreateIssueModal';
 import { IssueDetailModal } from './IssueDetailModal';
 
@@ -11,9 +11,10 @@ interface IssuesPanelProps {
   projectId: string;
   fileItemId: string;
   onToast: (message: string, type?: 'success' | 'error') => void;
+  onIssuesChanged?: () => void;
 }
 
-export function IssuesPanel({ projectId, fileItemId, onToast }: IssuesPanelProps) {
+export function IssuesPanel({ projectId, fileItemId, onToast, onIssuesChanged }: IssuesPanelProps) {
   const { items, loading, error, refetch } = useIssues(fileItemId);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export function IssuesPanel({ projectId, fileItemId, onToast }: IssuesPanelProps
           onCreated={() => {
             setShowCreate(false);
             void refetch();
+            onIssuesChanged?.();
           }}
         />
       )}
@@ -77,10 +79,12 @@ export function IssuesPanel({ projectId, fileItemId, onToast }: IssuesPanelProps
       {selectedIssueId && (
         <IssueDetailModal
           issueId={selectedIssueId}
-          projectId={projectId}
           onClose={() => setSelectedIssueId(null)}
           onToast={onToast}
-          onChanged={() => void refetch()}
+          onChanged={() => {
+            void refetch();
+            onIssuesChanged?.();
+          }}
         />
       )}
     </div>

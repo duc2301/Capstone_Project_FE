@@ -1,17 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { IssuePriority, IssueType } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
 import { useAssignableMembers } from '../model/useAssignableMembers';
-
-const MAX_ATTACHMENT_SIZE_BYTES = 20 * 1024 * 1024;
-
-interface PendingFile {
-  file: File;
-  previewUrl: string | null;
-}
 
 interface CreateIssueModalProps {
   projectId: string;
@@ -27,10 +20,8 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
   const [type, setType] = useState<IssueType>('Issue');
   const [priority, setPriority] = useState<IssuePriority>('Medium');
   const [assigneeId, setAssigneeId] = useState('');
-  const [files, setFiles] = useState<PendingFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(fileItemId);
 
@@ -41,43 +32,11 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
 
   const canSubmit = title.trim().length > 0 && !busy;
 
-  // Thu hoi object URL preview khi component unmount, tranh leak.
-  useEffect(() => () => {
-    files.forEach((f) => {
-      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleFilesSelected = (fileList: FileList | null) => {
-    if (!fileList) return;
-    const picked = Array.from(fileList);
-    const tooBig = picked.find((f) => f.size > MAX_ATTACHMENT_SIZE_BYTES);
-    if (tooBig) {
-      onToast(t('issues.create.attachmentTooLarge'), 'error');
-      return;
-    }
-    const withPreview: PendingFile[] = picked.map((file) => ({
-      file,
-      previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-    }));
-    setFiles((prev) => [...prev, ...withPreview]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleRemoveFile = (idx: number) => {
-    setFiles((prev) => {
-      const target = prev[idx];
-      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
-      return prev.filter((_, i) => i !== idx);
-    });
-  };
-
   const handleSubmit = async () => {
     setBusy(true);
     setError(null);
     try {
-      const created = await issueApi.create({
+      await issueApi.create({
         projectId,
         linkedFileItemId: fileItemId,
         title: title.trim(),
@@ -87,14 +46,6 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
         priority,
         assignedToAccountId: assigneeId || undefined,
       });
-
-      for (const { file } of files) {
-        try {
-          await issueApi.uploadAttachment(created.id, file);
-        } catch (err) {
-          onToast(issueErrorMessage(err, t('issues.error.uploadAttachment')), 'error');
-        }
-      }
 
       onToast(t('issues.toast.created'));
       onCreated();
@@ -187,52 +138,6 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               className="resize-none rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
             />
           </label>
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.create.attachmentsLabel')}</span>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-xl border border-dashed border-card-border px-4 py-3 text-center text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t('issues.create.attachmentsHint')}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              className="hidden"
-              onChange={(e) => handleFilesSelected(e.target.files)}
-            />
-            {files.length > 0 && (
-              <ul className="flex flex-wrap gap-2">
-                {files.map((f, idx) => (
-                  <li key={`${f.file.name}-${idx}`} className="relative flex items-center gap-2 rounded-lg bg-content-bg/60 px-2.5 py-1.5 text-xs">
-                    {f.previewUrl ? (
-                      <img src={f.previewUrl} alt={f.file.name} className="h-8 w-8 shrink-0 rounded-md object-cover" />
-                    ) : (
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-content-bg text-text-muted">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                      </span>
-                    )}
-                    <span className="max-w-[140px] truncate text-text">{f.file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(idx)}
-                      className="shrink-0 text-text-muted hover:text-danger"
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
 
           {error && (
             <div className="rounded-xl border border-danger/30 bg-danger-light px-4 py-3">

@@ -11,3 +11,5 @@ export type {
   MarkupSet,
   UpdateFileNotePayload
 } from './model/fileNote.types';
+export { buildMarkupAuthorOptions, filterMarkupNotes } from './model/markupFilter';
+

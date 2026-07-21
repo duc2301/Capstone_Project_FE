@@ -35,7 +35,7 @@ export function AdminLayout({ children }: Props) {
       />
 
       {/* Main content area (offset by sidebar width on desktop) */}
-      <div className={`flex flex-1 flex-col transition-[margin] duration-300 ${collapsed ? 'lg:ml-[76px]' : 'lg:ml-[260px]'}`}>
+      <div className={`flex flex-1 flex-col transition-[margin] duration-300 ${collapsed ? 'lg:ml-[64px]' : 'lg:ml-[216px]'}`}>
         <AdminTopBar onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
         <main className="flex-1 p-6 lg:p-8">

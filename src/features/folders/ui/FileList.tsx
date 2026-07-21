@@ -119,12 +119,12 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
         <thead>
           <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
             <th className="py-2.5 pr-3 font-bold">{t('documents.files.colName')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colVersion')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colType')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colStatus')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colSize')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colModified')}</th>
-            <th className="px-3 py-2.5 font-bold">{t('documents.files.colAuthor')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colVersion')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colType')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colStatus')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colSize')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colModified')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colAuthor')}</th>
           </tr>
         </thead>
         <tbody>
@@ -166,27 +166,27 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               title={t('documents.files.openHint')}
               className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
-              {/* w-full + max-w-0: cột tên chiếm phần còn lại và ép truncate,
-                  mô tả dài không banh hàng sang phải */}
+              {/* w-full + max-w-0: cột tên chiếm phần còn lại, không banh hàng sang phải;
+                  tên dài thì xuống dòng (break-words) thay vì cắt mất chữ */}
               <td className="w-full max-w-0 py-3 pr-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <FileIcon />
                   <div className="min-w-0 flex-1">
-                    <p className="flex min-w-0 items-center gap-1.5 truncate font-medium text-text">
-                      <span className="truncate">{f.name}</span>
+                    <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
+                      <span className="break-words">{f.name}</span>
                       {f.warnning && <WarningIcon message={f.warnningMessage} />}
                     </p>
                     {f.description && <FileDescription text={f.description} />}
                   </div>
                 </div>
               </td>
-              <td className="px-3 py-3">
+              <td className="whitespace-nowrap px-3 py-3">
                 <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
                   {f.displayVersion ?? `V${f.currentVersionNumber}`}
                 </span>
               </td>
-              <td className="px-3 py-3 text-text-secondary">{fileTypeLabel(f.fileType)}</td>
-              <td className="px-3 py-3">
+              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{fileTypeLabel(f.fileType)}</td>
+              <td className="whitespace-nowrap px-3 py-3">
                 {(() => {
                   const badge = fileStatusBadge(f);
                   return (
@@ -196,8 +196,8 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   );
                 })()}
               </td>
-              <td className="px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
-              <td className="px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
+              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
+              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
               <td className="px-3 py-3">
                 <div className="flex items-center justify-between gap-2 text-text-secondary">
                   <span className="truncate">{f.authorName ?? '—'}</span>

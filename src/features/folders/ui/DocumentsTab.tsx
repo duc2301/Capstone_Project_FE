@@ -13,7 +13,7 @@ import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus, FileReturnRequestStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileReturnRequestStatus, is3DFile } from '@/entities/file-item';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 
 import { useFolderActions } from '../model/useFolderActions';
@@ -349,7 +349,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           <p className="text-sm font-medium text-danger">{error}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_1fr]">
           {/* Cây thư mục — chuột phải để mở menu thao tác */}
           <FolderTree
             tree={tree}
@@ -359,21 +359,21 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-6 shadow-card">
+          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>
               </div>
             ) : (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3 border-b border-card-border pb-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 border-b border-card-border pb-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                       </svg>
                     </span>
-                    <h3 className="truncate font-display text-xl text-text">{selected.name}</h3>
+                    <h3 className="truncate text-xl font-normal text-text">{selected.name}</h3>
                   </div>
 
                   {/* Nút thao tác nhanh trên thư mục đang chọn */}
@@ -577,8 +577,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           fileName={submitApprovalFor.name}
           currentZone={selected ? zoneNameFromArea(selected.area) : 'Wip'}
           targetZone={selectedTargetZone}
-          canRequireSignature={!!selectedTargetZone}
-          mustRequireSignature={selected?.area === CdeArea.Shared && selectedTargetZone === 'Published'}
+          canRequireSignature={!!selectedTargetZone && !is3DFile(submitApprovalFor.fileType, submitApprovalFor.format)}
+          mustRequireSignature={
+            selected?.area === CdeArea.Shared &&
+            selectedTargetZone === 'Published' &&
+            !is3DFile(submitApprovalFor.fileType, submitApprovalFor.format)
+          }
           signerGroups={signerGroups}
           loadingSigners={signerGroupsLoading}
           busy={approvalBusy}
@@ -591,6 +595,9 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {/* Danh sách chờ duyệt */}
       {pendingApprovalsOpen && (
         <PendingApprovalsModal
+          isLeader={canManageNaming}
+          currentAccountId={currentUser?.accountId}
+          projectId={projectId}
           onClose={() => setPendingApprovalsOpen(false)}
           onChanged={() => {
             void refetchFiles();

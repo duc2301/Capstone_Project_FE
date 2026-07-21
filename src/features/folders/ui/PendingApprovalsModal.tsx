@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { ApprovalListItem } from '@/entities/approval';
 import { approvalApi, approvalErrorMessage } from '@/entities/approval';
@@ -13,27 +14,37 @@ import { zoneLabel } from '../model/zoneTransferFormat';
 import { ApprovalDetailModal } from './ApprovalDetailModal';
 import { RejectApprovalModal } from './RejectApprovalModal';
 import { RejectReturnModal } from './RejectReturnModal';
-import { SmartCaSignModal } from './SmartCaSignModal';
 
 interface PendingApprovalsModalProps {
   onClose: () => void;
   /* Gọi sau khi phê duyệt/từ chối thành công để bên ngoài làm mới danh sách tệp đang xem. */
   onChanged?: () => void;
+  /* Chỉ Leader (hoặc Admin) mới thấy toàn bộ danh sách và được phê duyệt/từ chối. */
+  isLeader?: boolean;
+  currentAccountId?: string;
+  /* Dự phòng cho nút "Xem trực tiếp" khi BE không trả projectId trong chi tiết phê duyệt. */
+  projectId?: string;
 }
 
-export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsModalProps) {
-  const { items, loading, error, refetch } = usePendingApprovals();
+export function PendingApprovalsModal({ onClose, onChanged, isLeader = false, currentAccountId, projectId }: PendingApprovalsModalProps) {
+  const navigate = useNavigate();
+  const { items: allItems, loading, error, refetch } = usePendingApprovals();
   const {
-    items: returnRequests,
+    items: allReturnRequests,
     loading: returnLoading,
     error: returnError,
     refetch: refetchReturnRequests,
   } = useZoneReturnRequests();
+
+  /* Member chỉ thấy các yêu cầu do chính mình gửi và không được phê duyệt/từ chối. */
+  const items = isLeader ? allItems : allItems.filter((it) => it.requestedByAccountId === currentAccountId);
+  const returnRequests = isLeader
+    ? allReturnRequests
+    : allReturnRequests.filter((r) => r.requestedByAccountId === currentAccountId);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<ApprovalListItem | null>(null);
   const [rejectFor, setRejectFor] = useState<ApprovalListItem | null>(null);
-  const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [confirmReturnApprove, setConfirmReturnApprove] = useState<ZoneReturnRequestItem | null>(null);
   const [rejectReturnFor, setRejectReturnFor] = useState<ZoneReturnRequestItem | null>(null);
@@ -46,6 +57,14 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  /* Bấm "Ký số" ngoài danh sách -> đóng modal, điều hướng thẳng vào file, mở sẵn tab "Lịch sử ký số". */
+  const handleSignNow = (it: ApprovalListItem) => {
+    const viewProjectId = it.projectId ?? projectId;
+    if (!viewProjectId) return;
+    onClose();
+    navigate(`/projects/${viewProjectId}/files/${it.fileItemId}/view?folder=${it.folderId ?? ''}&panel=signatureHistory`);
   };
 
   const handleApprove = async () => {
@@ -115,7 +134,7 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-6xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <h2 className="font-heading text-lg font-bold text-text">{t('approvals.pending.title')}</h2>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
@@ -141,12 +160,12 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                          <th className="py-2.5 pr-3 font-bold">{t('approvals.pending.colName')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('approvals.pending.colSender')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('approvals.pending.colDate')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('approvals.pending.colStatus')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('approvals.pending.colSignature')}</th>
-                          <th className="px-3 py-2.5 text-right font-bold">{t('approvals.pending.colActions')}</th>
+                          <th className="w-64 whitespace-nowrap py-2.5 pr-3 font-bold">{t('approvals.pending.colName')}</th>
+                          <th className="w-36 px-3 py-2.5 font-bold">{t('approvals.pending.colSender')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.pending.colDate')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.pending.colStatus')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.pending.colSignature')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 text-right font-bold">{t('approvals.pending.colActions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -158,53 +177,56 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                           const approvalLockedBySignature = canSignWithSmartCa && !it.isSigned;
                           return (
                             <tr key={it.id} className="border-b border-card-border/60">
-                              <td className="py-3 pr-3 font-medium text-text">{it.fileName}</td>
-                              <td className="px-3 py-3 text-text-secondary">{it.requestedByName}</td>
-                              <td className="px-3 py-3 text-text-secondary">{formatDateTime(it.createdAt)}</td>
-                              <td className="px-3 py-3">
+                              <td className="w-64 py-3 pr-3 font-medium text-text break-words">{it.fileName}</td>
+                              <td className="w-36 px-3 py-3 text-text-secondary break-words">{it.requestedByName}</td>
+                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(it.createdAt)}</td>
+                              <td className="whitespace-nowrap px-3 py-3">
                                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                               </td>
-                              <td className="px-3 py-3 text-text-secondary">
+                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">
                                 {canSignWithSmartCa
                                   ? (it.isSigned ? t('smartca.status.signed') : t('smartca.signature.required'))
                                   : t('approvals.detail.no')}
                               </td>
-                              <td className="px-3 py-3 text-right">
-                                <div className="flex items-center justify-end gap-2">
+                              <td className="whitespace-nowrap px-3 py-3 text-right">
+                                <div className="grid grid-cols-[auto_auto_auto_auto] items-center justify-end gap-2">
                                   <button
                                     type="button"
                                     onClick={() => setDetailId(it.id)}
-                                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
+                                    className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
                                   >
                                     {t('approvals.action.detail')}
                                   </button>
-                                  {canOpenSmartCa && (
+                                  {isLeader && canOpenSmartCa ? (
                                     <button
                                       type="button"
-                                      disabled={busy}
-                                      onClick={() => setSignFor(it)}
-                                      className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+                                      onClick={() => handleSignNow(it)}
+                                      className="whitespace-nowrap rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
                                     >
                                       {t('smartca.action.sign')}
                                     </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    disabled={busy || approvalLockedBySignature}
-                                    title={approvalLockedBySignature ? t('smartca.error.signatureRequiredBeforeApprove') : undefined}
-                                    onClick={() => setConfirmApprove(it)}
-                                    className="rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
-                                  >
-                                    {approvalApproveLabel(it.targetZone)}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => setRejectFor(it)}
-                                    className="rounded-lg bg-danger-light px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
-                                  >
-                                    {t('approvals.action.reject')}
-                                  </button>
+                                  ) : <span />}
+                                  {isLeader ? (
+                                    <button
+                                      type="button"
+                                      disabled={busy || approvalLockedBySignature}
+                                      title={approvalLockedBySignature ? t('smartca.error.signatureRequiredBeforeApprove') : undefined}
+                                      onClick={() => setConfirmApprove(it)}
+                                      className="whitespace-nowrap rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
+                                    >
+                                      {approvalApproveLabel(it.targetZone)}
+                                    </button>
+                                  ) : <span />}
+                                  {isLeader ? (
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => setRejectFor(it)}
+                                      className="whitespace-nowrap rounded-lg bg-danger-light px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
+                                    >
+                                      {t('approvals.action.reject')}
+                                    </button>
+                                  ) : <span />}
                                 </div>
                               </td>
                             </tr>
@@ -223,12 +245,12 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                          <th className="py-2.5 pr-3 font-bold">{t('returnRequests.page.colFile')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('returnRequests.page.colZone')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('returnRequests.page.colRequestedBy')}</th>
+                          <th className="w-56 whitespace-nowrap py-2.5 pr-3 font-bold">{t('returnRequests.page.colFile')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('returnRequests.page.colZone')}</th>
+                          <th className="w-36 px-3 py-2.5 font-bold">{t('returnRequests.page.colRequestedBy')}</th>
                           <th className="px-3 py-2.5 font-bold">{t('returnRequests.page.colReason')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('returnRequests.page.colDate')}</th>
-                          <th className="px-3 py-2.5 text-right font-bold">{t('returnRequests.page.colActions')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('returnRequests.page.colDate')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 text-right font-bold">{t('returnRequests.page.colActions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -236,29 +258,35 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
                           const busy = returnBusyId === request.id;
                           return (
                             <tr key={request.id} className="border-b border-card-border/60">
-                              <td className="py-3 pr-3 font-medium text-text">{request.fileName}</td>
-                              <td className="px-3 py-3 text-text-secondary">{zoneLabel(request.currentZone)}</td>
-                              <td className="px-3 py-3 text-text-secondary">{request.requestedByName}</td>
-                              <td className="px-3 py-3 text-text-secondary">{request.reason}</td>
-                              <td className="px-3 py-3 text-text-secondary">{formatDateTime(request.createdAt)}</td>
-                              <td className="px-3 py-3 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => setConfirmReturnApprove(request)}
-                                    className="rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
-                                  >
-                                    {approveReturnLabel}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => setRejectReturnFor(request)}
-                                    className="rounded-lg bg-danger-light px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
-                                  >
-                                    {rejectReturnLabel}
-                                  </button>
+                              <td className="w-56 py-3 pr-3 font-medium text-text break-words">{request.fileName}</td>
+                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{zoneLabel(request.currentZone)}</td>
+                              <td className="w-36 px-3 py-3 text-text-secondary break-words">{request.requestedByName}</td>
+                              <td className="max-w-60 px-3 py-3 text-text-secondary break-words">{request.reason}</td>
+                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(request.createdAt)}</td>
+                              <td className="whitespace-nowrap px-3 py-3 text-right">
+                                <div className="grid grid-cols-[auto_auto] items-center justify-end gap-2">
+                                  {isLeader ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() => setConfirmReturnApprove(request)}
+                                        className="whitespace-nowrap rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
+                                      >
+                                        {approveReturnLabel}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() => setRejectReturnFor(request)}
+                                        className="whitespace-nowrap rounded-lg bg-danger-light px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
+                                      >
+                                        {rejectReturnLabel}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <span className="col-span-2 text-right text-xs text-text-muted">—</span>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -280,18 +308,8 @@ export function PendingApprovalsModal({ onClose, onChanged }: PendingApprovalsMo
         </div>
       )}
 
-      {detailId && <ApprovalDetailModal approvalId={detailId} onClose={() => setDetailId(null)} />}
-
-      {signFor && (
-        <SmartCaSignModal
-          approval={signFor}
-          onClose={() => setSignFor(null)}
-          onToast={showToast}
-          onSigned={() => {
-            void refetch();
-            onChanged?.();
-          }}
-        />
+      {detailId && (
+        <ApprovalDetailModal approvalId={detailId} onClose={() => setDetailId(null)} fallbackProjectId={projectId} />
       )}
 
       {confirmApprove && (

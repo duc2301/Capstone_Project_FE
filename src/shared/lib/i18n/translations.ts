@@ -901,6 +901,7 @@ export const translations = {
   'approvals.detail.completed': 'Đã hoàn tất',
   'approvals.detail.waiting': 'Đang chờ',
   'approvals.detail.close': 'Đóng chi tiết',
+  'approvals.detail.viewFile': 'Xem trực tiếp',
 
   'approvals.history.title': 'Lịch sử phê duyệt',
   'approvals.history.empty': 'Chưa có lịch sử phê duyệt.',
@@ -1015,7 +1016,7 @@ export const translations = {
   'fileView.details.history': 'Lịch sử phiên bản',
   'fileView.details.noHistory': 'Chưa có lịch sử phiên bản.',
   'fileView.tabs.properties': 'Thông tin',
-  'fileView.tabs.signatureHistory': 'Lịch sử ký số',
+  'fileView.tabs.signatureHistory': 'Ký số',
   'fileView.info.name': 'Tên tài liệu',
   'fileView.info.type': 'Loại tài liệu',
   'fileView.info.status': 'Trạng thái duyệt',

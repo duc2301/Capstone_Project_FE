@@ -13,7 +13,7 @@ import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus, FileReturnRequestStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileReturnRequestStatus, is3DFile } from '@/entities/file-item';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 
 import { useFolderActions } from '../model/useFolderActions';
@@ -577,8 +577,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           fileName={submitApprovalFor.name}
           currentZone={selected ? zoneNameFromArea(selected.area) : 'Wip'}
           targetZone={selectedTargetZone}
-          canRequireSignature={!!selectedTargetZone}
-          mustRequireSignature={selected?.area === CdeArea.Shared && selectedTargetZone === 'Published'}
+          canRequireSignature={!!selectedTargetZone && !is3DFile(submitApprovalFor.fileType, submitApprovalFor.format)}
+          mustRequireSignature={
+            selected?.area === CdeArea.Shared &&
+            selectedTargetZone === 'Published' &&
+            !is3DFile(submitApprovalFor.fileType, submitApprovalFor.format)
+          }
           signerGroups={signerGroups}
           loadingSigners={signerGroupsLoading}
           busy={approvalBusy}

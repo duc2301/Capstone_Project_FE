@@ -34,7 +34,7 @@ const TABS: { id: TabId; key: TranslationKey }[] = [
 ];
 
 const cardClass =
-  'rounded-[24px] border border-card-border/60 bg-card/70 p-8 shadow-card backdrop-blur-sm';
+  'rounded-[20px] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
 
 /* ── Small presentational helpers ──────────────────────── */
 interface ModalProps {
@@ -213,7 +213,7 @@ function GroupCard({
   const partnerName = partner ? (partner.displayName || partner.legalName) : null;
 
   return (
-    <div className="flex flex-col gap-4 rounded-[24px] border border-[#C3C9B9] bg-card p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+    <div className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -603,7 +603,7 @@ export function ProjectDetailPage() {
   /* ── Loading / error / not found ─────────────────────── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
+      <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-14 shadow-card">
         <p className="text-sm text-text-muted">{t('common.loading')}</p>
       </div>
     );
@@ -633,36 +633,23 @@ export function ProjectDetailPage() {
   const shortCode = project.id.slice(0, 8).toUpperCase();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
         </div>
       )}
 
-      {/* ── Back ──────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => navigate('/projects')}
-        className="inline-flex items-center gap-2 text-sm font-medium text-text-muted transition-colors hover:text-primary"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
-        {t('projectDetail.back')}
-      </button>
-
       {/* ── Hero banner ───────────────────────────────── */}
-      <section className="relative h-72 overflow-hidden rounded-[32px] shadow-dropdown">
+      <section className="relative min-h-60 overflow-hidden rounded-[24px] shadow-dropdown">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-hover to-[#2D3A28]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-        <div className="absolute inset-x-8 bottom-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative flex min-h-60 flex-col justify-end gap-4 px-7 py-7 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-2">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
               {t('projectDetail.heroCode')}: {shortCode}
             </span>
-            <h1 className="font-display text-4xl leading-tight text-white lg:text-5xl">
+            <h1 className="font-display text-3xl leading-tight text-white break-words lg:text-4xl">
               {project.projectName}
             </h1>
           </div>
@@ -674,65 +661,65 @@ export function ProjectDetailPage() {
         {TABS.filter((item) => (item.id === 'settings'
           ? isAdmin // cấu hình quy tắc đặt tên: chỉ Admin
           : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            className={`-mb-px shrink-0 border-b-2 px-8 py-4 text-base transition-colors ${tab === item.id
-              ? 'border-primary font-bold text-primary'
-              : 'border-transparent font-medium text-text-secondary hover:text-primary'
-              }`}
-          >
-            {t(item.key)}
-          </button>
-        ))}
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`-mb-px shrink-0 border-b-2 px-6 py-3 text-sm transition-colors ${tab === item.id
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent font-medium text-text-secondary hover:text-primary'
+                }`}
+            >
+              {t(item.key)}
+            </button>
+          ))}
       </nav>
 
       {/* ── Tab: Thông tin (bento layout) ─────────────── */}
       {tab === 'info' && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Cột trái 2/3: chỉ còn thông tin cơ bản */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
-              {/* Thông tin cơ bản */}
-              <div className={`${cardClass} flex flex-col gap-6`}>
-                <SectionHeading
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="16" x2="12" y2="12" />
-                      <line x1="12" y1="8" x2="12.01" y2="8" />
-                    </svg>
-                  }
-                  title={t('projectDetail.basic.title')}
-                />
-                <Field label={t('projectDetail.basic.name')}>
-                  <span className="text-lg font-bold text-text">{project.projectName}</span>
+          <div className="flex flex-col gap-4 lg:col-span-2">
+            {/* Thông tin cơ bản */}
+            <div className={`${cardClass} flex flex-col gap-4`}>
+              <SectionHeading
+                icon={
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                }
+                title={t('projectDetail.basic.title')}
+              />
+              <Field label={t('projectDetail.basic.name')}>
+                <span className="text-lg font-bold text-text">{project.projectName}</span>
+              </Field>
+              <Field label={t('projectDetail.basic.code')}>
+                <span className="font-mono text-base font-semibold text-[#8A5100]">{shortCode}</span>
+              </Field>
+              <Field label={t('projectDetail.basic.location')}>
+                <span className="flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${project.location?.address?.trim() ? 'text-primary' : 'text-text-placeholder'}`}>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  {project.location?.address?.trim()
+                    ? <span className="text-sm text-text">{project.location.address}</span>
+                    : <NotUpdated />}
+                </span>
+              </Field>
+              {project.projectDescription?.trim() && (
+                <Field label={t('projectDetail.basic.description')}>
+                  <span className="text-sm leading-relaxed text-text-secondary">{project.projectDescription}</span>
                 </Field>
-                <Field label={t('projectDetail.basic.code')}>
-                  <span className="font-mono text-base font-semibold text-[#8A5100]">{shortCode}</span>
-                </Field>
-                <Field label={t('projectDetail.basic.location')}>
-                  <span className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${project.location?.address?.trim() ? 'text-primary' : 'text-text-placeholder'}`}>
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    {project.location?.address?.trim()
-                      ? <span className="text-sm text-text">{project.location.address}</span>
-                      : <NotUpdated />}
-                  </span>
-                </Field>
-                {project.projectDescription?.trim() && (
-                  <Field label={t('projectDetail.basic.description')}>
-                    <span className="text-sm leading-relaxed text-text-secondary">{project.projectDescription}</span>
-                  </Field>
-                )}
-              </div>
+              )}
+            </div>
           </div>
 
           {/* Cột phải 1/3: các bên liên quan + mô hình BIM */}
-          <div className="flex flex-col gap-6">
-            <div className={`${cardClass} flex flex-col gap-6`}>
+          <div className="flex flex-col gap-4">
+            <div className={`${cardClass} flex flex-col gap-4`}>
               <SectionHeading
                 icon={
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -767,9 +754,9 @@ export function ProjectDetailPage() {
 
       {/* ── Tab: Nhóm (teams) ─────────────────────────── */}
       {tab === 'teams' && (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-display text-2xl font-semibold text-primary">
+            <h2 className="font-display text-xl font-semibold text-primary">
               {t('projectDetail.teams.title')}
             </h2>
             {canViewAllTabs && (
@@ -805,15 +792,15 @@ export function ProjectDetailPage() {
           </div>
 
           {groupsLoading ? (
-            <div className="flex items-center justify-center rounded-[24px] border border-card-border bg-card py-20 shadow-card">
+            <div className="flex items-center justify-center rounded-[20px] border border-card-border bg-card py-14 shadow-card">
               <p className="text-sm text-text-muted">{t('common.loading')}</p>
             </div>
           ) : groups.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
+            <div className="rounded-[20px] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
               <p className="text-sm text-text-muted">{t('projectDetail.teams.empty')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {groups.map((g) => (
                 <GroupCard
                   key={g.id}
@@ -838,17 +825,17 @@ export function ProjectDetailPage() {
 
       {tab === 'partners' && (
         <div className="space-y-6">
-          <h2 className="font-display text-2xl font-semibold text-primary">
+          <h2 className="font-display text-xl font-semibold text-primary">
             {t('projectDetail.tab.partners')}
           </h2>
           {projectPartners.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
+            <div className="rounded-[20px] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
               <p className="text-sm text-text-muted">{t('projectDetail.partners.empty')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {projectPartners.map((partner) => (
-                <div key={partner.id} className="flex flex-col gap-4 rounded-[24px] border border-[#C3C9B9] bg-card p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+                <div key={partner.id} className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
                   <div className="flex items-start gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl font-bold text-primary">
                       {(partner.displayName || partner.legalName).charAt(0).toUpperCase()}
@@ -934,7 +921,7 @@ export function ProjectDetailPage() {
       {tab === 'packages' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl font-semibold text-primary">Danh sách gói thầu</h2>
+            <h2 className="font-display text-xl font-semibold text-primary">Danh sách gói thầu</h2>
             <button
               onClick={() => {
                 setEditingPackage(null);
@@ -949,7 +936,7 @@ export function ProjectDetailPage() {
               Tạo gói thầu
             </button>
           </div>
-          
+
           <div className={`${cardClass} overflow-x-auto`}>
             <table className="w-full text-left text-sm">
               <thead>
@@ -974,7 +961,7 @@ export function ProjectDetailPage() {
                   </tr>
                 ) : packages.map(p => {
                   const mainContractor = p.assignments?.find(a => a.role === 0);
-                  const partnerName = mainContractor 
+                  const partnerName = mainContractor
                     ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
                     : 'Chưa phân công';
                   return (
@@ -993,7 +980,7 @@ export function ProjectDetailPage() {
                         </span>
                       </td>
                       <td className="py-4 text-center">
-                        <button 
+                        <button
                           className="text-primary hover:underline font-semibold"
                           onClick={async (e) => {
                             e.stopPropagation();

@@ -153,13 +153,5 @@ function formatApprovalErrorMessage(message: string): string {
     return 'Tài liệu cần tạo PDF đã ký trước khi phê duyệt.';
   }
 
-  if (message.includes('requires at least 2 signers')) {
-    return 'Chuyển từ Shared sang Published cần ít nhất 2 người ký.';
-  }
-
-  if (message.includes('requires at least 1 signer from a different team')) {
-    return 'Chuyển từ Shared sang Published cần ít nhất 1 người ký thuộc nhóm khác với nhóm của bạn.';
-  }
-
   return message;
 }

@@ -80,6 +80,10 @@ function mapMessage(item: RawDiscussionMessage): DiscussionMessage {
   };
 }
 
+export function normalizeDiscussionMessage(raw: RawDiscussionMessage): DiscussionMessage {
+  return mapMessage(raw);
+}
+
 export const discussionApi = {
   getMessages: async (discussionId: string): Promise<DiscussionMessage[]> => {
     const { data } = await axiosInstance.get<ApiResponse<RawDiscussionMessage[]>>(

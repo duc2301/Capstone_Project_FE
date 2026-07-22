@@ -169,17 +169,6 @@ export const issueApi = {
     unwrap(data);
   },
 
-  uploadAttachment: async (issueId: string, file: File): Promise<IssueAttachment> => {
-    const form = new FormData();
-    form.append('file', file);
-    const { data } = await axiosInstance.post<ApiResponse<RawIssueAttachment>>(
-      `/issues/${issueId}/attachments`,
-      form,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
-    );
-    return mapAttachment(unwrap(data));
-  },
-
   getOpenIssueFileIds: async (fileItemIds: string[]): Promise<string[]> => {
     if (fileItemIds.length === 0) return [];
     const { data } = await axiosInstance.post<ApiResponse<string[]>>(

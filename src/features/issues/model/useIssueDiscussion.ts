@@ -4,6 +4,8 @@ import type { DiscussionMessage, PostDiscussionMessagePayload } from '@/entities
 import { discussionApi, discussionErrorMessage } from '@/entities/discussion';
 import { t } from '@/shared/lib/i18n';
 
+import { useIssueDiscussionRealtime } from './useIssueDiscussionRealtime';
+
 interface UseIssueDiscussionReturn {
   messages: DiscussionMessage[];
   loading: boolean;
@@ -13,11 +15,22 @@ interface UseIssueDiscussionReturn {
   postMessage: (payload: PostDiscussionMessagePayload) => Promise<boolean>;
 }
 
-export function useIssueDiscussion(discussionId: string | null | undefined): UseIssueDiscussionReturn {
+function sortByCreatedAt(list: DiscussionMessage[]): DiscussionMessage[] {
+  return [...list].sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
+}
+
+export function useIssueDiscussion(
+  discussionId: string | null | undefined,
+  fileItemId?: string | null,
+): UseIssueDiscussionReturn {
   const [messages, setMessages] = useState<DiscussionMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useIssueDiscussionRealtime(fileItemId, discussionId, (incoming) => {
+    setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : sortByCreatedAt([...prev, incoming])));
+  });
 
   const loadMessages = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
     if (!discussionId) return;

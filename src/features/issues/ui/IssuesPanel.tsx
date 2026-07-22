@@ -1,32 +1,49 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { RelatedFileArea } from '@/entities/file-item';
+import type { IssueItem } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
-import { useIssues } from '../model/useIssues';
 import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
+import { useIssues } from '../model/useIssues';
 import { CreateIssueModal } from './CreateIssueModal';
-import { IssueDetailModal } from './IssueDetailModal';
 
 interface IssuesPanelProps {
   projectId: string;
   fileItemId: string;
+  area?: RelatedFileArea;
+  folderId?: string | null;
   onToast: (message: string, type?: 'success' | 'error') => void;
+  onIssuesChanged?: () => void;
 }
 
-export function IssuesPanel({ projectId, fileItemId, onToast }: IssuesPanelProps) {
+export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, onIssuesChanged }: IssuesPanelProps) {
   const { items, loading, error, refetch } = useIssues(fileItemId);
   const [showCreate, setShowCreate] = useState(false);
-  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const folderQuery = folderId ? `?folder=${folderId}` : '';
+  const openIssue = (issueId: string) =>
+    navigate(`/projects/${projectId}/files/${fileItemId}/issues/${issueId}${folderQuery}`);
+
+  const canCreateIssue = area !== RelatedFileArea.Wip;
 
   return (
     <div className="space-y-4">
-      <button
-        type="button"
-        onClick={() => setShowCreate(true)}
-        className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-      >
-        {t('issues.panel.createButton')}
-      </button>
+      {canCreateIssue ? (
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+        >
+          {t('issues.panel.createButton')}
+        </button>
+      ) : (
+        <p className="rounded-xl border border-card-border bg-content-bg/40 px-3 py-2.5 text-xs text-text-muted">
+          {t('issues.panel.wipHint')}
+        </p>
+      )}
 
       {loading ? (
         <p className="py-6 text-center text-sm text-text-muted">{t('common.loading')}</p>
@@ -40,7 +57,7 @@ export function IssuesPanel({ projectId, fileItemId, onToast }: IssuesPanelProps
             <li key={issue.id}>
               <button
                 type="button"
-                onClick={() => setSelectedIssueId(issue.id)}
+                onClick={() => openIssue(issue.id)}
                 className="w-full rounded-xl border border-card-border bg-card p-3 text-left transition-colors hover:bg-content-bg"
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -67,20 +84,12 @@ export function IssuesPanel({ projectId, fileItemId, onToast }: IssuesPanelProps
           fileItemId={fileItemId}
           onClose={() => setShowCreate(false)}
           onToast={onToast}
-          onCreated={() => {
+          onCreated={(issue: IssueItem) => {
             setShowCreate(false);
             void refetch();
+            onIssuesChanged?.();
+            openIssue(issue.id);
           }}
-        />
-      )}
-
-      {selectedIssueId && (
-        <IssueDetailModal
-          issueId={selectedIssueId}
-          projectId={projectId}
-          onClose={() => setSelectedIssueId(null)}
-          onToast={onToast}
-          onChanged={() => void refetch()}
         />
       )}
     </div>

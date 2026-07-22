@@ -264,8 +264,8 @@ export const translations = {
   'admin.footer.privacy': 'Chính sách bảo mật',
   'admin.footer.status': 'Trạng thái hệ thống',
   'admin.footer.terms': 'Điều khoản',
-  'admin.topbar.search': 'Tìm kiếm dự án...',
   'admin.topbar.breadcrumb.home': 'TRANG CHỦ',
+  'admin.topbar.breadcrumb.projects': 'DỰ ÁN',
 
   // ── Account page enhancements ─────────────────────
   'account.description': 'Quản lý tài khoản người dùng trong hệ thống CDE Portal.',
@@ -551,6 +551,9 @@ export const translations = {
   'projectDetail.stakeholders.manager': 'Quản lý dự án',
   'projectDetail.stakeholders.noManager': 'Chưa chỉ định quản lý',
   'projectDetail.stakeholders.otherParties': 'Các bên khác (Chủ đầu tư, nhà thầu…) sẽ được cập nhật sau.',
+  'projectDetail.stats.packages': 'Gói thầu',
+  'projectDetail.stats.groups': 'Nhóm tham gia',
+  'projectDetail.stats.manager': 'Quản lý dự án',
 
 
   // Project detail — tab Nhóm (Quản lý đội ngũ dự án)
@@ -1120,6 +1123,14 @@ export const translations = {
   'markup.panel.openCount': 'Chưa xử lý',
   'markup.error.load': 'Không tải được ghi chú markup.',
   'markup.error.save': 'Không lưu được ghi chú. Vui lòng thử lại.',
+  // Bộ lọc ghi chú markup (theo người tạo / trạng thái)
+  'markup.filter.author': 'Người tạo',
+  'markup.filter.allAuthors': 'Tất cả người tạo',
+  'markup.filter.status': 'Trạng thái',
+  'markup.filter.allStatus': 'Tất cả trạng thái',
+  'markup.filter.unknownAuthor': 'Không rõ',
+  'markup.filter.showing': 'Đang hiện',
+  'markup.filter.noMatch': 'Không có ghi chú khớp bộ lọc.',
 
   // Khu vực dịch cho phần 3D markup (dùng tool của APS)
   'markup.model.title': 'Ghi chú (Comments)',
@@ -1240,6 +1251,7 @@ export const translations = {
   // --- Issue workflow ---
   'issues.panel.tab': 'Issue',
   'issues.panel.createButton': 'Tạo issue mới',
+  'issues.panel.wipHint': 'File đang ở vùng WIP nên chưa thể tạo issue. Issue chỉ được tạo khi file ở vùng Shared hoặc Published.',
   'issues.panel.empty': 'Chưa có issue nào cho file này.',
   'issues.error': 'Không tải được issue.',
   'issues.error.forbidden': 'Bạn không có quyền thực hiện thao tác này.',
@@ -1270,16 +1282,11 @@ export const translations = {
   'issues.create.priorityLabel': 'Mức độ ưu tiên',
   'issues.create.assigneeLabel': 'Người thực hiện',
   'issues.create.assigneePlaceholder': 'Chọn thành viên dự án...',
-  'issues.create.attachmentsLabel': 'Đính kèm',
-  'issues.create.attachmentsHint': 'Đính kèm ảnh hoặc tệp tin (tối đa 20MB)',
-  'issues.create.attachmentTooLarge': 'File vượt quá 20MB, không thể đính kèm.',
-  'issues.error.uploadAttachment': 'Không upload được file đính kèm.',
   'issues.create.cancel': 'Huỷ',
   'issues.create.submit': 'Gửi Issue',
   'issues.detail.title': 'Chi tiết Issue',
   'issues.detail.raisedBy': 'Người tạo',
   'issues.detail.assignee': 'Người thực hiện',
-  'issues.detail.viewAttachment': 'Xem tệp đính kèm',
   'issues.detail.markResolved': 'Đánh dấu đã giải quyết',
   'issues.detail.requestReturnToWip': 'Yêu cầu trả về WIP',
   'issues.detail.returnRequestStatus': 'Trạng thái yêu cầu trả về',
@@ -1295,13 +1302,15 @@ export const translations = {
   'issues.discussion.error': 'Không tải được thảo luận.',
   'issues.discussion.postError': 'Không gửi được tin nhắn.',
   'issues.discussion.placeholder': 'Nhập nội dung trao đổi...',
-  'issues.discussion.attachFile': 'Đính kèm file có sẵn',
   'issues.discussion.fileAttachment': 'Tệp đính kèm',
   'issues.discussion.send': 'Gửi',
-  'issues.attach.pickerTitle': 'Chọn file đính kèm',
-  'issues.attach.pickFolderFirst': 'Chọn 1 thư mục để xem file.',
-  'issues.attach.folderEmpty': 'Thư mục này chưa có file nào.',
-  'issues.attach.noVersion': 'File này chưa có phiên bản nội dung để đính kèm.',
+  'issues.discussion.you': 'Bạn',
+  'issues.discussion.closed': 'Issue đã đóng — không thể gửi thêm tin nhắn.',
+  'issues.tab.discussion': 'Thảo luận',
+  'issues.tab.markup': 'Ghi chú',
+  'issues.page.backToFile': 'Về trang file',
+  'issues.page.previewUnsupported': 'File này không xem trực tiếp được. Hãy tải về từ trang file để xem.',
+  'issues.page.markupUnsupported': 'File này không hỗ trợ ghi chú trực quan (markup).',
 
   /* ── Quy tắc đặt tên tệp (naming convention) ── */
   'naming.title': 'Quy tắc đặt tên tệp',

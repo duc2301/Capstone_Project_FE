@@ -3,6 +3,7 @@ import type { CreateContractPackagePayload, ContractPackage } from '@/entities/c
 import type { Account } from '@/entities/account';
 import { useOrganizations } from '@/features/organizations';
 import { fileItemApi } from '@/entities/file-item';
+import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
 
 /* ── Work-type options for multi-select ── */
 const WORK_TYPES = [
@@ -19,9 +20,9 @@ const WORK_TYPES = [
 /* ── Section heading component ── */
 function SectionHeading({ icon, number, title }: { icon?: string; number: number; title: string }) {
   return (
-    <div className="flex items-center gap-2 border-b border-card-border pb-3 mb-4">
-      {icon && <span className="text-lg">{icon}</span>}
-      <h3 className="text-base font-semibold text-primary">
+    <div className="flex items-center gap-2 border-b border-card-border pb-3 mb-5">
+      {icon && <span className="text-xl">{icon}</span>}
+      <h3 className="text-base font-bold text-primary">
         {number}. {title}
       </h3>
     </div>
@@ -31,22 +32,25 @@ function SectionHeading({ icon, number, title }: { icon?: string; number: number
 /* ── Label helper ── */
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-sm font-semibold text-text mb-1">
+    <label className="block text-sm font-medium text-text-secondary mb-1.5">
       {children}
-      {required && <span className="text-danger ml-0.5">*</span>}
+      {required && <span className="text-danger ml-1">*</span>}
     </label>
   );
 }
 
 /* ── Input CSS class ── */
 const inputCls =
-  'w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text placeholder:text-text-placeholder focus:border-primary focus:ring-1 focus:ring-primary transition-colors';
+  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 const readOnlyCls =
-  'w-full rounded-lg border border-input-border bg-content-bg px-4 py-2.5 text-sm text-text-muted cursor-not-allowed';
+  'w-full rounded-[var(--radius-input)] border border-input-border bg-content-bg px-4 py-3 text-sm text-text-muted cursor-not-allowed';
 
 /* ── Format currency ── */
 function fmtCurrency(value: number, currency: string): string {
-  return new Intl.NumberFormat('vi-VN').format(value) + ' ' + currency;
+  const isVnd = currency === 'VND';
+  return new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits: isVnd ? 0 : 2,
+  }).format(value) + ' ' + currency;
 }
 
 export interface CreatePackageFormProps {
@@ -92,14 +96,18 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
   const [currency, setCurrency] = useState(initialData?.currency ?? 'VND');
 
   // Section 5 – Contractor
-  const mainContractor = initialData?.assignments?.find(a => a.role === 0) || initialData?.assignments?.[0];
-  const [contractorOrgId, setContractorOrgId] = useState(mainContractor?.organizationId ?? '');
-  const [representativeId, setRepresentativeId] = useState(mainContractor?.representativeAccountId ?? '');
+  const mainContractors = initialData?.assignments?.filter(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor') || [];
+  const [contractorOrgId, setContractorOrgId] = useState<string>(
+    mainContractors[0]?.organizationId ?? ''
+  );
+  const [representativeId, setRepresentativeId] = useState(
+    mainContractors[0]?.representativeAccountId ?? ''
+  );
 
   // Section 6 – Contract
-  const [contractNumber, setContractNumber] = useState(mainContractor?.contractNumber ?? '');
-  const [contractSignDate, setContractSignDate] = useState(mainContractor?.contractSignDate ? mainContractor.contractSignDate.split('T')[0] : '');
-  const [contractJobTitle, setContractJobTitle] = useState(mainContractor?.position ?? '');
+  const [contractNumber, setContractNumber] = useState(mainContractors[0]?.contractNumber ?? '');
+  const [contractSignDate, setContractSignDate] = useState(mainContractors[0]?.contractSignDate ? mainContractors[0].contractSignDate.split('T')[0] : '');
+  const [contractJobTitle, setContractJobTitle] = useState(mainContractors[0]?.position ?? '');
 
   // Section 7 – Extra
   const [notes, setNotes] = useState(initialData?.notes ?? '');
@@ -116,12 +124,12 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       setTaxRate(initialData.taxRate ?? 10);
       setCurrency(initialData.currency ?? 'VND');
       
-      const mc = initialData.assignments?.find(a => a.role === 0) || initialData.assignments?.[0];
-      setContractorOrgId(mc?.organizationId ?? '');
-      setRepresentativeId(mc?.representativeAccountId ?? '');
-      setContractNumber(mc?.contractNumber ?? '');
-      setContractSignDate(mc?.contractSignDate ? mc.contractSignDate.split('T')[0] : '');
-      setContractJobTitle(mc?.position ?? '');
+      const mcs = initialData.assignments?.filter(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor') || [];
+      setContractorOrgId(mcs[0]?.organizationId ?? '');
+      setRepresentativeId(mcs[0]?.representativeAccountId ?? '');
+      setContractNumber(mcs[0]?.contractNumber ?? '');
+      setContractSignDate(mcs[0]?.contractSignDate ? mcs[0].contractSignDate.split('T')[0] : '');
+      setContractJobTitle(mcs[0]?.position ?? '');
       setNotes(initialData.notes ?? '');
       setSelectedFiles([]);
       
@@ -220,7 +228,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       {/* ══════ Section 1: Thông tin cơ bản ══════ */}
       <section>
         <SectionHeading number={1} title="Thông tin cơ bản" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
             <Label required>Tên gói thầu</Label>
             <input
@@ -255,7 +263,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       {/* ══════ Section 2: Thời gian thực hiện ══════ */}
       <section>
         <SectionHeading number={2} title="Thời gian" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
             <Label required>Ngày khởi công</Label>
             <input
@@ -278,7 +286,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                 placeholder="90"
                 className={inputCls}
               />
-              <span className="rounded-lg border border-input-border bg-content-bg px-3 py-2.5 text-sm font-semibold text-text-muted whitespace-nowrap">
+              <span className="rounded-[var(--radius-input)] border border-input-border bg-content-bg px-3 py-3 text-sm font-medium text-text-muted whitespace-nowrap">
                 Ngày
               </span>
             </div>
@@ -289,14 +297,14 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       {/* ══════ Section 3: Phạm vi công việc ══════ */}
       <section>
         <SectionHeading number={3} title="Phạm vi công việc" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
             <Label required>Loại công việc</Label>
-            <div className="rounded-lg border border-input-border bg-input-bg p-2 max-h-36 overflow-y-auto">
+            <div className="rounded-[var(--radius-input)] border border-input-border bg-input-bg p-2 max-h-36 overflow-y-auto">
               {WORK_TYPES.map((wt) => (
                 <label
                   key={wt}
-                  className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-primary/5 ${
+                  className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-primary/5 ${
                     selectedWorkTypes.includes(wt) ? 'bg-primary/10 text-primary font-semibold' : 'text-text'
                   }`}
                 >
@@ -329,23 +337,30 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       {/* ══════ Section 4: Thông tin tài chính ══════ */}
       <section>
         <SectionHeading number={4} title="Giá trị & Tài chính" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <Label required>Giá trị hợp đồng gốc</Label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 min={0}
+                max={999999999999999}
                 value={contractValue}
-                onChange={(e) => setContractValue(e.target.value ? Number(e.target.value) : '')}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw.length > 15) return;
+                  const val = raw ? Number(raw) : '';
+                  if (typeof val === 'number' && val > 999999999999999) return;
+                  setContractValue(val);
+                }}
                 required
-                placeholder="0"
                 className={inputCls}
+                placeholder="Ví dụ: 1000000000"
               />
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm font-semibold text-text"
+                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-3 text-sm font-semibold text-text"
               >
                 <option value="VND">VND</option>
                 <option value="USD">USD</option>
@@ -371,15 +386,30 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               className={readOnlyCls}
             />
           </div>
+          <div>
+            <Label>Tổng giá trị (sau VAT) <span className="text-text-muted font-normal">(Tự động)</span></Label>
+            <input
+              value={fmtCurrency((contractValue || 0) + vatAmount, currency)}
+              disabled
+              className="w-full rounded-[var(--radius-input)] border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-bold text-primary cursor-not-allowed"
+            />
+          </div>
+          {contractValue ? (
+            <div className="sm:col-span-2">
+              <p className="text-sm italic text-text-muted">
+                Bằng chữ (Tổng giá trị): <span className="font-semibold text-text not-italic">{numberToWordsVN((contractValue || 0) + vatAmount)}</span>
+              </p>
+            </div>
+          ) : null}
         </div>
       </section>
 
       {/* ══════ Section 5: Đơn vị thầu ══════ */}
-      <section>
+      <section className="space-y-4">
         <SectionHeading number={5} title="Nhà thầu & Phân công" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <Label required>Công ty chính thầu</Label>
+            <Label required>Đối tác / Liên doanh quản lý</Label>
             <select
               value={contractorOrgId}
               onChange={(e) => setContractorOrgId(e.target.value)}
@@ -387,10 +417,12 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               className={inputCls}
               disabled={orgsLoading}
             >
-              <option value="">{orgsLoading ? 'Đang tải danh sách...' : 'Tìm kiếm công ty...'}</option>
+              <option value="">{orgsLoading ? 'Đang tải danh sách...' : 'Chọn đối tác hoặc liên doanh...'}</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
+                  {org.isJointVenture ? '⭐ [Liên doanh] ' : ''}
                   {org.displayName || org.legalName}
+                  {org.taxCode ? ` (MST: ${org.taxCode})` : ''}
                 </option>
               ))}
             </select>
@@ -417,7 +449,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       {/* ══════ Section 6: Thông tin hợp đồng ══════ */}
       <section>
         <SectionHeading number={6} title="Thông tin hợp đồng" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div>
             <Label>Số hợp đồng</Label>
             <input
@@ -464,7 +496,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
           </div>
           <div>
             <Label>Tệp đính kèm (Hồ sơ dự thầu, Quyết định phê duyệt...)</Label>
-            <div className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-input-border bg-content-bg p-8 transition-colors hover:border-primary/40 cursor-pointer">
+            <div className="relative flex flex-col items-center justify-center rounded-[var(--radius-card)] border-2 border-dashed border-input-border bg-content-bg p-8 transition-colors hover:border-primary/40 cursor-pointer">
               <input 
                 type="file" 
                 multiple
@@ -593,18 +625,18 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       </section>
 
       {/* ── Footer ── */}
-      <div className="flex items-center justify-end gap-3 border-t border-card-border pt-6">
+      <div className="flex items-center justify-end gap-3 border-t border-card-border pt-6 mt-4">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-card-border px-6 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
+          className="rounded-[var(--radius-button)] border border-card-border px-6 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
         >
           Hủy bỏ
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+          className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />

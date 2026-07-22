@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ApprovalTargetZone, SubmitApprovalPayload } from '@/entities/approval';
 import type { Group } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
+import { GroupMemberRole } from '@/entities/invitation';
 import type { ZoneName } from '@/entities/zone-transfer';
 import { t } from '@/shared/lib/i18n';
 
@@ -15,6 +16,10 @@ interface SubmitApprovalModalProps {
   signerGroups: Group[];
   loadingSigners: boolean;
   busy: boolean;
+  /* Lỗi trả về từ API khi submit (BE) — hiển thị trong khung modal thay vì toast ngoài. */
+  submitError?: string | null;
+  /* Hành động gợi ý đi kèm lỗi (vd: lỗi do chưa thuộc nhóm phụ trách -> nút mở tab "Nhóm"). */
+  submitErrorAction?: { label: string; onClick: () => void } | null;
   onClose: () => void;
   onSubmit: (payload: SubmitApprovalPayload) => void;
 }
@@ -59,6 +64,8 @@ export function SubmitApprovalModal({
   signerGroups,
   loadingSigners,
   busy,
+  submitError,
+  submitErrorAction,
   onClose,
   onSubmit,
 }: SubmitApprovalModalProps) {
@@ -190,7 +197,11 @@ export function SubmitApprovalModal({
                     Chưa có nhóm hoặc thành viên để chọn.
                   </p>
                 ) : signerGroups.map((group) => {
-                  const activeMembers = group.members.filter((member) => member.status === GroupMemberStatus.Active);
+                  // Shared->Published bắt buộc signer đích danh phải là Leader active của 1 nhóm nào
+                  // đó (BE validate lại ở SubmitAsync) — member thường không đủ điều kiện được chọn.
+                  const activeMembers = group.members.filter(
+                    (member) => member.status === GroupMemberStatus.Active && member.role === GroupMemberRole.Leader,
+                  );
                   const activeMemberIds = activeMembers.map((member) => member.accountId);
                   const selectedMemberCount = activeMemberIds.filter((id) => signerAccountIds.includes(id)).length;
                   const allGroupMembersSelected = activeMemberIds.length > 0 && selectedMemberCount === activeMemberIds.length;
@@ -208,7 +219,7 @@ export function SubmitApprovalModal({
 
                       <div className="mt-3 space-y-2 border-t border-card-border pt-3">
                         {activeMembers.length === 0 ? (
-                          <p className="text-xs text-text-muted">Nhóm này chưa có thành viên active.</p>
+                          <p className="text-xs text-text-muted">Nhóm này chưa có Leader active.</p>
                         ) : activeMembers.map((member) => (
                           <label key={`${group.id}-${member.accountId}`} className="flex items-start gap-2.5 rounded-lg px-2 py-1.5 hover:bg-content-bg">
                             <input
@@ -235,10 +246,19 @@ export function SubmitApprovalModal({
             </div>
           )}
 
-          {error && (
-            <p className="rounded-xl border border-danger/20 bg-danger-light px-3.5 py-2 text-sm font-medium text-danger">
-              {error}
-            </p>
+          {(error ?? submitError) && (
+            <div className="space-y-2 rounded-xl border border-danger/20 bg-danger-light px-3.5 py-2.5">
+              <p className="text-sm font-medium text-danger">{error ?? submitError}</p>
+              {!error && submitErrorAction && (
+                <button
+                  type="button"
+                  onClick={submitErrorAction.onClick}
+                  className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-danger/20"
+                >
+                  {submitErrorAction.label}
+                </button>
+              )}
+            </div>
           )}
         </div>
 

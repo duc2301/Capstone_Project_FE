@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { ApprovalListItem, ApprovalSigner } from '@/entities/approval';
+import { isTeamPermissionError } from '@/entities/approval';
 import type { Certificate, SignatureInfo, SignatureTransactionStatus, SignedFileInfo, TransactionStatusInfo } from '@/entities/smartca';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { t } from '@/shared/lib/i18n';
 
 import { formatDateTime } from '../model/approvalFormat';
+import { useApprovalRealtime } from '../model/useApprovalRealtime';
 
 interface SmartCaSignModalProps {
   approval: ApprovalListItem;
+  /* Dùng để xác định người dùng hiện tại đã tự ký xong phần của mình chưa (khi hồ sơ cần nhiều
+   * người ký) — nếu đã ký rồi thì không cho tạo yêu cầu ký lại, chỉ hiện trạng thái chờ người khác. */
+  currentAccountId?: string;
   onClose: () => void;
   onSigned: () => void;
   onToast: (message: string, type?: 'success' | 'error') => void;
@@ -50,10 +56,17 @@ function isWaitingForOtherSignersMessage(message?: string | null): boolean {
   return normalized.includes('all required digital signers must sign');
 }
 
-export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: SmartCaSignModalProps) {
+export function SmartCaSignModal({ approval: initialApproval, currentAccountId, onClose, onSigned, onToast }: SmartCaSignModalProps) {
+  const navigate = useNavigate();
+  // Bản sao "sống" của approval — vá lại qua realtime (SignalR) khi người ký khác vừa ký xong,
+  // để "Danh sách người ký" cập nhật ngay mà không cần đóng/mở lại modal.
+  const [approval, setApproval] = useState(initialApproval);
+  useEffect(() => setApproval(initialApproval), [initialApproval]);
+  useApprovalRealtime((updated) => {
+    if (updated.id === initialApproval.id) setApproval(updated);
+  });
+
   const [userId, setUserId] = useState('');
-  const [pin, setPin] = useState('');
-  const [useCompanyStamp, setUseCompanyStamp] = useState(false);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [certificateSerial, setCertificateSerial] = useState('');
   const [transactionId, setTransactionId] = useState<string | null>(null);
@@ -66,6 +79,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
   const [generatingSignedPdf, setGeneratingSignedPdf] = useState(false);
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorIsPermissionIssue, setErrorIsPermissionIssue] = useState(false);
   const [waitingForOtherSigners, setWaitingForOtherSigners] = useState(false);
   const generatingSignedPdfRef = useRef(false);
 
@@ -224,13 +238,19 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
 
     setCreatingRequest(true);
     setError(null);
+    setErrorIsPermissionIssue(false);
     try {
       const data = await smartcaApi.createSignRequest(approval.id, trimmedUserId, certificateSerial);
       setTransactionId(data.transactionId);
       setTransactionStatus(data.status);
       onToast(t('smartca.toast.requestCreated'));
     } catch (err) {
-      setError(smartcaErrorMessage(err, t('smartca.error.signRequest')));
+      setError(
+        isTeamPermissionError(err)
+          ? t('smartca.error.notRequiredSigner')
+          : smartcaErrorMessage(err, t('smartca.error.signRequest')),
+      );
+      setErrorIsPermissionIssue(isTeamPermissionError(err));
     } finally {
       setCreatingRequest(false);
     }
@@ -240,6 +260,16 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
     Boolean(signedFile) ||
     signedPdfReady ||
     Boolean(approval.signedVersionId && (transactionStatus === 'Signed' || signatureInfo?.status === 'Signed'));
+  // Bản thân người dùng hiện tại đã ký xong phần của mình, nhưng hồ sơ vẫn cần thêm người khác ký ->
+  // không cho tạo yêu cầu ký lại, chỉ hiện trạng thái chờ. Gộp 2 nguồn tín hiệu: (1) waitingForOtherSigners
+  // — BE xác nhận trực tiếp ngay sau khi ký (đáng tin cậy nhất, không phải chờ realtime); (2) signers
+  // list (approval.signers, có thể vá qua realtime) — dùng khi mở lại modal ở phiên sau, sau khi đã ký
+  // từ trước, lúc BE không còn trả lại thông báo "vừa ký xong" nữa.
+  const myOwnSignerRecord = currentAccountId
+    ? approval.signers.find((s) => s.signerAccountId === currentAccountId)
+    : undefined;
+  const hasAlreadySignedButWaitingForOthers =
+    !hasSignedSuccessfully && (waitingForOtherSigners || myOwnSignerRecord?.status === 'Signed');
   const canCreateSignRequest = !!userId.trim() && !!certificateSerial && !creatingRequest && !generatingSignedPdf;
 
   return (
@@ -260,6 +290,8 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {hasSignedSuccessfully ? (
             <SmartCaSuccessView approval={approval} signatureInfo={signatureInfo} signedFile={signedFile} />
+          ) : hasAlreadySignedButWaitingForOthers ? (
+            <SmartCaWaitingForOthersView approval={approval} />
           ) : (
             <>
               <section className="space-y-1">
@@ -326,28 +358,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                     <p className="mt-1">{t('smartca.signModal.certificateStatus')}: {selectedCertificate.status ?? '-'}</p>
                   </div>
                 )}
-
-                <label className="flex flex-col gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.pin')}</span>
-                  <input
-                    type="password"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    placeholder={t('smartca.signModal.pinPlaceholder')}
-                    className="h-11 rounded-lg border border-input-border bg-card px-3 text-sm text-text outline-none focus:border-input-focus"
-                  />
-                </label>
               </section>
-
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={useCompanyStamp}
-                  onChange={(e) => setUseCompanyStamp(e.target.checked)}
-                  className="h-5 w-5 rounded border-card-border accent-primary"
-                />
-                <span className="text-sm font-semibold text-text-secondary">{t('smartca.signModal.companyStamp')}</span>
-              </label>
 
               {(transactionId || transactionStatus) && (
                 <div className="rounded-xl border border-card-border p-4">
@@ -368,19 +379,24 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                 </div>
               )}
 
-              {approval.signers.length > 1 && <SignersListPanel signers={approval.signers} />}
+              {approval.currentZone === 'Shared' &&
+                approval.targetZone === 'Published' &&
+                approval.signers.length > 1 && <SignersListPanel signers={approval.signers} />}
 
               <SignatureInfoPanel signatureInfo={signatureInfo} />
 
-              {waitingForOtherSigners && (
-                <div className="rounded-xl border border-info/30 bg-info-light px-4 py-3">
-                  <p className="text-sm font-medium text-info">{t('smartca.signModal.waitingOtherSigners')}</p>
-                </div>
-              )}
-
               {error && (
-                <div className="rounded-xl border border-danger/30 bg-danger-light px-4 py-3">
+                <div className="space-y-2 rounded-xl border border-danger/30 bg-danger-light px-4 py-3">
                   <p className="text-sm font-medium text-danger">{error}</p>
+                  {errorIsPermissionIssue && approval.projectId && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/projects/${approval.projectId}?tab=teams`)}
+                      className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-danger/20"
+                    >
+                      {t('documents.goToTeamsTab')}
+                    </button>
+                  )}
                 </div>
               )}
             </>
@@ -388,7 +404,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
         </div>
 
         <div className="flex gap-3 border-t border-card-border bg-[#f6f4ec]/70 p-6">
-          {!hasSignedSuccessfully && (
+          {!hasSignedSuccessfully && !hasAlreadySignedButWaitingForOthers && (
             <button
               type="button"
               disabled={!canCreateSignRequest}
@@ -402,9 +418,9 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
             type="button"
             onClick={onClose}
             disabled={creatingRequest}
-            className={`${hasSignedSuccessfully ? 'flex-1 bg-primary text-white hover:bg-primary-hover' : 'border border-card-border text-text-secondary hover:bg-content-bg'} h-12 rounded-xl px-6 text-base font-medium transition-colors disabled:opacity-40`}
+            className={`${hasSignedSuccessfully || hasAlreadySignedButWaitingForOthers ? 'flex-1 bg-primary text-white hover:bg-primary-hover' : 'border border-card-border text-text-secondary hover:bg-content-bg'} h-12 rounded-xl px-6 text-base font-medium transition-colors disabled:opacity-40`}
           >
-            {hasSignedSuccessfully ? t('smartca.success.close') : t('smartca.signModal.cancel')}
+            {hasSignedSuccessfully || hasAlreadySignedButWaitingForOthers ? t('smartca.success.close') : t('smartca.signModal.cancel')}
           </button>
         </div>
       </div>
@@ -450,6 +466,28 @@ function SmartCaSuccessView({
         <InfoRow label={t('smartca.success.signedAt')} value={formatDateTime(signatureInfo?.signedAt)} />
         <div className="my-3 h-px bg-card-border/70" />
         <InfoRow label={t('smartca.success.signedBy')} value={signerName} />
+      </div>
+    </section>
+  );
+}
+
+// Bản thân người dùng hiện tại đã ký xong, hồ sơ đang chờ những signer còn lại — không cho tạo yêu
+// cầu ký lại, chỉ hiện trạng thái + danh sách người ký (realtime) để theo dõi.
+function SmartCaWaitingForOthersView({ approval }: { approval: ApprovalListItem }) {
+  return (
+    <section className="flex flex-col items-center text-center">
+      <div className="relative mt-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-warning/30 bg-[#f6f4ec] text-warning">
+        <span className="absolute -inset-6 rounded-full bg-warning/10" />
+        <svg className="relative z-10" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+        </svg>
+      </div>
+
+      <h3 className="mt-8 font-display text-2xl font-semibold text-warning">{t('smartca.waiting.title')}</h3>
+      <p className="mt-2 max-w-md text-base text-text-secondary">{t('smartca.waiting.desc')}</p>
+
+      <div className="mt-8 w-full">
+        <SignersListPanel signers={approval.signers} />
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
-export { useIssues } from './model/useIssues';
+export { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from './model/issueFormat';
 export { useIssueDiscussion } from './model/useIssueDiscussion';
-export { issuePriorityBadge, issueStatusBadge, formatIssueDateTime } from './model/issueFormat';
-export { IssuesPanel } from './ui/IssuesPanel';
+export { useIssues } from './model/useIssues';
 export { CreateIssueModal } from './ui/CreateIssueModal';
-export { IssueDetailModal } from './ui/IssueDetailModal';
-export { AttachExistingFilePicker } from './ui/AttachExistingFilePicker';
+export { IssueSidePanel } from './ui/IssueSidePanel';
+export { IssuesPanel } from './ui/IssuesPanel';
+

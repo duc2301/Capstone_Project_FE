@@ -225,9 +225,27 @@ export const smartcaApi = {
   },
 };
 
+/* Lỗi BE khi actor không đủ điều kiện thao tác Team-Leader-only (đặt vị trí ký, sinh PDF đã ký...) —
+ * dịch rõ để phân biệt 2 nguyên nhân khác nhau: (1) folder CHƯA được cấp quyền CanApprove cho nhóm
+ * nào cả (lỗi cấu hình phân quyền, không phải do actor thiếu vai trò Leader); (2) đã có nhóm được
+ * cấp quyền nhưng actor không phải Leader của nhóm đó. */
+const TEAM_LEADER_MESSAGES: Record<string, string> = {
+  'No group has been granted approve permission on this folder yet. Please ask the project Admin to configure it.':
+    'Thư mục này chưa được cấp quyền Duyệt (CanApprove) cho nhóm nào cả. Hãy nhờ quản trị dự án vào "Phân quyền" cấu hình quyền Duyệt cho đúng nhóm phụ trách trước khi thao tác.',
+  'Only the Team Leader can perform this action.':
+    'Bạn chưa được phân quyền để thực hiện thao tác này trên tài liệu này.',
+};
+
+function translateTeamLeaderMessage(message: string): string {
+  const knownKey = Object.keys(TEAM_LEADER_MESSAGES).find((m) => message.includes(m));
+  return knownKey ? TEAM_LEADER_MESSAGES[knownKey] : message;
+}
+
 export function smartcaErrorMessage(err: unknown, fallback: string): string {
   const apiMessage = getApiErrorMessage(err, '');
-  if (apiMessage) return apiMessage;
-  if (err instanceof Error && err.message) return err.message;
+  if (apiMessage) return translateTeamLeaderMessage(apiMessage);
+  // unwrap() ném Error(data.message) khi API trả isSuccess:false (không phải lỗi HTTP) — vẫn cần dịch
+  // các thông báo Team-Leader-only ở đây, không chỉ nhánh apiMessage phía trên.
+  if (err instanceof Error && err.message) return translateTeamLeaderMessage(err.message);
   return fallback;
 }

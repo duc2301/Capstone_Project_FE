@@ -16,11 +16,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'header.nav.home', to: '/', routed: true },
   { labelKey: 'header.nav.about', to: '/about', routed: true },
-  { labelKey: 'header.nav.consult', to: '#', routed: false },
-  { labelKey: 'header.nav.contact', to: '#', routed: false },
-  { labelKey: 'header.nav.accounts', to: '/accounts', routed: true, authOnly: true },
-  { labelKey: 'admin.nav.profile', to: '/profile', routed: true, authOnly: true },
-  { labelKey: 'header.nav.viewer', to: '/viewer', routed: true, authOnly: true },
 ];
 
 const INACTIVE_LINK =
@@ -82,9 +77,12 @@ export const Header = () => {
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <NotificationBell variant="header" />
-              <span className="hidden max-w-[120px] truncate font-jakarta text-sm font-medium text-[#43493C] sm:inline">
+              <Link
+                to="/profile"
+                className="hidden max-w-[120px] truncate font-jakarta text-sm font-medium text-[#43493C] transition-colors hover:text-[#406623] sm:inline"
+              >
                 {currentUser?.userName}
-              </span>
+              </Link>
               <button
                 type="button"
                 onClick={logout}

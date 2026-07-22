@@ -31,13 +31,14 @@ function toFileListItem(dto: FolderContentsFileDto): FileListItem {
     currentVersionNumber: 1,
     displayVersion: dto.displayVersion,
     sizeBytes: dto.fileSizeBytes,
-    format: null,
+    format: dto.format ?? null,
     createdByAccountId: null,
     authorName: dto.uploaderEmail,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     warnning: dto.warnning,
     warnningMessage: dto.warnningMessage,
+    description: dto.description ?? null,
     hasOpenIssue: dto.hasOpenIssue,
   };
 }

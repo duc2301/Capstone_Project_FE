@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { approvalApi, approvalErrorMessage, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
+import { approvalApi, approvalErrorMessage, isTeamPermissionError, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
 import type { DocumentSearchResult } from '@/entities/document-search';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
-import { CdeArea } from '@/entities/folder';
+import { CdeArea, folderErrorMessage } from '@/entities/folder';
+import { GroupMemberStatus } from '@/entities/group';
+import { GroupMemberRole } from '@/entities/invitation';
+import { isAccountAdmin, useSession } from '@/entities/session';
+import { FolderNamingInfoModal } from '@/features/naming-conventions';
 import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus, FileReturnRequestStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileReturnRequestStatus, is3DFile } from '@/entities/file-item';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 
 import { useFolderActions } from '../model/useFolderActions';
@@ -83,6 +87,19 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
   const { groups: signerGroups, loading: signerGroupsLoading } = useProjectGroups(projectId);
+  const { currentUser } = useSession();
+
+  // Gate thô cho nút gán/kế thừa/tùy chỉnh naming: Admin hoặc Leader active của 1 group
+  // trong project. BE check chính xác theo group phụ trách từng folder (403 nếu lách).
+  const canManageNaming =
+    isAccountAdmin(currentUser?.role)
+    || signerGroups.some((g) =>
+      g.members.some(
+        (m) =>
+          m.accountId === currentUser?.accountId
+          && m.role === GroupMemberRole.Leader
+          && m.status === GroupMemberStatus.Active,
+      ));
 
   // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
@@ -95,12 +112,15 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [fileMenu, setFileMenu] = useState<{ file: FileListItem; x: number; y: number } | null>(null);
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
   const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
+  const [submitApprovalError, setSubmitApprovalError] = useState<string | null>(null);
+  const [submitApprovalPermissionIssue, setSubmitApprovalPermissionIssue] = useState(false);
   const [approvalBusy, setApprovalBusy] = useState(false);
   const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
   const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
+  const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
@@ -161,6 +181,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
 
   const openSubmitApproval = (file: FileListItem) => {
     setSubmitApprovalFor(file);
+    setSubmitApprovalError(null);
+    setSubmitApprovalPermissionIssue(false);
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -199,8 +221,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
         : t('documents.toast.deleted'),
       );
       setModal(null);
-    } catch {
-      showToast(t('common.error'), 'error');
+    } catch (err) {
+      showToast(folderErrorMessage(err, t('common.error')), 'error');
     } finally {
       setBusy(false);
     }
@@ -217,13 +239,16 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const handleSubmitApproval = async (payload: SubmitApprovalPayload) => {
     if (!submitApprovalFor) return;
     setApprovalBusy(true);
+    setSubmitApprovalError(null);
+    setSubmitApprovalPermissionIssue(false);
     try {
       await approvalApi.submitApproval(submitApprovalFor.id, payload);
       await refetchFiles();
       showToast(t('approvals.toast.submitted'));
       setSubmitApprovalFor(null);
     } catch (err) {
-      showToast(approvalErrorMessage(err, t('common.error')), 'error');
+      setSubmitApprovalError(approvalErrorMessage(err, t('common.error')));
+      setSubmitApprovalPermissionIssue(isTeamPermissionError(err));
     } finally {
       setApprovalBusy(false);
     }
@@ -328,7 +353,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           <p className="text-sm font-medium text-danger">{error}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_1fr]">
           {/* Cây thư mục — chuột phải để mở menu thao tác */}
           <FolderTree
             tree={tree}
@@ -338,21 +363,21 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-6 shadow-card">
+          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>
               </div>
             ) : (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3 border-b border-card-border pb-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 border-b border-card-border pb-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                       </svg>
                     </span>
-                    <h3 className="truncate font-display text-xl text-text">{selected.name}</h3>
+                    <h3 className="truncate text-xl font-normal text-text">{selected.name}</h3>
                   </div>
 
                   {/* Nút thao tác nhanh trên thư mục đang chọn */}
@@ -453,6 +478,24 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onMove={() => setModal({ action: 'move', node: menu.node })}
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
           onPermission={() => setPermissionFor(menu.node)}
+          onNaming={() => setNamingFor(menu.node)}
+        />
+      )}
+
+      {/* Modal quy tắc đặt tên của thư mục (+ kế thừa từ thư mục cha) */}
+      {namingFor && (
+        <FolderNamingInfoModal
+          folder={namingFor}
+          canManage={canManageNaming}
+          onClose={() => setNamingFor(null)}
+          onInherited={() => {
+            setNamingFor(null);
+            showToast(t('naming.folder.inherited'));
+          }}
+          onCustomized={() => {
+            setNamingFor(null);
+            showToast(t('naming.folder.customized'));
+          }}
         />
       )}
 
@@ -538,12 +581,22 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           fileName={submitApprovalFor.name}
           currentZone={selected ? zoneNameFromArea(selected.area) : 'Wip'}
           targetZone={selectedTargetZone}
-          canRequireSignature={!!selectedTargetZone}
-          mustRequireSignature={selected?.area === CdeArea.Shared && selectedTargetZone === 'Published'}
+          canRequireSignature={!!selectedTargetZone && !is3DFile(submitApprovalFor.fileType, submitApprovalFor.format)}
+          mustRequireSignature={
+            selected?.area === CdeArea.Shared &&
+            selectedTargetZone === 'Published' &&
+            !is3DFile(submitApprovalFor.fileType, submitApprovalFor.format)
+          }
           signerGroups={signerGroups}
           loadingSigners={signerGroupsLoading}
           busy={approvalBusy}
-          onClose={() => setSubmitApprovalFor(null)}
+          submitError={submitApprovalError}
+          submitErrorAction={
+            submitApprovalPermissionIssue
+              ? { label: t('documents.goToTeamsTab'), onClick: () => navigate(`/projects/${projectId}?tab=teams`) }
+              : null
+          }
+          onClose={() => { setSubmitApprovalFor(null); setSubmitApprovalError(null); setSubmitApprovalPermissionIssue(false); }}
           onSubmit={handleSubmitApproval}
         />
       )}
@@ -551,6 +604,10 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       {/* Danh sách chờ duyệt */}
       {pendingApprovalsOpen && (
         <PendingApprovalsModal
+          isLeader={canManageNaming}
+          currentAccountId={currentUser?.accountId}
+          projectId={projectId}
+          projectGroups={signerGroups}
           onClose={() => setPendingApprovalsOpen(false)}
           onChanged={() => {
             void refetchFiles();

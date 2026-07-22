@@ -42,10 +42,14 @@ export interface FolderContentsFileDto {
   displayVersion: string | null;
   uploaderEmail: string | null;
   fileSizeBytes: number;
+  /* Định dạng của bản hiện hành, vd "DWG", "RVT" (null nếu chưa có nội dung) */
+  format?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   warnning?: boolean | null;
   warnningMessage?: string | null;
+  /** Tóm tắt nội dung do AI sinh sau upload (null = chưa tóm tắt / không trích được chữ). */
+  description?: string | null;
   hasOpenIssue?: boolean;
 }
 

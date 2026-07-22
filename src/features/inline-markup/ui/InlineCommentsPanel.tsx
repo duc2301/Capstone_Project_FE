@@ -1,17 +1,28 @@
+import { useState } from 'react';
+
 import type { FileNote, MarkupType } from '@/entities/file-note';
-import { FileNoteStatus, MarkupType as MT } from '@/entities/file-note';
+import { buildMarkupAuthorOptions, FileNoteStatus, filterMarkupNotes, MarkupType as MT } from '@/entities/file-note';
+import { MarkupNoteFilter, type MarkupStatusFilter } from '@/shared/components';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { useInlineMarkupContext } from '../model/inlineMarkupContext';
 
-/** Tab "Ghi chú" nằm ở cột bên phải */
-export function InlineCommentsPanel() {
+interface InlineCommentsPanelProps {
+  onJumpToNote?: () => void;
+}
+
+export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) {
   const c = useInlineMarkupContext();
+  const [authorId, setAuthorId] = useState('');
+  const [statusFilter, setStatusFilter] = useState<MarkupStatusFilter>('all');
   const openCount = c.notes.filter((n) => n.status === FileNoteStatus.Open).length;
+  const authorOptions = buildMarkupAuthorOptions(c.notes, t('markup.filter.unknownAuthor'));
+  const filteredNotes = filterMarkupNotes(c.notes, authorId, statusFilter);
 
   const jumpTo = (note: FileNote) => {
     if (note.pageNumber) c.setPage(note.pageNumber);
     c.setSelectedId(note.id);
+    onJumpToNote?.();
   };
 
   return (
@@ -27,13 +38,27 @@ export function InlineCommentsPanel() {
         {t('markup.inline.panelHint')}
       </p>
 
+      {c.notes.length > 0 && (
+        <MarkupNoteFilter
+          authors={authorOptions}
+          authorId={authorId}
+          onAuthorChange={setAuthorId}
+          status={statusFilter}
+          onStatusChange={setStatusFilter}
+          total={c.notes.length}
+          shown={filteredNotes.length}
+        />
+      )}
+
       {c.loading ? (
         <p className="py-8 text-center text-sm text-text-muted">{t('common.loading')}</p>
       ) : c.notes.length === 0 ? (
         <p className="py-8 text-center text-sm text-text-muted">{t('markup.inline.empty')}</p>
+      ) : filteredNotes.length === 0 ? (
+        <p className="py-8 text-center text-sm text-text-muted">{t('markup.filter.noMatch')}</p>
       ) : (
         <ul className="space-y-3">
-          {c.notes.map((n) => (
+          {filteredNotes.map((n) => (
             <NoteRow
               key={n.id}
               note={n}

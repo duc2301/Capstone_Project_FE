@@ -9,6 +9,19 @@ export const FileType = {
 } as const;
 export type FileType = (typeof FileType)[keyof typeof FileType];
 
+/* File 3D (IFC, hoặc CAD không phải bản vẽ 2D dwg/dwgx như rvt/nwc/nwd/dgn) — khớp BE
+ * FileSignatureFormatRules.Is3DModelFile: chưa hỗ trợ ký số trực quan nên không bắt buộc ký khi
+ * chuyển vùng Shared -> Published (xem SubmitApprovalModal). */
+export function is3DFile(fileType: FileType, format: string | null | undefined): boolean {
+  if (fileType === FileType.Ifc) return true;
+  if (fileType !== FileType.Cad) return false;
+  const normalized = (format ?? '').trim().toUpperCase();
+  // Danh sách file trong thư mục (folder-contents) hiện chưa trả "format" (luôn null) —
+  // không rõ định dạng thì coi là bản vẽ 2D (an toàn hơn: không chặn nhầm ký số của file 2D).
+  if (!normalized) return false;
+  return normalized !== 'DWG' && normalized !== 'DWGX';
+}
+
 /* Trạng thái phê duyệt file — khớp BE (Domain.Enum.File.FileItemStatus) */
 export const FileItemStatus = {
   Draft: 0,
@@ -49,6 +62,8 @@ export interface FileListItem {
   updatedAt: string | null;
   warnning?: boolean | null;
   warnningMessage?: string | null;
+  /** Tóm tắt nội dung do AI sinh sau khi upload (null = chưa tóm tắt / không trích được chữ). */
+  description?: string | null;
   hasOpenIssue?: boolean;
 }
 
@@ -73,6 +88,7 @@ export type ModelViewerStatus = (typeof ModelViewerStatus)[keyof typeof ModelVie
 
 export interface FileViewInfo {
   kind: FileViewKind;
+  area?: RelatedFileArea;
   urn: string | null;
   /* Chỉ có khi kind = 'model'. null cho file không phải model. */
   viewerStatus: ModelViewerStatus | null;
@@ -85,6 +101,66 @@ export interface FileViewInfo {
   requiresSignature?: boolean;
   isSigned?: boolean;
   signedVersionId?: string | null;
+}
+
+/* ── Tệp liên quan (file links) ────────────────────────────
+ * Liên kết HAI CHIỀU giữa 2 file: mở file nào trong cặp cũng thấy file kia.
+ * BE lọc sẵn theo quyền View của người gọi — FE chỉ hiển thị những gì BE trả về,
+ * KHÔNG tự suy quyền (xem 06-fe-be-contract.md §5). */
+
+/* Khu vực CDE của tệp liên quan — numeric union khớp BE (Domain.Enum.Cde.CdeArea).
+ * Khai lại ở đây thay vì dùng lại `CdeArea` của entities/folder vì FSD cấm entities
+ * import chéo entities; giá trị phải khớp đúng entities/folder/model/folder.types.ts. */
+export const RelatedFileArea = {
+  Wip: 0,
+  Shared: 1,
+  Published: 2,
+  Archived: 3,
+} as const;
+export type RelatedFileArea = (typeof RelatedFileArea)[keyof typeof RelatedFileArea];
+
+/* 1 dòng trong danh sách "Tệp liên quan" khi xem 1 file */
+export interface RelatedFile {
+  id: string;
+  name: string;
+  fileType: FileType;
+  status: FileItemStatus;
+  folderId: string;
+  folderName: string;
+  area: RelatedFileArea;
+  currentVersionNumber: number;
+  /* Chuỗi version theo hệ mới, vd "P01.02" / "C01" (null nếu file chưa có version state). */
+  displayVersion: string | null;
+  format: string | null;
+  sizeBytes: number;
+  /* Thông tin của chính liên kết, không phải của file */
+  linkedAt: string;
+  linkedByName: string | null;
+}
+
+/* Response của GET/POST /file-items/{id}/related-files.
+ * canLink nằm ở cấp danh sách vì nó là quyền trên FILE ĐANG XEM (Edit/Update trên folder chứa nó),
+ * dùng chung cho mọi liên kết — và FE cần nó CẢ KHI files rỗng để ẩn nút "Thêm liên kết". */
+export interface RelatedFilesResult {
+  canLink: boolean;
+  files: RelatedFile[];
+}
+
+/* 1 dòng trong picker chọn tệp để liên kết (chỉ file trong thư mục của nhóm ở cùng khu vực) */
+export interface LinkableFile {
+  id: string;
+  name: string;
+  fileType: FileType;
+  folderId: string;
+  folderName: string;
+  currentVersionNumber: number;
+  /* Chuỗi version theo hệ mới, vd "P01.02" / "C01" (null nếu file chưa có version state). */
+  displayVersion: string | null;
+  format: string | null;
+  sizeBytes: number;
+  updatedAt: string | null;
+  /* Đã liên kết sẵn với file nguồn -> picker tick sẵn + khoá */
+  alreadyLinked: boolean;
 }
 
 /* 1 phiên bản của file — khớp BE /file-versions/{fileItemId}/history */

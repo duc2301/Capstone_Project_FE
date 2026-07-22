@@ -1,25 +1,19 @@
 import { useEffect, useRef } from 'react';
 
-import type { FileNote } from '@/entities/file-note';
+import type { IssueItem } from '@/entities/issue';
 import { SIGNALR_EVENTS, SIGNALR_HUBS, SIGNALR_MARKUP_METHODS } from '@/shared/config';
 import { createHubConnection } from '@/shared/lib/signalr';
 
-export interface InlineMarkupRealtimeHandlers {
-  onNoteAdded?: (note: FileNote) => void;
-  onNoteUpdated?: (note: FileNote) => void;
-  onNoteDeleted?: (noteId: string) => void;
+export interface IssueRealtimeHandlers {
+  onIssueCreated?: (issue: IssueItem) => void;
+  onIssueUpdated?: (issue: IssueItem) => void;
 }
 
-interface DeletedPayload {
-  fileItemId: string;
-  noteId: string;
-}
-
-/** Xử lý realtime cho phần markup (đồng bộ qua websocket) */
-export function useInlineMarkupRealtime(
-  fileItemId: string | null,
-  handlers: InlineMarkupRealtimeHandlers,
-): void {
+/**
+ * Lắng nghe "IssueCreated"/"IssueUpdated" qua MarkupHub (room theo fileItemId, tái dùng room có sẵn
+ * cho markup) — dùng để tự vá danh sách issue của file đang mở, không cần refetch API.
+ */
+export function useIssueRealtime(fileItemId: string | undefined, handlers: IssueRealtimeHandlers): void {
   const handlersRef = useRef(handlers);
   useEffect(() => {
     handlersRef.current = handlers;
@@ -31,14 +25,11 @@ export function useInlineMarkupRealtime(
     let cancelled = false;
     const connection = createHubConnection(SIGNALR_HUBS.markup);
 
-    connection.on(SIGNALR_EVENTS.markupNoteAdded, (note: FileNote) => {
-      if (!cancelled) handlersRef.current.onNoteAdded?.(note);
+    connection.on(SIGNALR_EVENTS.issueCreated, (issue: IssueItem) => {
+      if (!cancelled) handlersRef.current.onIssueCreated?.(issue);
     });
-    connection.on(SIGNALR_EVENTS.markupNoteUpdated, (note: FileNote) => {
-      if (!cancelled) handlersRef.current.onNoteUpdated?.(note);
-    });
-    connection.on(SIGNALR_EVENTS.markupNoteDeleted, (payload: DeletedPayload) => {
-      if (!cancelled) handlersRef.current.onNoteDeleted?.(payload.noteId);
+    connection.on(SIGNALR_EVENTS.issueUpdated, (issue: IssueItem) => {
+      if (!cancelled) handlersRef.current.onIssueUpdated?.(issue);
     });
 
     const startPromise = connection

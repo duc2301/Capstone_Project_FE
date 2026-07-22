@@ -1,5 +1,5 @@
 import type { ApiResponse } from "@/shared/api";
-import { axiosInstance } from "@/shared/api";
+import { axiosInstance, getApiErrorMessage } from "@/shared/api";
 import type {
   CdeArea,
   CreateSubFolderPayload,
@@ -50,3 +50,17 @@ export const folderApi = {
       payload,
     ),
 };
+
+/* Các lỗi quyền thao tác thư mục mà BE trả — dịch sang tiếng Việt rõ nghĩa thay vì để nguyên
+ * tiếng Anh hoặc rơi vào thông báo lỗi chung chung "Có lỗi xảy ra". */
+const FOLDER_PERMISSION_MESSAGES: Record<string, string> = {
+  "Only the group's Team Leader (or project manager/Admin) can create sub-folders here.":
+    "Bạn không có quyền tạo thư mục con ở đây. Chỉ Leader của nhóm phụ trách (hoặc quản lý dự án/Admin) mới được tạo.",
+};
+
+export function folderErrorMessage(err: unknown, fallback: string): string {
+  const raw = getApiErrorMessage(err, "");
+  if (!raw) return fallback;
+  const knownKey = Object.keys(FOLDER_PERMISSION_MESSAGES).find((m) => raw.includes(m));
+  return knownKey ? FOLDER_PERMISSION_MESSAGES[knownKey] : raw;
+}

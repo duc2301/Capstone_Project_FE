@@ -3,23 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreateProjectStepper, useProjectInvite, useProjects } from '@/features/projects';
-import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
-
-const STATUS_KEYS: Record<number, TranslationKey> = {
-  0: 'projects.status.planning',
-  1: 'projects.status.active',
-  2: 'projects.status.onHold',
-  3: 'projects.status.completed',
-  4: 'projects.status.closed',
-};
-const PHASE_KEYS: Record<number, TranslationKey> = {
-  0: 'projects.phase.concept',
-  1: 'projects.phase.design',
-  2: 'projects.phase.construction',
-  3: 'projects.phase.handover',
-  4: 'projects.phase.operation',
-};
 
 interface ModalProps {
   title: string;
@@ -126,8 +110,6 @@ export function ProjectsPage() {
               <thead>
                 <tr className="border-b border-card-border bg-input-bg">
                   <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.name')}</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.status')}</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.phase')}</th>
                   <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.manager')}</th>
                   <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.actions')}</th>
                 </tr>
@@ -135,7 +117,7 @@ export function ProjectsPage() {
               <tbody className="divide-y divide-card-border">
                 {projects.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center text-sm text-text-muted">
+                    <td colSpan={3} className="px-6 py-16 text-center text-sm text-text-muted">
                       {t('projects.empty')}
                     </td>
                   </tr>
@@ -147,14 +129,6 @@ export function ProjectsPage() {
                       className="cursor-pointer transition-colors duration-150 hover:bg-primary-ghost"
                     >
                       <td className="px-6 py-4 font-semibold text-text">{p.projectName}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-block rounded-[var(--radius-badge)] bg-info-light px-2.5 py-1 text-xs font-semibold text-info">
-                          {t(STATUS_KEYS[p.status] ?? 'projects.status.planning')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-text-secondary">
-                        {t(PHASE_KEYS[p.phase] ?? 'projects.phase.concept')}
-                      </td>
                       <td className="px-6 py-4 text-text-muted">
                         {p.managerAccountId
                           ? accountNameById.get(p.managerAccountId) ?? p.managerAccountId

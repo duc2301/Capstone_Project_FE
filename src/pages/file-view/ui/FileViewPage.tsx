@@ -5,13 +5,14 @@ import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
+import { useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
+import { isRequiredSigner, RelatedFilesPanel } from '@/features/folders';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
-import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
-import { ModelCommentsPanel } from '@/features/model-markup';
+import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
@@ -41,8 +42,9 @@ function getDefaultSignaturePosition(pageSize: PdfPageSize): SignaturePlacementV
   const height = Math.round(pageSize.height * 0.083);
   return {
     pageNumber: 1,
-    x: Math.round(pageSize.width * 0.605),
-    y: Math.round(pageSize.height * 0.808),
+    // Đặt giữa trang (theo cả 2 chiều) để người dùng thấy rõ vị trí ký khi đặt/xác nhận.
+    x: Math.round((pageSize.width - width) / 2),
+    y: Math.round((pageSize.height - height) / 2),
     width,
     height,
   };
@@ -57,10 +59,12 @@ function Spinner() {
   );
 }
 
-function FileIcon({ danger = false }: { danger?: boolean }) {
+function FileIcon({ danger = false, size = 'md' }: { danger?: boolean; size?: 'md' | 'sm' }) {
+  const boxClass = size === 'sm' ? 'h-9 w-9 rounded-xl' : 'h-12 w-12 rounded-2xl';
+  const iconSize = size === 'sm' ? 18 : 24;
   return (
-    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${danger ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <span className={`flex ${boxClass} shrink-0 items-center justify-center ${danger ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
       </svg>
@@ -131,27 +135,38 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
-      <div className="break-words text-sm font-medium text-text">{value}</div>
+      <div className="break-words text-[13px] font-medium text-text">{value}</div>
     </div>
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'markup' | 'issues' | 'loi';
+type FilePanelTab = 'properties' | 'signatureHistory' | 'issues' | 'loi' | 'related';
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const folderId = searchParams.get('folder');
+  const { currentUser } = useSession();
+  const { groups: projectGroups } = useProjectGroups(projectId);
+  const initialPanelTab = (
+    ['properties', 'signatureHistory', 'issues', 'loi', 'related'] as const
+  ).includes(searchParams.get('panel') as FilePanelTab)
+    ? (searchParams.get('panel') as FilePanelTab)
+    : 'properties';
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
   const [versions, setVersions] = useState<FileVersion[]>([]);
   const [fileListItem, setFileListItem] = useState<FileListItem | null>(null);
   const [fileApprovals, setFileApprovals] = useState<ApprovalListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // File đã nạp xong dữ liệu. Suy ra `loading` từ đây thay vì giữ cờ riêng: đổi file (bấm 1 tệp
+  // liên quan) là id lệch ngay -> loading bật tức thì, không cần setState trong effect.
+  // Trước đây cờ loading chỉ được bật lúc khởi tạo rồi tắt vĩnh viễn -> chuyển file KHÔNG hiện
+  // loading và trang vẫn bày dữ liệu của file CŨ như thể đã tải xong.
+  const [loadedFileId, setLoadedFileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
-  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>('properties');
+  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>(initialPanelTab);
   const [signaturePlacementMode, setSignaturePlacementMode] = useState(false);
   const [signaturePlacementConfirmed, setSignaturePlacementConfirmed] = useState(false);
   const [savingSignaturePosition, setSavingSignaturePosition] = useState(false);
@@ -164,13 +179,13 @@ export function FileViewPage() {
   // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [modelViewer, setModelViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
-  const handleViewerReady = useCallback(
-    (v: Autodesk.Viewing.GuiViewer3D | null) => setModelViewer(v),
-    [],
-  );
 
   const latestVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
+
+  const loading = Boolean(fileId) && loadedFileId !== fileId;
+  // Đang ĐỔI sang file khác (đã có nội dung file cũ trên màn) — khác với lần tải đầu (màn còn trống).
+  // Lúc này màn vẫn bày dữ liệu file cũ nên phải chặn thao tác, tránh bấm nhầm ghi chú/ký số của file cũ.
+  const switchingFile = loading && info !== null;
 
   const fetchView = useCallback(async (): Promise<FileViewInfo> => {
     const { data } = await fileItemApi.getView(fileId!);
@@ -203,6 +218,7 @@ export function FileViewPage() {
         ]);
 
         if (!cancelled) {
+          setError(null);   // xoá lỗi còn sót của file trước khi chuyển sang file mới
           setInfo(viewResult);
           setVersions(versionsResult.data.result ?? []);
           setFileListItem(currentFileResult);
@@ -211,7 +227,7 @@ export function FileViewPage() {
       } catch {
         if (!cancelled) setError(t('fileView.error'));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadedFileId(fileId);
       }
     })();
 
@@ -292,15 +308,6 @@ export function FileViewPage() {
     info?.kind === 'model' && status === ModelViewerStatus.Ready && !!info.urn;
   const isModelFailed = info?.kind === 'model' && status === ModelViewerStatus.Failed;
 
-  const canMarkup = Boolean(info?.kind === 'model' && isModelReady);
-  // Hiển thị phần vẽ vời 2D cho mấy file xem trực tiếp được
-  const canMarkupInline = Boolean(
-    info?.kind === 'inline' &&
-    ((info.contentType ?? '').startsWith('image/') || info.contentType === 'application/pdf'),
-  );
-  const showMarkupTab = (canMarkup && info?.kind === 'model') || canMarkupInline;
-  const inlineVersionId = fileListItem?.currentVersionId ?? latestVersion?.id ?? null;
-
   const statusMeta = useMemo(
     () => getStatusMeta(info, isModelProcessing, isModelFailed),
     [info, isModelProcessing, isModelFailed],
@@ -313,12 +320,8 @@ export function FileViewPage() {
   const isExcelFile = isExcelFormat(format);
   const isCad2DFile = isCad2DFormat(format);
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
-  // Tab "Kiểm LOI" chỉ hiện với file mô hình .ifc (cùng dải tab với markup).
-  const showLoiTab = format === 'IFC';
-  // 3 tab luôn có (Thông tin / Ký số / Issue) + markup (nếu xem được) + LOI (nếu file .ifc).
-  const panelTabCount = 3 + (showMarkupTab ? 1 : 0) + (showLoiTab ? 1 : 0);
-  const panelTabGridClass =
-    panelTabCount >= 5 ? 'grid-cols-5' : panelTabCount === 4 ? 'grid-cols-4' : 'grid-cols-3';
+  // Tab "Kiểm LOI" TẠM TẮT (chức năng chưa hoàn thiện). Mở lại: đổi về `format === 'IFC'`.
+  const showLoiTab = false;
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = fileListItem?.authorName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.createdAt);
@@ -331,7 +334,10 @@ export function FileViewPage() {
       approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
     [signatureApprovals],
   );
-  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile);
+  const isSignerForCurrentApproval = Boolean(
+    signableApproval && isRequiredSigner(signableApproval.signers, currentUser?.accountId, projectGroups),
+  );
+  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile && isSignerForCurrentApproval);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -435,181 +441,190 @@ export function FileViewPage() {
 
   return (
     <div className="min-h-[calc(100vh-96px)] bg-[#fbf9f1] px-4 py-5 sm:px-6 lg:px-8">
-      <InlineMarkupProvider
-        fileItemId={fileId ?? ''}
-        fileVersionId={inlineVersionId}
-        fileName={fileTitle}
-        url={info?.url ?? null}
-        contentType={info?.contentType ?? null}
-        enabled={canMarkupInline}
-      >
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
-          <main className="min-w-0 flex-1 space-y-5">
-            <header className="flex flex-col gap-4 rounded-3xl border border-card-border/70 bg-card/80 px-5 py-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-4">
-                <FileIcon danger={format === 'PDF'} />
-                <div className="min-w-0">
-                  <h1 className="truncate font-display text-2xl font-semibold text-text sm:text-3xl">{fileTitle}</h1>
-                  <p className="mt-1 text-sm text-text-muted">
-                    {format} {latestVersion ? `- ${latestVersion.displayVersion}` : ''}
-                  </p>
-                </div>
+      {/* Chặn tương tác trong lúc đổi sang file khác: màn vẫn đang bày dữ liệu file CŨ, để bấm được
+          thì ghi chú / ký số / phê duyệt sẽ chạy nhầm trên file cũ. z cao hơn mọi modal (60). */}
+      {switchingFile && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/25 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-card px-8 py-6 shadow-modal">
+            <Spinner />
+            <p className="font-jakarta text-sm font-medium text-text">{t('fileView.switching')}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
+        <main className="min-w-0 flex-1 space-y-3">
+          <header className="flex flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <FileIcon danger={format === 'PDF'} size="sm" />
+              <div className="min-w-0">
+                <h1 className="break-words font-jakarta text-xl font-semibold text-text">{fileTitle}</h1>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  {format} {latestVersion ? `- ${latestVersion.displayVersion}` : ''}
+                </p>
               </div>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
-                  {statusMeta.label}
-                </span>
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
-                >
-                  {t('fileView.back')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={!info}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {t('fileView.download.button')}
-                </button>
-              </div>
-            </header>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
+                {statusMeta.label}
+              </span>
+              <button
+                type="button"
+                onClick={goBack}
+                className="whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
+              >
+                {t('fileView.back')}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={!info}
+                className="whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('fileView.download.button')}
+              </button>
+            </div>
+          </header>
 
-            <section className="relative h-[calc(100vh-250px)] min-h-[560px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
-              <div className="absolute inset-0 bg-[#dcdad2]" />
+          <section className="relative h-[calc(100vh-200px)] min-h-[640px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
+            <div className="absolute inset-0 bg-[#dcdad2]" />
 
-              {loading ? (
+            {loading ? (
+              // Đang chuyển file thì overlay chặn ở trên đã báo rồi -> khỏi spinner thứ hai lấp ló dưới lớp mờ.
+              switchingFile ? null : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                   <Spinner />
                   <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
                 </div>
-              ) : error ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                  <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
-                </div>
-              ) : isModelReady ? (
-                <div className="absolute inset-0 bg-card">
-                  <ModelViewer
-                    urn={info!.urn!}
-                    className="h-full w-full"
-                    onViewerReady={handleViewerReady}
-                  />
-                </div>
-              ) : isModelProcessing ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-                  <Spinner />
-                  <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
-                  <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
-                  {info?.viewerProgress ? (
-                    <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
-                  ) : null}
-                </div>
-              ) : isModelFailed ? (
-                <div className="absolute inset-0 flex items-center justify-center px-6">
-                  <EmptyViewerState
-                    danger
-                    title={t('fileView.model.failed.title')}
-                    desc={t('fileView.model.failed.desc')}
-                    primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
-                    onPrimary={handleRetranslate}
-                    secondaryLabel={t('fileView.download.button')}
-                    onSecondary={handleDownload}
-                    disabled={retrying}
-                  />
-                </div>
-              ) : info && info.kind === 'inline' && info.url ? (
-                canMarkupInline ? (
-                  <InlineMarkupStage />
-                ) : (
-                  <div className="absolute inset-0 p-5">
-                    <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
-                      <InlineContent info={info} />
-                    </div>
-                  </div>
-                )
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center px-6">
-                  <EmptyViewerState
-                    title={t('fileView.download.title')}
-                    desc={t('fileView.download.desc')}
-                    primaryLabel={t('fileView.download.button')}
-                    onPrimary={handleDownload}
-                  />
-                </div>
-              )}
-
-              {requiresSignature && signaturePlacementMode && (
-                <SignaturePlacementOverlay
-                  fileName={fileTitle}
-                  pdfUrl={signaturePreviewUrl ?? info?.url ?? null}
-                  pageSize={pdfPageSize}
-                  pageCount={pdfPageCount}
-                  confirmed={signaturePlacementConfirmed}
-                  busy={savingSignaturePosition}
-                  value={signaturePosition}
-                  onChange={setSignaturePosition}
-                  onChangePage={handleSignaturePageChange}
-                  onConfirm={handleConfirmSignaturePlacement}
-                  onClose={() => setSignaturePlacementMode(false)}
+              )
+            ) : error ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
+              </div>
+            ) : isModelReady ? (
+              <div className="absolute inset-0 bg-card">
+                <ModelViewer
+                  urn={info!.urn!}
+                  className="h-full w-full"
                 />
-              )}
-
-
-              {!canMarkupInline && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
-                  <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
-                    <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">-</button>
-                    <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
-                    <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold text-text transition-colors hover:bg-content-bg">+</button>
-                    <span className="h-4 w-px bg-card-border" />
-                    <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
-                      {t('fileView.download.button')}
-                    </button>
-                  </div>
+              </div>
+            ) : isModelProcessing ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+                <Spinner />
+                <h3 className="font-jakarta text-base font-semibold text-text">{t('fileView.model.processing.title')}</h3>
+                <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
+                {info?.viewerProgress ? (
+                  <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
+                ) : null}
+              </div>
+            ) : isModelFailed ? (
+              <div className="absolute inset-0 flex items-center justify-center px-6">
+                <EmptyViewerState
+                  danger
+                  title={t('fileView.model.failed.title')}
+                  desc={t('fileView.model.failed.desc')}
+                  primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
+                  onPrimary={handleRetranslate}
+                  secondaryLabel={t('fileView.download.button')}
+                  onSecondary={handleDownload}
+                  disabled={retrying}
+                />
+              </div>
+            ) : info && info.kind === 'inline' && info.url ? (
+              <div className="absolute inset-0 p-5">
+                <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
+                  <InlineContent info={info} />
                 </div>
-              )}
-            </section>
-          </main>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center px-6">
+                <EmptyViewerState
+                  title={t('fileView.download.title')}
+                  desc={t('fileView.download.desc')}
+                  primaryLabel={t('fileView.download.button')}
+                  onPrimary={handleDownload}
+                />
+              </div>
+            )}
 
-          <aside className="w-full shrink-0 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-            <div className={`grid ${panelTabGridClass} border-b border-card-border`}>
-              <PanelTabButton
-                active={activePanelTab === 'properties'}
-                label={t('fileView.tabs.properties')}
-                onClick={() => setActivePanelTab('properties')}
+            {requiresSignature && signaturePlacementMode && (
+              <SignaturePlacementOverlay
+                fileName={fileTitle}
+                pdfUrl={signaturePreviewUrl ?? info?.url ?? null}
+                pageSize={pdfPageSize}
+                pageCount={pdfPageCount}
+                confirmed={signaturePlacementConfirmed}
+                busy={savingSignaturePosition}
+                value={signaturePosition}
+                onChange={setSignaturePosition}
+                onChangePage={handleSignaturePageChange}
+                onConfirm={handleConfirmSignaturePlacement}
+                onClose={() => setSignaturePlacementMode(false)}
               />
-              <PanelTabButton
-                active={activePanelTab === 'signatureHistory'}
-                label={t('fileView.tabs.signatureHistory')}
-                badge={requiresSignature && !isSigned ? '0' : undefined}
-                onClick={() => setActivePanelTab('signatureHistory')}
-              />
-              {showMarkupTab && (
-                <PanelTabButton
-                  active={activePanelTab === 'markup'}
-                  label={t('markup.inline.tab')}
-                  onClick={() => setActivePanelTab('markup')}
-                />
-              )}
-              <PanelTabButton
-                active={activePanelTab === 'issues'}
-                label={t('issues.panel.tab')}
-                onClick={() => setActivePanelTab('issues')}
-              />
-              {showLoiTab && (
-                <PanelTabButton
-                  active={activePanelTab === 'loi'}
-                  label={t('loi.tab')}
-                  onClick={() => setActivePanelTab('loi')}
-                />
-              )}
+            )}
+
+
+            {/* Thanh dưới của chế độ đọc: định dạng + tải về. Markup đã dời sang trang issue. */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
+              <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
+                <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
+                <span className="h-4 w-px bg-card-border" />
+                <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
+                  {t('fileView.download.button')}
+                </button>
+              </div>
             </div>
+          </section>
+        </main>
 
-            <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
-              {activePanelTab === 'properties' ? (
+        {/* xl:self-start: không để flex-row kéo giãn aside cao bằng khung xem file -> panel cao theo
+              nội dung, hết khoảng trắng dư ở cuối tab. Nội dung dài vẫn tự cuộn nhờ max-h ở div dưới. */}
+        <aside className="w-full shrink-0 self-start overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
+          <div className="flex items-center justify-between border-b border-card-border px-2">
+            <PanelTabButton
+              active={activePanelTab === 'properties'}
+              label={t('fileView.tabs.properties')}
+              onClick={() => setActivePanelTab('properties')}
+            />
+            <PanelTabButton
+              active={activePanelTab === 'signatureHistory'}
+              label={t('fileView.tabs.signatureHistory')}
+              badge={requiresSignature && !isSigned ? '0' : undefined}
+              onClick={() => setActivePanelTab('signatureHistory')}
+            />
+            <PanelTabButton
+              active={activePanelTab === 'issues'}
+              label={t('issues.panel.tab')}
+              onClick={() => setActivePanelTab('issues')}
+            />
+            <PanelTabButton
+              active={activePanelTab === 'related'}
+              label={t('relatedFiles.tab')}
+              onClick={() => setActivePanelTab('related')}
+            />
+            {showLoiTab && (
+              <PanelTabButton
+                active={activePanelTab === 'loi'}
+                label={t('loi.tab')}
+                onClick={() => setActivePanelTab('loi')}
+              />
+            )}
+          </div>
+
+          <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
+            {activePanelTab === 'properties' ? (
+              <>
+                {fileListItem?.warnning && fileListItem.warnningMessage && (
+                  <AiCheckerWarningCard message={fileListItem.warnningMessage} />
+                )}
+                {fileListItem?.description && (
+                  <AiSummaryCard summary={fileListItem.description} />
+                )}
                 <FilePropertiesPanel
                   info={info}
                   fileListItem={fileListItem}
@@ -621,45 +636,42 @@ export function FileViewPage() {
                   statusMeta={statusMeta}
                   versions={versions}
                 />
-              ) : activePanelTab === 'markup' ? (
-                <>
-                  {fileListItem?.warnning && fileListItem.warnningMessage && (
-                    <AiCheckerWarningCard message={fileListItem.warnningMessage} />
-                  )}
-                  {info?.kind === 'model' ? (
-                    modelViewer && fileId ? (
-                      <ModelCommentsPanel
-                        viewer={modelViewer}
-                        fileItemId={fileId}
-                        fileVersionId={fileListItem?.currentVersionId ?? null}
-                      />
-                    ) : (
-                      <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>
-                    )
-                  ) : (
-                    <InlineCommentsPanel />
-                  )}
-                </>
-              ) : activePanelTab === 'issues' ? (
-                projectId && fileId ? (
-                  <IssuesPanel projectId={projectId} fileItemId={fileId} onToast={showToast} />
-                ) : null
-              ) : activePanelTab === 'loi' ? (
-                <LoiCheckPanel fileItemId={fileId ?? ''} />
-              ) : (
-                <SignatureHistoryPanel
-                  requiresSignature={requiresSignature}
-                  canSign={canSignCurrentApproval}
-                  signatureApprovals={signatureApprovals}
-                  placementActive={signaturePlacementMode}
-                  placementConfirmed={signaturePlacementConfirmed}
-                  onStartPlacement={openSignaturePlacement}
+              </>
+            ) : activePanelTab === 'issues' ? (
+              projectId && fileId ? (
+                <IssuesPanel
+                  projectId={projectId}
+                  fileItemId={fileId}
+                  area={info?.area}
+                  folderId={fileListItem?.folderId ?? folderId}
+                  onToast={showToast}
                 />
-              )}
-            </div>
-          </aside>
-        </div>
-      </InlineMarkupProvider>
+              ) : null
+            ) : activePanelTab === 'related' ? (
+              projectId && fileId ? (
+                <RelatedFilesPanel
+                  projectId={projectId}
+                  fileItemId={fileId}
+                  // ?folder= có thể vắng (vào thẳng bằng link) -> lấy folder thật của file làm mốc phạm vi.
+                  folderId={fileListItem?.folderId ?? folderId}
+                />
+              ) : null
+            ) : activePanelTab === 'loi' ? (
+              <LoiCheckPanel fileItemId={fileId ?? ''} />
+            ) : (
+              <SignatureHistoryPanel
+                requiresSignature={requiresSignature}
+                canSign={canSignCurrentApproval}
+                isSignerForCurrentApproval={isSignerForCurrentApproval}
+                signatureApprovals={signatureApprovals}
+                placementActive={signaturePlacementMode}
+                placementConfirmed={signaturePlacementConfirmed}
+                onStartPlacement={openSignaturePlacement}
+              />
+            )}
+          </div>
+        </aside>
+      </div>
 
       {toast && (
         <div className={`fixed right-6 top-20 z-[80] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
@@ -670,6 +682,7 @@ export function FileViewPage() {
       {signFor && (
         <SmartCaSignModal
           approval={signFor}
+          currentAccountId={currentUser?.accountId}
           onClose={() => setSignFor(null)}
           onToast={showToast}
           onSigned={() => {
@@ -681,6 +694,29 @@ export function FileViewPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/* Tóm tắt nội dung file do AI sinh sau khi upload — hỗ trợ đọc nhanh, chỉ mang tính tham khảo. */
+function AiSummaryCard({ summary }: { summary: string }) {
+  return (
+    <div className="mb-4 rounded-xl border border-primary/25 bg-primary-ghost p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="9" y1="13" x2="15" y2="13" />
+            <line x1="9" y1="17" x2="13" y2="17" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-bold text-primary">{t('fileSummary.title')}</p>
+          <p className="text-xs text-text-muted">{t('fileSummary.sender')}</p>
+        </div>
+      </div>
+      <p className="mt-2.5 whitespace-pre-line text-sm leading-relaxed text-text">{summary}</p>
     </div>
   );
 }
@@ -721,7 +757,7 @@ function PanelTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex h-14 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
+      className={`relative flex h-14 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
         }`}
     >
       {label}
@@ -791,16 +827,17 @@ function FilePropertiesPanel({
   const updatedAt = formatDateTime(fileListItem?.updatedAt);
   const requiresSignature = Boolean(info?.requiresSignature || fileListItem?.requiresSignature);
   const isSigned = Boolean(info?.isSigned || fileListItem?.isSigned);
-  const checksum = latestVersion?.checksum ?? null;
   const status = itemStatusMeta(fileListItem?.status, fileListItem?.hasOpenIssue);
   const yesNo = (v: boolean) => (v ? t('fileView.info.yes') : t('fileView.info.no'));
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-heading text-lg font-bold text-text">{t('fileView.details.title')}</h2>
+        <h2 className="font-jakarta text-base font-bold text-text">{t('fileView.details.title')}</h2>
         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>{statusMeta.label}</span>
       </div>
+
+      {/* Tóm tắt AI + cảnh báo AI được hiển thị ở đầu tab (AiSummaryCard/AiCheckerWarningCard) — trước là ở tab Markup nay đã bỏ. */}
 
       <div className="mt-6 space-y-5">
         <DetailItem label={t('fileView.info.name')} value={<span className="break-all">{name}</span>} />
@@ -831,7 +868,6 @@ function FilePropertiesPanel({
           label={t('fileView.info.isSigned')}
           value={<span className={isSigned ? 'font-semibold text-success' : ''}>{yesNo(isSigned)}</span>}
         />
-        {checksum && <DetailItem label={t('fileView.info.checksum')} value={<span className="break-all text-xs text-text-secondary">{checksum}</span>} />}
       </div>
 
       <div className="mt-6 border-t border-card-border/70 pt-5">
@@ -863,6 +899,7 @@ function FilePropertiesPanel({
 function SignatureHistoryPanel({
   requiresSignature,
   canSign,
+  isSignerForCurrentApproval,
   signatureApprovals,
   placementActive,
   placementConfirmed,
@@ -870,6 +907,7 @@ function SignatureHistoryPanel({
 }: {
   requiresSignature: boolean;
   canSign: boolean;
+  isSignerForCurrentApproval: boolean;
   signatureApprovals: ApprovalListItem[];
   placementActive: boolean;
   placementConfirmed: boolean;
@@ -877,7 +915,7 @@ function SignatureHistoryPanel({
 }) {
   return (
     <div>
-      <h2 className="font-heading text-lg font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
+      <h2 className="font-jakarta text-base font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
       <p className="mt-1 text-sm text-text-muted">{t('fileView.signatureHistory.desc')}</p>
 
       {requiresSignature && canSign && (
@@ -892,6 +930,15 @@ function SignatureHistoryPanel({
           </svg>
           {placementActive ? t('fileView.signatureHistory.signing') : t('fileView.signatureHistory.signNow')}
         </button>
+      )}
+
+      {requiresSignature && !canSign && !isSignerForCurrentApproval && (
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-card-border bg-content-bg/60 px-3.5 py-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-text-muted">
+            <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <p className="text-xs font-medium text-text-secondary">{t('fileView.signatureHistory.leaderOnly')}</p>
+        </div>
       )}
 
       <div className="relative mt-6 space-y-5">
@@ -932,6 +979,10 @@ function approvalStatusLabel(status: ApprovalStatus): string {
 function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListItem }) {
   const isSigned = approval.isSigned;
   const isRejected = approval.status === 'Rejected';
+  const signerNames = approval.signers
+    .map((s) => s.signerAccountName ?? s.signerGroupName)
+    .filter((name): name is string => Boolean(name))
+    .join(', ');
   const title = isSigned
     ? t('fileView.signatureHistory.signedApprovalTitle')
     : isRejected
@@ -964,6 +1015,9 @@ function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListIte
         </div>
         <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
         <div className="mt-3 space-y-1 border-t border-card-border/60 pt-3 text-xs text-text-muted">
+          {!isSigned && signerNames && (
+            <p className="font-semibold text-text">{t('approvals.detail.signerNames')}: {signerNames}</p>
+          )}
           <p>{t('approvals.detail.requestedBy')}: {approval.requestedByName || '-'}</p>
           <p>{t('approvals.detail.createdAt')}: {formatDateTime(approval.createdAt)}</p>
         </div>
@@ -1087,7 +1141,6 @@ function SignaturePlacementOverlay({
     <div className="absolute inset-0 z-20 overflow-hidden bg-[#dcdad2]/95">
       <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-4 rounded-2xl border border-white/60 bg-card/80 px-5 py-3 shadow-dropdown backdrop-blur">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{t('smartca.placement.toolbarLabel')}</span>
-        <SignatureToolButton label={t('smartca.placement.insertSignature')} />
         <SignatureToolButton
           label={t('smartca.placement.resetPosition')}
           onClick={() => onChange(getDefaultSignaturePosition(pageSize))}
@@ -1145,7 +1198,7 @@ function SignaturePlacementOverlay({
         >
           <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-[#fbf9f1]/90 px-5 py-3 shadow-sm backdrop-blur">
             <div className="min-w-0">
-              <p className="truncate font-display text-base font-bold text-primary">{fileName}</p>
+              <p className="truncate font-jakarta text-base font-bold text-primary">{fileName}</p>
               <p className="text-xs text-text-muted">{t('smartca.placement.previewDocument')}</p>
             </div>
             <span className="rounded-full bg-success-light px-3 py-1 text-xs font-semibold text-success">
@@ -1187,15 +1240,15 @@ function SignaturePlacementOverlay({
         </div>
       </div>
 
-      <div className="absolute bottom-8 right-8 z-30 w-[288px] rounded-3xl border border-white bg-white/75 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
-        <h3 className="font-display text-lg font-semibold text-text">{t('smartca.placement.confirmTitle')}</h3>
-        <p className="mt-2 text-xs font-medium leading-5 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
-        <div className="mt-6 space-y-3">
+      <div className="absolute bottom-6 right-6 z-30 w-[220px] rounded-2xl border border-white bg-white/75 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
+        <h3 className="font-jakarta text-sm font-semibold text-text">{t('smartca.placement.confirmTitle')}</h3>
+        <p className="mt-1.5 text-[11px] font-medium leading-4 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
+        <div className="mt-3 space-y-2">
           <button
             type="button"
             onClick={() => onConfirm(value)}
             disabled={busy}
-            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.confirmPosition')}
           </button>
@@ -1203,7 +1256,7 @@ function SignaturePlacementOverlay({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="w-full rounded-xl border border-card-border px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+            className="w-full rounded-xl border border-card-border px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
           >
             {t('smartca.signModal.cancel')}
           </button>
@@ -1265,7 +1318,7 @@ function EmptyViewerState({
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-3xl bg-card/90 p-8 text-center shadow-card">
       <FileIcon danger={danger} />
-      <h3 className="font-display text-lg font-semibold text-text">{title}</h3>
+      <h3 className="font-jakarta text-base font-semibold text-text">{title}</h3>
       <p className="font-jakarta text-sm text-text-muted">{desc}</p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
         <button

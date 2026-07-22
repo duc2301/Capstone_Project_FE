@@ -1,4 +1,4 @@
-export { discussionApi, discussionErrorMessage } from './api/discussionApi';
+export { discussionApi, discussionErrorMessage, normalizeDiscussionMessage } from './api/discussionApi';
 export { MessageAttachmentTypeValue } from './model/discussion.types';
 export type {
   DiscussionMention,
@@ -6,5 +6,5 @@ export type {
   MessageAttachment,
   MessageAttachmentType,
   PostDiscussionMessagePayload,
-  PostMessageAttachmentPayload,
+  PostMessageAttachmentPayload
 } from './model/discussion.types';

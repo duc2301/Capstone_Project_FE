@@ -83,6 +83,10 @@
 }
 
 /* ── Base ──────────────────────────────────────────── */
+html {
+  font-size: 93.75%; /* 15px thay vì 16px — chữ toàn hệ thống nhỏ lại chút */
+}
+
 html,
 body {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;

@@ -38,6 +38,12 @@ export interface ApprovalListItem {
   approvedAt?: string | null;
   rejectReason?: string | null;
   signers: ApprovalSigner[];
+  /* Tên các Team Leader của nhóm phụ trách file — người sẽ nhận/duyệt yêu cầu này. Chỉ có ý nghĩa
+     khi status còn PendingApproval; rỗng khi đã Approved/Rejected (lúc đó dùng approvedByName). */
+  pendingApproverNames?: string[];
+  /* accountId tương ứng với pendingApproverNames — dùng để xác định CHÍNH XÁC người xem hiện tại
+     có đúng là người phụ trách hay không, kể cả khi họ cũng là người gửi request. */
+  pendingApproverAccountIds?: string[];
 }
 
 /* Chi tiết 1 yêu cầu phê duyệt — cùng hình dạng với danh sách */

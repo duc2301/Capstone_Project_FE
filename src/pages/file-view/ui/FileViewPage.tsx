@@ -5,14 +5,17 @@ import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
+import { useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { RelatedFilesPanel } from '@/features/folders';
+import { isRequiredSigner } from '@/features/folders/model/approvalFormat';
 import { formatSize } from '@/features/folders/model/fileFormat';
 import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { ModelCommentsPanel } from '@/features/model-markup';
+import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
@@ -147,6 +150,8 @@ export function FileViewPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const folderId = searchParams.get('folder');
+  const { currentUser } = useSession();
+  const { groups: projectGroups } = useProjectGroups(projectId);
   const initialPanelTab = (
     ['properties', 'signatureHistory', 'markup', 'issues', 'loi', 'related'] as const
   ).includes(searchParams.get('panel') as FilePanelTab)
@@ -354,7 +359,10 @@ export function FileViewPage() {
       approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
     [signatureApprovals],
   );
-  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile);
+  const isSignerForCurrentApproval = Boolean(
+    signableApproval && isRequiredSigner(signableApproval.signers, currentUser?.accountId, projectGroups),
+  );
+  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile && isSignerForCurrentApproval);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -722,6 +730,7 @@ export function FileViewPage() {
                 <SignatureHistoryPanel
                   requiresSignature={requiresSignature}
                   canSign={canSignCurrentApproval}
+                  isSignerForCurrentApproval={isSignerForCurrentApproval}
                   signatureApprovals={signatureApprovals}
                   placementActive={signaturePlacementMode}
                   placementConfirmed={signaturePlacementConfirmed}
@@ -742,6 +751,7 @@ export function FileViewPage() {
       {signFor && (
         <SmartCaSignModal
           approval={signFor}
+          currentAccountId={currentUser?.accountId}
           onClose={() => setSignFor(null)}
           onToast={showToast}
           onSigned={() => {
@@ -966,6 +976,7 @@ function FilePropertiesPanel({
 function SignatureHistoryPanel({
   requiresSignature,
   canSign,
+  isSignerForCurrentApproval,
   signatureApprovals,
   placementActive,
   placementConfirmed,
@@ -973,6 +984,7 @@ function SignatureHistoryPanel({
 }: {
   requiresSignature: boolean;
   canSign: boolean;
+  isSignerForCurrentApproval: boolean;
   signatureApprovals: ApprovalListItem[];
   placementActive: boolean;
   placementConfirmed: boolean;
@@ -995,6 +1007,15 @@ function SignatureHistoryPanel({
           </svg>
           {placementActive ? t('fileView.signatureHistory.signing') : t('fileView.signatureHistory.signNow')}
         </button>
+      )}
+
+      {requiresSignature && !canSign && !isSignerForCurrentApproval && (
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-card-border bg-content-bg/60 px-3.5 py-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-text-muted">
+            <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <p className="text-xs font-medium text-text-secondary">{t('fileView.signatureHistory.leaderOnly')}</p>
+        </div>
       )}
 
       <div className="relative mt-6 space-y-5">
@@ -1035,6 +1056,10 @@ function approvalStatusLabel(status: ApprovalStatus): string {
 function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListItem }) {
   const isSigned = approval.isSigned;
   const isRejected = approval.status === 'Rejected';
+  const signerNames = approval.signers
+    .map((s) => s.signerAccountName ?? s.signerGroupName)
+    .filter((name): name is string => Boolean(name))
+    .join(', ');
   const title = isSigned
     ? t('fileView.signatureHistory.signedApprovalTitle')
     : isRejected
@@ -1067,6 +1092,9 @@ function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListIte
         </div>
         <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
         <div className="mt-3 space-y-1 border-t border-card-border/60 pt-3 text-xs text-text-muted">
+          {!isSigned && signerNames && (
+            <p className="font-semibold text-text">{t('approvals.detail.signerNames')}: {signerNames}</p>
+          )}
           <p>{t('approvals.detail.requestedBy')}: {approval.requestedByName || '-'}</p>
           <p>{t('approvals.detail.createdAt')}: {formatDateTime(approval.createdAt)}</p>
         </div>

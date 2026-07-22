@@ -37,6 +37,8 @@ export interface ProjectModel {
 export interface Project {
   id: string;
   projectName: string;
+  projectCode?: string | null;
+  projectImageUrl?: string | null;
   projectDescription?: string | null;
   managerAccountId?: string | null;
   status: ProjectStatus;
@@ -47,6 +49,8 @@ export interface Project {
 
 export interface CreateProjectPayload {
   projectName: string;
+  projectCode?: string;
+  projectImageUrl?: string;
   projectDescription?: string;
   address?: string;
   latitude?: number;

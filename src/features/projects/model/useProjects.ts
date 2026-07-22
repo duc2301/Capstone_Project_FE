@@ -16,6 +16,8 @@ export interface ProjectGroupDraft {
 
 export interface CreateProjectWithGroupsInput {
   projectName: string;
+  projectCode?: string;
+  projectImageUrl?: string;
   projectDescription?: string;
   address?: string;
   latitude?: number;
@@ -79,6 +81,8 @@ export function useProjects(): UseProjectsReturn {
   const createProject = useCallback(async (input: CreateProjectWithGroupsInput) => {
     const { data: projectRes } = await projectApi.create({
       projectName: input.projectName,
+      projectCode: input.projectCode,
+      projectImageUrl: input.projectImageUrl,
       projectDescription: input.projectDescription,
       address: input.address,
       latitude: input.latitude,

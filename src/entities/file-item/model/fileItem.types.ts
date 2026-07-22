@@ -9,6 +9,19 @@ export const FileType = {
 } as const;
 export type FileType = (typeof FileType)[keyof typeof FileType];
 
+/* File 3D (IFC, hoặc CAD không phải bản vẽ 2D dwg/dwgx như rvt/nwc/nwd/dgn) — khớp BE
+ * FileSignatureFormatRules.Is3DModelFile: chưa hỗ trợ ký số trực quan nên không bắt buộc ký khi
+ * chuyển vùng Shared -> Published (xem SubmitApprovalModal). */
+export function is3DFile(fileType: FileType, format: string | null | undefined): boolean {
+  if (fileType === FileType.Ifc) return true;
+  if (fileType !== FileType.Cad) return false;
+  const normalized = (format ?? '').trim().toUpperCase();
+  // Danh sách file trong thư mục (folder-contents) hiện chưa trả "format" (luôn null) —
+  // không rõ định dạng thì coi là bản vẽ 2D (an toàn hơn: không chặn nhầm ký số của file 2D).
+  if (!normalized) return false;
+  return normalized !== 'DWG' && normalized !== 'DWGX';
+}
+
 /* Trạng thái phê duyệt file — khớp BE (Domain.Enum.File.FileItemStatus) */
 export const FileItemStatus = {
   Draft: 0,

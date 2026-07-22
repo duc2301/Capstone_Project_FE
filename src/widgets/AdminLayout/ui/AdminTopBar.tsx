@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
 import { NotificationBell } from '@/features/notifications';
@@ -26,10 +26,12 @@ interface AdminTopBarProps {
 
 export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser } = useSession();
   // Trail động do page đặt (VD: chi tiết dự án); rỗng thì rơi về map tĩnh theo pathname.
   const trail = useBreadcrumbTrail();
   const pageLabel = BREADCRUMB_MAP[location.pathname] ?? '';
+  const isHome = location.pathname === '/dashboard';
 
   const initials = (currentUser?.userName ?? 'U')
     .split(' ')
@@ -39,7 +41,7 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-card-border bg-content-bg/80 px-6 backdrop-blur-md lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
       {/* Left: hamburger + breadcrumb */}
       <div className="flex items-center gap-4">
         {/* Mobile hamburger */}
@@ -55,6 +57,22 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
+
+        {/* Back */}
+        {!isHome && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label={t('projectDetail.back')}
+            title={t('projectDetail.back')}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-card hover:text-text"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        )}
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs font-semibold tracking-wider">
@@ -82,14 +100,19 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         {/* Notification bell + realtime popup */}
         <NotificationBell variant="admin" />
 
-        {/* User avatar */}
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-          {initials}
-        </div>
+        {/* User name + avatar */}
+        <Link to="/profile" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
+          <span className="hidden whitespace-nowrap text-sm font-semibold text-text sm:inline">
+            {currentUser?.userName}
+          </span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+            {initials}
+          </span>
+        </Link>
       </div>
     </header>
   );

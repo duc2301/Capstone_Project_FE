@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { ApprovalDetail } from '@/entities/approval';
 import { approvalApi, approvalErrorMessage } from '@/entities/approval';
@@ -9,12 +10,15 @@ import { approvalStatusBadge, formatDateTime } from '../model/approvalFormat';
 interface ApprovalDetailModalProps {
   approvalId: string;
   onClose: () => void;
+  /* Dự phòng khi BE không trả projectId trong chi tiết phê duyệt (vd: /approvals/{id}) —
+     modal luôn được mở từ trong 1 dự án cụ thể nên trang cha luôn biết projectId. */
+  fallbackProjectId?: string;
 }
 
 function FileIcon() {
   return (
-    <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-danger/10 text-danger">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-danger/10 text-danger">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
       </svg>
@@ -31,7 +35,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function ApprovalDetailModal({ approvalId, onClose }: ApprovalDetailModalProps) {
+export function ApprovalDetailModal({ approvalId, onClose, fallbackProjectId }: ApprovalDetailModalProps) {
   const [detail, setDetail] = useState<ApprovalDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,14 +71,23 @@ export function ApprovalDetailModal({ approvalId, onClose }: ApprovalDetailModal
             <p className="text-sm font-medium text-danger">{error}</p>
           </div>
         ) : detail ? (
-          <ApprovalDetailContent detail={detail} onClose={onClose} />
+          <ApprovalDetailContent detail={detail} onClose={onClose} fallbackProjectId={fallbackProjectId} />
         ) : null}
       </div>
     </div>
   );
 }
 
-function ApprovalDetailContent({ detail, onClose }: { detail: ApprovalDetail; onClose: () => void }) {
+function ApprovalDetailContent({
+  detail,
+  onClose,
+  fallbackProjectId,
+}: {
+  detail: ApprovalDetail;
+  onClose: () => void;
+  fallbackProjectId?: string;
+}) {
+  const navigate = useNavigate();
   const badge = approvalStatusBadge(detail.status);
   const signatureStatus = detail.requiresSignature
     ? detail.isSigned
@@ -82,27 +95,41 @@ function ApprovalDetailContent({ detail, onClose }: { detail: ApprovalDetail; on
       : t('smartca.signature.required')
     : t('approvals.detail.no');
 
+  const viewProjectId = detail.projectId ?? fallbackProjectId;
+  const canViewFile = Boolean(viewProjectId && detail.fileItemId);
+  const canSign = canViewFile && detail.requiresSignature && !detail.isSigned;
+  const handleViewFile = () => {
+    if (!canViewFile) return;
+    onClose();
+    navigate(`/projects/${viewProjectId}/files/${detail.fileItemId}/view?folder=${detail.folderId ?? ''}`);
+  };
+  const handleSignNow = () => {
+    if (!canSign) return;
+    onClose();
+    navigate(`/projects/${viewProjectId}/files/${detail.fileItemId}/view?folder=${detail.folderId ?? ''}&panel=signatureHistory`);
+  };
+
   return (
     <div className="grid w-full grid-cols-1 lg:grid-cols-[1fr_382px]">
       <main className="min-h-[620px] space-y-6 p-6 lg:p-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
             <FileIcon />
             <div className="min-w-0">
-              <h2 className="truncate font-display text-3xl font-semibold text-text">{detail.fileName}</h2>
-              <p className="mt-1 text-sm text-text-muted">{t('approvals.detail.subtitle')}</p>
+              <h2 className="break-words font-display text-xl font-semibold text-text">{detail.fileName}</h2>
+              <p className="mt-1 text-xs text-text-muted">{t('approvals.detail.subtitle')}</p>
             </div>
           </div>
 
-          <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
+          <span className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
         </header>
 
         <section className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
           <div className="flex min-h-[470px] items-center justify-center bg-[#dcdad2] p-6">
             <div className="flex w-full max-w-xl flex-col items-center rounded-3xl bg-white p-8 text-center shadow-sm">
               <FileIcon />
-              <h3 className="mt-4 max-w-full truncate font-display text-2xl font-semibold text-text">{detail.fileName}</h3>
-              <p className="mt-2 max-w-md text-sm text-text-muted">{t('approvals.detail.previewHint')}</p>
+              <h3 className="mt-4 max-w-full break-words font-display text-lg font-semibold text-text">{detail.fileName}</h3>
+              <p className="mt-2 max-w-md text-xs text-text-muted">{t('approvals.detail.previewHint')}</p>
 
               <div className="mt-6 grid w-full gap-3 sm:grid-cols-2">
                 <InfoTile label={t('approvals.detail.requestedBy')} value={detail.requestedByName || '-'} />
@@ -118,7 +145,7 @@ function ApprovalDetailContent({ detail, onClose }: { detail: ApprovalDetail; on
       <aside className="flex max-h-[92vh] flex-col border-t border-card-border bg-card lg:border-l lg:border-t-0">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-5">
           <div>
-            <h3 className="font-heading text-lg font-bold text-text">{t('approvals.detail.panelTitle')}</h3>
+            <h3 className="font-heading text-base font-bold text-text">{t('approvals.detail.panelTitle')}</h3>
             <p className="mt-1 text-xs text-text-muted">{t('approvals.detail.panelSubtitle')}</p>
           </div>
           <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
@@ -173,13 +200,23 @@ function ApprovalDetailContent({ detail, onClose }: { detail: ApprovalDetail; on
           </section>
         </div>
 
-        <div className="border-t border-card-border bg-[#f0eee6] p-4">
+        <div className="flex gap-3 border-t border-card-border bg-[#f0eee6] p-4">
+          {canSign && (
+            <button
+              type="button"
+              onClick={handleSignNow}
+              className="flex-1 rounded-xl bg-warning px-5 py-3 text-sm font-bold text-white transition-colors hover:opacity-90"
+            >
+              {t('smartca.action.sign')}
+            </button>
+          )}
           <button
             type="button"
-            onClick={onClose}
-            className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
+            disabled={!canViewFile}
+            onClick={handleViewFile}
+            className="flex-1 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {t('approvals.detail.close')}
+            {t('approvals.detail.viewFile')}
           </button>
         </div>
       </aside>
@@ -221,12 +258,12 @@ function TimelineItem({ title, badge, body, time, active = false, tone = 'succes
         </svg>
       </span>
 
-      <div className={`flex-1 rounded-2xl border p-4 shadow-sm ${active ? 'border-card-border bg-white' : 'border-card-border/70 bg-white/60 opacity-80'}`}>
-        <div className="flex items-start justify-between gap-3">
-          <h5 className="text-sm font-bold text-text">{title}</h5>
-          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${toneClass}`}>{badge}</span>
+      <div className={`min-w-0 flex-1 rounded-2xl border p-3.5 shadow-sm ${active ? 'border-card-border bg-white' : 'border-card-border/70 bg-white/60 opacity-80'}`}>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h5 className="min-w-0 break-words text-xs font-bold text-text">{title}</h5>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${toneClass}`}>{badge}</span>
         </div>
-        <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
+        <p className="mt-2 break-words text-xs font-medium text-text-secondary">{body}</p>
         <p className="mt-3 border-t border-card-border/60 pt-3 text-[11px] text-text-muted">{time}</p>
       </div>
     </div>

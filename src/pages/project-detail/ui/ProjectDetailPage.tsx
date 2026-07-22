@@ -35,7 +35,7 @@ const TABS: { id: TabId; key: TranslationKey }[] = [
 ];
 
 const cardClass =
-  'rounded-[24px] border border-card-border/60 bg-card/70 p-8 shadow-card backdrop-blur-sm';
+  'rounded-[20px] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
 
 /* ── Small presentational helpers ──────────────────────── */
 interface ModalProps {
@@ -230,7 +230,7 @@ function GroupCard({
   const partnerName = partner ? (partner.displayName || partner.legalName) : null;
 
   return (
-    <div className="flex flex-col gap-4 rounded-[24px] border border-[#C3C9B9] bg-card p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+    <div className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -532,6 +532,14 @@ export function ProjectDetailPage() {
   const isAdmin = isAccountAdmin(currentUser?.role);
   const isManager = project?.managerAccountId === currentUser?.accountId;
   const canViewAllTabs = isAdmin || isManager;
+  // Leader active của ít nhất 1 group trong project — được vào tab Cài đặt (bản rút gọn).
+  const isProjectLeader = groups.some((g) =>
+    g.members.some(
+      (m) =>
+        m.accountId === currentUser?.accountId
+        && m.role === GroupMemberRole.Leader
+        && m.status === GroupMemberStatus.Active,
+    ));
 
   // Breadcrumb topbar: TRANG CHỦ / DỰ ÁN / (tên dự án)
   useEffect(() => {
@@ -630,7 +638,7 @@ export function ProjectDetailPage() {
   /* ── Loading / error / not found ─────────────────────── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
+      <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-14 shadow-card">
         <p className="text-sm text-text-muted">{t('common.loading')}</p>
       </div>
     );
@@ -660,7 +668,7 @@ export function ProjectDetailPage() {
   const shortCode = project.id.slice(0, 8).toUpperCase();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
@@ -670,13 +678,13 @@ export function ProjectDetailPage() {
       {/* ── Tabs: ghim ngay dưới topbar (h-16) khi cuộn ── */}
       <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
-          ? isAdmin // cấu hình quy tắc đặt tên: chỉ Admin
+          ? isAdmin || isManager || isProjectLeader // quy tắc đặt tên: Admin/PM full, Leader bản rút gọn
           : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`-mb-px shrink-0 border-b-2 px-6 py-2.5 text-base transition-colors ${tab === item.id
+              className={`-mb-px shrink-0 border-b-2 px-6 py-2.5 text-sm transition-colors ${tab === item.id
                 ? 'border-primary font-bold text-primary'
                 : 'border-transparent font-medium text-text-secondary hover:text-primary'
                 }`}
@@ -798,9 +806,9 @@ export function ProjectDetailPage() {
 
       {/* ── Tab: Nhóm (teams) ─────────────────────────── */}
       {tab === 'teams' && (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-display text-2xl font-semibold text-primary">
+            <h2 className="font-display text-xl font-semibold text-primary">
               {t('projectDetail.teams.title')}
             </h2>
             {canViewAllTabs && (
@@ -836,15 +844,15 @@ export function ProjectDetailPage() {
           </div>
 
           {groupsLoading ? (
-            <div className="flex items-center justify-center rounded-[24px] border border-card-border bg-card py-20 shadow-card">
+            <div className="flex items-center justify-center rounded-[20px] border border-card-border bg-card py-14 shadow-card">
               <p className="text-sm text-text-muted">{t('common.loading')}</p>
             </div>
           ) : groups.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
+            <div className="rounded-[20px] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
               <p className="text-sm text-text-muted">{t('projectDetail.teams.empty')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {groups.map((g) => (
                 <GroupCard
                   key={g.id}
@@ -869,17 +877,17 @@ export function ProjectDetailPage() {
 
       {tab === 'partners' && (
         <div className="space-y-6">
-          <h2 className="font-display text-2xl font-semibold text-primary">
+          <h2 className="font-display text-xl font-semibold text-primary">
             {t('projectDetail.tab.partners')}
           </h2>
           {projectPartners.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
+            <div className="rounded-[20px] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
               <p className="text-sm text-text-muted">{t('projectDetail.partners.empty')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {projectPartners.map((partner) => (
-                <div key={partner.id} className="flex flex-col gap-4 rounded-[24px] border border-[#C3C9B9] bg-card p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+                <div key={partner.id} className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
                   <div className="flex items-start gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl font-bold text-primary">
                       {(partner.displayName || partner.legalName).charAt(0).toUpperCase()}
@@ -956,16 +964,16 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — chỉ Admin ── */}
-      {tab === 'settings' && isAdmin && (
-        <NamingConventionSettings projectId={project.id} />
+      {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
+      {tab === 'settings' && (isAdmin || isManager || isProjectLeader) && (
+        <NamingConventionSettings projectId={project.id} canConfigure={isAdmin || isManager} />
       )}
 
       {/* ── Tab: Packages ───────────── */}
       {tab === 'packages' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl font-semibold text-primary">Danh sách gói thầu</h2>
+            <h2 className="font-display text-xl font-semibold text-primary">Danh sách gói thầu</h2>
             <button
               onClick={() => {
                 setEditingPackage(null);

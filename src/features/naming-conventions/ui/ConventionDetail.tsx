@@ -1,17 +1,20 @@
 import { useState } from 'react';
 
-import type { NamingConvention, NamingField } from '@/entities/naming-convention';
+import type { AssignedFolder, NamingConvention, NamingField } from '@/entities/naming-convention';
 import { NAMING_DELIMITERS, namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
 import { Modal } from '@/shared/components/modal';
 import { t } from '@/shared/lib/i18n';
 
-import { AssignFolderModal } from './AssignFolderModal';
+import { ApplyConventionModal } from './ApplyConventionModal';
 import { ConfirmModal } from './ConfirmModal';
+import { FolderFieldSelectionEditor } from './FolderFieldSelectionEditor';
 
 interface ConventionDetailProps {
   convention: NamingConvention;
   projectId: string;
+  /** Admin/PM = true (toàn quyền). Leader = false (chỉ xem + tùy chỉnh trường theo folder). */
+  canConfigure: boolean;
   onBack: () => void;
   /** Nhận bản convention mới từ response của các API ghi (đỡ refetch). */
   onMutated: (convention: NamingConvention) => void;
@@ -231,13 +234,14 @@ function FieldFormModal({
 
 /* ── Màn chi tiết 1 bộ quy tắc ─────────────────────────── */
 export function ConventionDetail({
-  convention, projectId, onBack, onMutated, onDeleted, refetch, showToast,
+  convention, projectId, canConfigure, onBack, onMutated, onDeleted, refetch, showToast,
 }: ConventionDetailProps) {
   const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [fieldForm, setFieldForm] = useState<{ field: NamingField | null } | null>(null);
-  const [assignOpen, setAssignOpen] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [customizeFolder, setCustomizeFolder] = useState<AssignedFolder | null>(null);
   const [confirm, setConfirm] = useState<
     | { kind: 'convention' }
     | { kind: 'field'; field: NamingField }
@@ -245,6 +249,7 @@ export function ConventionDetail({
   >(null);
 
   const sortedFields = [...convention.fields].sort((a, b) => a.orderIndex - b.orderIndex);
+  const folderCount = convention.assignedFolders.length;
 
   /* API ghi trả về convention mới -> đẩy lên cha. Trả true nếu thành công. */
   const run = async (
@@ -364,6 +369,15 @@ export function ConventionDetail({
     if (ok) setConfirm(null);
   };
 
+  const statusBadge = (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+      convention.isActive ? 'bg-success-light text-success' : 'bg-content-bg text-text-muted'
+    }`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${convention.isActive ? 'bg-success' : 'bg-text-placeholder'}`} />
+      {convention.isActive ? t('naming.status.active') : t('naming.status.inactive')}
+    </span>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -395,41 +409,45 @@ export function ConventionDetail({
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* Bật/tắt hiệu lực */}
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void run(
-                () => namingConventionApi.update(convention.id, { isActive: !convention.isActive }),
-                t('naming.toast.updated'),
-              )}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
-                convention.isActive
-                  ? 'bg-success-light text-success hover:bg-success/20'
-                  : 'bg-content-bg text-text-muted hover:bg-card-border/50'
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${convention.isActive ? 'bg-success' : 'bg-text-placeholder'}`} />
-              {convention.isActive ? t('naming.status.active') : t('naming.status.inactive')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditOpen(true)}
-              disabled={busy}
-              className="flex items-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-              {t('naming.detail.edit')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirm({ kind: 'convention' })}
-              disabled={busy}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger-light disabled:opacity-50"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-              {t('naming.detail.delete')}
-            </button>
+            {canConfigure ? (
+              <>
+                {/* Bật/tắt hiệu lực */}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void run(
+                    () => namingConventionApi.update(convention.id, { isActive: !convention.isActive }),
+                    t('naming.toast.updated'),
+                  )}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                    convention.isActive
+                      ? 'bg-success-light text-success hover:bg-success/20'
+                      : 'bg-content-bg text-text-muted hover:bg-card-border/50'
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${convention.isActive ? 'bg-success' : 'bg-text-placeholder'}`} />
+                  {convention.isActive ? t('naming.status.active') : t('naming.status.inactive')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  disabled={busy}
+                  className="flex items-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  {t('naming.detail.edit')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirm({ kind: 'convention' })}
+                  disabled={busy}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger-light disabled:opacity-50"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                  {t('naming.detail.delete')}
+                </button>
+              </>
+            ) : statusBadge}
           </div>
         </div>
       </div>
@@ -443,15 +461,17 @@ export function ConventionDetail({
             </span>
             <h3 className="font-display text-base font-medium text-primary">{t('naming.detail.fields')}</h3>
           </div>
-          <button
-            type="button"
-            onClick={() => setFieldForm({ field: null })}
-            disabled={busy}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            {t('naming.editor.addField')}
-          </button>
+          {canConfigure && (
+            <button
+              type="button"
+              onClick={() => setFieldForm({ field: null })}
+              disabled={busy}
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              {t('naming.editor.addField')}
+            </button>
+          )}
         </div>
 
         {sortedFields.length === 0 ? (
@@ -485,55 +505,72 @@ export function ConventionDetail({
                       </p>
                     </div>
 
-                    {/* Bắt buộc */}
-                    <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-semibold text-text-secondary">
-                      <input
-                        type="checkbox"
-                        checked={field.isRequired}
-                        disabled={busy}
-                        onChange={() => void run(
-                          () => namingConventionApi.updateField(field.id, { isRequired: !field.isRequired }),
-                          t('naming.toast.updated'),
+                    {canConfigure ? (
+                      <>
+                        {/* Bắt buộc */}
+                        <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-semibold text-text-secondary">
+                          <input
+                            type="checkbox"
+                            checked={field.isRequired}
+                            disabled={busy}
+                            onChange={() => void run(
+                              () => namingConventionApi.updateField(field.id, { isRequired: !field.isRequired }),
+                              t('naming.toast.updated'),
+                            )}
+                            className="h-4 w-4 accent-primary"
+                          />
+                          {t('naming.detail.required')}
+                        </label>
+
+                        {/* Khóa giá trị */}
+                        <div className="flex shrink-0 items-center gap-1.5" title={t('naming.detail.lockHint')}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={field.lockedValue ? 'text-warning' : 'text-text-placeholder'}>
+                            <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                          <select
+                            value={field.lockedValue?.id ?? ''}
+                            disabled={busy || (activeValues.length === 0 && !field.lockedValue)}
+                            onChange={(e) => {
+                              const valueId = e.target.value;
+                              void run(
+                                () => (valueId
+                                  ? namingConventionApi.setLockedValue(field.id, valueId)
+                                  : namingConventionApi.removeLockedValue(field.id)),
+                                t('naming.toast.updated'),
+                              );
+                            }}
+                            className="w-40 rounded-(--radius-input) border border-input-border bg-input-bg px-2.5 py-1.5 text-xs text-text outline-none focus:border-input-focus disabled:opacity-50"
+                          >
+                            <option value="">{t('naming.detail.noLock')}</option>
+                            {activeValues.map((v) => (
+                              <option key={v.id} value={v.id}>{v.code} — {v.displayName}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex shrink-0 items-center">
+                          <button type="button" title={t('naming.detail.editFieldValues')} onClick={() => setFieldForm({ field })} disabled={busy} className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-content-bg hover:text-primary disabled:opacity-40">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                          </button>
+                          <button type="button" title={t('naming.editor.removeField')} onClick={() => setConfirm({ kind: 'field', field })} disabled={busy} className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-40">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      /* Leader: chỉ xem — badge thay control */
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {field.isRequired && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t('naming.detail.required')}</span>
                         )}
-                        className="h-4 w-4 accent-primary"
-                      />
-                      {t('naming.detail.required')}
-                    </label>
-
-                    {/* Khóa giá trị */}
-                    <div className="flex shrink-0 items-center gap-1.5" title={t('naming.detail.lockHint')}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={field.lockedValue ? 'text-warning' : 'text-text-placeholder'}>
-                        <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      <select
-                        value={field.lockedValue?.id ?? ''}
-                        disabled={busy || (activeValues.length === 0 && !field.lockedValue)}
-                        onChange={(e) => {
-                          const valueId = e.target.value;
-                          void run(
-                            () => (valueId
-                              ? namingConventionApi.setLockedValue(field.id, valueId)
-                              : namingConventionApi.removeLockedValue(field.id)),
-                            t('naming.toast.updated'),
-                          );
-                        }}
-                        className="w-40 rounded-(--radius-input) border border-input-border bg-input-bg px-2.5 py-1.5 text-xs text-text outline-none focus:border-input-focus disabled:opacity-50"
-                      >
-                        <option value="">{t('naming.detail.noLock')}</option>
-                        {activeValues.map((v) => (
-                          <option key={v.id} value={v.id}>{v.code} — {v.displayName}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex shrink-0 items-center">
-                      <button type="button" title={t('naming.detail.editFieldValues')} onClick={() => setFieldForm({ field })} disabled={busy} className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-content-bg hover:text-primary disabled:opacity-40">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                      </button>
-                      <button type="button" title={t('naming.editor.removeField')} onClick={() => setConfirm({ kind: 'field', field })} disabled={busy} className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-40">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                      </button>
-                    </div>
+                        {field.lockedValue && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-warning-light px-2 py-0.5 text-xs font-semibold text-warning" title={t('naming.detail.lockHint')}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            {field.lockedValue.code}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Expand: chip gọn, chỉ xem — sửa/thêm value qua modal (nút bút chì) */}
@@ -563,15 +600,17 @@ export function ConventionDetail({
                             })}
                         </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setFieldForm({ field })}
-                        disabled={busy}
-                        className="mt-2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                        {t('naming.detail.editFieldValues')}
-                      </button>
+                      {canConfigure && (
+                        <button
+                          type="button"
+                          onClick={() => setFieldForm({ field })}
+                          disabled={busy}
+                          className="mt-2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                          {t('naming.detail.editFieldValues')}
+                        </button>
+                      )}
                     </div>
                   )}
                 </li>
@@ -588,41 +627,60 @@ export function ConventionDetail({
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
             </span>
-            <h3 className="font-display text-base font-medium text-primary">{t('naming.detail.assignedFolders')}</h3>
+            <div>
+              <h3 className="font-display text-base font-medium text-primary">{t('naming.detail.assignedFolders')}</h3>
+              <p className="text-xs text-text-muted">
+                {t('naming.appliedFor')} {folderCount} {t('naming.foldersUnit')}
+              </p>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setAssignOpen(true)}
-            disabled={busy}
-            className="flex items-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            {t('naming.detail.assignFolder')}
-          </button>
+          {canConfigure && (
+            <button
+              type="button"
+              onClick={() => setApplyOpen(true)}
+              disabled={busy}
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              {t('naming.detail.applyBtn')}
+            </button>
+          )}
         </div>
 
-        {convention.assignedFolders.length === 0 ? (
+        {folderCount === 0 ? (
           <p className="rounded-xl border border-warning/30 bg-warning-light px-4 py-3 text-sm font-medium text-warning">
             {t('naming.detail.noFolders')}
           </p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {convention.assignedFolders.map((folder) => (
-              <span key={folder.id} className="inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
-                {folder.name}
+              <li key={folder.id} className="flex items-center gap-2.5 rounded-xl border border-card-border bg-card px-3.5 py-2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-primary">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{folder.name}</span>
                 <button
                   type="button"
-                  title={t('naming.detail.unassign')}
+                  onClick={() => setCustomizeFolder(folder)}
                   disabled={busy}
-                  onClick={() => void runVoid(() => namingConventionApi.unassignFolder(folder.id), t('naming.toast.unassigned'))}
-                  className="flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-primary/20 disabled:opacity-40"
+                  className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
                 >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  {t('naming.leader.customizeFolder')}
                 </button>
-              </span>
+                {canConfigure && (
+                  <button
+                    type="button"
+                    title={t('naming.detail.unassign')}
+                    disabled={busy}
+                    onClick={() => void runVoid(() => namingConventionApi.unassignFolder(folder.id), t('naming.toast.unassigned'))}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-40"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
 
@@ -648,17 +706,43 @@ export function ConventionDetail({
         />
       )}
 
-      {assignOpen && (
-        <AssignFolderModal
+      {applyOpen && (
+        <ApplyConventionModal
           convention={convention}
           projectId={projectId}
-          onClose={() => setAssignOpen(false)}
-          onAssigned={(next) => {
+          onClose={() => setApplyOpen(false)}
+          onApplied={(next) => {
             onMutated(next);
-            setAssignOpen(false);
+            setApplyOpen(false);
             showToast(t('naming.toast.assigned'));
           }}
         />
+      )}
+
+      {customizeFolder && (
+        <Modal
+          title={`${t('naming.leader.customizeFolder')} · ${customizeFolder.name}`}
+          onClose={() => setCustomizeFolder(null)}
+          maxWidth="max-w-lg"
+        >
+          <FolderFieldSelectionEditor
+            folderId={customizeFolder.id}
+            canManage
+            onSaved={() => {
+              setCustomizeFolder(null);
+              showToast(t('naming.folder.customized'));
+            }}
+            footerLeft={
+              <button
+                type="button"
+                onClick={() => setCustomizeFolder(null)}
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+              >
+                {t('naming.cancel')}
+              </button>
+            }
+          />
+        </Modal>
       )}
 
       {confirm && (

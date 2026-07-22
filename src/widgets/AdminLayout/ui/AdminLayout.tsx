@@ -45,7 +45,8 @@ export function AdminLayout({ children }: Props) {
         onToggleCollapse={toggleCollapse}
       />
 
-      <div className={`flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ${collapsed ? 'lg:ml-[76px]' : 'lg:ml-[260px]'}`}>
+      {/* Main content area (offset by sidebar width on desktop) */}
+      <div className={`flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ${collapsed ? 'lg:ml-[64px]' : 'lg:ml-[216px]'}`}>
         <AdminTopBar onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
         <main className="min-w-0 flex-1 overflow-x-clip px-6 pt-6 pb-16 lg:px-8 lg:pt-8">
@@ -57,7 +58,7 @@ export function AdminLayout({ children }: Props) {
         </main>
 
         <footer
-          className={`fixed bottom-0 left-0 right-0 z-20 flex h-12 items-center border-t border-card-border bg-content-bg px-6 transition-[left] duration-300 lg:px-8 ${collapsed ? 'lg:left-[76px]' : 'lg:left-[260px]'}`}
+          className={`fixed bottom-0 left-0 right-0 z-20 flex h-12 items-center border-t border-card-border bg-content-bg px-6 transition-[left] duration-300 lg:px-8 ${collapsed ? 'lg:left-[64px]' : 'lg:left-[216px]'}`}
         >
           <div className="flex w-full flex-col items-center justify-between gap-0.5 text-xs text-text-muted sm:flex-row sm:gap-2">
             <p>{t('footer.copyright')}</p>

@@ -52,8 +52,6 @@ function isWaitingForOtherSignersMessage(message?: string | null): boolean {
 
 export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: SmartCaSignModalProps) {
   const [userId, setUserId] = useState('');
-  const [pin, setPin] = useState('');
-  const [useCompanyStamp, setUseCompanyStamp] = useState(false);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [certificateSerial, setCertificateSerial] = useState('');
   const [transactionId, setTransactionId] = useState<string | null>(null);
@@ -326,28 +324,7 @@ export function SmartCaSignModal({ approval, onClose, onSigned, onToast }: Smart
                     <p className="mt-1">{t('smartca.signModal.certificateStatus')}: {selectedCertificate.status ?? '-'}</p>
                   </div>
                 )}
-
-                <label className="flex flex-col gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.pin')}</span>
-                  <input
-                    type="password"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    placeholder={t('smartca.signModal.pinPlaceholder')}
-                    className="h-11 rounded-lg border border-input-border bg-card px-3 text-sm text-text outline-none focus:border-input-focus"
-                  />
-                </label>
               </section>
-
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={useCompanyStamp}
-                  onChange={(e) => setUseCompanyStamp(e.target.checked)}
-                  className="h-5 w-5 rounded border-card-border accent-primary"
-                />
-                <span className="text-sm font-semibold text-text-secondary">{t('smartca.signModal.companyStamp')}</span>
-              </label>
 
               {(transactionId || transactionStatus) && (
                 <div className="rounded-xl border border-card-border p-4">

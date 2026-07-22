@@ -40,8 +40,9 @@ function getDefaultSignaturePosition(pageSize: PdfPageSize): SignaturePlacementV
   const height = Math.round(pageSize.height * 0.083);
   return {
     pageNumber: 1,
-    x: Math.round(pageSize.width * 0.605),
-    y: Math.round(pageSize.height * 0.808),
+    // Đặt giữa trang (theo cả 2 chiều) để người dùng thấy rõ vị trí ký khi đặt/xác nhận.
+    x: Math.round((pageSize.width - width) / 2),
+    y: Math.round((pageSize.height - height) / 2),
     width,
     height,
   };
@@ -56,10 +57,12 @@ function Spinner() {
   );
 }
 
-function FileIcon({ danger = false }: { danger?: boolean }) {
+function FileIcon({ danger = false, size = 'md' }: { danger?: boolean; size?: 'md' | 'sm' }) {
+  const boxClass = size === 'sm' ? 'h-9 w-9 rounded-xl' : 'h-12 w-12 rounded-2xl';
+  const iconSize = size === 'sm' ? 18 : 24;
   return (
-    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${danger ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <span className={`flex ${boxClass} shrink-0 items-center justify-center ${danger ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
       </svg>
@@ -130,7 +133,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
-      <div className="break-words text-sm font-medium text-text">{value}</div>
+      <div className="break-words text-[13px] font-medium text-text">{value}</div>
     </div>
   );
 }
@@ -142,6 +145,11 @@ export function FileViewPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const folderId = searchParams.get('folder');
+  const initialPanelTab = (
+    ['properties', 'signatureHistory', 'issues', 'loi', 'related'] as const
+  ).includes(searchParams.get('panel') as FilePanelTab)
+    ? (searchParams.get('panel') as FilePanelTab)
+    : 'properties';
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
   const [versions, setVersions] = useState<FileVersion[]>([]);
@@ -154,7 +162,7 @@ export function FileViewPage() {
   const [loadedFileId, setLoadedFileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
-  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>('properties');
+  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>(initialPanelTab);
   const [signaturePlacementMode, setSignaturePlacementMode] = useState(false);
   const [signaturePlacementConfirmed, setSignaturePlacementConfirmed] = useState(false);
   const [savingSignaturePosition, setSavingSignaturePosition] = useState(false);
@@ -310,8 +318,6 @@ export function FileViewPage() {
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
   // Tab "Kiểm LOI" TẠM TẮT (chức năng chưa hoàn thiện). Mở lại: đổi về `format === 'IFC'`.
   const showLoiTab = false;
-  const panelTabCount = 4 + (showLoiTab ? 1 : 0);
-  const panelTabGridClass = panelTabCount >= 5 ? 'grid-cols-5' : 'grid-cols-4';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = fileListItem?.authorName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.createdAt);
@@ -444,26 +450,26 @@ export function FileViewPage() {
       )}
 
       <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
-        <main className="min-w-0 flex-1 space-y-5">
-          <header className="flex flex-col gap-4 rounded-3xl border border-card-border/70 bg-card/80 px-5 py-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <FileIcon danger={format === 'PDF'} />
+        <main className="min-w-0 flex-1 space-y-3">
+          <header className="flex flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <FileIcon danger={format === 'PDF'} size="sm" />
               <div className="min-w-0">
-                <h1 className="truncate font-display text-2xl font-semibold text-text sm:text-3xl">{fileTitle}</h1>
-                <p className="mt-1 text-sm text-text-muted">
+                <h1 className="break-words font-jakarta text-xl font-semibold text-text">{fileTitle}</h1>
+                <p className="mt-0.5 text-xs text-text-muted">
                   {format} {latestVersion ? `- ${latestVersion.displayVersion}` : ''}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
                 {statusMeta.label}
               </span>
               <button
                 type="button"
                 onClick={goBack}
-                className="rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
+                className="whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
               >
                 {t('fileView.back')}
               </button>
@@ -471,14 +477,14 @@ export function FileViewPage() {
                 type="button"
                 onClick={handleDownload}
                 disabled={!info}
-                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t('fileView.download.button')}
               </button>
             </div>
           </header>
 
-          <section className="relative h-[calc(100vh-250px)] min-h-[560px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
+          <section className="relative h-[calc(100vh-200px)] min-h-[640px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
             <div className="absolute inset-0 bg-[#dcdad2]" />
 
             {loading ? (
@@ -503,7 +509,7 @@ export function FileViewPage() {
             ) : isModelProcessing ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
                 <Spinner />
-                <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
+                <h3 className="font-jakarta text-base font-semibold text-text">{t('fileView.model.processing.title')}</h3>
                 <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
                 {info?.viewerProgress ? (
                   <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
@@ -571,8 +577,8 @@ export function FileViewPage() {
 
         {/* xl:self-start: không để flex-row kéo giãn aside cao bằng khung xem file -> panel cao theo
               nội dung, hết khoảng trắng dư ở cuối tab. Nội dung dài vẫn tự cuộn nhờ max-h ở div dưới. */}
-        <aside className="w-full shrink-0 self-start overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[360px]">
-          <div className={`grid ${panelTabGridClass} border-b border-card-border`}>
+        <aside className="w-full shrink-0 self-start overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
+          <div className="flex items-center justify-between border-b border-card-border px-2">
             <PanelTabButton
               active={activePanelTab === 'properties'}
               label={t('fileView.tabs.properties')}
@@ -742,7 +748,7 @@ function PanelTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex h-14 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
+      className={`relative flex h-14 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
         }`}
     >
       {label}
@@ -818,7 +824,7 @@ function FilePropertiesPanel({
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-heading text-lg font-bold text-text">{t('fileView.details.title')}</h2>
+        <h2 className="font-jakarta text-base font-bold text-text">{t('fileView.details.title')}</h2>
         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>{statusMeta.label}</span>
       </div>
 
@@ -898,7 +904,7 @@ function SignatureHistoryPanel({
 }) {
   return (
     <div>
-      <h2 className="font-heading text-lg font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
+      <h2 className="font-jakarta text-base font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
       <p className="mt-1 text-sm text-text-muted">{t('fileView.signatureHistory.desc')}</p>
 
       {requiresSignature && canSign && (
@@ -1108,7 +1114,6 @@ function SignaturePlacementOverlay({
     <div className="absolute inset-0 z-20 overflow-hidden bg-[#dcdad2]/95">
       <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-4 rounded-2xl border border-white/60 bg-card/80 px-5 py-3 shadow-dropdown backdrop-blur">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{t('smartca.placement.toolbarLabel')}</span>
-        <SignatureToolButton label={t('smartca.placement.insertSignature')} />
         <SignatureToolButton
           label={t('smartca.placement.resetPosition')}
           onClick={() => onChange(getDefaultSignaturePosition(pageSize))}
@@ -1166,7 +1171,7 @@ function SignaturePlacementOverlay({
         >
           <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-[#fbf9f1]/90 px-5 py-3 shadow-sm backdrop-blur">
             <div className="min-w-0">
-              <p className="truncate font-display text-base font-bold text-primary">{fileName}</p>
+              <p className="truncate font-jakarta text-base font-bold text-primary">{fileName}</p>
               <p className="text-xs text-text-muted">{t('smartca.placement.previewDocument')}</p>
             </div>
             <span className="rounded-full bg-success-light px-3 py-1 text-xs font-semibold text-success">
@@ -1208,15 +1213,15 @@ function SignaturePlacementOverlay({
         </div>
       </div>
 
-      <div className="absolute bottom-8 right-8 z-30 w-[288px] rounded-3xl border border-white bg-white/75 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
-        <h3 className="font-display text-lg font-semibold text-text">{t('smartca.placement.confirmTitle')}</h3>
-        <p className="mt-2 text-xs font-medium leading-5 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
-        <div className="mt-6 space-y-3">
+      <div className="absolute bottom-6 right-6 z-30 w-[220px] rounded-2xl border border-white bg-white/75 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
+        <h3 className="font-jakarta text-sm font-semibold text-text">{t('smartca.placement.confirmTitle')}</h3>
+        <p className="mt-1.5 text-[11px] font-medium leading-4 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
+        <div className="mt-3 space-y-2">
           <button
             type="button"
             onClick={() => onConfirm(value)}
             disabled={busy}
-            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.confirmPosition')}
           </button>
@@ -1224,7 +1229,7 @@ function SignaturePlacementOverlay({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="w-full rounded-xl border border-card-border px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+            className="w-full rounded-xl border border-card-border px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
           >
             {t('smartca.signModal.cancel')}
           </button>
@@ -1286,7 +1291,7 @@ function EmptyViewerState({
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-3xl bg-card/90 p-8 text-center shadow-card">
       <FileIcon danger={danger} />
-      <h3 className="font-display text-lg font-semibold text-text">{title}</h3>
+      <h3 className="font-jakarta text-base font-semibold text-text">{title}</h3>
       <p className="font-jakarta text-sm text-text-muted">{desc}</p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
         <button

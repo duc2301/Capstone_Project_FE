@@ -264,8 +264,8 @@ export const translations = {
   'admin.footer.privacy': 'Chính sách bảo mật',
   'admin.footer.status': 'Trạng thái hệ thống',
   'admin.footer.terms': 'Điều khoản',
-  'admin.topbar.search': 'Tìm kiếm dự án...',
   'admin.topbar.breadcrumb.home': 'TRANG CHỦ',
+  'admin.topbar.breadcrumb.projects': 'DỰ ÁN',
 
   // ── Account page enhancements ─────────────────────
   'account.description': 'Quản lý tài khoản người dùng trong hệ thống CDE Portal.',
@@ -551,6 +551,9 @@ export const translations = {
   'projectDetail.stakeholders.manager': 'Quản lý dự án',
   'projectDetail.stakeholders.noManager': 'Chưa chỉ định quản lý',
   'projectDetail.stakeholders.otherParties': 'Các bên khác (Chủ đầu tư, nhà thầu…) sẽ được cập nhật sau.',
+  'projectDetail.stats.packages': 'Gói thầu',
+  'projectDetail.stats.groups': 'Nhóm tham gia',
+  'projectDetail.stats.manager': 'Quản lý dự án',
 
 
   // Project detail — tab Nhóm (Quản lý đội ngũ dự án)
@@ -1243,6 +1246,7 @@ export const translations = {
   // --- Issue workflow ---
   'issues.panel.tab': 'Issue',
   'issues.panel.createButton': 'Tạo issue mới',
+  'issues.panel.wipHint': 'File đang ở vùng WIP nên chưa thể tạo issue. Issue chỉ được tạo khi file ở vùng Shared hoặc Published.',
   'issues.panel.empty': 'Chưa có issue nào cho file này.',
   'issues.error': 'Không tải được issue.',
   'issues.error.forbidden': 'Bạn không có quyền thực hiện thao tác này.',
@@ -1295,6 +1299,13 @@ export const translations = {
   'issues.discussion.placeholder': 'Nhập nội dung trao đổi...',
   'issues.discussion.fileAttachment': 'Tệp đính kèm',
   'issues.discussion.send': 'Gửi',
+  'issues.discussion.you': 'Bạn',
+  'issues.discussion.closed': 'Issue đã đóng — không thể gửi thêm tin nhắn.',
+  'issues.tab.discussion': 'Thảo luận',
+  'issues.tab.markup': 'Ghi chú',
+  'issues.page.backToFile': 'Về trang file',
+  'issues.page.previewUnsupported': 'File này không xem trực tiếp được. Hãy tải về từ trang file để xem.',
+  'issues.page.markupUnsupported': 'File này không hỗ trợ ghi chú trực quan (markup).',
 
   /* ── Quy tắc đặt tên tệp (naming convention) ── */
   'naming.title': 'Quy tắc đặt tên tệp',

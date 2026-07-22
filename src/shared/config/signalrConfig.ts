@@ -11,6 +11,7 @@ export const SIGNALR_EVENTS = {
   approvalChanged: 'ApprovalChanged',
   issueCreated: 'IssueCreated',
   issueUpdated: 'IssueUpdated',
+  discussionMessagePosted: 'DiscussionMessagePosted',
 } as const;
 export const SIGNALR_MARKUP_METHODS = {
   joinFile: 'JoinFile',

@@ -1,7 +1,9 @@
-import { useLocation } from 'react-router-dom';
+import { Fragment } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
 import { NotificationBell } from '@/features/notifications';
+import { useBreadcrumbTrail } from '@/shared/lib/breadcrumb';
 import { t } from '@/shared/lib/i18n';
 
 /* ── Breadcrumb mapping ────────────────────────────── */
@@ -25,6 +27,8 @@ interface AdminTopBarProps {
 export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const location = useLocation();
   const { currentUser } = useSession();
+  // Trail động do page đặt (VD: chi tiết dự án); rỗng thì rơi về map tĩnh theo pathname.
+  const trail = useBreadcrumbTrail();
   const pageLabel = BREADCRUMB_MAP[location.pathname] ?? '';
 
   const initials = (currentUser?.userName ?? 'U')
@@ -55,44 +59,32 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs font-semibold tracking-wider">
           <span className="text-text-muted">{t('admin.topbar.breadcrumb.home')}</span>
-          {pageLabel && (
-            <>
-              <span className="text-text-muted">/</span>
-              <span className="text-text font-bold">{pageLabel}</span>
-            </>
-          )}
+          {trail.length > 0
+            ? trail.map((item, index) => (
+              <Fragment key={`${item.label}-${index}`}>
+                <span className="text-text-muted">/</span>
+                {item.to ? (
+                  <Link to={item.to} className="text-text-muted transition-colors hover:text-primary">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span className="max-w-[240px] truncate text-text font-bold">{item.label}</span>
+                )}
+              </Fragment>
+            ))
+            : pageLabel && (
+              <>
+                <span className="text-text-muted">/</span>
+                <span className="text-text font-bold">{pageLabel}</span>
+              </>
+            )}
         </nav>
       </div>
 
-      {/* Right: search + actions */}
+      {/* Right: actions */}
       <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="hidden items-center gap-2 rounded-full border border-card-border bg-card px-4 py-2 sm:flex">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            placeholder={t('admin.topbar.search')}
-            className="w-44 bg-transparent font-jakarta text-sm text-text outline-none placeholder:text-text-placeholder"
-          />
-        </div>
-
         {/* Notification bell + realtime popup */}
         <NotificationBell variant="admin" />
-
-        {/* Help */}
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-card-border bg-card text-text-muted transition-colors hover:text-text"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-        </button>
 
         {/* User avatar */}
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">

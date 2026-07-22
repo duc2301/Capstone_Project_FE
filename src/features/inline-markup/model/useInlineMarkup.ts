@@ -28,6 +28,7 @@ export function useInlineMarkup(
   fileItemId: string,
   fileVersionId: string | null,
   enabled = true,
+  issueId?: string | null,
 ): UseInlineMarkupReturn {
   const [set, setSet] = useState<MarkupSet | null>(null);
   const [notes, setNotes] = useState<FileNote[]>([]);
@@ -43,7 +44,9 @@ export function useInlineMarkup(
       setLoading(true);
       setError(null);
       try {
-        const { data } = await markupApi.getSetsByFile(fileItemId);
+        const { data } = issueId
+          ? await markupApi.getSetsByIssue(issueId)
+          : await markupApi.getSetsByFile(fileItemId);
         const sets = data.isSuccess && data.result ? data.result : [];
         const active = sets.find((s) => s.status === MarkupSetStatus.Open) ?? sets[0] ?? null;
         if (!active) {
@@ -68,15 +71,15 @@ export function useInlineMarkup(
     return () => {
       cancelled = true;
     };
-  }, [fileItemId, enabled]);
+  }, [fileItemId, enabled, issueId]);
 
   const ensureSet = useCallback(async (): Promise<MarkupSet> => {
     if (set) return set;
-    const { data } = await markupApi.createSet({ fileItemId, fileVersionId });
+    const { data } = await markupApi.createSet({ fileItemId, fileVersionId, issueId });
     if (!data.isSuccess || !data.result) throw new Error(t('markup.error.save'));
     setSet(data.result);
     return data.result;
-  }, [set, fileItemId, fileVersionId]);
+  }, [set, fileItemId, fileVersionId, issueId]);
 
   useInlineMarkupRealtime(enabled ? fileItemId : null, {
     onNoteAdded: (note) =>

@@ -23,7 +23,11 @@ export interface UseModelMarkupReturn {
   resolveNote: (noteId: string, status: FileNoteStatus) => Promise<void>;
 }
 
-export function useModelMarkup(fileItemId: string, fileVersionId: string | null): UseModelMarkupReturn {
+export function useModelMarkup(
+  fileItemId: string,
+  fileVersionId: string | null,
+  issueId?: string | null,
+): UseModelMarkupReturn {
   const [set, setSet] = useState<MarkupSet | null>(null);
   const [notes, setNotes] = useState<FileNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +41,9 @@ export function useModelMarkup(fileItemId: string, fileVersionId: string | null)
       setLoading(true);
       setError(null);
       try {
-        const { data } = await markupApi.getSetsByFile(fileItemId);
+        const { data } = issueId
+          ? await markupApi.getSetsByIssue(issueId)
+          : await markupApi.getSetsByFile(fileItemId);
         const sets = data.isSuccess && data.result ? data.result : [];
         const active = sets.find((s) => s.status === MarkupSetStatus.Open) ?? sets[0] ?? null;
         if (!active) {
@@ -62,15 +68,15 @@ export function useModelMarkup(fileItemId: string, fileVersionId: string | null)
     return () => {
       cancelled = true;
     };
-  }, [fileItemId]);
+  }, [fileItemId, issueId]);
 
   const ensureSet = useCallback(async (): Promise<MarkupSet> => {
     if (set) return set;
-    const { data } = await markupApi.createSet({ fileItemId, fileVersionId });
+    const { data } = await markupApi.createSet({ fileItemId, fileVersionId, issueId });
     if (!data.isSuccess || !data.result) throw new Error(t('markup.error.save'));
     setSet(data.result);
     return data.result;
-  }, [set, fileItemId, fileVersionId]);
+  }, [set, fileItemId, fileVersionId, issueId]);
 
   useModelMarkupRealtime(fileItemId, {
     onNoteAdded: (note) =>

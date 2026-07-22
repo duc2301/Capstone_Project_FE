@@ -12,6 +12,7 @@ interface Props {
   viewer: Viewer;
   fileItemId: string;
   fileVersionId: string | null;
+  issueId?: string | null;
 }
 
 function formatDateTime(iso: string | null): string {
@@ -21,8 +22,8 @@ function formatDateTime(iso: string | null): string {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId }: Props) {
-  const { notes, loading, saving, error, addViewpointNote, deleteNote, resolveNote } = useModelMarkup(fileItemId, fileVersionId);
+export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId }: Props) {
+  const { notes, loading, saving, error, addViewpointNote, deleteNote, resolveNote } = useModelMarkup(fileItemId, fileVersionId, issueId);
   const [drawing, setDrawing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);

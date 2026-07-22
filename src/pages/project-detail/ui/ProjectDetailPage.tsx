@@ -1,16 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { contractPackageApi } from '@/entities/contractPackage';
 import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
 import { groupApi, GroupMemberStatus } from '@/entities/group';
-import { contractPackageApi } from '@/entities/contractPackage';
-import { usePackages, PackageFormModal } from '@/features/packages';
 import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
 import { NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
+import { PackageFormModal, usePackages } from '@/features/packages';
 import type { AddGroupInput } from '@/features/projects';
 import {
   CreateGroupForm,
@@ -20,6 +20,7 @@ import {
   useProjectInvite,
 } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
+import { clearBreadcrumbTrail, setBreadcrumbTrail } from '@/shared/lib/breadcrumb';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -78,11 +79,27 @@ function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string 
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/* Ô số liệu nhanh (Gói thầu / Nhóm…) ở đầu tab Thông tin. */
+function StatTile({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</span>
-      {children}
+    <div className="flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-card">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-2xl font-bold leading-none text-text">{value}</p>
+        <p className="mt-1.5 text-xs font-medium text-text-muted">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+/* 1 dòng thông tin (nhãn trên, giá trị dưới) — dùng trong danh sách <dl> có gạch ngăn giữa các dòng. */
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="py-3.5 first:pt-0 last:pb-0">
+      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
+      <div className="mt-1 text-sm text-text">{value}</div>
     </div>
   );
 }
@@ -516,6 +533,16 @@ export function ProjectDetailPage() {
   const isManager = project?.managerAccountId === currentUser?.accountId;
   const canViewAllTabs = isAdmin || isManager;
 
+  // Breadcrumb topbar: TRANG CHỦ / DỰ ÁN / (tên dự án)
+  useEffect(() => {
+    if (!project) return;
+    setBreadcrumbTrail([
+      { label: t('admin.topbar.breadcrumb.projects'), to: '/projects' },
+      { label: project.projectName },
+    ]);
+    return () => clearBreadcrumbTrail();
+  }, [project]);
+
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
@@ -640,126 +667,130 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Back ──────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => navigate('/projects')}
-        className="inline-flex items-center gap-2 text-sm font-medium text-text-muted transition-colors hover:text-primary"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
-        {t('projectDetail.back')}
-      </button>
-
-      {/* ── Hero banner ───────────────────────────────── */}
-      <section className="relative h-72 overflow-hidden rounded-[32px] shadow-dropdown">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-hover to-[#2D3A28]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-        <div className="absolute inset-x-8 bottom-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-2">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-              {t('projectDetail.heroCode')}: {shortCode}
-            </span>
-            <h1 className="font-display text-4xl leading-tight text-white lg:text-5xl">
-              {project.projectName}
-            </h1>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Tabs ──────────────────────────────────────── */}
-      <nav className="flex gap-1 overflow-x-auto border-b border-card-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* ── Tabs: ghim ngay dưới topbar (h-16) khi cuộn ── */}
+      <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
           ? isAdmin // cấu hình quy tắc đặt tên: chỉ Admin
           : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            className={`-mb-px shrink-0 border-b-2 px-8 py-4 text-base transition-colors ${tab === item.id
-              ? 'border-primary font-bold text-primary'
-              : 'border-transparent font-medium text-text-secondary hover:text-primary'
-              }`}
-          >
-            {t(item.key)}
-          </button>
-        ))}
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`-mb-px shrink-0 border-b-2 px-6 py-2.5 text-base transition-colors ${tab === item.id
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent font-medium text-text-secondary hover:text-primary'
+                }`}
+            >
+              {t(item.key)}
+            </button>
+          ))}
       </nav>
 
-      {/* ── Tab: Thông tin (bento layout) ─────────────── */}
+      {/* ── Tab: Thông tin ─────────────── */}
       {tab === 'info' && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Cột trái 2/3: chỉ còn thông tin cơ bản */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
-              {/* Thông tin cơ bản */}
-              <div className={`${cardClass} flex flex-col gap-6`}>
-                <SectionHeading
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="16" x2="12" y2="12" />
-                      <line x1="12" y1="8" x2="12.01" y2="8" />
-                    </svg>
-                  }
-                  title={t('projectDetail.basic.title')}
-                />
-                <Field label={t('projectDetail.basic.name')}>
-                  <span className="text-lg font-bold text-text">{project.projectName}</span>
-                </Field>
-                <Field label={t('projectDetail.basic.code')}>
-                  <span className="font-mono text-base font-semibold text-[#8A5100]">{shortCode}</span>
-                </Field>
-                <Field label={t('projectDetail.basic.location')}>
-                  <span className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${project.location?.address?.trim() ? 'text-primary' : 'text-text-placeholder'}`}>
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    {project.location?.address?.trim()
-                      ? <span className="text-sm text-text">{project.location.address}</span>
-                      : <NotUpdated />}
-                  </span>
-                </Field>
-                {project.projectDescription?.trim() && (
-                  <Field label={t('projectDetail.basic.description')}>
-                    <span className="text-sm leading-relaxed text-text-secondary">{project.projectDescription}</span>
-                  </Field>
-                )}
+        <div className="space-y-6">
+          {/* Số liệu nhanh */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatTile
+              value={String(packages.length)}
+              label={t('projectDetail.stats.packages')}
+              icon={
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16.5 9.4 7.5 4.21" />
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
+                </svg>
+              }
+            />
+            <StatTile
+              value={String(groups.length)}
+              label={t('projectDetail.stats.groups')}
+              icon={
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              }
+            />
+            <div className="flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-card">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white">
+                {(managerName ?? '?').charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-base font-bold leading-tight text-text">
+                  {managerName ?? t('projectDetail.stakeholders.noManager')}
+                </p>
+                <p className="mt-0.5 text-xs font-medium text-text-muted">{t('projectDetail.stats.manager')}</p>
               </div>
+            </div>
           </div>
 
-          {/* Cột phải 1/3: các bên liên quan + mô hình BIM */}
-          <div className="flex flex-col gap-6">
-            <div className={`${cardClass} flex flex-col gap-6`}>
+          {/* Chi tiết */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Thông tin cơ bản (2/3) */}
+            <div className="rounded-2xl border border-card-border bg-card p-6 shadow-card lg:col-span-2">
               <SectionHeading
                 icon={
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                }
+                title={t('projectDetail.basic.title')}
+              />
+              <dl className="mt-5 divide-y divide-card-border/60">
+                <InfoRow
+                  label={t('projectDetail.basic.name')}
+                  value={<span className="font-semibold text-text">{project.projectName}</span>}
+                />
+                <InfoRow
+                  label={t('projectDetail.basic.code')}
+                  value={<span className="font-mono font-semibold text-[#8A5100]">{shortCode}</span>}
+                />
+                <InfoRow
+                  label={t('projectDetail.basic.location')}
+                  value={project.location?.address?.trim()
+                    ? (
+                      <span className="flex items-start gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-primary">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span className="text-text">{project.location.address}</span>
+                      </span>
+                    )
+                    : <NotUpdated />}
+                />
+                <InfoRow
+                  label={t('projectDetail.basic.description')}
+                  value={project.projectDescription?.trim()
+                    ? <span className="leading-relaxed text-text-secondary">{project.projectDescription}</span>
+                    : <NotUpdated />}
+                />
+              </dl>
+            </div>
+
+            {/* Bên liên quan (1/3) */}
+            <div className="rounded-2xl border border-card-border bg-card p-6 shadow-card">
+              <SectionHeading
+                icon={
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
                   </svg>
                 }
                 title={t('projectDetail.stakeholders.title')}
               />
-              <div className="flex items-center gap-4 rounded-2xl border border-card-border/60 bg-input-bg/60 p-4">
+              <div className="mt-5 flex items-center gap-4 rounded-2xl border border-card-border/60 bg-input-bg/50 p-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base font-bold text-primary">
                   {(managerName ?? '?').charAt(0).toUpperCase()}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('projectDetail.stakeholders.manager')}
-                  </p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('projectDetail.stakeholders.manager')}</p>
                   <p className="truncate text-sm font-semibold text-text">
                     {managerName ?? <span className="italic font-normal text-text-placeholder">{t('projectDetail.stakeholders.noManager')}</span>}
                   </p>
                 </div>
               </div>
-              <div className="rounded-2xl border border-dashed border-card-border bg-input-bg/40 p-4 text-center">
-                <p className="text-xs text-text-muted">{t('projectDetail.stakeholders.otherParties')}</p>
-              </div>
+              <p className="mt-4 text-xs leading-relaxed text-text-muted">{t('projectDetail.stakeholders.otherParties')}</p>
             </div>
           </div>
         </div>
@@ -949,7 +980,7 @@ export function ProjectDetailPage() {
               Tạo gói thầu
             </button>
           </div>
-          
+
           <div className={`${cardClass} overflow-x-auto`}>
             <table className="w-full text-left text-sm">
               <thead>
@@ -974,7 +1005,7 @@ export function ProjectDetailPage() {
                   </tr>
                 ) : packages.map(p => {
                   const mainContractor = p.assignments?.find(a => a.role === 0);
-                  const partnerName = mainContractor 
+                  const partnerName = mainContractor
                     ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
                     : 'Chưa phân công';
                   return (
@@ -993,7 +1024,7 @@ export function ProjectDetailPage() {
                         </span>
                       </td>
                       <td className="py-4 text-center">
-                        <button 
+                        <button
                           className="text-primary hover:underline font-semibold"
                           onClick={async (e) => {
                             e.stopPropagation();

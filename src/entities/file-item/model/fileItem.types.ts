@@ -75,6 +75,7 @@ export type ModelViewerStatus = (typeof ModelViewerStatus)[keyof typeof ModelVie
 
 export interface FileViewInfo {
   kind: FileViewKind;
+  area?: RelatedFileArea;
   urn: string | null;
   /* Chỉ có khi kind = 'model'. null cho file không phải model. */
   viewerStatus: ModelViewerStatus | null;

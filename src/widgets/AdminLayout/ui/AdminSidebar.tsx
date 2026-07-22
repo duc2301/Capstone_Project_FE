@@ -252,8 +252,8 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
           ))}
         </nav>
 
-        {/* ── Logout (cố định) ────────────────────── */}
-        <div className="shrink-0 border-t border-white/10 px-3 py-3">
+        {/* ── Logout (cố định, cao h-12 = bằng footer để 2 đường gạch thẳng hàng) ── */}
+        <div className="flex h-12 shrink-0 items-center border-t border-white/10 px-3">
           <button
             type="button"
             onClick={logout}

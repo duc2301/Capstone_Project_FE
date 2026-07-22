@@ -2,6 +2,6 @@ export { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from './mod
 export { useIssueDiscussion } from './model/useIssueDiscussion';
 export { useIssues } from './model/useIssues';
 export { CreateIssueModal } from './ui/CreateIssueModal';
-export { IssueDetailModal } from './ui/IssueDetailModal';
+export { IssueSidePanel } from './ui/IssueSidePanel';
 export { IssuesPanel } from './ui/IssuesPanel';
 

@@ -13,15 +13,17 @@ interface Props {
   contentType: string | null;
   /** Chỉ bật tính năng này nếu file đó có hỗ trợ vẽ vời (PDF, ảnh, docx...) */
   enabled: boolean;
+  issueId?: string | null;
   children: ReactNode;
 }
 
 /** Cục này ôm toàn bộ state của markup 2D để chia sẻ cho các component con */
-export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url, contentType, enabled, children }: Props) {
+export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url, contentType, enabled, issueId, children }: Props) {
   const { notes, saving, loading, error, createNote, updateNote, deleteNote, resolveNote } = useInlineMarkup(
     fileItemId,
     fileVersionId,
     enabled,
+    issueId,
   );
 
   const [tool, setTool] = useState<ToolId>('select');

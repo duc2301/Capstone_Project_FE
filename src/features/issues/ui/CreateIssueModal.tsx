@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { IssuePriority, IssueType } from '@/entities/issue';
+import type { IssueItem, IssuePriority, IssueType } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
@@ -10,7 +10,7 @@ interface CreateIssueModalProps {
   projectId: string;
   fileItemId: string;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (issue: IssueItem) => void;
   onToast: (message: string, type?: 'success' | 'error') => void;
 }
 
@@ -27,7 +27,6 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
 
   useEffect(() => {
     if (membersError) onToast(membersError, 'error');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [membersError]);
 
   const canSubmit = title.trim().length > 0 && !busy;
@@ -36,7 +35,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
     setBusy(true);
     setError(null);
     try {
-      await issueApi.create({
+      const created = await issueApi.create({
         projectId,
         linkedFileItemId: fileItemId,
         title: title.trim(),
@@ -48,7 +47,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
       });
 
       onToast(t('issues.toast.created'));
-      onCreated();
+      onCreated(created);
     } catch (err) {
       setError(issueErrorMessage(err, t('issues.error.create')));
     } finally {

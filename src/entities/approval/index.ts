@@ -1,4 +1,4 @@
-export { approvalApi, approvalErrorMessage } from './api/approvalApi';
+export { approvalApi, approvalErrorMessage, isTeamPermissionError } from './api/approvalApi';
 export type {
   ApprovalDetail,
   ApprovalListItem,

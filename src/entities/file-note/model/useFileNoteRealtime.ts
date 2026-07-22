@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-import type { FileNote } from '@/entities/file-note';
 import { SIGNALR_EVENTS, SIGNALR_HUBS, SIGNALR_MARKUP_METHODS } from '@/shared/config';
 import { createHubConnection } from '@/shared/lib/signalr';
+import type { FileNote } from './fileNote.types';
 
-export interface ModelMarkupRealtimeHandlers {
+export interface FileNoteRealtimeHandlers {
   onNoteAdded?: (note: FileNote) => void;
   onNoteUpdated?: (note: FileNote) => void;
   onNoteDeleted?: (noteId: string) => void;
@@ -15,7 +15,10 @@ interface DeletedPayload {
   noteId: string;
 }
 
-export function useModelMarkupRealtime(fileItemId: string | null, handlers: ModelMarkupRealtimeHandlers): void {
+export function useFileNoteRealtime(
+  fileItemId: string | null,
+  handlers: FileNoteRealtimeHandlers,
+): void {
   const handlersRef = useRef(handlers);
   useEffect(() => {
     handlersRef.current = handlers;

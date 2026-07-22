@@ -6,9 +6,14 @@ import type {
   MarkupSet,
   UpdateFileNotePayload,
 } from '@/entities/file-note';
-import { FileNoteStatus, markupApi, MarkupSetStatus, MarkupType } from '@/entities/file-note';
+import {
+  FileNoteStatus,
+  markupApi,
+  MarkupSetStatus,
+  MarkupType,
+  useFileNoteRealtime,
+} from '@/entities/file-note';
 import { t } from '@/shared/lib/i18n';
-import { useInlineMarkupRealtime } from './useInlineMarkupRealtime';
 
 /** Lọc lấy riêng mấy cái markup 2D thôi */
 const is2dNote = (n: FileNote): boolean => n.markupType !== MarkupType.Viewpoint;
@@ -81,7 +86,7 @@ export function useInlineMarkup(
     return data.result;
   }, [set, fileItemId, fileVersionId, issueId]);
 
-  useInlineMarkupRealtime(enabled ? fileItemId : null, {
+  useFileNoteRealtime(enabled ? fileItemId : null, {
     onNoteAdded: (note) =>
       setNotes((prev) => (!is2dNote(note) || prev.some((n) => n.id === note.id) ? prev : [...prev, note])),
     onNoteUpdated: (note) =>

@@ -6,10 +6,10 @@ import {
   markupApi,
   MarkupSetStatus,
   MarkupType,
+  useFileNoteRealtime,
 } from '@/entities/file-note';
 import { t } from '@/shared/lib/i18n';
 import { captureMarkupSvg, captureThumbnail, captureViewpoint, endDraw } from './apsMarkup';
-import { useModelMarkupRealtime } from './useModelMarkupRealtime';
 
 type Viewer = Autodesk.Viewing.GuiViewer3D;
 
@@ -78,7 +78,7 @@ export function useModelMarkup(
     return data.result;
   }, [set, fileItemId, fileVersionId, issueId]);
 
-  useModelMarkupRealtime(fileItemId, {
+  useFileNoteRealtime(fileItemId, {
     onNoteAdded: (note) =>
       setNotes((prev) =>
         note.markupType !== MarkupType.Viewpoint || prev.some((n) => n.id === note.id) ? prev : [...prev, note],

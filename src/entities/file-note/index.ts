@@ -12,4 +12,6 @@ export type {
   UpdateFileNotePayload
 } from './model/fileNote.types';
 export { buildMarkupAuthorOptions, filterMarkupNotes } from './model/markupFilter';
+export { useFileNoteRealtime } from './model/useFileNoteRealtime';
+export type { FileNoteRealtimeHandlers } from './model/useFileNoteRealtime';
 

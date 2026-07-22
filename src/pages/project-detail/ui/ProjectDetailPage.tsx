@@ -223,11 +223,11 @@ function GroupCard({
   const [removingGroup, setRemovingGroup] = useState(false);
   const [editingName, setEditingName] = useState(group.name);
   const [editingDesc, setEditingDesc] = useState(group.description || '');
-  const [editingOrgId, setEditingOrgId] = useState(group.organizationId || '');
+  const [editingOrgId, setEditingOrgId] = useState<string | null>(group.organizationId || null);
   const [updatingGroup, setUpdatingGroup] = useState(false);
 
-  const partner = group.organizationId ? organizations.find((o) => o.id === group.organizationId) : null;
-  const partnerName = partner ? (partner.displayName || partner.legalName) : null;
+  const partner = organizations.find(o => o.id === group.organizationId);
+  const partnerNames = partner ? (partner.displayName || partner.legalName) : '';
 
   return (
     <div className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
@@ -252,7 +252,7 @@ function GroupCard({
               onClick={() => {
                 setEditingName(group.name);
                 setEditingDesc(group.description || '');
-                setEditingOrgId(group.organizationId || '');
+                setEditingOrgId(group.organizationId || null);
                 setEditGroupModalOpen(true);
               }}
               className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary transition-colors"
@@ -281,7 +281,7 @@ function GroupCard({
       </div>
 
       <div className="flex flex-col gap-2">
-        {partnerName && (
+        {partnerNames && (
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
@@ -297,7 +297,7 @@ function GroupCard({
               <path d="M8 14h.01" />
             </svg>
             <span className="truncate flex items-center gap-2">
-              {t('projectDetail.partners.managedBy')} <span className="font-bold text-text">{partnerName}</span>
+              {t('projectDetail.partners.managedBy')} <span className="font-bold text-text">{partnerNames}</span>
             </span>
           </div>
         )}
@@ -374,7 +374,7 @@ function GroupCard({
               <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.partner')}</label>
               <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
                 <button
-                  onClick={() => setEditingOrgId('')}
+                  onClick={() => setEditingOrgId(null)}
                   className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${!editingOrgId ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
                     }`}
                 >
@@ -387,12 +387,19 @@ function GroupCard({
                   <p className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.noPartner')}</p>
                 </button>
                 {organizations.map((org) => {
-                  const orgName = org.displayName || org.legalName || '---';
+                  const orgName = org.displayName || org.legalName;
                   const isSelected = editingOrgId === org.id;
                   return (
                     <button
                       key={org.id}
-                      onClick={() => setEditingOrgId(org.id)}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setEditingOrgId(null);
+                        } else {
+                          setEditingOrgId(org.id);
+                        }
+                      }}
                       className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
                         }`}
                     >
@@ -626,9 +633,12 @@ export function ProjectDetailPage() {
 
   const handleAssignPartner = async (groupId: string, organizationId: string) => {
     try {
-      await groupApi.update(groupId, { organizationId });
-      await refreshGroups();
-      showToast(t('projectDetail.teams.toast.partnerAssigned'));
+      const group = groups.find(g => g.id === groupId);
+      if (group?.organizationId !== organizationId) {
+        await groupApi.update(groupId, { organizationId });
+        await refreshGroups();
+        showToast(t('projectDetail.teams.toast.partnerAssigned'));
+      }
     } catch (err) {
       showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
@@ -674,6 +684,26 @@ export function ProjectDetailPage() {
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
         </div>
       )}
+
+      {/* ── Hero banner ───────────────────────────────── */}
+      <section className="relative min-h-60 overflow-hidden rounded-[24px] shadow-dropdown mb-6">
+        {project.projectImageUrl ? (
+          <img src={project.projectImageUrl} alt={project.projectName} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-hover to-[#2D3A28]" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="relative flex min-h-60 flex-col justify-end gap-4 px-7 py-7 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+              {t('projectDetail.heroCode')}: {shortCode}
+            </span>
+            <h1 className="font-display text-3xl leading-tight text-white break-words lg:text-4xl">
+              {project.projectName}
+            </h1>
+          </div>
+        </div>
+      </section>
 
       {/* ── Tabs: ghim ngay dưới topbar (h-16) khi cuộn ── */}
       <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -1012,15 +1042,14 @@ export function ProjectDetailPage() {
                     <td colSpan={7} className="py-8 text-center text-text-muted italic">Chưa có gói thầu nào.</td>
                   </tr>
                 ) : packages.map(p => {
-                  const mainContractor = p.assignments?.find(a => a.role === 0);
-                  const partnerName = mainContractor
+                  const mainContractor = p.assignments?.find(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor');
+                  const partnerName = mainContractor 
                     ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
                     : 'Chưa phân công';
                   return (
                     <tr key={p.id} className="hover:bg-card-hover transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}/packages/${p.id}`)}>
                       <td className="py-4 font-medium text-primary max-w-[200px] truncate" title={p.name}>
                         <span className="hover:underline">{p.name}</span>
-                        {p.isDefault && <span className="ml-2 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success uppercase">Mặc định</span>}
                       </td>
                       <td className="py-4 font-bold text-primary">{p.code}</td>
                       <td className="py-4 text-text-muted">{partnerName}</td>

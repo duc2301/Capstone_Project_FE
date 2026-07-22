@@ -9,7 +9,7 @@ import {
 } from '@/features/organizations';
 import { t } from '@/shared/lib/i18n';
 
-type FormMode = 'idle' | 'create' | 'edit';
+type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
 
 /* ── Stat card ─────────────────────────────────────── */
 interface StatCardProps {
@@ -146,16 +146,30 @@ export function OrganizationsPage() {
             {t('org.description')}
           </p>
         </div>
-        <button
-          onClick={() => setFormMode('create')}
-          className="flex shrink-0 items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          {t('org.createNew')}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => setFormMode('create-jv')}
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-info px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-info-hover hover:shadow-md"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Thêm liên danh
+          </button>
+          <button
+            onClick={() => setFormMode('create')}
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            {t('org.createNew')}
+          </button>
+        </div>
       </div>
 
       {/* ── Statistics Cards ───────────────────────── */}
@@ -285,17 +299,28 @@ export function OrganizationsPage() {
                   filtered.map((org) => (
                     <tr key={org.id} className="transition-colors duration-150 hover:bg-primary-ghost">
                       <td className="px-6 py-4">
-                        <span className="inline-block rounded-lg bg-input-bg px-2.5 py-1 font-mono text-xs font-medium text-text-secondary">
-                          {org.taxCode}
-                        </span>
+                        {org.isJointVenture ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-info/10 px-2.5 py-1 text-xs font-bold text-info">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Liên danh
+                          </span>
+                        ) : (
+                          <span className="inline-block rounded-lg bg-input-bg px-2.5 py-1 font-mono text-xs font-medium text-text-secondary">
+                            {org.taxCode || '—'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
-                            {org.legalName.charAt(0).toUpperCase()}
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm ${org.isJointVenture ? 'bg-info text-white' : 'bg-primary-light text-primary border border-primary/10'}`}>
+                            {org.isJointVenture ? (
+                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            ) : org.legalName.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-text">{org.displayName ?? org.legalName}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-text">{org.displayName ?? org.legalName}</p>
+                            </div>
                             {org.displayName && (
                               <p className="text-xs text-text-muted">{org.legalName}</p>
                             )}
@@ -303,7 +328,7 @@ export function OrganizationsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-badge)] bg-info-light px-2.5 py-1 text-xs font-semibold text-info">
+                        <span className="inline-flex items-center whitespace-nowrap gap-1.5 rounded-[var(--radius-badge)] bg-info-light px-2.5 py-1 text-xs font-semibold text-info">
                           {orgTypeMap.get(org.organizationTypeId) ?? '—'}
                         </span>
                       </td>
@@ -355,7 +380,14 @@ export function OrganizationsPage() {
       {/* ── Create Modal ───────────────────────────── */}
       {formMode === 'create' && (
         <Modal title={t('org.modal.createTitle')} onClose={closeForm}>
-          <CreateOrganizationForm orgTypes={orgTypes} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
+          <CreateOrganizationForm mode="organization" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
+        </Modal>
+      )}
+      
+      {/* ── Create Joint Venture Modal ───────────────────────────── */}
+      {formMode === 'create-jv' && (
+        <Modal title="Thêm liên danh mới" onClose={closeForm}>
+          <CreateOrganizationForm mode="joint-venture" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}
 
@@ -364,6 +396,7 @@ export function OrganizationsPage() {
         <Modal title={t('org.modal.editTitle')} onClose={closeForm}>
           <UpdateOrganizationForm
             organization={selectedOrg}
+            organizations={organizations}
             orgTypes={orgTypes}
             onSubmit={handleUpdate}
             onCancel={closeForm}

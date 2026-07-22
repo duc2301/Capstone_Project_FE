@@ -1,19 +1,22 @@
 import { useState } from 'react';
 
-import type { CreateOrganizationPayload } from '@/entities/organization';
+import type { Organization, CreateOrganizationPayload } from '@/entities/organization';
 import type { OrganizationType, CreateOrganizationTypePayload } from '@/entities/organization-type';
 import { t } from '@/shared/lib/i18n';
 
 const OTHER_VALUE = '__other__';
 
 interface Props {
+  mode: 'organization' | 'joint-venture';
   orgTypes: OrganizationType[];
+  organizations?: Organization[];
   onSubmit: (payload: CreateOrganizationPayload) => Promise<void>;
   onCancel: () => void;
   onCreateOrgType?: (payload: CreateOrganizationTypePayload) => Promise<OrganizationType | null>;
 }
 
-export function CreateOrganizationForm({ orgTypes, onSubmit, onCancel, onCreateOrgType }: Props) {
+export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onSubmit, onCancel, onCreateOrgType }: Props) {
+  const isJv = mode === 'joint-venture';
   const [form, setForm] = useState<CreateOrganizationPayload>({
     taxCode: '',
     legalName: '',
@@ -22,6 +25,9 @@ export function CreateOrganizationForm({ orgTypes, onSubmit, onCancel, onCreateO
     address: '',
     phone: '',
     email: '',
+    isJointVenture: isJv,
+    jointVentureMemberIds: [],
+    representativeOrganizationId: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [isOtherType, setIsOtherType] = useState(false);
@@ -104,42 +110,44 @@ export function CreateOrganizationForm({ orgTypes, onSubmit, onCancel, onCreateO
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        {/* Tax Code */}
-        <div className="space-y-1.5">
-          <label htmlFor="create-taxCode" className="block text-sm font-medium text-text-secondary">
-            {t('org.taxCode')} <span className="text-danger">*</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="create-taxCode"
-              name="taxCode"
-              value={form.taxCode}
-              onChange={handleChange}
-              onBlur={() => {
-                if (form.taxCode.length >= 10 && !form.legalName) handleLookup();
-              }}
-              placeholder={t('org.taxCodePlaceholder')}
-              required
-              maxLength={13}
-              pattern="^\d{10,13}$"
-              title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
-              className={inputClass}
-            />
-            <button
-              type="button"
-              onClick={handleLookup}
-              disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
-              className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
-            >
-              {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
-            </button>
+        {/* Tax Code - Hidden for Joint Ventures */}
+        {!isJv && (
+          <div className="space-y-1.5">
+            <label htmlFor="create-taxCode" className="block text-sm font-medium text-text-secondary">
+              {t('org.taxCode')} <span className="text-danger">*</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="create-taxCode"
+                name="taxCode"
+                value={form.taxCode}
+                onChange={handleChange}
+                onBlur={() => {
+                  if (form.taxCode.length >= 10 && !form.legalName) handleLookup();
+                }}
+                placeholder={t('org.taxCodePlaceholder')}
+                required
+                maxLength={13}
+                pattern="^\d{10,13}$"
+                title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
+                className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
+              >
+                {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Legal Name */}
         <div className="space-y-1.5">
           <label htmlFor="create-legalName" className="block text-sm font-medium text-text-secondary">
-            {t('org.legalName')} <span className="text-danger">*</span>
+            {isJv ? 'Tên liên danh' : t('org.legalName')} <span className="text-danger">*</span>
           </label>
           <input
             id="create-legalName"
@@ -170,7 +178,7 @@ export function CreateOrganizationForm({ orgTypes, onSubmit, onCancel, onCreateO
         </div>
 
         {/* Organization Type — dropdown hoặc input tại chỗ */}
-        <div className="space-y-1.5">
+        <div className={`space-y-1.5 ${isJv ? 'sm:col-span-2' : ''}`}>
           <label htmlFor="create-orgType" className="block text-sm font-medium text-text-secondary">
             {t('org.type')} <span className="text-danger">*</span>
           </label>
@@ -216,6 +224,96 @@ export function CreateOrganizationForm({ orgTypes, onSubmit, onCancel, onCreateO
             </div>
           )}
         </div>
+
+        {/* --- Joint Venture Fields --- */}
+        {isJv && (
+          <div className="sm:col-span-2 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-5 space-y-4 mt-2">
+            <h3 className="text-sm font-bold text-primary">Cấu trúc Liên danh</h3>
+            <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-secondary">
+                  Thành viên liên danh <span className="text-danger">*</span>
+                </label>
+                <div className="space-y-3 relative">
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const newId = e.target.value;
+                        setForm(prev => ({
+                          ...prev,
+                          jointVentureMemberIds: prev.jointVentureMemberIds?.includes(newId)
+                            ? prev.jointVentureMemberIds
+                            : [...(prev.jointVentureMemberIds || []), newId]
+                        }));
+                      }
+                    }}
+                    className={inputClass}
+                  >
+                    <option value="">+ Thêm đối tác vào liên danh...</option>
+                    {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.displayName || org.legalName}
+                      </option>
+                    ))}
+                  </select>
+
+                  {form.jointVentureMemberIds && form.jointVentureMemberIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {form.jointVentureMemberIds.map((orgId) => {
+                        const org = organizations.find((o) => o.id === orgId);
+                        return (
+                          <span
+                            key={orgId}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary border border-primary/20"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            {org?.displayName || org?.legalName || 'Unknown'}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm((prev) => {
+                                  const newMembers = prev.jointVentureMemberIds?.filter((id) => id !== orgId);
+                                  const newRep = prev.representativeOrganizationId === orgId ? '' : prev.representativeOrganizationId;
+                                  return { ...prev, jointVentureMemberIds: newMembers, representativeOrganizationId: newRep };
+                                });
+                              }}
+                              className="text-primary hover:text-danger ml-1 focus:outline-none"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-secondary">
+                  Đơn vị đứng đầu (Đại diện) liên danh <span className="text-danger">*</span>
+                </label>
+                <select
+                  value={form.representativeOrganizationId || ''}
+                  onChange={(e) => setForm(prev => ({ ...prev, representativeOrganizationId: e.target.value }))}
+                  required={isJv}
+                  className={inputClass}
+                >
+                  <option value=""> Chọn đơn vị đại diện </option>
+                  {(form.jointVentureMemberIds || []).map((orgId) => {
+                    const org = organizations.find((o) => o.id === orgId);
+                    return (
+                      <option key={orgId} value={orgId}>
+                        {org?.displayName || org?.legalName}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Address */}
         <div className="space-y-1.5 sm:col-span-2">

@@ -8,13 +8,14 @@ const OTHER_VALUE = '__other__';
 
 interface Props {
   organization: Organization;
+  organizations: Organization[];
   orgTypes: OrganizationType[];
   onSubmit: (id: string, payload: UpdateOrganizationPayload) => Promise<void>;
   onCancel: () => void;
   onCreateOrgType?: (payload: CreateOrganizationTypePayload) => Promise<OrganizationType | null>;
 }
 
-export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCancel, onCreateOrgType }: Props) {
+export function UpdateOrganizationForm({ organization, organizations, orgTypes, onSubmit, onCancel, onCreateOrgType }: Props) {
   const [form, setForm] = useState<UpdateOrganizationPayload>({
     taxCode: organization.taxCode,
     legalName: organization.legalName,
@@ -23,6 +24,9 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
     address: organization.address ?? '',
     phone: organization.phone ?? '',
     email: organization.email ?? '',
+    isJointVenture: organization.isJointVenture,
+    jointVentureMemberIds: organization.jointVentureMemberIds ?? [],
+    representativeOrganizationId: organization.representativeOrganizationId ?? '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [isOtherType, setIsOtherType] = useState(false);
@@ -105,38 +109,40 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        {/* Tax Code */}
-        <div className="space-y-1.5">
-          <label htmlFor="edit-taxCode" className="block text-sm font-medium text-text-secondary">
-            {t('org.taxCode')}
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="edit-taxCode"
-              name="taxCode"
-              value={form.taxCode ?? ''}
-              onChange={handleChange}
-              placeholder={t('org.taxCodePlaceholder')}
-              maxLength={13}
-              pattern="^\d{10,13}$"
-              title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
-              className={inputClass}
-            />
-            <button
-              type="button"
-              onClick={handleLookup}
-              disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
-              className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
-            >
-              {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
-            </button>
+        {/* Tax Code - Hidden for Joint Ventures */}
+        {!organization.isJointVenture && (
+          <div className="space-y-1.5">
+            <label htmlFor="edit-taxCode" className="block text-sm font-medium text-text-secondary">
+              {t('org.taxCode')}
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="edit-taxCode"
+                name="taxCode"
+                value={form.taxCode ?? ''}
+                onChange={handleChange}
+                placeholder={t('org.taxCodePlaceholder')}
+                maxLength={13}
+                pattern="^\d{10,13}$"
+                title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
+                className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
+              >
+                {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Legal Name */}
         <div className="space-y-1.5">
           <label htmlFor="edit-legalName" className="block text-sm font-medium text-text-secondary">
-            {t('org.legalName')}
+            {organization.isJointVenture ? 'Tên liên danh' : t('org.legalName')}
           </label>
           <input
             id="edit-legalName"
@@ -166,7 +172,7 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
         </div>
 
         {/* Organization Type — dropdown hoặc input tại chỗ */}
-        <div className="space-y-1.5">
+        <div className={`space-y-1.5 ${organization.isJointVenture ? 'sm:col-span-2' : ''}`}>
           <label htmlFor="edit-orgType" className="block text-sm font-medium text-text-secondary">
             {t('org.type')}
           </label>
@@ -211,6 +217,96 @@ export function UpdateOrganizationForm({ organization, orgTypes, onSubmit, onCan
             </div>
           )}
         </div>
+
+        {/* --- Joint Venture Fields --- */}
+        {organization.isJointVenture && (
+          <div className="sm:col-span-2 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-5 space-y-4 mt-2">
+            <h3 className="text-sm font-bold text-primary">Cấu trúc Liên danh</h3>
+            <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-secondary">
+                  Thành viên liên danh <span className="text-danger">*</span>
+                </label>
+                <div className="space-y-3 relative">
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const newId = e.target.value;
+                        setForm(prev => ({
+                          ...prev,
+                          jointVentureMemberIds: prev.jointVentureMemberIds?.includes(newId)
+                            ? prev.jointVentureMemberIds
+                            : [...(prev.jointVentureMemberIds || []), newId]
+                        }));
+                      }
+                    }}
+                    className={inputClass}
+                  >
+                    <option value="">+ Thêm đối tác vào liên danh...</option>
+                    {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.displayName || org.legalName}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {form.jointVentureMemberIds && form.jointVentureMemberIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {form.jointVentureMemberIds.map((orgId) => {
+                        const org = organizations.find((o) => o.id === orgId);
+                        return (
+                          <span
+                            key={orgId}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary border border-primary/20"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            {org?.displayName || org?.legalName || 'Unknown'}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm((prev) => {
+                                  const newMembers = prev.jointVentureMemberIds?.filter((id) => id !== orgId);
+                                  const newRep = prev.representativeOrganizationId === orgId ? '' : prev.representativeOrganizationId;
+                                  return { ...prev, jointVentureMemberIds: newMembers, representativeOrganizationId: newRep };
+                                });
+                              }}
+                              className="text-primary hover:text-danger ml-1 focus:outline-none"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-secondary">
+                  Đơn vị đứng đầu (Đại diện) liên danh <span className="text-danger">*</span>
+                </label>
+                <select
+                  value={form.representativeOrganizationId || ''}
+                  onChange={(e) => setForm(prev => ({ ...prev, representativeOrganizationId: e.target.value }))}
+                  required={organization.isJointVenture}
+                  className={inputClass}
+                >
+                  <option value="">— Chọn đơn vị đại diện —</option>
+                  {(form.jointVentureMemberIds || []).map((orgId) => {
+                    const org = organizations.find((o) => o.id === orgId);
+                    return (
+                      <option key={orgId} value={orgId}>
+                        {org?.displayName || org?.legalName}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Address */}
         <div className="space-y-1.5 sm:col-span-2">

@@ -13,7 +13,7 @@ interface FolderTreeProps {
 /* Icon: folder */
 function FolderIcon({ className = '' }: { className?: string }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${className}`}>
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
     </svg>
   );
@@ -55,7 +55,7 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
       <div
         onContextMenu={(e) => onContextMenu?.(e, node)}
         style={{ paddingLeft: 8 + depth * 12 }}
-        className={`flex w-full items-center gap-1.5 rounded-lg pr-2 text-[13px] transition-colors ${
+        className={`flex min-w-full items-center gap-1.5 rounded-lg pr-2 text-[13px] transition-colors ${
           isSelected
             ? 'bg-primary-light font-semibold text-primary'
             : isRoot
@@ -79,10 +79,10 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
         <button
           type="button"
           onClick={() => onSelect(node)}
-          className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left"
+          className="flex items-center gap-1.5 py-1.5 text-left"
         >
           <FolderIcon className={isSelected ? 'text-primary' : isRoot ? 'text-primary/80' : 'text-text-muted'} />
-          <span className="truncate">{label}</span>
+          <span className="whitespace-nowrap">{label}</span>
           {node.hasWarning && (
             <span title={t('fileWarn.folderTooltip')} className="ml-auto shrink-0 text-danger">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,20 +175,24 @@ export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: Folder
       {tree.length === 0 ? (
         <p className="mt-7 px-2 py-6 text-center text-sm text-text-muted">{t('documents.empty')}</p>
       ) : (
-        <ul className="mt-7 space-y-0.5">
-          {tree.map((node) => (
-            <FolderNode
-              key={node.id}
-              node={node}
-              depth={0}
-              selectedId={selectedId}
-              expandedIds={expandedIds}
-              onToggleExpand={toggleExpand}
-              onSelect={onSelect}
-              onContextMenu={onContextMenu}
-            />
-          ))}
-        </ul>
+        // Cây có thể thụt lề rất sâu -> tên folder không bị cắt/tràn ra ngoài khung, thay vào đó
+        // cuộn ngang để xem đủ tên khi cây quá rộng so với khung.
+        <div className="admin-scrollbar mt-7 overflow-x-auto">
+          <ul className="w-max min-w-full space-y-0.5">
+            {tree.map((node) => (
+              <FolderNode
+                key={node.id}
+                node={node}
+                depth={0}
+                selectedId={selectedId}
+                expandedIds={expandedIds}
+                onToggleExpand={toggleExpand}
+                onSelect={onSelect}
+                onContextMenu={onContextMenu}
+              />
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

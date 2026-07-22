@@ -1,4 +1,4 @@
-export { formatDateTime } from './model/approvalFormat';
+export { formatDateTime, isRequiredSigner } from './model/approvalFormat';
 export { useFolderTree } from './model/useFolderTree';
 export { useZoneReturnRequests } from './model/useZoneReturnRequests';
 export { returnRequestStatusBadge, zoneLabel } from './model/zoneTransferFormat';

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { approvalApi, approvalErrorMessage, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
+import { approvalApi, approvalErrorMessage, isTeamPermissionError, type ApprovalTargetZone, type SubmitApprovalPayload } from '@/entities/approval';
 import type { DocumentSearchResult } from '@/entities/document-search';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
-import { CdeArea } from '@/entities/folder';
+import { CdeArea, folderErrorMessage } from '@/entities/folder';
 import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
@@ -113,6 +113,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
   const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
   const [submitApprovalError, setSubmitApprovalError] = useState<string | null>(null);
+  const [submitApprovalPermissionIssue, setSubmitApprovalPermissionIssue] = useState(false);
   const [approvalBusy, setApprovalBusy] = useState(false);
   const [pendingApprovalsOpen, setPendingApprovalsOpen] = useState(false);
   const [approvalHistoryOpen, setApprovalHistoryOpen] = useState(false);
@@ -181,6 +182,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const openSubmitApproval = (file: FileListItem) => {
     setSubmitApprovalFor(file);
     setSubmitApprovalError(null);
+    setSubmitApprovalPermissionIssue(false);
   };
 
   const handleDownload = async (file: FileListItem) => {
@@ -219,8 +221,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
         : t('documents.toast.deleted'),
       );
       setModal(null);
-    } catch {
-      showToast(t('common.error'), 'error');
+    } catch (err) {
+      showToast(folderErrorMessage(err, t('common.error')), 'error');
     } finally {
       setBusy(false);
     }
@@ -238,6 +240,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     if (!submitApprovalFor) return;
     setApprovalBusy(true);
     setSubmitApprovalError(null);
+    setSubmitApprovalPermissionIssue(false);
     try {
       await approvalApi.submitApproval(submitApprovalFor.id, payload);
       await refetchFiles();
@@ -245,6 +248,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       setSubmitApprovalFor(null);
     } catch (err) {
       setSubmitApprovalError(approvalErrorMessage(err, t('common.error')));
+      setSubmitApprovalPermissionIssue(isTeamPermissionError(err));
     } finally {
       setApprovalBusy(false);
     }
@@ -587,7 +591,12 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           loadingSigners={signerGroupsLoading}
           busy={approvalBusy}
           submitError={submitApprovalError}
-          onClose={() => { setSubmitApprovalFor(null); setSubmitApprovalError(null); }}
+          submitErrorAction={
+            submitApprovalPermissionIssue
+              ? { label: t('documents.goToTeamsTab'), onClick: () => navigate(`/projects/${projectId}?tab=teams`) }
+              : null
+          }
+          onClose={() => { setSubmitApprovalFor(null); setSubmitApprovalError(null); setSubmitApprovalPermissionIssue(false); }}
           onSubmit={handleSubmitApproval}
         />
       )}
@@ -598,6 +607,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           isLeader={canManageNaming}
           currentAccountId={currentUser?.accountId}
           projectId={projectId}
+          projectGroups={signerGroups}
           onClose={() => setPendingApprovalsOpen(false)}
           onChanged={() => {
             void refetchFiles();

@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 
 import type { ApprovalDetail } from '@/entities/approval';
 import { approvalApi, approvalErrorMessage } from '@/entities/approval';
+import type { Group } from '@/entities/group';
 import { t } from '@/shared/lib/i18n';
 
-import { approvalStatusBadge, formatDateTime } from '../model/approvalFormat';
+import { approvalStatusBadge, formatDateTime, isRequiredSigner } from '../model/approvalFormat';
 
 interface ApprovalDetailModalProps {
   approvalId: string;
@@ -13,6 +14,9 @@ interface ApprovalDetailModalProps {
   /* Dự phòng khi BE không trả projectId trong chi tiết phê duyệt (vd: /approvals/{id}) —
      modal luôn được mở từ trong 1 dự án cụ thể nên trang cha luôn biết projectId. */
   fallbackProjectId?: string;
+  /* Chỉ đúng người/nhóm được chỉ định ký (asign) mới thấy/dùng được nút "Ký số". */
+  currentAccountId?: string;
+  projectGroups?: Group[];
 }
 
 function FileIcon() {
@@ -35,7 +39,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function ApprovalDetailModal({ approvalId, onClose, fallbackProjectId }: ApprovalDetailModalProps) {
+export function ApprovalDetailModal({ approvalId, onClose, fallbackProjectId, currentAccountId, projectGroups = [] }: ApprovalDetailModalProps) {
   const [detail, setDetail] = useState<ApprovalDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +75,13 @@ export function ApprovalDetailModal({ approvalId, onClose, fallbackProjectId }: 
             <p className="text-sm font-medium text-danger">{error}</p>
           </div>
         ) : detail ? (
-          <ApprovalDetailContent detail={detail} onClose={onClose} fallbackProjectId={fallbackProjectId} />
+          <ApprovalDetailContent
+            detail={detail}
+            onClose={onClose}
+            fallbackProjectId={fallbackProjectId}
+            currentAccountId={currentAccountId}
+            projectGroups={projectGroups}
+          />
         ) : null}
       </div>
     </div>
@@ -82,10 +92,14 @@ function ApprovalDetailContent({
   detail,
   onClose,
   fallbackProjectId,
+  currentAccountId,
+  projectGroups,
 }: {
   detail: ApprovalDetail;
   onClose: () => void;
   fallbackProjectId?: string;
+  currentAccountId?: string;
+  projectGroups: Group[];
 }) {
   const navigate = useNavigate();
   const badge = approvalStatusBadge(detail.status);
@@ -94,10 +108,18 @@ function ApprovalDetailContent({
       ? t('smartca.status.signed')
       : t('smartca.signature.required')
     : t('approvals.detail.no');
+  const signerNames = detail.signers
+    .map((s) => s.signerAccountName ?? s.signerGroupName)
+    .filter((name): name is string => Boolean(name))
+    .join(', ');
 
   const viewProjectId = detail.projectId ?? fallbackProjectId;
   const canViewFile = Boolean(viewProjectId && detail.fileItemId);
-  const canSign = canViewFile && detail.requiresSignature && !detail.isSigned;
+  const canSign =
+    canViewFile
+    && detail.requiresSignature
+    && !detail.isSigned
+    && isRequiredSigner(detail.signers, currentAccountId, projectGroups);
   const handleViewFile = () => {
     if (!canViewFile) return;
     onClose();
@@ -182,7 +204,16 @@ function ApprovalDetailContent({
                   active={detail.isSigned}
                   title={detail.isSigned ? t('smartca.status.signed') : t('smartca.signature.required')}
                   badge={t('smartca.action.sign')}
-                  body={detail.isSigned ? t('approvals.detail.signatureDone') : t('approvals.detail.signatureWaiting')}
+                  body={
+                    <>
+                      {detail.isSigned ? t('approvals.detail.signatureDone') : t('approvals.detail.signatureWaiting')}
+                      {!detail.isSigned && signerNames && (
+                        <span className="mt-1 block font-semibold text-text">
+                          {t('approvals.detail.signerNames')}: {signerNames}
+                        </span>
+                      )}
+                    </>
+                  }
                   time={detail.isSigned ? t('approvals.detail.completed') : t('approvals.detail.waiting')}
                   tone={detail.isSigned ? 'success' : 'warning'}
                 />
@@ -236,7 +267,7 @@ function InfoTile({ label, value }: { label: string; value: string }) {
 interface TimelineItemProps {
   title: string;
   badge: string;
-  body: string;
+  body: React.ReactNode;
   time: string;
   active?: boolean;
   tone?: 'success' | 'warning' | 'danger';

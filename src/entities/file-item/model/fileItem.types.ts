@@ -182,3 +182,17 @@ export interface FileVersion {
   checksum: string | null;
   createdAt: string | null;
 }
+
+/* Kết quả các endpoint ghi phiên bản (restore/enter-shared/publish...) —
+ * khớp BE FileVersionResult. versionStateId là id dòng MỚI (= CurrentVersionId mới). */
+export interface FileVersionResult {
+  fileItemId: string;
+  versionStateId: string;
+  isNewDocument: boolean;
+  /* 0 = Working, 1 = Published */
+  stage: number;
+  workingRevision: number;
+  workingVersion: number;
+  publishedRevision: number;
+  displayVersion: string;
+}

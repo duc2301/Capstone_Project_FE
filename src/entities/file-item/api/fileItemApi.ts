@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { FileListItem, FileVersion, FileViewInfo, LinkableFile, RelatedFilesResult } from '../model/fileItem.types';
+import type { FileListItem, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
@@ -20,6 +20,12 @@ export const fileItemApi = {
   /** Lịch sử phiên bản của 1 file (mới nhất trước). */
   getVersions: (fileItemId: string) =>
     axiosInstance.get<ApiResponse<FileVersion[]>>(`/file-versions/${fileItemId}/history`),
+
+  /** Khôi phục 1 phiên bản cũ làm phiên bản hiện hành (tạo bản mới với nội dung của bản cũ). */
+  restoreVersion: (fileItemId: string, versionStateId: string) =>
+    axiosInstance.post<ApiResponse<FileVersionResult>>(
+      `/file-versions/${fileItemId}/restore/${versionStateId}`,
+    ),
 
   /** Tải nội dung file về (blob, qua server – có kèm token). */
   download: (fileItemId: string) =>

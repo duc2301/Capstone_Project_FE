@@ -1076,6 +1076,14 @@ export const translations = {
   'documents.versions.uploadedBy': 'Người tải',
   'documents.versions.uploadedAt': 'Thời điểm',
   'documents.versions.current': 'Hiện hành',
+  'documents.versions.setCurrent': 'Đặt làm hiện hành',
+  'documents.versions.restoring': 'Đang khôi phục…',
+  'documents.versions.cancel': 'Hủy',
+  'documents.versions.confirmTitle': 'Đặt phiên bản này làm hiện hành?',
+  'documents.versions.confirmDesc':
+    'Hệ thống sẽ tạo một phiên bản mới với nội dung của {version}. Phiên bản hiện tại vẫn được giữ trong lịch sử.',
+  'documents.versions.confirmYes': 'Đặt làm hiện hành',
+  'documents.versions.restoreSuccess': 'Đã đặt {version} làm phiên bản hiện hành.',
 
   // Modal tải tệp lên
   'documents.uploadModal.title': 'Tải tệp lên',

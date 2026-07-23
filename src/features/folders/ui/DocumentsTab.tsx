@@ -560,6 +560,10 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           fileName={versionsFor.name}
           currentVersionId={versionsFor.currentVersionId}
           onClose={() => setVersionsFor(null)}
+          onRestored={(displayVersion) => {
+            void refetchFiles();
+            showToast(t('documents.versions.restoreSuccess').replace('{version}', displayVersion));
+          }}
         />
       )}
 

@@ -10,6 +10,9 @@ export interface Organization {
   email: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  isJointVenture?: boolean;
+  jointVentureMemberIds?: string[];
+  representativeOrganizationId?: string | null;
 }
 
 export interface CreateOrganizationPayload {
@@ -20,6 +23,9 @@ export interface CreateOrganizationPayload {
   address?: string;
   phone?: string;
   email?: string;
+  isJointVenture?: boolean;
+  jointVentureMemberIds?: string[];
+  representativeOrganizationId?: string;
 }
 
 export interface UpdateOrganizationPayload {
@@ -30,4 +36,7 @@ export interface UpdateOrganizationPayload {
   address?: string;
   phone?: string;
   email?: string;
+  isJointVenture?: boolean;
+  jointVentureMemberIds?: string[];
+  representativeOrganizationId?: string | null;
 }

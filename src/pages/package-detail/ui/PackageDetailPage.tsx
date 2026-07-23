@@ -5,7 +5,6 @@ import type { ContractPackage } from '@/entities/contractPackage';
 import { PackageFormModal } from '@/features/packages';
 import { useAccounts } from '@/features/accounts';
 import { fileItemApi } from '@/entities/file-item';
-import { t } from '@/shared/lib/i18n';
 
 /* ── Status mapping ── */
 const STATUS_MAP: Record<number, { label: string; cls: string }> = {
@@ -18,8 +17,11 @@ const STATUS_MAP: Record<number, { label: string; cls: string }> = {
 };
 
 function fmtCurrency(val: number | undefined, cur = 'VND') {
-  if (!val) return '0 ' + cur;
-  return new Intl.NumberFormat('vi-VN').format(val) + ' ' + cur;
+  if (val === undefined) return '';
+  const isVnd = cur === 'VND';
+  return new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits: isVnd ? 0 : 2,
+  }).format(val) + ' ' + cur;
 }
 
 function fmtDate(d?: string) {
@@ -133,34 +135,12 @@ export default function PackageDetailPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-12">
-      {/* ── Breadcrumb ── */}
-      <nav className="flex items-center gap-2 text-sm text-text-muted">
-        <button onClick={() => navigate('/')} className="hover:text-primary transition-colors">
-          {t('brand.name')}
-        </button>
-        <span>/</span>
-        <button onClick={() => navigate('/projects')} className="hover:text-primary transition-colors">
-          Projects
-        </button>
-        <span>/</span>
-        <button onClick={() => navigate(`/projects/${projectId}`)} className="hover:text-primary transition-colors">
-          Dự án
-        </button>
-        <span>/</span>
-        <span className="text-text font-semibold">Chi tiết gói thầu</span>
-      </nav>
+
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
-          <button
-            onClick={() => navigate(`/projects/${projectId}?tab=packages`)}
-            className="mt-1 rounded-lg p-1.5 text-text-muted hover:bg-content-bg hover:text-text transition-colors"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
+
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">{pkg.code}</span>
@@ -314,9 +294,14 @@ export default function PackageDetailPage() {
               </div>
               <div className="pt-4 mt-6">
                 <p className="text-xs font-bold uppercase tracking-wider text-[#E8D7B0] mb-2">TỔNG CỘNG BAO GỒM THUẾ</p>
-                <div className="flex items-baseline gap-3 mt-1">
-                  <span className="text-4xl font-semibold tracking-tight">{new Intl.NumberFormat('vi-VN').format(total)}</span>
-                  <span className="text-sm font-medium text-[#E8D7B0] uppercase">{pkg.currency ?? 'VND'}</span>
+                <div className="flex items-baseline gap-2 mt-1 flex-wrap">
+                  <span 
+                    className="text-2xl xl:text-3xl font-semibold tracking-tight break-all"
+                    title={`${new Intl.NumberFormat('vi-VN').format(total)} ${pkg.currency ?? 'VND'}`}
+                  >
+                    {new Intl.NumberFormat('vi-VN').format(total)}
+                  </span>
+                  <span className="text-sm font-medium text-[#E8D7B0] uppercase shrink-0">{pkg.currency ?? 'VND'}</span>
                 </div>
               </div>
             </div>

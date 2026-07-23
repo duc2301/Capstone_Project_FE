@@ -25,7 +25,7 @@ export interface Group {
   id: string;
   name: string;
   description?: string | null;
-  organizationId?: string | null;
+  organizationId?: string;
   createdAt?: string | null;
   members: GroupMember[];
 }

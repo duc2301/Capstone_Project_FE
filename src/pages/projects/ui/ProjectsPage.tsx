@@ -128,7 +128,21 @@ export function ProjectsPage() {
                       onClick={() => navigate(`/projects/${p.id}`)}
                       className="cursor-pointer transition-colors duration-150 hover:bg-primary-ghost"
                     >
-                      <td className="px-6 py-4 font-semibold text-text">{p.projectName}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {p.projectImageUrl ? (
+                            <img src={p.projectImageUrl} alt={p.projectName} className="w-10 h-10 rounded-md object-cover border border-card-border" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20">
+                              {p.projectName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-semibold text-text">{p.projectName}</div>
+                            {p.projectCode && <div className="text-xs text-text-muted mt-0.5">{p.projectCode}</div>}
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-text-muted">
                         {p.managerAccountId
                           ? accountNameById.get(p.managerAccountId) ?? p.managerAccountId

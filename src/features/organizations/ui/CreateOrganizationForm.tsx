@@ -87,7 +87,13 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     e.preventDefault();
     setSubmitting(true);
     try {
-      let finalPayload = { ...form };
+      let finalPayload: any = { ...form };
+      if (!finalPayload.taxCode) finalPayload.taxCode = undefined;
+      if (!finalPayload.displayName) finalPayload.displayName = undefined;
+      if (!finalPayload.address) finalPayload.address = undefined;
+      if (!finalPayload.phone) finalPayload.phone = undefined;
+      if (!finalPayload.email) finalPayload.email = undefined;
+      if (!finalPayload.representativeOrganizationId) finalPayload.representativeOrganizationId = undefined;
 
       if (isOtherType && customTypeName.trim() && onCreateOrgType) {
         const code = customTypeName.trim().replace(/\s+/g, '');
@@ -100,6 +106,17 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
       }
 
       await onSubmit(finalPayload);
+    } catch (error: any) {
+      console.error(error);
+      let errorMsg = error.response?.data?.message;
+      if (!errorMsg && error.response?.data?.errors) {
+        const errors = error.response.data.errors as Record<string, string[]>;
+        errorMsg = Object.values(errors).flat().join('\n');
+      }
+      if (!errorMsg && error.response?.data) {
+        errorMsg = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
+      }
+      alert(errorMsg || 'Có lỗi xảy ra khi lưu. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setSubmitting(false);
     }

@@ -1146,9 +1146,15 @@ export function ProjectDetailPage() {
         projectId={project.id}
         initialData={editingPackage || undefined}
         accounts={accounts}
-        onSuccess={(msg) => {
+        onSuccess={(msg, packageId) => {
           setToast({ msg, type: 'success' });
-          window.location.reload();
+          if (packageId) {
+            window.location.href = `/projects/${project.id}/packages/${packageId}`;
+          } else {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'packages');
+            window.location.href = url.toString();
+          }
         }}
         onError={(msg) => setToast({ msg, type: 'error' })}
       />

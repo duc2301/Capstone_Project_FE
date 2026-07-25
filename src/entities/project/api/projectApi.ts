@@ -40,4 +40,7 @@ export const projectApi = {
       `/projects/${projectId}/participants/${groupId}/status`,
       payload,
     ),
+
+  delete: (projectId: string) =>
+    axiosInstance.delete<ApiResponse<null>>(`/projects/${projectId}`),
 };

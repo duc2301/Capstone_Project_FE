@@ -55,22 +55,17 @@ export default function PackageDetailPage() {
       .then((res) => {
         const p = res.data?.result ?? null;
         setPkg(p);
-        console.log('[PackageDetail] pkg loaded:', { id: p?.id, documentFolderId: p?.documentFolderId });
         if (p?.documentFolderId) {
-          console.log('[PackageDetail] Fetching files for documentFolderId:', p.documentFolderId);
           import('@/entities/folder').then(({ folderApi }) => {
             folderApi.getContents(p.documentFolderId!)
               .then(viewRes => {
-                console.log('[PackageDetail] getContents response:', viewRes.data);
                 setDocFiles(viewRes.data?.result?.files ?? []);
               })
-              .catch((err) => {
-                console.error('[PackageDetail] getContents FAILED:', err);
+              .catch(() => {
                 setDocFiles([]);
               });
           });
         } else {
-          console.log('[PackageDetail] No documentFolderId on this package');
           setDocFiles([]);
         }
       })
@@ -585,7 +580,7 @@ export default function PackageDetailPage() {
         projectId={projectId!}
         initialData={pkg || undefined}
         accounts={accounts}
-        onSuccess={(msg) => {
+        onSuccess={(msg, _packageId) => {
           showToast(msg, 'success');
           setIsEditModalOpen(false);
           loadData();

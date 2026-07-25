@@ -23,7 +23,7 @@ export interface PackageFormModalProps {
   projectId: string;
   initialData?: ContractPackage;
   accounts: Account[];
-  onSuccess: (msg: string) => void;
+  onSuccess: (msg: string, packageId?: string) => void;
   onError: (msg: string) => void;
 }
 
@@ -51,6 +51,7 @@ export function PackageFormModal({
         onSubmit={async (payload, files) => {
           try {
             let documentFolderId = (initialData as any)?.documentFolderId;
+            let currentPackageId = initialData?.id;
 
             // Create or update the contract package first
             if (initialData) {
@@ -61,6 +62,7 @@ export function PackageFormModal({
               const createPayload: CreateContractPackagePayload = { ...payload, projectId };
               const createRes = await contractPackageApi.create(createPayload);
               documentFolderId = createRes.data?.result?.documentFolderId;
+              currentPackageId = createRes.data?.result?.id;
             }
 
             // Upload any new files to the folder
@@ -78,7 +80,7 @@ export function PackageFormModal({
               await Promise.all(uploadPromises);
             }
 
-            onSuccess(initialData ? 'Cập nhật gói thầu thành công' : 'Tạo gói thầu thành công');
+            onSuccess(initialData ? 'Cập nhật gói thầu thành công' : 'Tạo gói thầu thành công', currentPackageId);
           } catch (e: any) {
             console.error('Package submit error:', e);
             onError(e.message || (initialData ? 'Lỗi khi cập nhật' : 'Lỗi khi tạo gói thầu'));

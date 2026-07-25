@@ -10,6 +10,7 @@ import { t } from '@/shared/lib/i18n';
 const BREADCRUMB_MAP: Record<string, string> = {
   '/accounts': 'QUẢN LÝ TÀI KHOẢN',
   '/organizations': 'QUẢN LÝ TỔ CHỨC',
+  '/audit-log': 'NHẬT KÝ HOẠT ĐỘNG',
   '/profile': 'HỒ SƠ',
   '/dashboard': 'TỔNG QUAN',
   '/projects': 'DỰ ÁN CỦA TÔI',

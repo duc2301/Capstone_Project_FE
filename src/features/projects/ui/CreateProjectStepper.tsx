@@ -286,6 +286,8 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
   const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError(null);
+    let createdProjectId: string | null = null;
+    
     try {
       /* 1. Create project */
       setSubmitProgress('Đang tạo dự án...');
@@ -302,14 +304,15 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
       });
       const project = projectRes.result;
       if (!project) throw new Error('Tạo dự án thất bại');
+      createdProjectId = project.id;
 
-      /* 2. Upload mandatory files to /WIP/Chủ đầu tư */
+      /* 2. Upload mandatory files to /Published/Hồ sơ pháp lý */
       if (state.mandatoryFiles.length > 0) {
         setSubmitProgress('Đang tải lên hồ sơ bắt buộc...');
-        // Find the WIP > Chủ đầu tư folder
-        const { data: treeRes } = await folderApi.getTree(project.id, 0); // area=WIP
+        // Find the Published > Hồ sơ pháp lý folder
+        const { data: treeRes } = await folderApi.getTree(project.id, 2); // area=Published
         const tree = treeRes.result ?? [];
-        const ownerFolderId = findFolderByName(tree, 'Chủ đầu tư');
+        const legalFolderId = findFolderByName(tree, 'Hồ sơ pháp lý');
 
         const detectFileType = (fileName: string): number => {
           const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
@@ -321,10 +324,10 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
           return 5;
         };
 
-        if (ownerFolderId) {
+        if (legalFolderId) {
           for (const file of state.mandatoryFiles) {
             const formData = new FormData();
-            formData.append('FolderId', ownerFolderId);
+            formData.append('FolderId', legalFolderId);
             formData.append('FileType', detectFileType(file.name).toString());
             formData.append('Name', file.name.replace(/\.[^/.]+$/, ''));
             formData.append('file', file);
@@ -376,7 +379,6 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
         };
 
         for (const pkgItem of state.packages) {
-
           setSubmitProgress(`Đang tạo gói thầu ${pkgItem.payload.name}...`);
           const pkgPayload: CreateContractPackagePayload = {
             ...pkgItem.payload,
@@ -405,6 +407,13 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
       setSubmitProgress('Hoàn tất!');
       onComplete();
     } catch (err: any) {
+      if (createdProjectId) {
+        try {
+          await projectApi.delete(createdProjectId);
+        } catch (deleteErr) {
+          console.error("Failed to rollback project creation", deleteErr);
+        }
+      }
       setSubmitError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra');
     } finally {
       setSubmitting(false);
@@ -684,7 +693,7 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
         <h3 className="text-lg font-bold text-text mb-1">Hồ sơ dự án bắt buộc</h3>
         <p className="text-sm text-text-muted">
           Tải lên các tài liệu pháp lý bắt buộc cho dự án (Quyết định phê duyệt, Giấy phép xây dựng, ...).
-          Các file sẽ được lưu vào thư mục <span className="font-semibold text-primary">/WIP/Chủ đầu tư</span> sau khi dự án được khởi tạo.
+          Các file sẽ được lưu vào thư mục <span className="font-semibold text-primary">/Published/Hồ sơ pháp lý</span> sau khi dự án được khởi tạo.
         </p>
       </div>
 

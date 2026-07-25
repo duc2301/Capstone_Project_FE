@@ -215,7 +215,7 @@ function FileDropzone({
    ══════════════════════════════════════════════════════════════ */
 
 export interface CreateProjectStepperProps {
-  onComplete: () => void;
+  onComplete: (projectId: string) => void;
   onCancel: () => void;
 }
 
@@ -411,7 +411,7 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
       }
 
       setSubmitProgress('Hoàn tất!');
-      onComplete();
+      onComplete(createdProjectId!);
     } catch (err: any) {
       if (createdProjectId) {
         try {

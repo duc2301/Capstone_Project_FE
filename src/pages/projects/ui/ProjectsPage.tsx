@@ -56,10 +56,11 @@ export function ProjectsPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleStepperComplete = () => {
+  const handleStepperComplete = (projectId: string) => {
     setCreating(false);
     showToast(t('projects.toast.created'));
     fetchProjects();
+    navigate(`/projects/${projectId}`);
   };
 
   return (

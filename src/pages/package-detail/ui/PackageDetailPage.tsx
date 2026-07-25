@@ -585,7 +585,7 @@ export default function PackageDetailPage() {
         projectId={projectId!}
         initialData={pkg || undefined}
         accounts={accounts}
-        onSuccess={(msg) => {
+        onSuccess={(msg, _packageId) => {
           showToast(msg, 'success');
           setIsEditModalOpen(false);
           loadData();

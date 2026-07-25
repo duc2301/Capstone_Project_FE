@@ -1146,9 +1146,13 @@ export function ProjectDetailPage() {
         projectId={project.id}
         initialData={editingPackage || undefined}
         accounts={accounts}
-        onSuccess={(msg) => {
+        onSuccess={(msg, packageId) => {
           setToast({ msg, type: 'success' });
-          window.location.reload();
+          if (packageId) {
+            navigate(`/packages/${packageId}`);
+          } else {
+            window.location.reload();
+          }
         }}
         onError={(msg) => setToast({ msg, type: 'error' })}
       />

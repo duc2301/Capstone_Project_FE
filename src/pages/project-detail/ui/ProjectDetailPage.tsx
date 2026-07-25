@@ -19,18 +19,20 @@ import {
   useProjectGroups,
   useProjectInvite,
 } from '@/features/projects';
+import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
 import { clearBreadcrumbTrail, setBreadcrumbTrail } from '@/shared/lib/breadcrumb';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
-type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'settings';
+type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'audit' | 'settings';
 const TABS: { id: TabId; key: TranslationKey }[] = [
   { id: 'info', key: 'projectDetail.tab.info' },
   { id: 'partners', key: 'projectDetail.tab.partners' },
   { id: 'packages', key: 'projectDetail.tab.packages' },
   { id: 'teams', key: 'projectDetail.tab.teams' },
   { id: 'documents', key: 'projectDetail.tab.documents' },
+  { id: 'audit', key: 'projectDetail.tab.audit' },
   { id: 'settings', key: 'projectDetail.tab.settings' },
 ];
 
@@ -709,7 +711,7 @@ export function ProjectDetailPage() {
       <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
           ? isAdmin || isManager || isProjectLeader // quy tắc đặt tên: Admin/PM full, Leader bản rút gọn
-          : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
+          : canViewAllTabs || ['info', 'partners', 'teams', 'documents', 'audit'].includes(item.id))).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -992,6 +994,17 @@ export function ProjectDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Tab: Nhật ký hoạt động ──────
+          Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
+          BE tự lọc chỉ còn log của thư mục họ có quyền xem + nhóm họ tham gia. */}
+      {tab === 'audit' && (
+        <AuditLogPanel
+          mode={canViewAllTabs ? 'project' : 'my'}
+          projectId={project.id}
+          subtitle={canViewAllTabs ? t('audit.subtitle.project') : t('audit.subtitle.my')}
+        />
       )}
 
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}

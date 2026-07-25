@@ -59,8 +59,7 @@ export function ProjectsPage() {
   const handleStepperComplete = (projectId: string) => {
     setCreating(false);
     showToast(t('projects.toast.created'));
-    fetchProjects();
-    navigate(`/projects/${projectId}`);
+    window.location.href = `/projects/${projectId}`;
   };
 
   return (

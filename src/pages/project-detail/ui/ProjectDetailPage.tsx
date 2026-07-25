@@ -1149,9 +1149,11 @@ export function ProjectDetailPage() {
         onSuccess={(msg, packageId) => {
           setToast({ msg, type: 'success' });
           if (packageId) {
-            navigate(`/packages/${packageId}`);
+            window.location.href = `/projects/${project.id}/packages/${packageId}`;
           } else {
-            window.location.reload();
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'packages');
+            window.location.href = url.toString();
           }
         }}
         onError={(msg) => setToast({ msg, type: 'error' })}

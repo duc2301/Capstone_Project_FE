@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { contractPackageApi } from '@/entities/contractPackage';
+import type { Account } from '@/entities/account';
+import { accountApi } from '@/entities/account/api/accountApi';
 import type { CreateContractPackagePayload } from '@/entities/contractPackage';
+import { contractPackageApi } from '@/entities/contractPackage';
+import { fileItemApi } from '@/entities/file-item';
 import type { FolderTreeNodeDto } from '@/entities/folder';
 import { folderApi } from '@/entities/folder';
 import { groupApi } from '@/entities/group';
 import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
-import { fileItemApi } from '@/entities/file-item';
-import { accountApi } from '@/entities/account/api/accountApi';
-import type { Account } from '@/entities/account';
-import { t } from '@/shared/lib/i18n';
 import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
-import { AddressField } from './AddressField';
+import { t } from '@/shared/lib/i18n';
 import { CreatePackageForm } from '../../packages/ui/CreatePackageForm';
+import { AddressField } from './AddressField';
 
 /* ══════════════════════════════════════════════════════════════
    Types
@@ -39,6 +39,8 @@ interface StepperState {
   projectCode: string;
   projectImageUrl: string;
   projectDescription: string;
+  ownerOrganizationId: string;
+  contactAddress: string;
   address: string;
   latitude: string;
   longitude: string;
@@ -247,6 +249,8 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
     projectCode: '',
     projectImageUrl: '',
     projectDescription: '',
+    ownerOrganizationId: '',
+    contactAddress: '',
     address: '',
     latitude: '',
     longitude: '',
@@ -296,6 +300,8 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
         projectCode: state.projectCode.trim() || undefined,
         projectImageUrl: state.projectImageUrl.trim() || undefined,
         projectDescription: state.projectDescription.trim() || undefined,
+        ownerOrganizationId: state.ownerOrganizationId || undefined,
+        contactAddress: state.contactAddress.trim() || undefined,
         address: state.address.trim() || undefined,
         latitude: Number.isFinite(lat) ? lat : undefined,
         longitude: Number.isFinite(lng) ? lng : undefined,
@@ -445,8 +451,8 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
                   className={`flex flex-col items-center gap-1.5 group ${isDone ? 'cursor-pointer' : isActive ? 'cursor-default' : 'cursor-not-allowed'}`}
                 >
                   <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${isActive ? 'border-primary bg-primary text-white shadow-lg shadow-primary/25 scale-110' :
-                      isDone ? 'border-primary bg-primary/10 text-primary' :
-                        'border-card-border bg-card text-text-muted'
+                    isDone ? 'border-primary bg-primary/10 text-primary' :
+                      'border-card-border bg-card text-text-muted'
                     }`}>
                     {isDone ? (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -463,7 +469,14 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
 
       {/* ── Step Content ── */}
       <div className="flex-1 overflow-y-auto px-8 py-6">
-        {step === 0 && <Step1ProjectInfo state={state} update={update} />}
+        {step === 0 && (
+          <Step1ProjectInfo
+            state={state}
+            update={update}
+            organizations={organizations}
+            orgsLoading={orgsLoading}
+          />
+        )}
         {step === 1 && <Step2MandatoryFiles state={state} update={update} />}
         {step === 2 && (
           <Step3PackageInfo
@@ -546,7 +559,14 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
 /* ══════════════════════════════════════════════════════════════
    Step 1: Thông tin dự án
    ══════════════════════════════════════════════════════════════ */
-function Step1ProjectInfo({ state, update }: { state: StepperState; update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void }) {
+function Step1ProjectInfo({
+  state, update, organizations, orgsLoading,
+}: {
+  state: StepperState;
+  update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void;
+  organizations: Organization[];
+  orgsLoading: boolean;
+}) {
   // Demo images for user to pick (Auto-discover from assets folder)
   const imageModules = import.meta.glob('/src/assets/project-covers/*.{jpg,jpeg,png,webp,gif}', { eager: true, query: '?url', import: 'default' });
   const DEMO_IMAGES = Object.values(imageModules) as string[];
@@ -578,6 +598,24 @@ function Step1ProjectInfo({ state, update }: { state: StepperState; update: <K e
             className={inputCls}
           />
         </div>
+      </div>
+
+      {/* Chủ đầu tư — trường thông tin đầu tiên của BEP, lưu FK sang Organizations */}
+      <div className="space-y-1.5">
+        <SectionLabel>{t('projects.form.owner')}</SectionLabel>
+        <select
+          value={state.ownerOrganizationId}
+          onChange={(e) => update('ownerOrganizationId', e.target.value)}
+          disabled={orgsLoading}
+          className={inputCls}
+        >
+          <option value="">{orgsLoading ? t('common.loading') : t('projects.form.ownerSelect')}</option>
+          {organizations.map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.displayName || org.legalName}{org.taxCode ? ` (MST: ${org.taxCode})` : ''}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-1.5">
@@ -657,6 +695,18 @@ function Step1ProjectInfo({ state, update }: { state: StepperState; update: <K e
           rows={3}
           className={inputCls}
         />
+      </div>
+
+      {/* Địa chỉ liên hệ — TÁCH khỏi địa điểm công trình bên dưới */}
+      <div className="space-y-1.5">
+        <SectionLabel>{t('projects.form.contactAddress')}</SectionLabel>
+        <input
+          value={state.contactAddress}
+          onChange={(e) => update('contactAddress', e.target.value)}
+          placeholder={t('projects.form.contactAddress')}
+          className={inputCls}
+        />
+        <p className="text-xs text-text-muted">{t('projects.form.contactAddressHint')}</p>
       </div>
 
       <div className="space-y-2 border-t border-card-border pt-5">
@@ -1059,7 +1109,9 @@ function Step6Summary({
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div><span className="text-text-muted">Tên dự án:</span> <span className="font-semibold text-text">{state.projectName}</span></div>
+          {state.ownerOrganizationId && <div><span className="text-text-muted">{t('projects.form.owner')}:</span> <span className="font-semibold text-text">{getOrgName(state.ownerOrganizationId)}</span></div>}
           {state.projectDescription && <div className="col-span-2"><span className="text-text-muted">Mô tả:</span> <span className="text-text">{state.projectDescription}</span></div>}
+          {state.contactAddress && <div className="col-span-2"><span className="text-text-muted">{t('projects.form.contactAddress')}:</span> <span className="text-text">{state.contactAddress}</span></div>}
           {state.address && <div className="col-span-2"><span className="text-text-muted">Địa chỉ:</span> <span className="text-text">{state.address}</span></div>}
         </div>
       </div>

@@ -7,15 +7,6 @@ export const ProjectStatus = {
 } as const;
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
-export const ProjectPhase = {
-  Concept: 0,
-  Design: 1,
-  Construction: 2,
-  Handover: 3,
-  Operation: 4,
-} as const;
-export type ProjectPhase = (typeof ProjectPhase)[keyof typeof ProjectPhase];
-
 export interface ProjectLocation {
   id: string;
   projectId: string;
@@ -42,7 +33,11 @@ export interface Project {
   projectDescription?: string | null;
   managerAccountId?: string | null;
   status: ProjectStatus;
-  phase: ProjectPhase;
+  ownerOrganizationId?: string | null;
+  ownerOrganizationName?: string | null;
+  contactAddress?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   location?: ProjectLocation | null;
   models?: ProjectModel[];
 }
@@ -52,6 +47,8 @@ export interface CreateProjectPayload {
   projectCode?: string;
   projectImageUrl?: string;
   projectDescription?: string;
+  ownerOrganizationId?: string;
+  contactAddress?: string;
   address?: string;
   latitude?: number;
   longitude?: number;

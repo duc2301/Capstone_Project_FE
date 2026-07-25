@@ -787,6 +787,18 @@ export function ProjectDetailPage() {
                   value={<span className="font-mono font-semibold text-[#8A5100]">{shortCode}</span>}
                 />
                 <InfoRow
+                  label={t('projectDetail.basic.owner')}
+                  value={project.ownerOrganizationName?.trim()
+                    ? <span className="font-semibold text-text">{project.ownerOrganizationName}</span>
+                    : <NotUpdated />}
+                />
+                <InfoRow
+                  label={t('projectDetail.basic.contactAddress')}
+                  value={project.contactAddress?.trim()
+                    ? <span className="text-text">{project.contactAddress}</span>
+                    : <NotUpdated />}
+                />
+                <InfoRow
                   label={t('projectDetail.basic.location')}
                   value={project.location?.address?.trim()
                     ? (
@@ -1056,7 +1068,7 @@ export function ProjectDetailPage() {
                   </tr>
                 ) : packages.map(p => {
                   const mainContractor = p.assignments?.find(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor');
-                  const partnerName = mainContractor 
+                  const partnerName = mainContractor
                     ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
                     : 'Chưa phân công';
                   return (

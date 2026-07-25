@@ -37,7 +37,7 @@ function Modal({ title, onClose, children }: ModalProps) {
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
   const navigate = useNavigate();
-  const { projects, loading, error, fetchProjects } = useProjects();
+  const { projects, loading, error } = useProjects();
   const { accounts } = useProjectInvite();
   const { currentUser } = useSession();
   const isAdmin = isAccountAdmin(currentUser?.role);

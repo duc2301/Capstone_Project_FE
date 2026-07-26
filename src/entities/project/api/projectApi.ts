@@ -3,6 +3,7 @@ import { axiosInstance } from '@/shared/api';
 import type {
   AddParticipantsBulkPayload,
   AssignManagerPayload,
+  BepParseResult,
   CreateProjectPayload,
   Participant,
   Project,
@@ -43,4 +44,13 @@ export const projectApi = {
 
   delete: (projectId: string) =>
     axiosInstance.delete<ApiResponse<null>>(`/projects/${projectId}`),
+
+  // Khởi tạo nhanh: tải file BEP (multipart) -> AI trả field prefill cho stepper.
+  // Phải override Content-Type multipart (axiosInstance mặc định application/json),
+  // và timeout: 0 vì AI/Ollama generate có thể lâu hơn timeout mặc định 10s.
+  parseBep: (formData: FormData) =>
+    axiosInstance.post<ApiResponse<BepParseResult>>('/projects/parse-bep', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+    }),
 };

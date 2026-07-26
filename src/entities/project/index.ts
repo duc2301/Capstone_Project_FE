@@ -8,7 +8,7 @@ export type {
   Participant,
   Project,
   ProjectLocation,
-  ProjectModel,
-  UpdateParticipantStatusPayload
+  UpdateParticipantStatusPayload,
+  UpdateProjectPayload
 } from './model/project.types';
 

@@ -687,25 +687,7 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* ── Hero banner ───────────────────────────────── */}
-      <section className="relative min-h-60 overflow-hidden rounded-[24px] shadow-dropdown mb-6">
-        {project.projectImageUrl ? (
-          <img src={project.projectImageUrl} alt={project.projectName} className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-hover to-[#2D3A28]" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-        <div className="relative flex min-h-60 flex-col justify-end gap-4 px-7 py-7 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-2">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-              {t('projectDetail.heroCode')}: {shortCode}
-            </span>
-            <h1 className="font-display text-3xl leading-tight text-white break-words lg:text-4xl">
-              {project.projectName}
-            </h1>
-          </div>
-        </div>
-      </section>
+      {/* Bỏ hero banner (ảnh + mã + tên dự án): tab "Thông tin" đã có đủ các trường này. */}
 
       {/* ── Tabs: ghim ngay dưới topbar (h-16) khi cuộn ── */}
       <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -777,6 +759,30 @@ export function ProjectDetailPage() {
                 }
                 title={t('projectDetail.basic.title')}
               />
+
+              {/* Ảnh dự án — thay cho hero banner đã bỏ ở đầu trang */}
+              <div className="mt-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                  {t('projectDetail.basic.image')}
+                </p>
+                {project.projectImageUrl?.trim() ? (
+                  <img
+                    src={project.projectImageUrl}
+                    alt={project.projectName}
+                    className="mt-2 aspect-[16/7] w-full rounded-xl border border-card-border object-cover"
+                  />
+                ) : (
+                  <div className="mt-2 flex aspect-[16/7] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-card-border bg-input-bg/50 text-text-placeholder">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span className="text-sm italic">{t('projectDetail.common.notUpdated')}</span>
+                  </div>
+                )}
+              </div>
+
               <dl className="mt-5 divide-y divide-card-border/60">
                 <InfoRow
                   label={t('projectDetail.basic.name')}

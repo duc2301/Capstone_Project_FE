@@ -1,9 +1,22 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import type { CreateContractPackagePayload, ContractPackage } from '@/entities/contractPackage';
+import { PackageStatus } from '@/entities/contractPackage';
 import type { Account } from '@/entities/account';
 import { useOrganizations } from '@/features/organizations';
 import { fileItemApi } from '@/entities/file-item';
+import type { TranslationKey } from '@/shared/lib/i18n';
+import { t } from '@/shared/lib/i18n';
 import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
+
+/* ── Trạng thái gói thầu (numeric union khớp BE) ── */
+const PACKAGE_STATUS_OPTIONS: { value: PackageStatus; labelKey: TranslationKey }[] = [
+  { value: PackageStatus.Draft, labelKey: 'packages.status.draft' },
+  { value: PackageStatus.Pending, labelKey: 'packages.status.pending' },
+  { value: PackageStatus.Active, labelKey: 'packages.status.active' },
+  { value: PackageStatus.Completed, labelKey: 'packages.status.completed' },
+  { value: PackageStatus.Suspended, labelKey: 'packages.status.suspended' },
+  { value: PackageStatus.Reviewing, labelKey: 'packages.status.reviewing' },
+];
 
 /* ── Work-type options for multi-select ── */
 const WORK_TYPES = [
@@ -111,6 +124,9 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
   // Section 7 – Extra
   const [notes, setNotes] = useState(initialData?.notes ?? '');
+  const [status, setStatus] = useState<PackageStatus>(
+    (initialData?.status as PackageStatus) ?? PackageStatus.Pending,
+  );
 
   // ── Sync with initialData & fetch existing document ──
   useEffect(() => {
@@ -200,7 +216,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
         contractValue: contractValue ? Number(contractValue) : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        status: initialData?.status ?? 1, // Keep status or default to Pending
+        status,
         isDefault: initialData?.isDefault ?? false,
         workTypes: selectedWorkTypes.join(','),
         scopeDescription: scopeDescription,
@@ -246,6 +262,18 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               disabled
               className={readOnlyCls}
             />
+          </div>
+          <div>
+            <Label>{t('packages.form.status')}</Label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(Number(e.target.value) as PackageStatus)}
+              className={inputCls}
+            >
+              {PACKAGE_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+              ))}
+            </select>
           </div>
           <div className="sm:col-span-2">
             <Label>Mô tả gói thầu</Label>

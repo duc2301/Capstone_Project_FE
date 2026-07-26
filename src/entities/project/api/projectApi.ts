@@ -7,17 +7,25 @@ import type {
   Participant,
   Project,
   UpdateParticipantStatusPayload,
+  UpdateProjectPayload,
 } from '../model/project.types';
 
 export const projectApi = {
   getAll: () =>
     axiosInstance.get<ApiResponse<Project[]>>('/projects'),
 
+  /** Dự án người dùng hiện tại tham gia (qua nhóm) hoặc làm PM — BE đã lọc sẵn. */
+  getMine: () =>
+    axiosInstance.get<ApiResponse<Project[]>>('/projects/mine'),
+
   getById: (projectId: string) =>
     axiosInstance.get<ApiResponse<Project>>(`/projects/${projectId}`),
 
   create: (payload: CreateProjectPayload) =>
     axiosInstance.post<ApiResponse<Project>>('/projects', payload),
+
+  update: (projectId: string, payload: UpdateProjectPayload) =>
+    axiosInstance.put<ApiResponse<Project>>(`/projects/${projectId}`, payload),
 
   assignManager: (projectId: string, payload: AssignManagerPayload) =>
     axiosInstance.post<ApiResponse<Project>>(`/projects/${projectId}/manager`, payload),

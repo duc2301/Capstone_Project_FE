@@ -8,6 +8,7 @@ import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
+import { ProjectIssuesTab } from '@/features/issues';
 import { NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
 import { PackageFormModal, usePackages } from '@/features/packages';
@@ -25,13 +26,14 @@ import { clearBreadcrumbTrail, setBreadcrumbTrail } from '@/shared/lib/breadcrum
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
-type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'audit' | 'settings';
+type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'issues' | 'audit' | 'settings';
 const TABS: { id: TabId; key: TranslationKey }[] = [
   { id: 'info', key: 'projectDetail.tab.info' },
   { id: 'partners', key: 'projectDetail.tab.partners' },
   { id: 'packages', key: 'projectDetail.tab.packages' },
   { id: 'teams', key: 'projectDetail.tab.teams' },
   { id: 'documents', key: 'projectDetail.tab.documents' },
+  { id: 'issues', key: 'projectDetail.tab.issues' },
   { id: 'audit', key: 'projectDetail.tab.audit' },
   { id: 'settings', key: 'projectDetail.tab.settings' },
 ];
@@ -76,7 +78,7 @@ function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string 
       <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
         {icon}
       </span>
-      <h3 className="font-display text-base font-medium text-primary">{title}</h3>
+      <h3 className="heading-card">{title}</h3>
     </div>
   );
 }
@@ -244,7 +246,7 @@ function GroupCard({
             </svg>
           </span>
           <div>
-            <h3 className="font-display text-xl text-primary">{group.name}</h3>
+            <h3 className="heading-entity">{group.name}</h3>
             {group.description && <p className="text-sm text-text-muted mt-0.5">{group.description}</p>}
           </div>
         </div>
@@ -680,20 +682,18 @@ export function ProjectDetailPage() {
   const shortCode = project.id.slice(0, 8).toUpperCase();
 
   return (
-    <div className="space-y-6">
+    <>
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
         </div>
       )}
 
-      {/* Bỏ hero banner (ảnh + mã + tên dự án): tab "Thông tin" đã có đủ các trường này. */}
-
-      {/* ── Tabs: ghim ngay dưới topbar (h-16) khi cuộn ── */}
-      <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Navbar dự án: kéo âm để huỷ padding của <main> cho thanh tab chạm mép */}
+      <nav className="-mx-6 -mt-6 mb-6 flex shrink-0 gap-1 overflow-x-auto border-b border-card-border bg-content-bg px-6 [scrollbar-width:none] lg:-mx-8 lg:-mt-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
           ? isAdmin || isManager || isProjectLeader // quy tắc đặt tên: Admin/PM full, Leader bản rút gọn
-          : canViewAllTabs || ['info', 'partners', 'teams', 'documents', 'audit'].includes(item.id))).map((item) => (
+          : canViewAllTabs || ['info', 'partners', 'teams', 'documents', 'issues', 'audit'].includes(item.id))).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -708,9 +708,13 @@ export function ProjectDetailPage() {
           ))}
       </nav>
 
+      {/* Nội dung tab tự cuộn -> thanh tab nằm ngoài vùng cuộn nên đứng yên */}
+      <div className="admin-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
       {/* ── Tab: Thông tin ─────────────── */}
       {tab === 'info' && (
         <div className="space-y-6">
+          <h2 className="heading-tab">{t('projectDetail.tab.info')}</h2>
+
           {/* Số liệu nhanh */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile
@@ -760,7 +764,7 @@ export function ProjectDetailPage() {
                 title={t('projectDetail.basic.title')}
               />
 
-              {/* Ảnh dự án — thay cho hero banner đã bỏ ở đầu trang */}
+              {/* Ảnh dự án */}
               <div className="mt-5">
                 <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
                   {t('projectDetail.basic.image')}
@@ -858,7 +862,7 @@ export function ProjectDetailPage() {
       {tab === 'teams' && (
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-display text-xl font-semibold text-primary">
+            <h2 className="heading-tab">
               {t('projectDetail.teams.title')}
             </h2>
             {canViewAllTabs && (
@@ -925,9 +929,11 @@ export function ProjectDetailPage() {
       {/* ── Tab: Tài liệu (cây thư mục CDE) ───────────── */}
       {tab === 'documents' && <DocumentsTab projectId={project.id} />}
 
+      {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
+
       {tab === 'partners' && (
         <div className="space-y-6">
-          <h2 className="font-display text-xl font-semibold text-primary">
+          <h2 className="heading-tab">
             {t('projectDetail.tab.partners')}
           </h2>
           {projectPartners.length === 0 ? (
@@ -944,7 +950,7 @@ export function ProjectDetailPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <h3
-                        className="font-display text-lg font-bold text-text leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden"
+                        className="heading-entity leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden"
                         title={partner.displayName || partner.legalName}
                       >
                         {partner.displayName || partner.legalName}
@@ -1034,7 +1040,7 @@ export function ProjectDetailPage() {
       {tab === 'packages' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold text-primary">Danh sách gói thầu</h2>
+            <h2 className="heading-tab">Danh sách gói thầu</h2>
             <button
               onClick={() => {
                 setEditingPackage(null);
@@ -1164,6 +1170,7 @@ export function ProjectDetailPage() {
         }}
         onError={(msg) => setToast({ msg, type: 'error' })}
       />
-    </div>
+      </div>
+    </>
   );
 }

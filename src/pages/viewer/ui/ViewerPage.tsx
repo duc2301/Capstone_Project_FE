@@ -77,7 +77,7 @@ export function ViewerPage() {
       <Header />
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 pb-16 pt-[120px]">
         <div className="mb-2 max-w-2xl text-center">
-          <h1 className="font-display text-3xl font-bold text-[#1B1C17]">
+          <h1 className="heading-page">
             {t('viewer.title')}
           </h1>
           <p className="mt-2 font-jakarta text-sm text-[#43493C]">

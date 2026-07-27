@@ -36,6 +36,28 @@ export interface IssueItem {
   attachments: IssueAttachment[];
 }
 
+/* Dong issue trong bang tong hop toan du an. BE da loc theo quyen View thu muc cua nguoi goi. */
+export interface ProjectIssueListItem {
+  id: string;
+  projectId: string;
+  type: IssueType;
+  title: string;
+  description: string | null;
+  status: IssueStatus;
+  priority: IssuePriority;
+  raisedByAccountId: string | null;
+  raisedByName: string | null;
+  assignedToAccountId: string | null;
+  assignedToName: string | null;
+  dueDate: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  linkedFileItemId: string | null;
+  linkedFileName: string | null;
+  linkedFolderId: string | null;
+  linkedFolderName: string | null;
+}
+
 /* Ung vien co the chon lam nguoi thuc hien/tham gia issue cua 1 file — BE tu gioi han theo nhom
  * so huu file neu file dang o vung WIP. */
 export interface AssignableMember {

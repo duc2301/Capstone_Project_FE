@@ -42,7 +42,7 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
+    <header className="z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
       {/* Left: hamburger + breadcrumb */}
       <div className="flex items-center gap-4">
         {/* Mobile hamburger */}

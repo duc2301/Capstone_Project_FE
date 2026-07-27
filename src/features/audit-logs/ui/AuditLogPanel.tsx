@@ -23,7 +23,14 @@ export function AuditLogPanel({ mode, projectId, subtitle }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-text">{t('audit.title')}</h2>
+        {/* Trong dự án panel này là 1 tab -> theo chuẩn tiêu đề tab; trang riêng thì
+            nó nằm dưới h1 nên giữ cỡ nhỏ để không đè tiêu đề trang */}
+        <h2 className={inProject
+          ? 'heading-tab'
+          : 'text-lg font-bold text-text'}
+        >
+          {t('audit.title')}
+        </h2>
         <p className="text-sm text-text-muted">{subtitle ?? t('audit.subtitle')}</p>
       </div>
 

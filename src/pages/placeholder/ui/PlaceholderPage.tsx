@@ -16,7 +16,7 @@ export function PlaceholderPage({ titleKey, descKey }: PlaceholderPageProps) {
           <path d="M2 12l10 5 10-5" />
         </svg>
       </div>
-      <h1 className="font-display text-2xl font-bold text-text">{t(titleKey)}</h1>
+      <h1 className="heading-page">{t(titleKey)}</h1>
       <p className="mt-3 text-text-muted">{t(descKey)}</p>
       <p className="mt-6 rounded-full bg-warning-light px-4 py-2 text-sm font-medium text-warning">
         {t('placeholder.comingSoon')}

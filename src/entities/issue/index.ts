@@ -8,4 +8,5 @@ export type {
   IssuePriority,
   IssueStatus,
   IssueType,
+  ProjectIssueListItem,
 } from './model/issue.types';

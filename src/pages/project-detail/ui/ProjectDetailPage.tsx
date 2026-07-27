@@ -8,6 +8,7 @@ import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
+import { ProjectIssuesTab } from '@/features/issues';
 import { NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
 import { PackageFormModal, usePackages } from '@/features/packages';
@@ -19,18 +20,21 @@ import {
   useProjectGroups,
   useProjectInvite,
 } from '@/features/projects';
+import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
 import { clearBreadcrumbTrail, setBreadcrumbTrail } from '@/shared/lib/breadcrumb';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
-type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'settings';
+type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'issues' | 'audit' | 'settings';
 const TABS: { id: TabId; key: TranslationKey }[] = [
   { id: 'info', key: 'projectDetail.tab.info' },
   { id: 'partners', key: 'projectDetail.tab.partners' },
   { id: 'packages', key: 'projectDetail.tab.packages' },
   { id: 'teams', key: 'projectDetail.tab.teams' },
   { id: 'documents', key: 'projectDetail.tab.documents' },
+  { id: 'issues', key: 'projectDetail.tab.issues' },
+  { id: 'audit', key: 'projectDetail.tab.audit' },
   { id: 'settings', key: 'projectDetail.tab.settings' },
 ];
 
@@ -74,7 +78,7 @@ function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string 
       <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
         {icon}
       </span>
-      <h3 className="font-display text-base font-medium text-primary">{title}</h3>
+      <h3 className="heading-card">{title}</h3>
     </div>
   );
 }
@@ -223,11 +227,11 @@ function GroupCard({
   const [removingGroup, setRemovingGroup] = useState(false);
   const [editingName, setEditingName] = useState(group.name);
   const [editingDesc, setEditingDesc] = useState(group.description || '');
-  const [editingOrgId, setEditingOrgId] = useState(group.organizationId || '');
+  const [editingOrgId, setEditingOrgId] = useState<string | null>(group.organizationId || null);
   const [updatingGroup, setUpdatingGroup] = useState(false);
 
-  const partner = group.organizationId ? organizations.find((o) => o.id === group.organizationId) : null;
-  const partnerName = partner ? (partner.displayName || partner.legalName) : null;
+  const partner = organizations.find(o => o.id === group.organizationId);
+  const partnerNames = partner ? (partner.displayName || partner.legalName) : '';
 
   return (
     <div className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
@@ -242,7 +246,7 @@ function GroupCard({
             </svg>
           </span>
           <div>
-            <h3 className="font-display text-xl text-primary">{group.name}</h3>
+            <h3 className="heading-entity">{group.name}</h3>
             {group.description && <p className="text-sm text-text-muted mt-0.5">{group.description}</p>}
           </div>
         </div>
@@ -252,7 +256,7 @@ function GroupCard({
               onClick={() => {
                 setEditingName(group.name);
                 setEditingDesc(group.description || '');
-                setEditingOrgId(group.organizationId || '');
+                setEditingOrgId(group.organizationId || null);
                 setEditGroupModalOpen(true);
               }}
               className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary transition-colors"
@@ -281,7 +285,7 @@ function GroupCard({
       </div>
 
       <div className="flex flex-col gap-2">
-        {partnerName && (
+        {partnerNames && (
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
@@ -297,7 +301,7 @@ function GroupCard({
               <path d="M8 14h.01" />
             </svg>
             <span className="truncate flex items-center gap-2">
-              {t('projectDetail.partners.managedBy')} <span className="font-bold text-text">{partnerName}</span>
+              {t('projectDetail.partners.managedBy')} <span className="font-bold text-text">{partnerNames}</span>
             </span>
           </div>
         )}
@@ -374,7 +378,7 @@ function GroupCard({
               <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.partner')}</label>
               <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
                 <button
-                  onClick={() => setEditingOrgId('')}
+                  onClick={() => setEditingOrgId(null)}
                   className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${!editingOrgId ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
                     }`}
                 >
@@ -387,12 +391,19 @@ function GroupCard({
                   <p className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.noPartner')}</p>
                 </button>
                 {organizations.map((org) => {
-                  const orgName = org.displayName || org.legalName || '---';
+                  const orgName = org.displayName || org.legalName;
                   const isSelected = editingOrgId === org.id;
                   return (
                     <button
                       key={org.id}
-                      onClick={() => setEditingOrgId(org.id)}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setEditingOrgId(null);
+                        } else {
+                          setEditingOrgId(org.id);
+                        }
+                      }}
                       className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
                         }`}
                     >
@@ -626,9 +637,12 @@ export function ProjectDetailPage() {
 
   const handleAssignPartner = async (groupId: string, organizationId: string) => {
     try {
-      await groupApi.update(groupId, { organizationId });
-      await refreshGroups();
-      showToast(t('projectDetail.teams.toast.partnerAssigned'));
+      const group = groups.find(g => g.id === groupId);
+      if (group?.organizationId !== organizationId) {
+        await groupApi.update(groupId, { organizationId });
+        await refreshGroups();
+        showToast(t('projectDetail.teams.toast.partnerAssigned'));
+      }
     } catch (err) {
       showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
@@ -668,18 +682,18 @@ export function ProjectDetailPage() {
   const shortCode = project.id.slice(0, 8).toUpperCase();
 
   return (
-    <div className="space-y-6">
+    <>
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
         </div>
       )}
 
-      {/* ── Tabs: ghim ngay dưới topbar (h-16) khi cuộn ── */}
-      <nav className="sticky top-16 z-10 flex gap-1 overflow-x-auto border-b border-card-border bg-content-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Navbar dự án: kéo âm để huỷ padding của <main> cho thanh tab chạm mép */}
+      <nav className="-mx-6 -mt-6 mb-6 flex shrink-0 gap-1 overflow-x-auto border-b border-card-border bg-content-bg px-6 [scrollbar-width:none] lg:-mx-8 lg:-mt-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
           ? isAdmin || isManager || isProjectLeader // quy tắc đặt tên: Admin/PM full, Leader bản rút gọn
-          : canViewAllTabs || ['info', 'partners', 'teams', 'documents'].includes(item.id))).map((item) => (
+          : canViewAllTabs || ['info', 'partners', 'teams', 'documents', 'issues', 'audit'].includes(item.id))).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -694,9 +708,13 @@ export function ProjectDetailPage() {
           ))}
       </nav>
 
+      {/* Nội dung tab tự cuộn -> thanh tab nằm ngoài vùng cuộn nên đứng yên */}
+      <div className="admin-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
       {/* ── Tab: Thông tin ─────────────── */}
       {tab === 'info' && (
         <div className="space-y-6">
+          <h2 className="heading-tab">{t('projectDetail.tab.info')}</h2>
+
           {/* Số liệu nhanh */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile
@@ -745,6 +763,30 @@ export function ProjectDetailPage() {
                 }
                 title={t('projectDetail.basic.title')}
               />
+
+              {/* Ảnh dự án */}
+              <div className="mt-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                  {t('projectDetail.basic.image')}
+                </p>
+                {project.projectImageUrl?.trim() ? (
+                  <img
+                    src={project.projectImageUrl}
+                    alt={project.projectName}
+                    className="mt-2 aspect-[16/7] w-full rounded-xl border border-card-border object-cover"
+                  />
+                ) : (
+                  <div className="mt-2 flex aspect-[16/7] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-card-border bg-input-bg/50 text-text-placeholder">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span className="text-sm italic">{t('projectDetail.common.notUpdated')}</span>
+                  </div>
+                )}
+              </div>
+
               <dl className="mt-5 divide-y divide-card-border/60">
                 <InfoRow
                   label={t('projectDetail.basic.name')}
@@ -753,6 +795,18 @@ export function ProjectDetailPage() {
                 <InfoRow
                   label={t('projectDetail.basic.code')}
                   value={<span className="font-mono font-semibold text-[#8A5100]">{shortCode}</span>}
+                />
+                <InfoRow
+                  label={t('projectDetail.basic.owner')}
+                  value={project.ownerOrganizationName?.trim()
+                    ? <span className="font-semibold text-text">{project.ownerOrganizationName}</span>
+                    : <NotUpdated />}
+                />
+                <InfoRow
+                  label={t('projectDetail.basic.contactAddress')}
+                  value={project.contactAddress?.trim()
+                    ? <span className="text-text">{project.contactAddress}</span>
+                    : <NotUpdated />}
                 />
                 <InfoRow
                   label={t('projectDetail.basic.location')}
@@ -808,7 +862,7 @@ export function ProjectDetailPage() {
       {tab === 'teams' && (
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-display text-xl font-semibold text-primary">
+            <h2 className="heading-tab">
               {t('projectDetail.teams.title')}
             </h2>
             {canViewAllTabs && (
@@ -875,9 +929,11 @@ export function ProjectDetailPage() {
       {/* ── Tab: Tài liệu (cây thư mục CDE) ───────────── */}
       {tab === 'documents' && <DocumentsTab projectId={project.id} />}
 
+      {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
+
       {tab === 'partners' && (
         <div className="space-y-6">
-          <h2 className="font-display text-xl font-semibold text-primary">
+          <h2 className="heading-tab">
             {t('projectDetail.tab.partners')}
           </h2>
           {projectPartners.length === 0 ? (
@@ -894,7 +950,7 @@ export function ProjectDetailPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <h3
-                        className="font-display text-lg font-bold text-text leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden"
+                        className="heading-entity leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden"
                         title={partner.displayName || partner.legalName}
                       >
                         {partner.displayName || partner.legalName}
@@ -964,6 +1020,17 @@ export function ProjectDetailPage() {
         </div>
       )}
 
+      {/* ── Tab: Nhật ký hoạt động ──────
+          Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
+          BE tự lọc chỉ còn log của thư mục họ có quyền xem + nhóm họ tham gia. */}
+      {tab === 'audit' && (
+        <AuditLogPanel
+          mode={canViewAllTabs ? 'project' : 'my'}
+          projectId={project.id}
+          subtitle={canViewAllTabs ? t('audit.subtitle.project') : t('audit.subtitle.my')}
+        />
+      )}
+
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
       {tab === 'settings' && (isAdmin || isManager || isProjectLeader) && (
         <NamingConventionSettings projectId={project.id} canConfigure={isAdmin || isManager} />
@@ -973,7 +1040,7 @@ export function ProjectDetailPage() {
       {tab === 'packages' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold text-primary">Danh sách gói thầu</h2>
+            <h2 className="heading-tab">Danh sách gói thầu</h2>
             <button
               onClick={() => {
                 setEditingPackage(null);
@@ -1012,7 +1079,7 @@ export function ProjectDetailPage() {
                     <td colSpan={7} className="py-8 text-center text-text-muted italic">Chưa có gói thầu nào.</td>
                   </tr>
                 ) : packages.map(p => {
-                  const mainContractor = p.assignments?.find(a => a.role === 0);
+                  const mainContractor = p.assignments?.find(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor');
                   const partnerName = mainContractor
                     ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
                     : 'Chưa phân công';
@@ -1020,7 +1087,6 @@ export function ProjectDetailPage() {
                     <tr key={p.id} className="hover:bg-card-hover transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}/packages/${p.id}`)}>
                       <td className="py-4 font-medium text-primary max-w-[200px] truncate" title={p.name}>
                         <span className="hover:underline">{p.name}</span>
-                        {p.isDefault && <span className="ml-2 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success uppercase">Mặc định</span>}
                       </td>
                       <td className="py-4 font-bold text-primary">{p.code}</td>
                       <td className="py-4 text-text-muted">{partnerName}</td>
@@ -1092,12 +1158,19 @@ export function ProjectDetailPage() {
         projectId={project.id}
         initialData={editingPackage || undefined}
         accounts={accounts}
-        onSuccess={(msg) => {
+        onSuccess={(msg, packageId) => {
           setToast({ msg, type: 'success' });
-          window.location.reload();
+          if (packageId) {
+            window.location.href = `/projects/${project.id}/packages/${packageId}`;
+          } else {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'packages');
+            window.location.href = url.toString();
+          }
         }}
         onError={(msg) => setToast({ msg, type: 'error' })}
       />
-    </div>
+      </div>
+    </>
   );
 }

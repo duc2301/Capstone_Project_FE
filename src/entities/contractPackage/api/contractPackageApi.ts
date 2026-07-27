@@ -1,6 +1,17 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
 
+/** Khớp Domain/Enum/ContractPackage/PackageStatus.cs (BE serialize enum ra SỐ). */
+export const PackageStatus = {
+  Draft: 0,
+  Pending: 1,
+  Active: 2,
+  Completed: 3,
+  Suspended: 4,
+  Reviewing: 5,
+} as const;
+export type PackageStatus = (typeof PackageStatus)[keyof typeof PackageStatus];
+
 export interface ContractPackage {
   id: string;
   projectId: string;

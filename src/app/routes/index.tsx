@@ -30,6 +30,8 @@ const NotificationsPage = lazy(() => import('@/pages/notifications').then((m) =>
 const ViewerPage = lazy(() => import('@/pages/viewer').then((m) => ({ default: m.ViewerPage })));
 const FileViewPage = lazy(() => import('@/pages/file-view').then((m) => ({ default: m.FileViewPage })));
 const IssueDetailPage = lazy(() => import('@/pages/issue-detail').then((m) => ({ default: m.IssueDetailPage })));
+const ContractPackagesPage = lazy(() => import('@/pages/contract-packages').then((m) => ({ default: m.ContractPackagesPage })));
+const AuditLogsPage = lazy(() => import('@/pages/audit-logs').then((m) => ({ default: m.AuditLogsPage })));
 
 /* Fallback toàn màn hình cho các trang KHÔNG bọc AdminLayout (login/home/viewer). Trang trong
  * AdminLayout có Suspense riêng ở vùng nội dung (shell không nhấp nháy). */
@@ -90,6 +92,18 @@ export const AppRoutes = () => {
           }
         />
         <Route
+          path="/audit-log"
+          element={
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminLayout>
+                  <AuditLogsPage />
+                </AdminLayout>
+              </RequireAdmin>
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <RequireAuth>
@@ -125,6 +139,16 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <PackageDetailPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/contract-packages"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <ContractPackagesPage />
               </AdminLayout>
             </RequireAuth>
           }

@@ -70,7 +70,7 @@ export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, on
                 </div>
                 <p className="mt-1.5 truncate text-sm font-semibold text-text">{issue.title}</p>
                 <p className="mt-0.5 text-xs text-text-muted">
-                  {issue.raisedByName ?? issue.raisedByAccountId} · {formatIssueDateTime(issue.createdAt)}
+                  {issue.raisedByName ?? t('issues.unknownUser')} · {formatIssueDateTime(issue.createdAt)}
                 </p>
               </button>
             </li>

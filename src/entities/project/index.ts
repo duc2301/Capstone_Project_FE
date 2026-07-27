@@ -1,14 +1,17 @@
 export { projectApi } from './api/projectApi';
-export { ProjectParticipantRole, ProjectParticipantStatus, ProjectPhase, ProjectStatus } from './model/project.types';
+export { ProjectParticipantRole, ProjectParticipantStatus, ProjectStatus } from './model/project.types';
 export type {
   AddParticipantPayload,
   AddParticipantsBulkPayload,
   AssignManagerPayload,
+  BepGroup,
+  BepPackage,
+  BepParseResult,
   CreateProjectPayload,
   Participant,
   Project,
   ProjectLocation,
-  ProjectModel,
-  UpdateParticipantStatusPayload
+  UpdateParticipantStatusPayload,
+  UpdateProjectPayload
 } from './model/project.types';
 

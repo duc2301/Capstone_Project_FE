@@ -7,15 +7,6 @@ export const ProjectStatus = {
 } as const;
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
-export const ProjectPhase = {
-  Concept: 0,
-  Design: 1,
-  Construction: 2,
-  Handover: 3,
-  Operation: 4,
-} as const;
-export type ProjectPhase = (typeof ProjectPhase)[keyof typeof ProjectPhase];
-
 export interface ProjectLocation {
   id: string;
   projectId: string;
@@ -26,31 +17,75 @@ export interface ProjectLocation {
   createdAt?: string | null;
 }
 
-export interface ProjectModel {
-  id: string;
-  projectId: string;
-  name: string;
-  description?: string | null;
-  createdAt?: string | null;
-}
-
 export interface Project {
   id: string;
   projectName: string;
+  projectCode?: string | null;
+  projectImageUrl?: string | null;
   projectDescription?: string | null;
   managerAccountId?: string | null;
   status: ProjectStatus;
-  phase: ProjectPhase;
+  ownerOrganizationId?: string | null;
+  ownerOrganizationName?: string | null;
+  contactAddress?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   location?: ProjectLocation | null;
-  models?: ProjectModel[];
 }
 
 export interface CreateProjectPayload {
   projectName: string;
+  projectCode?: string;
+  projectImageUrl?: string;
   projectDescription?: string;
+  ownerOrganizationId?: string;
+  contactAddress?: string;
   address?: string;
   latitude?: number;
   longitude?: number;
+}
+
+/** Mọi trường tùy chọn — chỉ gửi cái muốn đổi. `address/latitude/longitude`
+ *  cập nhật địa điểm công trình (ProjectLocation), khác `contactAddress`. */
+export interface UpdateProjectPayload {
+  projectName?: string;
+  projectCode?: string;
+  projectImageUrl?: string;
+  projectDescription?: string;
+  managerAccountId?: string;
+  status?: ProjectStatus;
+  ownerOrganizationId?: string;
+  contactAddress?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+/* ── Khởi tạo nhanh từ BEP: AI đọc file BEP -> field prefill cho stepper ── */
+export interface BepGroup {
+  name: string;
+  description?: string | null;
+  partnerOrganizationName?: string | null;
+}
+
+export interface BepPackage {
+  name: string;
+  description?: string | null;
+  contractValue?: number | null;
+  currency?: string | null;
+  contractorOrganizationName?: string | null;
+}
+
+export interface BepParseResult {
+  projectName?: string | null;
+  projectCode?: string | null;
+  projectDescription?: string | null;
+  ownerOrganizationName?: string | null;
+  contactAddress?: string | null;
+  address?: string | null;
+  groups: BepGroup[];
+  packages: BepPackage[];
+  extractionEmpty: boolean;
 }
 
 export interface AssignManagerPayload {

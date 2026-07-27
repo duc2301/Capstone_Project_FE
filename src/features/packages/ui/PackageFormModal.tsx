@@ -3,7 +3,6 @@ import { CreatePackageForm } from './CreatePackageForm';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage, CreateContractPackagePayload, UpdateContractPackagePayload } from '@/entities/contractPackage';
 import { fileItemApi } from '@/entities/file-item';
-import { folderApi, CdeArea } from '@/entities/folder';
 import { FileType } from '@/entities/file-item/model/fileItem.types';
 
 /** Detect BE FileType from file extension for proper view/download support */
@@ -24,7 +23,7 @@ export interface PackageFormModalProps {
   projectId: string;
   initialData?: ContractPackage;
   accounts: Account[];
-  onSuccess: (msg: string) => void;
+  onSuccess: (msg: string, packageId?: string) => void;
   onError: (msg: string) => void;
 }
 
@@ -51,44 +50,19 @@ export function PackageFormModal({
         onCancel={onClose}
         onSubmit={async (payload, files) => {
           try {
-            // Find WIP folder for the project
-            const resTree = await folderApi.getTree(projectId, CdeArea.Wip);
-            const wipRoot = resTree.data?.result?.find(r => r.parentFolderId === null);
-            if (!wipRoot) {
-              onError('Không tìm thấy thư mục gốc WIP của dự án!');
-              return;
-            }
-
             let documentFolderId = (initialData as any)?.documentFolderId;
-
-            // If we don't have a folder yet, create one
-            if (!documentFolderId) {
-              const folderName = initialData?.code
-                ? `Tài liệu gói thầu ${initialData.code}`
-                : `Tài liệu gói thầu ${payload.name}`;
-
-              try {
-                const createRes = await folderApi.createSubFolder({
-                  parentFolderId: wipRoot.id,
-                  name: folderName
-                });
-                documentFolderId = createRes.data?.result?.id;
-              } catch (e) {
-                console.error('[PkgModal] Create subfolder failed', e);
-                onError('Không thể tạo thư mục lưu trữ cho gói thầu!');
-                return;
-              }
-            }
+            let currentPackageId = initialData?.id;
 
             // Create or update the contract package first
             if (initialData) {
               const updatePayload: UpdateContractPackagePayload = { ...payload };
-              if (documentFolderId) updatePayload.documentFolderId = documentFolderId;
-              await contractPackageApi.update(initialData.id, updatePayload);
+              const updateRes = await contractPackageApi.update(initialData.id, updatePayload);
+              documentFolderId = updateRes.data?.result?.documentFolderId || documentFolderId;
             } else {
               const createPayload: CreateContractPackagePayload = { ...payload, projectId };
-              if (documentFolderId) createPayload.documentFolderId = documentFolderId;
-              await contractPackageApi.create(createPayload);
+              const createRes = await contractPackageApi.create(createPayload);
+              documentFolderId = createRes.data?.result?.documentFolderId;
+              currentPackageId = createRes.data?.result?.id;
             }
 
             // Upload any new files to the folder
@@ -106,7 +80,7 @@ export function PackageFormModal({
               await Promise.all(uploadPromises);
             }
 
-            onSuccess(initialData ? 'Cập nhật gói thầu thành công' : 'Tạo gói thầu thành công');
+            onSuccess(initialData ? 'Cập nhật gói thầu thành công' : 'Tạo gói thầu thành công', currentPackageId);
           } catch (e: any) {
             console.error('Package submit error:', e);
             onError(e.message || (initialData ? 'Lỗi khi cập nhật' : 'Lỗi khi tạo gói thầu'));

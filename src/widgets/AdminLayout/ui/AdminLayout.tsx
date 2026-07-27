@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { Suspense, useState } from 'react';
 
-import { t } from '@/shared/lib/i18n';
-
 import { AdminSidebar } from './AdminSidebar';
 import { AdminTopBar } from './AdminTopBar';
 
@@ -36,7 +34,8 @@ export function AdminLayout({ children }: Props) {
     });
 
   return (
-    <div className="flex min-h-screen bg-content-bg">
+    // Shell cố định bằng màn hình; chỉ <main> cuộn.
+    <div className="flex h-screen overflow-hidden bg-content-bg">
       {/* Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}
@@ -46,29 +45,17 @@ export function AdminLayout({ children }: Props) {
       />
 
       {/* Main content area (offset by sidebar width on desktop) */}
-      <div className={`flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ${collapsed ? 'lg:ml-[64px]' : 'lg:ml-[216px]'}`}>
+      <div className={`flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ${collapsed ? 'lg:ml-[64px]' : 'lg:ml-[240px]'}`}>
         <AdminTopBar onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
-        <main className="min-w-0 flex-1 overflow-x-clip px-6 pt-6 pb-16 lg:px-8 lg:pt-8">
-          <div className="mx-auto max-w-[1400px]">
+        <main className="admin-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-clip px-6 pt-6 pb-6 lg:px-8 lg:pt-8">
+          {/* h-full để trang con dùng được h-full thay vì tính calc(100vh - ...) */}
+          <div className="mx-auto flex h-full max-w-[1400px] flex-col">
             <Suspense fallback={<ContentFallback />}>
               {children}
             </Suspense>
           </div>
         </main>
-
-        <footer
-          className={`fixed bottom-0 left-0 right-0 z-20 flex h-12 items-center border-t border-card-border bg-content-bg px-6 transition-[left] duration-300 lg:px-8 ${collapsed ? 'lg:left-[64px]' : 'lg:left-[216px]'}`}
-        >
-          <div className="flex w-full flex-col items-center justify-between gap-0.5 text-xs text-text-muted sm:flex-row sm:gap-2">
-            <p>{t('footer.copyright')}</p>
-            <nav className="flex items-center gap-4">
-              <a href="#" className="transition-colors hover:text-text-secondary">{t('admin.footer.privacy')}</a>
-              <a href="#" className="transition-colors hover:text-text-secondary">{t('admin.footer.status')}</a>
-              <a href="#" className="transition-colors hover:text-text-secondary">{t('admin.footer.terms')}</a>
-            </nav>
-          </div>
-        </footer>
       </div>
     </div>
   );

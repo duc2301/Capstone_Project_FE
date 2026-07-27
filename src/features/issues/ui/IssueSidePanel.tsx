@@ -10,7 +10,7 @@ import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../mo
 import { useAssignableMembers } from '../model/useAssignableMembers';
 import { IssueDiscussionPanel } from './IssueDiscussionPanel';
 
-type SideTab = 'discussion' | 'markup';
+type SideTab = 'info' | 'discussion' | 'markup';
 
 interface IssueSidePanelProps {
   issueId: string;
@@ -25,7 +25,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<SideTab>('discussion');
+  const [tab, setTab] = useState<SideTab>('info');
 
   const [participantQuery, setParticipantQuery] = useState('');
   const [showParticipantPicker, setShowParticipantPicker] = useState(false);
@@ -140,8 +140,16 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Thông tin issue + thao tác (không cuộn cùng chat) */}
-      <div className="max-h-[45%] shrink-0 space-y-4 overflow-y-auto border-b border-card-border px-5 py-4">
+      {/* 3 tab đồng nhất với panel trang xem file */}
+      <div className="grid shrink-0 grid-cols-3 border-b border-card-border">
+        <SideTabButton active={tab === 'info'} label={t('issues.tab.info')} onClick={() => setTab('info')} />
+        <SideTabButton active={tab === 'discussion'} label={t('issues.tab.discussion')} onClick={() => setTab('discussion')} />
+        <SideTabButton active={tab === 'markup'} label={t('issues.tab.markup')} onClick={() => setTab('markup')} />
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-hidden">
+      {tab === 'info' && (
+      <div className="admin-scrollbar h-full space-y-4 overflow-y-auto px-5 py-4">
         <section className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${issueStatusBadge(issue.status).className}`}>
@@ -159,11 +167,11 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
           <h2 className="font-heading text-lg font-bold text-text">{issue.title}</h2>
           {issue.description && <p className="text-sm text-text-secondary">{issue.description}</p>}
           <p className="text-xs text-text-muted">
-            {t('issues.detail.raisedBy')}: {issue.raisedByName ?? issue.raisedByAccountId} · {formatIssueDateTime(issue.createdAt)}
+            {t('issues.detail.raisedBy')}: {issue.raisedByName ?? t('issues.unknownUser')} · {formatIssueDateTime(issue.createdAt)}
           </p>
           {issue.assignedToAccountId && (
             <p className="text-xs text-text-muted">
-              {t('issues.detail.assignee')}: <span className="font-semibold text-text">{issue.assignedToName ?? issue.assignedToAccountId}</span>
+              {t('issues.detail.assignee')}: <span className="font-semibold text-text">{issue.assignedToName ?? t('issues.unknownUser')}</span>
             </p>
           )}
         </section>
@@ -227,7 +235,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
             )}
             {issue.participants.map((p) => (
               <span key={p.accountId} className="flex items-center gap-1.5 rounded-full border border-card-border bg-content-bg/60 px-3 py-1 text-xs font-medium text-text">
-                {p.name ?? p.accountId}
+                {p.name ?? t('issues.unknownUser')}
                 {isCreator && (
                   <button type="button" onClick={() => handleRemoveParticipant(p.accountId)} className="text-text-muted hover:text-danger">×</button>
                 )}
@@ -283,25 +291,21 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
           )}
         </section>
       </div>
+      )}
 
-      {/* Tabs: Thảo luận | Ghi chú */}
-      <div className="grid shrink-0 grid-cols-2 border-b border-card-border">
-        <SideTabButton active={tab === 'discussion'} label={t('issues.tab.discussion')} onClick={() => setTab('discussion')} />
-        <SideTabButton active={tab === 'markup'} label={t('issues.tab.markup')} onClick={() => setTab('markup')} />
-      </div>
+      {tab === 'discussion' && (
+        <IssueDiscussionPanel
+          discussionId={issue.discussionId}
+          fileItemId={fileItemId}
+          currentAccountId={currentUser?.accountId ?? null}
+          canDiscuss={canDiscuss}
+          resolved={isResolved}
+        />
+      )}
 
-      <div className="min-h-0 flex-1 overflow-hidden">
-        {tab === 'discussion' ? (
-          <IssueDiscussionPanel
-            discussionId={issue.discussionId}
-            fileItemId={fileItemId}
-            currentAccountId={currentUser?.accountId ?? null}
-            canDiscuss={canDiscuss}
-            resolved={isResolved}
-          />
-        ) : (
-          <div className="h-full overflow-y-auto px-4 py-4">{markupSlot}</div>
-        )}
+      {tab === 'markup' && (
+        <div className="admin-scrollbar h-full overflow-y-auto px-4 py-4">{markupSlot}</div>
+      )}
       </div>
     </div>
   );

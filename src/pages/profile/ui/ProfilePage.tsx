@@ -143,7 +143,7 @@ export function ProfilePage() {
               </button>
             </div>
             <div>
-              <h1 className="font-display text-2xl font-bold text-text lg:text-3xl">
+              <h1 className="heading-page">
                 {userName}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">

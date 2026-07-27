@@ -440,7 +440,8 @@ export function FileViewPage() {
   }, [requiresSignature]);
 
   return (
-    <div className="min-h-[calc(100vh-96px)] bg-[#fbf9f1] px-4 py-5 sm:px-6 lg:px-8">
+    // Nền + padding + max-width do AdminLayout lo; h-full để không cuộn trang
+    <div className="flex h-full flex-col">
       {/* Chặn tương tác trong lúc đổi sang file khác: màn vẫn đang bày dữ liệu file CŨ, để bấm được
           thì ghi chú / ký số / phê duyệt sẽ chạy nhầm trên file cũ. z cao hơn mọi modal (60). */}
       {switchingFile && (
@@ -456,13 +457,14 @@ export function FileViewPage() {
         </div>
       )}
 
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-5 xl:flex-row">
-        <main className="min-w-0 flex-1 space-y-3">
-          <header className="flex flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+      {/* gap-4 + aside 400px: giữ đồng nhất với trang chi tiết issue */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 xl:flex-row">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+          <header className="flex shrink-0 flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <FileIcon danger={format === 'PDF'} size="sm" />
               <div className="min-w-0">
-                <h1 className="break-words font-jakarta text-xl font-semibold text-text">{fileTitle}</h1>
+                <h1 className="heading-panel break-words">{fileTitle}</h1>
                 <p className="mt-0.5 text-xs text-text-muted">
                   {format} {latestVersion ? `- ${latestVersion.displayVersion}` : ''}
                 </p>
@@ -491,7 +493,7 @@ export function FileViewPage() {
             </div>
           </header>
 
-          <section className="relative h-[calc(100vh-200px)] min-h-[640px] overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
+          <section className="relative min-h-[420px] flex-1 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:min-h-0">
             <div className="absolute inset-0 bg-[#dcdad2]" />
 
             {loading ? (
@@ -569,23 +571,12 @@ export function FileViewPage() {
             )}
 
 
-            {/* Thanh dưới của chế độ đọc: định dạng + tải về. Markup đã dời sang trang issue. */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
-              <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-card-border/70 bg-card/90 px-4 py-3 shadow-dropdown backdrop-blur">
-                <span className="min-w-24 text-center text-sm font-semibold text-text">{format}</span>
-                <span className="h-4 w-px bg-card-border" />
-                <button type="button" onClick={handleDownload} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
-                  {t('fileView.download.button')}
-                </button>
-              </div>
-            </div>
           </section>
         </main>
 
-        {/* xl:self-start: không để flex-row kéo giãn aside cao bằng khung xem file -> panel cao theo
-              nội dung, hết khoảng trắng dư ở cuối tab. Nội dung dài vẫn tự cuộn nhờ max-h ở div dưới. */}
-        <aside className="w-full shrink-0 self-start overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
-          <div className="flex items-center justify-between border-b border-card-border px-2">
+        {/* Panel cao bằng khung xem file, nội dung cuộn bên trong */}
+        <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
+          <div className="flex shrink-0 items-center justify-between border-b border-card-border px-2">
             <PanelTabButton
               active={activePanelTab === 'properties'}
               label={t('fileView.tabs.properties')}
@@ -616,7 +607,7 @@ export function FileViewPage() {
             )}
           </div>
 
-          <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-6">
+          <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
             {activePanelTab === 'properties' ? (
               <>
                 {fileListItem?.warnning && fileListItem.warnningMessage && (

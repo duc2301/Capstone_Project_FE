@@ -139,7 +139,7 @@ export function OrganizationsPage() {
       {/* ── Page Header ────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-text lg:text-3xl">
+          <h1 className="heading-page">
             {t('org.title')}
           </h1>
           <p className="mt-1 text-sm text-text-muted">

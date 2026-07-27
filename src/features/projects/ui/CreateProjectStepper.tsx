@@ -13,6 +13,7 @@ import { organizationApi } from '@/entities/organization';
 import type { BepParseResult } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
+import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { CreatePackageForm } from '../../packages/ui/CreatePackageForm';
 import { AddressField } from './AddressField';
@@ -59,14 +60,18 @@ interface StepperState {
 
 const STEP_COUNT = 6;
 
-const STEP_LABELS = [
-  'Thông tin dự án',
-  'Hồ sơ dự án bắt buộc',
-  'Gói thầu & Hợp đồng',
-  'Quản lý nhóm',
-  'Thêm đối tác',
-  'Khởi tạo dự án',
+const STEP_LABEL_KEYS: TranslationKey[] = [
+  'projects.stepper.step1',
+  'projects.stepper.step2',
+  'projects.stepper.step3',
+  'projects.stepper.step4',
+  'projects.stepper.step5',
+  'projects.stepper.step6',
 ];
+
+/** Thư mục hệ thống nhận hồ sơ pháp lý — do FolderBootstrapService (BE) tạo sẵn. */
+const LEGAL_FOLDER_NAME = 'Hồ sơ pháp lý';
+const LEGAL_FOLDER_PATH = `/Published/${LEGAL_FOLDER_NAME}`;
 
 const STEP_ICONS = [
   // 1 - info
@@ -83,12 +88,12 @@ const STEP_ICONS = [
   <svg key="s6" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>,
 ];
 
-const DEFAULT_GROUP_NAMES = [
-  'Chủ đầu tư',
-  'Tư vấn thiết kế',
-  'Tư vấn thẩm tra',
-  'Nhà thầu thi công',
-  'Tư vấn giám sát',
+const DEFAULT_GROUP_KEYS: TranslationKey[] = [
+  'projects.defaultGroup.owner',
+  'projects.defaultGroup.design',
+  'projects.defaultGroup.verification',
+  'projects.defaultGroup.contractor',
+  'projects.defaultGroup.supervision',
 ];
 
 const newKey = () =>
@@ -97,7 +102,7 @@ const newKey = () =>
     : `g-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const buildDefaultGroups = (): GroupDraft[] =>
-  DEFAULT_GROUP_NAMES.map((name) => ({ key: newKey(), name, description: '', organizationId: null }));
+  DEFAULT_GROUP_KEYS.map((key) => ({ key: newKey(), name: t(key), description: '', organizationId: null }));
 
 /* ── Khởi tạo nhanh từ BEP: seed state + match tên tổ chức -> Guid ── */
 const buildInitialState = (bep?: BepParseResult): StepperState => {
@@ -247,8 +252,8 @@ function FileDropzone({
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        <p className="text-sm font-semibold text-text-muted">Kéo và thả tệp vào đây</p>
-        <p className="text-xs text-text-placeholder mt-1">Hoặc nhấp để duyệt file từ máy tính</p>
+        <p className="text-sm font-semibold text-text-muted">{t('projects.stepper.dropzone.drag')}</p>
+        <p className="text-xs text-text-placeholder mt-1">{t('projects.stepper.dropzone.browse')}</p>
       </div>
 
       {files.length > 0 && (
@@ -374,7 +379,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
     
     try {
       /* 1. Create project */
-      setSubmitProgress('Đang tạo dự án...');
+      setSubmitProgress(t('projects.stepper.progress.creatingProject'));
       const lat = Number.parseFloat(state.latitude);
       const lng = Number.parseFloat(state.longitude);
       const { data: projectRes } = await projectApi.create({
@@ -389,16 +394,16 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
         longitude: Number.isFinite(lng) ? lng : undefined,
       });
       const project = projectRes.result;
-      if (!project) throw new Error('Tạo dự án thất bại');
+      if (!project) throw new Error(t('projects.stepper.error.createFailed'));
       createdProjectId = project.id;
 
       /* 2. Upload mandatory files to /Published/Hồ sơ pháp lý */
       if (state.mandatoryFiles.length > 0) {
-        setSubmitProgress('Đang tải lên hồ sơ bắt buộc...');
+        setSubmitProgress(t('projects.stepper.progress.uploadingLegal'));
         // Find the Published > Hồ sơ pháp lý folder
         const { data: treeRes } = await folderApi.getTree(project.id, 2); // area=Published
         const tree = treeRes.result ?? [];
-        const legalFolderId = findFolderByName(tree, 'Hồ sơ pháp lý');
+        const legalFolderId = findFolderByName(tree, LEGAL_FOLDER_NAME);
 
         const detectFileType = (fileName: string): number => {
           const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
@@ -425,7 +430,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       /* 3. Create groups */
       const validGroups = state.groups.filter((g) => g.name.trim());
       if (validGroups.length > 0) {
-        setSubmitProgress('Đang tạo nhóm...');
+        setSubmitProgress(t('projects.stepper.progress.creatingGroups'));
         const createdGroups = await Promise.all(
           validGroups.map((g) =>
             groupApi.create({
@@ -440,7 +445,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
           .filter((id): id is string => Boolean(id));
 
         if (groupIds.length > 0) {
-          setSubmitProgress('Đang thêm nhóm vào dự án...');
+          setSubmitProgress(t('projects.stepper.progress.addingGroups'));
           await projectApi.addParticipantsBulk(project.id, {
             participants: groupIds.map((groupId) => ({
               groupId,
@@ -452,7 +457,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
 
       /* 4. Create packages */
       if (state.packages.length > 0) {
-        setSubmitProgress('Đang tạo các gói thầu...');
+        setSubmitProgress(t('projects.stepper.progress.creatingPackages'));
 
         const detectFileType = (fileName: string): number => {
           const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
@@ -464,19 +469,20 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
           return 5;
         };
 
-        for (const pkgItem of state.packages) {
-          setSubmitProgress(`Đang tạo gói thầu ${pkgItem.payload.name}...`);
+        for (const [index, pkgItem] of state.packages.entries()) {
+          setSubmitProgress(t('projects.stepper.progress.creatingPackage') + ` ${pkgItem.payload.name}...`);
           const pkgPayload: CreateContractPackagePayload = {
+            // status do form gói thầu nhập — KHÔNG ghi đè.
+            // isDefault: chỉ gói ĐẦU TIÊN là gói mặc định của dự án.
             ...pkgItem.payload,
             projectId: project.id,
-            status: 1,
-            isDefault: true,
+            isDefault: index === 0,
           };
           const pkgRes = await contractPackageApi.create(pkgPayload);
           const documentFolderId = pkgRes.data?.result?.documentFolderId;
 
           if (documentFolderId && pkgItem.files.length > 0) {
-            setSubmitProgress(`Đang tải lên hồ sơ gói thầu ${pkgItem.payload.name}...`);
+            setSubmitProgress(`${t('projects.stepper.progress.uploadingPackageFiles')} ${pkgItem.payload.name}...`);
 
             for (const file of pkgItem.files) {
               const formData = new FormData();
@@ -490,7 +496,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
         }
       }
 
-      setSubmitProgress('Hoàn tất!');
+      setSubmitProgress(t('projects.stepper.progress.done'));
       onComplete(createdProjectId!);
     } catch (err: any) {
       if (createdProjectId) {
@@ -500,7 +506,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
           console.error("Failed to rollback project creation", deleteErr);
         }
       }
-      setSubmitError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra');
+      setSubmitError(err?.response?.data?.message || err?.message || t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -525,7 +531,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       {/* ── Stepper Header ── */}
       <div className="px-8 pt-6 pb-4">
         <div className="flex items-center justify-between">
-          {STEP_LABELS.map((label, i) => {
+          {STEP_LABEL_KEYS.map((labelKey, i) => {
             const isActive = i === step;
             const isDone = i < step;
             return (
@@ -548,7 +554,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
                     ) : STEP_ICONS[i]}
                   </div>
                   <span className={`text-[11px] font-medium whitespace-nowrap transition-colors ${isActive ? 'text-primary font-bold' : isDone ? 'text-primary' : 'text-text-muted'
-                    }`}>{label}</span>
+                    }`}>{t(labelKey)}</span>
                 </button>
               </React.Fragment>
             );
@@ -597,17 +603,17 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
           className="flex items-center gap-2 rounded-xl border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg disabled:opacity-50"
         >
           {step === 0 ? (
-            'Hủy'
+            t('account.cancel')
           ) : (
             <>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
-              Quay lại
+              {t('projects.stepper.back')}
             </>
           )}
         </button>
 
         <div className="flex items-center gap-2 text-sm text-text-muted">
-          Bước <span className="font-bold text-primary">{step + 1}</span> / {STEP_COUNT}
+          {t('projects.stepper.stepLabel')} <span className="font-bold text-primary">{step + 1}</span> / {STEP_COUNT}
         </div>
 
         {step < STEP_COUNT - 1 ? (
@@ -617,7 +623,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
             disabled={!canProceed}
             className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
           >
-            Tiếp tục
+            {t('projects.stepper.next')}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
           </button>
         ) : (
@@ -635,7 +641,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
             ) : (
               <>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                Khởi tạo dự án
+                {t('projects.stepper.submit')}
               </>
             )}
           </button>
@@ -656,34 +662,30 @@ function Step1ProjectInfo({
   organizations: Organization[];
   orgsLoading: boolean;
 }) {
-  // Demo images for user to pick (Auto-discover from assets folder)
-  const imageModules = import.meta.glob('/src/assets/project-covers/*.{jpg,jpeg,png,webp,gif}', { eager: true, query: '?url', import: 'default' });
-  const DEMO_IMAGES = Object.values(imageModules) as string[];
-
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">Thông tin dự án</h3>
-        <p className="text-sm text-text-muted">Nhập thông tin cơ bản về dự án xây dựng.</p>
+        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.step1')}</h3>
+        <p className="text-sm text-text-muted">{t('projects.stepper.s1.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <SectionLabel required>Tên dự án</SectionLabel>
+          <SectionLabel required>{t('projects.form.name')}</SectionLabel>
           <input
             value={state.projectName}
             onChange={(e) => update('projectName', e.target.value)}
-            placeholder="VD: Chung cư Sunrise Tower"
+            placeholder={t('projects.stepper.s1.namePlaceholder')}
             required
             className={inputCls}
           />
         </div>
         <div className="space-y-1.5">
-          <SectionLabel>Mã dự án</SectionLabel>
+          <SectionLabel>{t('projects.stepper.s1.code')}</SectionLabel>
           <input
             value={state.projectCode}
             onChange={(e) => update('projectCode', e.target.value)}
-            placeholder="VD: PJ-2026-001"
+            placeholder={t('projects.stepper.s1.codePlaceholder')}
             className={inputCls}
           />
         </div>
@@ -708,79 +710,52 @@ function Step1ProjectInfo({
       </div>
 
       <div className="space-y-1.5">
-        <SectionLabel>Ảnh đại diện dự án</SectionLabel>
-        <div className="flex flex-col sm:flex-row gap-6 items-start">
-          <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-card-border overflow-hidden bg-content-bg flex items-center justify-center relative group">
-            {state.projectImageUrl ? (
-              <>
-                <img src={state.projectImageUrl} alt="Avatar" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                  <button type="button" onClick={() => update('projectImageUrl', '')} className="text-white hover:text-danger bg-black/50 p-2 rounded-full transition-colors">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                  </button>
-                </div>
-              </>
-            ) : (
-              <label className="cursor-pointer text-text-muted hover:text-primary transition-colors flex flex-col items-center justify-center w-full h-full gap-2 p-2">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                <span className="text-xs font-semibold text-center leading-tight">Thêm ảnh</span>
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg, image/jpg, image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        update('projectImageUrl', reader.result as string);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-              </label>
-            )}
-          </div>
-
-          <div className="flex-1 space-y-5 w-full">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                <span className="text-sm font-semibold text-text">Bộ sưu tập mẫu</span>
+        <SectionLabel>{t('projects.stepper.s1.image')}</SectionLabel>
+        <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-card-border overflow-hidden bg-content-bg flex items-center justify-center relative group">
+          {state.projectImageUrl ? (
+            <>
+              <img src={state.projectImageUrl} alt={t('projects.stepper.s1.image')} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                <button
+                  type="button"
+                  onClick={() => update('projectImageUrl', '')}
+                  title={t('projects.stepper.s1.removeImage')}
+                  className="text-white hover:text-danger bg-black/50 p-2 rounded-full transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                </button>
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
-                {DEMO_IMAGES.map((url, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => update('projectImageUrl', url)}
-                    className={`relative shrink-0 rounded-xl overflow-hidden border-2 transition-all w-24 h-16 snap-start shadow-sm hover:shadow-md ${state.projectImageUrl === url ? 'border-primary ring-2 ring-primary/20 scale-[1.02]' : 'border-transparent hover:border-primary/50'
-                      }`}
-                  >
-                    <img src={url} alt={`Demo ${i + 1}`} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                    {state.projectImageUrl === url && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center backdrop-blur-[1px]">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white drop-shadow-md"><polyline points="20 6 9 17 4 12" /></svg>
-                      </div>
-                    )}
-                  </button>
-                ))}
-                {DEMO_IMAGES.length === 0 && (
-                  <p className="text-sm text-text-muted italic py-2">Không tìm thấy ảnh mẫu nào.</p>
-                )}
-              </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <label className="cursor-pointer text-text-muted hover:text-primary transition-colors flex flex-col items-center justify-center w-full h-full gap-2 p-2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              <span className="text-xs font-semibold text-center leading-tight">{t('projects.stepper.s1.addImage')}</span>
+              <input
+                type="file"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      update('projectImageUrl', reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+            </label>
+          )}
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <SectionLabel>Mô tả dự án</SectionLabel>
+        <SectionLabel>{t('projects.form.description')}</SectionLabel>
         <textarea
           value={state.projectDescription}
           onChange={(e) => update('projectDescription', e.target.value)}
-          placeholder="Mô tả ngắn về dự án..."
+          placeholder={t('projects.stepper.s1.descPlaceholder')}
           rows={3}
           className={inputCls}
         />
@@ -820,10 +795,12 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">Hồ sơ dự án bắt buộc</h3>
+        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.step2')}</h3>
         <p className="text-sm text-text-muted">
-          Tải lên các tài liệu pháp lý bắt buộc cho dự án (Quyết định phê duyệt, Giấy phép xây dựng, ...).
-          Các file sẽ được lưu vào thư mục <span className="font-semibold text-primary">/Published/Hồ sơ pháp lý</span> sau khi dự án được khởi tạo.
+          {t('projects.stepper.s2.desc')}{' '}
+          {t('projects.stepper.s2.savedToPrefix')}{' '}
+          <span className="font-semibold text-primary">{LEGAL_FOLDER_PATH}</span>{' '}
+          {t('projects.stepper.s2.savedToSuffix')}
         </p>
       </div>
 
@@ -831,13 +808,13 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
         files={state.mandatoryFiles}
         onAdd={(newFiles) => update('mandatoryFiles', [...state.mandatoryFiles, ...newFiles])}
         onRemove={(idx) => update('mandatoryFiles', state.mandatoryFiles.filter((_, i) => i !== idx))}
-        label="Tải lên tài liệu"
-        hint="Hỗ trợ PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, DWG, IFC, RVT..."
+        label={t('projects.stepper.s2.uploadLabel')}
+        hint={t('projects.stepper.s2.hint')}
       />
 
       {state.mandatoryFiles.length === 0 && (
         <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
-          <p className="text-sm text-text-muted">Chưa có tài liệu nào. Bạn có thể bỏ qua bước này và tải lên sau.</p>
+          <p className="text-sm text-text-muted">{t('projects.stepper.s2.empty')}</p>
         </div>
       )}
     </div>
@@ -876,19 +853,19 @@ function Step3PackageInfo({
   return (
     <div className="space-y-8 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">Thông tin gói thầu & Hợp đồng</h3>
-        <p className="text-sm text-text-muted">Khởi tạo các gói thầu cho dự án. Bạn có thể thêm nhiều gói thầu hoặc bỏ qua bước này.</p>
+        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s3.title')}</h3>
+        <p className="text-sm text-text-muted">{t('projects.stepper.s3.subtitle')}</p>
       </div>
 
       <section className="space-y-4">
         <div className="flex items-center gap-2 border-b border-card-border pb-3">
           <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">1</span>
-          <h4 className="text-sm font-semibold text-primary">Danh sách Gói thầu</h4>
+          <h4 className="text-sm font-semibold text-primary">{t('projects.stepper.s3.listTitle')}</h4>
         </div>
 
         {state.packages.length === 0 ? (
           <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
-            <p className="text-sm text-text-muted">Chưa có gói thầu nào. Bạn có thể thêm gói thầu hoặc bỏ qua bước này.</p>
+            <p className="text-sm text-text-muted">{t('projects.stepper.s3.empty')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -898,11 +875,11 @@ function Step3PackageInfo({
                   <h5 className="font-bold text-text text-lg">{pkgItem.payload.name}</h5>
                   <div className="text-sm text-text-muted mt-2 space-y-1">
                     <p>
-                      Giá trị: <span className="font-semibold text-text">{pkgItem.payload.contractValue ? new Intl.NumberFormat('vi-VN').format(pkgItem.payload.contractValue) + ' ' + (pkgItem.payload.currency || 'VND') : 'Chưa nhập'}</span>
+                      {t('projects.stepper.s3.value')}: <span className="font-semibold text-text">{pkgItem.payload.contractValue ? new Intl.NumberFormat('vi-VN').format(pkgItem.payload.contractValue) + ' ' + (pkgItem.payload.currency || 'VND') : t('projects.stepper.s3.notEntered')}</span>
                     </p>
                     {pkgItem.payload.contractValue ? (
                       <p className="italic">
-                        Bằng chữ: <span className="font-semibold text-text not-italic">{numberToWordsVN(pkgItem.payload.contractValue)}</span>
+                        {t('projects.stepper.s3.inWords')}: <span className="font-semibold text-text not-italic">{numberToWordsVN(pkgItem.payload.contractValue)}</span>
                       </p>
                     ) : null}
 
@@ -910,9 +887,9 @@ function Step3PackageInfo({
                       const org = organizations.find(o => o.id === pkgItem.payload.contractorOrganizationId);
                       return (
                         <div className="flex items-center gap-1.5 flex-wrap mt-2 pt-2 border-t border-card-border/50">
-                          <span className="text-text-muted">Đối tác:</span>
+                          <span className="text-text-muted">{t('projects.stepper.s3.partner')}:</span>
                           <span className="inline-flex items-center gap-1 rounded-md bg-content-bg px-2 py-0.5 text-xs font-medium text-text border border-input-border">
-                            {org ? (org.displayName || org.legalName) : 'Unknown'}
+                            {org ? (org.displayName || org.legalName) : t('projects.stepper.s3.unknownOrg')}
                           </span>
                         </div>
                       );
@@ -928,14 +905,14 @@ function Step3PackageInfo({
                     }}
                     className="p-2 text-text-muted hover:text-primary transition-colors"
                   >
-                    Sửa
+                    {t('projects.stepper.s3.edit')}
                   </button>
                   <button
                     type="button"
                     onClick={() => removePackage(pkgItem.id)}
                     className="p-2 text-text-muted hover:text-danger transition-colors"
                   >
-                    Xóa
+                    {t('projects.stepper.s3.delete')}
                   </button>
                 </div>
               </div>
@@ -951,7 +928,7 @@ function Step3PackageInfo({
           }}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 py-4 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/10"
         >
-          + Thêm gói thầu
+          + {t('projects.stepper.s3.add')}
         </button>
       </section>
 
@@ -960,7 +937,7 @@ function Step3PackageInfo({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card shadow-2xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-card-border bg-card/80 px-6 py-4 backdrop-blur-xl">
-              <h3 className="text-xl font-bold text-text">{editingPackageId ? 'Chỉnh sửa Gói thầu' : 'Thêm Gói thầu mới'}</h3>
+              <h3 className="text-xl font-bold text-text">{editingPackageId ? t('projects.stepper.s3.modalEdit') : t('projects.stepper.s3.modalAdd')}</h3>
               <button onClick={() => setIsFormOpen(false)} className="rounded-full p-2 text-text-muted transition-colors hover:bg-content-bg hover:text-text">
                 &times;
               </button>
@@ -1022,8 +999,8 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-text mb-1">Quản lý nhóm trong dự án</h3>
-          <p className="text-sm text-text-muted">Thiết lập các nhóm tham gia dự án. Nhóm mặc định đã được tạo sẵn.</p>
+          <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s4.title')}</h3>
+          <p className="text-sm text-text-muted">{t('projects.stepper.s4.subtitle')}</p>
         </div>
         <button
           type="button"
@@ -1031,13 +1008,13 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
           className="flex shrink-0 items-center gap-1.5 rounded-xl border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-          Thêm nhóm
+          {t('projects.stepper.s4.add')}
         </button>
       </div>
 
       {groups.length === 0 ? (
         <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
-          <p className="text-sm text-text-muted">Chưa có nhóm nào. Bạn có thể thêm nhóm mới hoặc bỏ qua.</p>
+          <p className="text-sm text-text-muted">{t('projects.stepper.s4.empty')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -1050,13 +1027,13 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
                 <input
                   value={group.name}
                   onChange={(e) => updateGroup(group.key, { name: e.target.value })}
-                  placeholder="Tên nhóm (VD: Tư vấn thiết kế) *"
+                  placeholder={t('projects.stepper.s4.namePlaceholder')}
                   className="w-full rounded-lg border border-transparent bg-input-bg/60 px-3.5 py-2 text-sm text-text outline-none transition-all hover:bg-input-bg focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/20 placeholder:text-text-placeholder font-medium"
                 />
                 <input
                   value={group.description}
                   onChange={(e) => updateGroup(group.key, { description: e.target.value })}
-                  placeholder="Mô tả nhóm (không bắt buộc)..."
+                  placeholder={t('projects.stepper.s4.descPlaceholder')}
                   className="w-full rounded-lg border border-transparent bg-input-bg/60 px-3.5 py-2 text-sm text-text outline-none transition-all hover:bg-input-bg focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/20 placeholder:text-text-placeholder"
                 />
               </div>
@@ -1064,7 +1041,7 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
                 type="button"
                 onClick={() => removeGroup(group.key)}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-muted transition-all duration-150 hover:bg-danger/10 hover:text-danger sm:opacity-0 group-hover/item:opacity-100 focus:opacity-100"
-                title="Xóa nhóm"
+                title={t('projects.stepper.s4.remove')}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
@@ -1097,13 +1074,13 @@ function Step5Partners({
   return (
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">Thêm đối tác vào nhóm</h3>
-        <p className="text-sm text-text-muted">Gán công ty / tổ chức (đối tác) cho từng nhóm trong dự án.</p>
+        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s5.title')}</h3>
+        <p className="text-sm text-text-muted">{t('projects.stepper.s5.subtitle')}</p>
       </div>
 
       {groups.length === 0 ? (
         <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
-          <p className="text-sm text-text-muted">Chưa có nhóm nào. Vui lòng quay lại bước trước để thêm nhóm.</p>
+          <p className="text-sm text-text-muted">{t('projects.stepper.s5.noGroups')}</p>
         </div>
       ) : orgsLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -1121,7 +1098,7 @@ function Step5Partners({
                   </span>
                   <div>
                     <p className="text-sm font-bold text-text">{group.name}</p>
-                    <p className="text-xs text-text-muted mt-0.5">Nhóm đối tác</p>
+                    <p className="text-xs text-text-muted mt-0.5">{t('projects.stepper.s5.partnerGroup')}</p>
                   </div>
                 </div>
 
@@ -1137,7 +1114,7 @@ function Step5Partners({
                           {selectedOrg.taxCode && <p className="text-xs text-text-muted mt-0.5">MST: {selectedOrg.taxCode}</p>}
                         </div>
                       </div>
-                      <button type="button" onClick={() => setOrgForGroup(group.key, '')} className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors" title="Đổi đối tác">
+                      <button type="button" onClick={() => setOrgForGroup(group.key, '')} className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors" title={t('projects.stepper.s5.changePartner')}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                       </button>
                     </div>
@@ -1147,7 +1124,7 @@ function Step5Partners({
                       onChange={(e) => setOrgForGroup(group.key, e.target.value)}
                       className={inputCls}
                     >
-                      <option value=""> Chọn đối tác cho nhóm này </option>
+                      <option value="">{t('projects.stepper.s5.select')}</option>
                       {organizations.map((org) => (
                         <option key={org.id} value={org.id}>
                           {org.displayName || org.legalName}{org.taxCode ? ` (MST: ${org.taxCode})` : ''}
@@ -1186,22 +1163,22 @@ function Step6Summary({
   return (
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">Xác nhận khởi tạo dự án</h3>
-        <p className="text-sm text-text-muted">Kiểm tra lại toàn bộ thông tin trước khi khởi tạo.</p>
+        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s6.title')}</h3>
+        <p className="text-sm text-text-muted">{t('projects.stepper.s6.subtitle')}</p>
       </div>
 
       {/* Project Info */}
       <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-          Thông tin dự án
+          {t('projects.stepper.step1')}
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div><span className="text-text-muted">Tên dự án:</span> <span className="font-semibold text-text">{state.projectName}</span></div>
+          <div><span className="text-text-muted">{t('projects.form.name')}:</span> <span className="font-semibold text-text">{state.projectName}</span></div>
           {state.ownerOrganizationId && <div><span className="text-text-muted">{t('projects.form.owner')}:</span> <span className="font-semibold text-text">{getOrgName(state.ownerOrganizationId)}</span></div>}
-          {state.projectDescription && <div className="col-span-2"><span className="text-text-muted">Mô tả:</span> <span className="text-text">{state.projectDescription}</span></div>}
+          {state.projectDescription && <div className="col-span-2"><span className="text-text-muted">{t('projects.form.description')}:</span> <span className="text-text">{state.projectDescription}</span></div>}
           {state.contactAddress && <div className="col-span-2"><span className="text-text-muted">{t('projects.form.contactAddress')}:</span> <span className="text-text">{state.contactAddress}</span></div>}
-          {state.address && <div className="col-span-2"><span className="text-text-muted">Địa chỉ:</span> <span className="text-text">{state.address}</span></div>}
+          {state.address && <div className="col-span-2"><span className="text-text-muted">{t('projects.stepper.s6.address')}:</span> <span className="text-text">{state.address}</span></div>}
         </div>
       </div>
 
@@ -1209,7 +1186,7 @@ function Step6Summary({
       <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-          Hồ sơ bắt buộc
+          {t('projects.stepper.s6.legalFiles')}
         </div>
         {state.mandatoryFiles.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -1221,7 +1198,7 @@ function Step6Summary({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-text-muted italic">Không có file nào</p>
+          <p className="text-sm text-text-muted italic">{t('projects.stepper.s6.noFiles')}</p>
         )}
       </div>
 
@@ -1230,7 +1207,7 @@ function Step6Summary({
         <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
           <div className="flex items-center gap-2 text-primary font-bold text-sm">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
-            Gói thầu ({state.packages.length})
+            {t('projects.stepper.s6.packages')} ({state.packages.length})
           </div>
           <div className="space-y-3">
             {state.packages.map((pkgItem, i) => {
@@ -1241,23 +1218,23 @@ function Step6Summary({
                 <div key={pkgItem.id} className="border border-card-border rounded-lg p-3 bg-input-bg">
                   <div className="font-semibold text-text mb-2">{i + 1}. {pkgItem.payload.name}</div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    {pkgItem.payload.startDate && <div><span className="text-text-muted">Khởi công:</span> <span className="text-text">{pkgItem.payload.startDate}</span></div>}
-                    {pkgItem.payload.endDate && <div><span className="text-text-muted">Kết thúc:</span> <span className="text-text">{pkgItem.payload.endDate}</span></div>}
+                    {pkgItem.payload.startDate && <div><span className="text-text-muted">{t('projects.stepper.s6.startDate')}:</span> <span className="text-text">{pkgItem.payload.startDate}</span></div>}
+                    {pkgItem.payload.endDate && <div><span className="text-text-muted">{t('projects.stepper.s6.endDate')}:</span> <span className="text-text">{pkgItem.payload.endDate}</span></div>}
                     {pkgItem.payload.contractValue !== undefined && pkgItem.payload.contractValue !== 0 && (
                       <div className="col-span-2 rounded-lg bg-content-bg mt-1 p-3 space-y-2 border border-card-border/50">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div><span className="text-text-muted block sm:inline mb-1 sm:mb-0">Giá trị hợp đồng:</span> <span className="text-text font-semibold whitespace-nowrap">{fmtCurrency(Number(pkgItem.payload.contractValue), pkgItem.payload.currency ?? 'VND')}</span></div>
-                          <div><span className="text-text-muted block sm:inline mb-1 sm:mb-0">Tổng giá trị (sau VAT):</span> <span className="text-primary font-bold whitespace-nowrap">{fmtCurrency(total, pkgItem.payload.currency ?? 'VND')}</span></div>
+                          <div><span className="text-text-muted block sm:inline mb-1 sm:mb-0">{t('projects.stepper.s6.contractValue')}:</span> <span className="text-text font-semibold whitespace-nowrap">{fmtCurrency(Number(pkgItem.payload.contractValue), pkgItem.payload.currency ?? 'VND')}</span></div>
+                          <div><span className="text-text-muted block sm:inline mb-1 sm:mb-0">{t('projects.stepper.s6.totalAfterVat')}:</span> <span className="text-primary font-bold whitespace-nowrap">{fmtCurrency(total, pkgItem.payload.currency ?? 'VND')}</span></div>
                         </div>
                         <p className="text-sm italic text-text-muted border-t border-card-border/50 pt-2">
-                          Bằng chữ (Tổng giá trị): <span className="font-semibold text-text not-italic">{numberToWordsVN(total)}</span>
+                          {t('projects.stepper.s6.inWordsTotal')}: <span className="font-semibold text-text not-italic">{numberToWordsVN(total)}</span>
                         </p>
                       </div>
                     )}
                   </div>
                   {pkgItem.files.length > 0 && (
                     <div className="col-span-full mt-2 pt-3 border-t border-card-border">
-                      <span className="text-text-muted text-sm block mb-2">Tài liệu đính kèm:</span>
+                      <span className="text-text-muted text-sm block mb-2">{t('projects.stepper.s6.attachments')}:</span>
                       <div className="flex flex-wrap gap-2">
                         {pkgItem.files.map((f, idx) => (
                           <span key={idx} className="inline-flex items-center gap-1.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-1.5 text-xs font-medium text-text">
@@ -1279,7 +1256,7 @@ function Step6Summary({
       <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-          Nhóm ({validGroups.length})
+          {t('projects.stepper.s6.groups')} ({validGroups.length})
         </div>
         {validGroups.length > 0 ? (
           <div className="space-y-2">
@@ -1289,13 +1266,13 @@ function Step6Summary({
                 {g.organizationId ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">{getOrgName(g.organizationId)}</span>
                 ) : (
-                  <span className="text-xs text-text-placeholder italic">Chưa gán đối tác</span>
+                  <span className="text-xs text-text-placeholder italic">{t('projects.stepper.s6.noPartner')}</span>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-text-muted italic">Không có nhóm nào</p>
+          <p className="text-sm text-text-muted italic">{t('projects.stepper.s6.noGroups')}</p>
         )}
       </div>
 
@@ -1305,7 +1282,7 @@ function Step6Summary({
           <svg className="animate-spin h-6 w-6 text-primary" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" /></svg>
           <div>
             <p className="text-sm font-semibold text-primary">{submitProgress}</p>
-            <p className="text-xs text-text-muted mt-0.5">Vui lòng không đóng trang trong quá trình khởi tạo.</p>
+            <p className="text-xs text-text-muted mt-0.5">{t('projects.stepper.s6.doNotClose')}</p>
           </div>
         </div>
       )}

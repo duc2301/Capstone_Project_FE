@@ -21,7 +21,7 @@ export function DashboardPage() {
       {/* ── Greeting Banner ─────────────────────────── */}
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="font-display text-3xl font-bold text-text">
+          <h1 className="heading-page">
             {t(greetingKey as TranslationKey)}, {firstName} <span role="img" aria-label="wave">👋</span>
           </h1>
           <p className="mt-2 text-text-muted">

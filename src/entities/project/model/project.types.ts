@@ -17,14 +17,6 @@ export interface ProjectLocation {
   createdAt?: string | null;
 }
 
-export interface ProjectModel {
-  id: string;
-  projectId: string;
-  name: string;
-  description?: string | null;
-  createdAt?: string | null;
-}
-
 export interface Project {
   id: string;
   projectName: string;
@@ -39,7 +31,6 @@ export interface Project {
   createdAt?: string | null;
   updatedAt?: string | null;
   location?: ProjectLocation | null;
-  models?: ProjectModel[];
 }
 
 export interface CreateProjectPayload {
@@ -47,6 +38,22 @@ export interface CreateProjectPayload {
   projectCode?: string;
   projectImageUrl?: string;
   projectDescription?: string;
+  ownerOrganizationId?: string;
+  contactAddress?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+/** Mọi trường tùy chọn — chỉ gửi cái muốn đổi. `address/latitude/longitude`
+ *  cập nhật địa điểm công trình (ProjectLocation), khác `contactAddress`. */
+export interface UpdateProjectPayload {
+  projectName?: string;
+  projectCode?: string;
+  projectImageUrl?: string;
+  projectDescription?: string;
+  managerAccountId?: string;
+  status?: ProjectStatus;
   ownerOrganizationId?: string;
   contactAddress?: string;
   address?: string;

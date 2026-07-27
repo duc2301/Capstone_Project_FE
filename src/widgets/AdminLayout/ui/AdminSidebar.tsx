@@ -175,7 +175,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
           bg-sidebar
           transition-[transform,width] duration-300 ease-in-out
           lg:translate-x-0 lg:z-30
-          ${isCompact ? 'w-[64px]' : 'w-[216px]'}
+          ${isCompact ? 'w-[64px]' : 'w-[240px]'}
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
@@ -238,7 +238,8 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
                           <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-sidebar" />
                         )}
                       </span>
-                      {!isCompact && <span className="flex-1">{t(item.labelKey)}</span>}
+                      {/* truncate: nhãn dài không xuống dòng làm vỡ layout, quá dài thì cắt bằng "…" */}
+                      {!isCompact && <span className="flex-1 truncate">{t(item.labelKey)}</span>}
                       {!isCompact && badge !== undefined && badge > 0 && (
                         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold text-white">
                           {badge > 99 ? '99+' : badge}

@@ -164,20 +164,14 @@ export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: Folder
   }
 
   return (
-    <div className="rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
-      <div className="mb-3 flex items-center gap-1.5 px-1 pt-2">
-        <FolderIcon className="text-text-muted" />
-        <span className="text-[13px] font-bold uppercase tracking-wider text-text-muted">
-          {t('documents.structure')}
-        </span>
-      </div>
-
+    // Cây dài thì cuộn trong khung, không kéo dài cả trang
+    <div className="flex h-full min-h-0 flex-col rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
       {tree.length === 0 ? (
-        <p className="mt-7 px-2 py-6 text-center text-sm text-text-muted">{t('documents.empty')}</p>
+        <p className="px-2 py-6 text-center text-sm text-text-muted">{t('documents.empty')}</p>
       ) : (
         // Cây có thể thụt lề rất sâu -> tên folder không bị cắt/tràn ra ngoài khung, thay vào đó
         // cuộn ngang để xem đủ tên khi cây quá rộng so với khung.
-        <div className="admin-scrollbar mt-7 overflow-x-auto">
+        <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
           <ul className="w-max min-w-full space-y-0.5">
             {tree.map((node) => (
               <FolderNode

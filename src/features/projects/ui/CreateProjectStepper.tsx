@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Account } from '@/entities/account';
 import { accountApi } from '@/entities/account/api/accountApi';
@@ -10,6 +10,7 @@ import { folderApi } from '@/entities/folder';
 import { groupApi } from '@/entities/group';
 import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
+import type { BepParseResult } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
 import type { TranslationKey } from '@/shared/lib/i18n';
@@ -102,6 +103,74 @@ const newKey = () =>
 
 const buildDefaultGroups = (): GroupDraft[] =>
   DEFAULT_GROUP_KEYS.map((key) => ({ key: newKey(), name: t(key), description: '', organizationId: null }));
+
+/* ── Khởi tạo nhanh từ BEP: seed state + match tên tổ chức -> Guid ── */
+const buildInitialState = (bep?: BepParseResult): StepperState => {
+  const groups: GroupDraft[] =
+    bep && bep.groups.length > 0
+      ? bep.groups.map((g) => ({
+          key: newKey(),
+          name: g.name,
+          description: g.description ?? '',
+          organizationId: null,
+        }))
+      : buildDefaultGroups();
+
+  const packages: StepperPackage[] =
+    bep && bep.packages.length > 0
+      ? bep.packages.map((p) => ({
+          id: newKey(),
+          payload: {
+            projectId: '',
+            name: p.name,
+            description: p.description ?? undefined,
+            contractValue: p.contractValue ?? undefined,
+            currency: p.currency ?? undefined,
+            status: 1,
+            isDefault: true,
+          },
+          files: [],
+        }))
+      : [];
+
+  return {
+    projectName: bep?.projectName ?? '',
+    projectCode: bep?.projectCode ?? '',
+    projectImageUrl: '',
+    projectDescription: bep?.projectDescription ?? '',
+    ownerOrganizationId: '',
+    contactAddress: bep?.contactAddress ?? '',
+    address: bep?.address ?? '',
+    latitude: '',
+    longitude: '',
+    mandatoryFiles: [],
+    packages,
+    groups,
+  };
+};
+
+// Chuẩn hoá tiếng Việt (bỏ dấu, đ->d, gộp khoảng trắng) để so khớp tên tổ chức.
+const stripVN = (s: string): string =>
+  s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const matchOrg = (name: string | null | undefined, orgs: Organization[]): Organization | undefined => {
+  if (!name) return undefined;
+  const target = stripVN(name);
+  if (!target) return undefined;
+  return orgs.find((o) => {
+    const dn = stripVN(o.displayName || '');
+    const ln = stripVN(o.legalName || '');
+    const hit = (v: string) => v.length > 0 && (v === target || v.includes(target) || target.includes(v));
+    return hit(dn) || hit(ln);
+  });
+};
 
 const inputCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
@@ -222,9 +291,11 @@ function FileDropzone({
 export interface CreateProjectStepperProps {
   onComplete: (projectId: string) => void;
   onCancel: () => void;
+  /** Kết quả AI đọc BEP để prefill sẵn các bước (khởi tạo nhanh). */
+  initialData?: BepParseResult;
 }
 
-export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStepperProps) {
+export function CreateProjectStepper({ onComplete, onCancel, initialData }: CreateProjectStepperProps) {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState('');
@@ -248,25 +319,34 @@ export function CreateProjectStepper({ onComplete, onCancel }: CreateProjectStep
       .finally(() => setOrgsLoading(false));
   }, []);
 
-  /* ── Form state ── */
-  const [state, setState] = useState<StepperState>({
-    projectName: '',
-    projectCode: '',
-    projectImageUrl: '',
-    projectDescription: '',
-    ownerOrganizationId: '',
-    contactAddress: '',
-    address: '',
-    latitude: '',
-    longitude: '',
-    mandatoryFiles: [],
-    packages: [],
-    groups: buildDefaultGroups(),
-  });
+  /* ── Form state (prefill từ BEP nếu có) ── */
+  const [state, setState] = useState<StepperState>(() => buildInitialState(initialData));
 
   const update = useCallback(<K extends keyof StepperState>(key: K, value: StepperState[K]) => {
     setState((prev) => ({ ...prev, [key]: value }));
   }, []);
+
+  /* ── Match tên tổ chức (BEP chỉ có text) -> Guid, chạy 1 lần sau khi orgs load ── */
+  const orgMatchedRef = useRef(false);
+  useEffect(() => {
+    if (orgMatchedRef.current || !initialData || organizations.length === 0) return;
+    orgMatchedRef.current = true;
+    setState((prev) => ({
+      ...prev,
+      ownerOrganizationId:
+        matchOrg(initialData.ownerOrganizationName, organizations)?.id ?? prev.ownerOrganizationId,
+      groups: prev.groups.map((g, i) => {
+        const org = matchOrg(initialData.groups[i]?.partnerOrganizationName, organizations);
+        return org ? { ...g, organizationId: org.id } : g;
+      }),
+      packages: prev.packages.map((p, i) => {
+        const org = matchOrg(initialData.packages[i]?.contractorOrganizationName, organizations);
+        return org
+          ? { ...p, payload: { ...p.payload, contractorOrganizationId: org.id } }
+          : p;
+      }),
+    }));
+  }, [organizations, initialData]);
 
   /* ── Navigation ── */
   const canProceed = useMemo(() => {

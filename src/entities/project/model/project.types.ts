@@ -61,6 +61,33 @@ export interface UpdateProjectPayload {
   longitude?: number;
 }
 
+/* ── Khởi tạo nhanh từ BEP: AI đọc file BEP -> field prefill cho stepper ── */
+export interface BepGroup {
+  name: string;
+  description?: string | null;
+  partnerOrganizationName?: string | null;
+}
+
+export interface BepPackage {
+  name: string;
+  description?: string | null;
+  contractValue?: number | null;
+  currency?: string | null;
+  contractorOrganizationName?: string | null;
+}
+
+export interface BepParseResult {
+  projectName?: string | null;
+  projectCode?: string | null;
+  projectDescription?: string | null;
+  ownerOrganizationName?: string | null;
+  contactAddress?: string | null;
+  address?: string | null;
+  groups: BepGroup[];
+  packages: BepPackage[];
+  extractionEmpty: boolean;
+}
+
 export interface AssignManagerPayload {
   accountId: string;
 }

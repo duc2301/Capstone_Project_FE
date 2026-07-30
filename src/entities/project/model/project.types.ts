@@ -21,6 +21,7 @@ export interface Project {
   id: string;
   projectName: string;
   projectCode?: string | null;
+  /** URL xem ảnh dự án. Ảnh mới = presigned URL từ kho; dự án cũ có thể còn là chuỗi base64. */
   projectImageUrl?: string | null;
   projectDescription?: string | null;
   managerAccountId?: string | null;
@@ -36,7 +37,6 @@ export interface Project {
 export interface CreateProjectPayload {
   projectName: string;
   projectCode?: string;
-  projectImageUrl?: string;
   projectDescription?: string;
   ownerOrganizationId?: string;
   contactAddress?: string;
@@ -50,7 +50,6 @@ export interface CreateProjectPayload {
 export interface UpdateProjectPayload {
   projectName?: string;
   projectCode?: string;
-  projectImageUrl?: string;
   projectDescription?: string;
   managerAccountId?: string;
   status?: ProjectStatus;

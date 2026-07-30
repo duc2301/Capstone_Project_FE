@@ -17,4 +17,15 @@ export const accountApi = {
 
   remove: (id: string) =>
     axiosInstance.delete<ApiResponse<null>>(`/accounts/${id}`),
+
+  /** POST /api/accounts/{id}/avatar — trả presigned URL.
+   *  Phải override Content-Type: default JSON làm axios serialize FormData thành JSON -> 415. */
+  uploadAvatar: (id: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axiosInstance.post<ApiResponse<Account>>(`/accounts/${id}/avatar`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+    });
+  },
 };

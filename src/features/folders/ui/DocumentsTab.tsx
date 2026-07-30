@@ -23,6 +23,7 @@ import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
+import { FilePermissionModal } from './FilePermissionModal';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
@@ -124,6 +125,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
   const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
+  const [filePermissionFor, setFilePermissionFor] = useState<FileListItem | null>(null);
   const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
@@ -546,6 +548,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onDetail={() => handleDetail(fileMenu.file)}
           onDownload={() => handleDownload(fileMenu.file)}
           onVersions={() => setVersionsFor(fileMenu.file)}
+          onPermission={() => setFilePermissionFor(fileMenu.file)}
           onSoon={() => showToast(t('documents.fileMenu.soon'))}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
           onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
@@ -564,6 +567,16 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           busy={returnRequestBusy}
           onClose={() => setReturnRequestFor(null)}
           onSubmit={handleReturnRequest}
+        />
+      )}
+
+      {/* Modal phân quyền tệp */}
+      {filePermissionFor && (
+        <FilePermissionModal
+          fileItemId={filePermissionFor.id}
+          fileName={filePermissionFor.name}
+          onClose={() => setFilePermissionFor(null)}
+          onSaved={() => showToast(t('filePermission.toast.updated'))}
         />
       )}
 

@@ -320,8 +320,8 @@ export function FileViewPage() {
   const isExcelFile = isExcelFormat(format);
   const isCad2DFile = isCad2DFormat(format);
   const isVisualSignableFile = isPdfFile || isWordFile || isExcelFile || isCad2DFile;
-  // Tab "Kiểm LOI" TẠM TẮT (chức năng chưa hoàn thiện). Mở lại: đổi về `format === 'IFC'`.
-  const showLoiTab = false;
+  // Kiểm LOI chỉ áp dụng cho model .ifc.
+  const showLoiTab = format === 'IFC';
   const fileSize = latestVersion ? formatSize(latestVersion.fileSizeBytes) : '-';
   const uploadedBy = fileListItem?.authorName ?? '-';
   const uploadedAt = formatDateTime(latestVersion?.createdAt);
@@ -648,7 +648,7 @@ export function FileViewPage() {
                 />
               ) : null
             ) : activePanelTab === 'loi' ? (
-              <LoiCheckPanel fileItemId={fileId ?? ''} />
+              <LoiCheckPanel fileItemId={fileId ?? ''} projectId={projectId} />
             ) : (
               <SignatureHistoryPanel
                 requiresSignature={requiresSignature}

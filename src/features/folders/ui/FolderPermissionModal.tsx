@@ -13,7 +13,7 @@ interface FolderPermissionModalProps {
   onSaved?: () => void;
 }
 
-type PermissionFlagKey = 'canView' | 'canEdit' | 'canUpdate' | 'canDownload' | 'canVerify' | 'canApprove';
+type PermissionFlagKey = 'canView' | 'canEdit';
 
 /* 1 nhóm trong modal — di chuyển giữa 2 panel, giữ nguyên cờ quyền khi di chuyển */
 interface PermissionItem {
@@ -22,31 +22,19 @@ interface PermissionItem {
   organizationName: string | null;
   canView: boolean;
   canEdit: boolean;
-  canUpdate: boolean;
-  canDownload: boolean;
-  canVerify: boolean;
-  canApprove: boolean;
   /** Đang có quyền trên BE (status === 0) — nếu kết thúc ở panel trái thì đưa vào removeParticipantIds */
   wasSelected: boolean;
 }
 
-/* Các cột quyền ở panel phải (theo thứ tự hiển thị) */
+/* Các cột quyền ở panel phải (BE hiện chỉ hỗ trợ Xem/Sửa) */
 const PERMISSION_FLAGS: { key: PermissionFlagKey; label: () => string }[] = [
   { key: 'canView', label: () => t('folderPermission.col.view') },
   { key: 'canEdit', label: () => t('folderPermission.col.edit') },
-  { key: 'canUpdate', label: () => t('folderPermission.col.update') },
-  { key: 'canDownload', label: () => t('folderPermission.col.download') },
-  { key: 'canVerify', label: () => t('folderPermission.col.verify') },
-  { key: 'canApprove', label: () => t('folderPermission.col.approve') },
 ];
 
 const EMPTY_FLAGS = {
   canView: false,
   canEdit: false,
-  canUpdate: false,
-  canDownload: false,
-  canVerify: false,
-  canApprove: false,
 };
 
 /* Panel trái ban đầu: nhóm chưa gán quyền + nhóm đã gỡ quyền (status === 1) */
@@ -55,7 +43,7 @@ function buildInitialAvailable(data: FolderPermissionUiDto): PermissionItem[] {
     ...data.availableGroups.map((g) => ({
       projectParticipantId: g.projectParticipantId,
       groupName: g.groupName,
-      organizationName: g.organizationName,
+      organizationName: g.organizationName ?? null,
       ...EMPTY_FLAGS,
       wasSelected: false,
     })),
@@ -81,16 +69,12 @@ function buildInitialSelected(data: FolderPermissionUiDto): PermissionItem[] {
       organizationName: null,
       canView: p.canView,
       canEdit: p.canEdit,
-      canUpdate: p.canUpdate,
-      canDownload: p.canDownload,
-      canVerify: p.canVerify,
-      canApprove: p.canApprove,
       wasSelected: true,
     }));
 }
 
 /* Lưới 1 dòng panel phải: ô chọn + tên nhóm + 6 cột quyền thẳng hàng với header */
-const SELECTED_ROW_GRID = 'grid grid-cols-[1.5rem_minmax(0,1fr)_repeat(6,2.75rem)] items-center gap-x-1';
+const SELECTED_ROW_GRID = 'grid grid-cols-[1.5rem_minmax(0,1fr)_repeat(2,3.5rem)] items-center gap-x-1';
 
 /* Ô đánh dấu chọn nhóm (để di chuyển giữa 2 panel) */
 function SelectBox({ checked }: { checked: boolean }) {
@@ -217,10 +201,6 @@ function PermissionEditor({ folderId, data, onClose, onSaved }: PermissionEditor
           projectParticipantId: it.projectParticipantId,
           canView: it.canView,
           canEdit: it.canEdit,
-          canUpdate: it.canUpdate,
-          canDownload: it.canDownload,
-          canVerify: it.canVerify,
-          canApprove: it.canApprove,
         })),
         removeParticipantIds: available
           .filter((it) => it.wasSelected)
@@ -243,7 +223,7 @@ function PermissionEditor({ folderId, data, onClose, onSaved }: PermissionEditor
   return (
     <>
       <div className="flex-1 overflow-y-auto px-6 py-5">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto_1.4fr]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto_1fr]">
           {/* Panel trái: Nhóm hữu dụng */}
           <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
             <h3 className="text-sm font-bold text-text">{t('folderPermission.available.title')}</h3>
@@ -398,7 +378,7 @@ export function FolderPermissionModal({ node, onClose, onSaved }: FolderPermissi
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-5xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">

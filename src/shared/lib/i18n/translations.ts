@@ -857,6 +857,10 @@ export const translations = {
   'folderPermission.toast.updated': 'Đã cập nhật phân quyền',
   'folderPermission.moveRight': 'Chuyển sang "Nhóm được chọn"',
   'folderPermission.moveLeft': 'Chuyển về "Nhóm hữu dụng"',
+
+  // Modal phân quyền tệp (dùng chung layout với phân quyền thư mục)
+  'filePermission.title': 'Phân quyền truy cập tệp',
+  'filePermission.toast.updated': 'Đã cập nhật phân quyền tệp',
   'documents.action.createTitle': 'Tạo thư mục con',
   'documents.action.renameTitle': 'Đổi tên thư mục',
   'documents.action.moveTitle': 'Di chuyển thư mục',

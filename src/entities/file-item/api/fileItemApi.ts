@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { FileListItem, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult } from '../model/fileItem.types';
+import type { FileListItem, FilePermissionEntry, FilePermissionUiDto, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
@@ -66,4 +66,14 @@ export const fileItemApi = {
     axiosInstance.get<ApiResponse<LinkableFile[]>>('/file-items/linkable', {
       params: { folderId, excludeFileItemId },
     }),
+
+  /** Dữ liệu màn hình phân quyền file: nhóm khả dụng + nhóm đã gán quyền. */
+  getPermissionGroupUi: (fileItemId: string) =>
+    axiosInstance.get<ApiResponse<FilePermissionUiDto>>(
+      `/file-permissions/${fileItemId}/group-ui`,
+    ),
+
+  /** Cập nhật phân quyền nhóm trên file: gán/sửa quyền + gỡ quyền trong 1 lần gọi. */
+  updateGroupPermissions: (payload: UpdateFileGroupPermissionsPayload) =>
+    axiosInstance.post<ApiResponse<FilePermissionEntry[]>>('/file-permissions/add-group', payload),
 };

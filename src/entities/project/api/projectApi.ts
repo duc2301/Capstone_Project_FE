@@ -28,6 +28,17 @@ export const projectApi = {
   update: (projectId: string, payload: UpdateProjectPayload) =>
     axiosInstance.put<ApiResponse<Project>>(`/projects/${projectId}`, payload),
 
+  /** POST /api/projects/{id}/image — trả presigned URL.
+   *  Phải override Content-Type: default JSON làm axios serialize FormData thành JSON -> 415. */
+  uploadImage: (projectId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axiosInstance.post<ApiResponse<Project>>(`/projects/${projectId}/image`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+    });
+  },
+
   assignManager: (projectId: string, payload: AssignManagerPayload) =>
     axiosInstance.post<ApiResponse<Project>>(`/projects/${projectId}/manager`, payload),
 

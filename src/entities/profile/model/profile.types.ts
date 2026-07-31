@@ -14,6 +14,7 @@ export interface Profile {
   status: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  avatarUrl: string | null;
   groups: ProfileGroup[];
 }
 

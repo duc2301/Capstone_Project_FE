@@ -36,7 +36,6 @@ export interface Project {
 export interface CreateProjectPayload {
   projectName: string;
   projectCode?: string;
-  projectImageUrl?: string;
   projectDescription?: string;
   ownerOrganizationId?: string;
   contactAddress?: string;
@@ -50,7 +49,6 @@ export interface CreateProjectPayload {
 export interface UpdateProjectPayload {
   projectName?: string;
   projectCode?: string;
-  projectImageUrl?: string;
   projectDescription?: string;
   managerAccountId?: string;
   status?: ProjectStatus;

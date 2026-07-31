@@ -39,7 +39,7 @@ interface StepperState {
   /* Step 1 */
   projectName: string;
   projectCode: string;
-  projectImageUrl: string;
+  projectImage: File | null;
   projectDescription: string;
   ownerOrganizationId: string;
   contactAddress: string;
@@ -136,7 +136,7 @@ const buildInitialState = (bep?: BepParseResult): StepperState => {
   return {
     projectName: bep?.projectName ?? '',
     projectCode: bep?.projectCode ?? '',
-    projectImageUrl: '',
+    projectImage: null,
     projectDescription: bep?.projectDescription ?? '',
     ownerOrganizationId: '',
     contactAddress: bep?.contactAddress ?? '',
@@ -385,7 +385,6 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       const { data: projectRes } = await projectApi.create({
         projectName: state.projectName.trim(),
         projectCode: state.projectCode.trim() || undefined,
-        projectImageUrl: state.projectImageUrl.trim() || undefined,
         projectDescription: state.projectDescription.trim() || undefined,
         ownerOrganizationId: state.ownerOrganizationId || undefined,
         contactAddress: state.contactAddress.trim() || undefined,
@@ -396,6 +395,10 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       const project = projectRes.result;
       if (!project) throw new Error(t('projects.stepper.error.createFailed'));
       createdProjectId = project.id;
+
+      if (state.projectImage) {
+        await projectApi.uploadImage(project.id, state.projectImage);
+      }
 
       /* 2. Upload mandatory files to /Published/Hồ sơ pháp lý */
       if (state.mandatoryFiles.length > 0) {
@@ -662,6 +665,20 @@ function Step1ProjectInfo({
   organizations: Organization[];
   orgsLoading: boolean;
 }) {
+  const [projectImagePreview, setProjectImagePreview] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
+  const pickProjectImage = (file: File | null) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = file ? URL.createObjectURL(file) : null;
+    setProjectImagePreview(previewUrlRef.current);
+    update('projectImage', file);
+  };
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div>
@@ -712,13 +729,13 @@ function Step1ProjectInfo({
       <div className="space-y-1.5">
         <SectionLabel>{t('projects.stepper.s1.image')}</SectionLabel>
         <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-card-border overflow-hidden bg-content-bg flex items-center justify-center relative group">
-          {state.projectImageUrl ? (
+          {projectImagePreview ? (
             <>
-              <img src={state.projectImageUrl} alt={t('projects.stepper.s1.image')} className="w-full h-full object-cover" />
+              <img src={projectImagePreview} alt={t('projects.stepper.s1.image')} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                 <button
                   type="button"
-                  onClick={() => update('projectImageUrl', '')}
+                  onClick={() => pickProjectImage(null)}
                   title={t('projects.stepper.s1.removeImage')}
                   className="text-white hover:text-danger bg-black/50 p-2 rounded-full transition-colors"
                 >
@@ -736,13 +753,7 @@ function Step1ProjectInfo({
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      update('projectImageUrl', reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
-                  }
+                  pickProjectImage(file ?? null);
                 }}
               />
             </label>

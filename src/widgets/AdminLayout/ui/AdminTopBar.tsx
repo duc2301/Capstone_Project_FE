@@ -3,14 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
 import { NotificationBell } from '@/features/notifications';
-import { useProfile } from '@/features/profile';
-import { UserAvatar } from '@/shared/components';
 import { useBreadcrumbTrail } from '@/shared/lib/breadcrumb';
 import { t } from '@/shared/lib/i18n';
 
 /* ── Breadcrumb mapping ────────────────────────────── */
 const BREADCRUMB_MAP: Record<string, string> = {
-  '/accounts': 'QUẢN LÝ NGƯỜI DÙNG',
+  '/accounts': 'QUẢN LÝ TÀI KHOẢN',
   '/organizations': 'QUẢN LÝ TỔ CHỨC',
   '/audit-log': 'NHẬT KÝ HOẠT ĐỘNG',
   '/profile': 'HỒ SƠ',
@@ -31,13 +29,17 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useSession();
-  // Ảnh đại diện lấy từ /profile chứ không từ token: URL là presigned, hết hạn sau 60 phút
-  // nên phải xin lại mỗi lần vào app.
-  const { profile } = useProfile();
   // Trail động do page đặt (VD: chi tiết dự án); rỗng thì rơi về map tĩnh theo pathname.
   const trail = useBreadcrumbTrail();
   const pageLabel = BREADCRUMB_MAP[location.pathname] ?? '';
   const isHome = location.pathname === '/dashboard';
+
+  const initials = (currentUser?.userName ?? 'U')
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   return (
     <header className="z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
@@ -108,12 +110,9 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
           <span className="hidden whitespace-nowrap text-sm font-semibold text-text sm:inline">
             {currentUser?.userName}
           </span>
-          <UserAvatar
-            userName={currentUser?.userName ?? ''}
-            avatarUrl={profile?.avatarUrl}
-            size="sm"
-            rounded="full"
-          />
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+            {initials}
+          </span>
         </Link>
       </div>
     </header>

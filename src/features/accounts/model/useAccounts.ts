@@ -9,8 +9,8 @@ interface UseAccountsReturn {
   loading: boolean;
   error: string | null;
   fetchAccounts: () => Promise<void>;
-  createAccount: (payload: CreateAccountPayload, avatar?: File | null) => Promise<void>;
-  updateAccount: (id: string, payload: UpdateAccountPayload, avatar?: File | null) => Promise<void>;
+  createAccount: (payload: CreateAccountPayload) => Promise<void>;
+  updateAccount: (id: string, payload: UpdateAccountPayload) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
 }
 
@@ -32,27 +32,13 @@ export function useAccounts(): UseAccountsReturn {
     }
   }, []);
 
-  // Ảnh đại diện cần id tài khoản nên phải upload SAU khi tạo/sửa xong.
-  const createAccount = useCallback(async (payload: CreateAccountPayload, avatar?: File | null) => {
-    const { data } = await accountApi.create(payload);
-    const created = data.result;
-
-    if (avatar && created) {
-      try {
-        await accountApi.uploadAvatar(created.id, avatar);
-      } catch {
-        // Tài khoản ĐÃ tạo xong rồi; báo rõ để admin khỏi bấm tạo lại (sẽ trùng email).
-        await fetchAccounts();
-        throw new Error(t('account.avatar.uploadFailedAfterCreate'));
-      }
-    }
-
+  const createAccount = useCallback(async (payload: CreateAccountPayload) => {
+    await accountApi.create(payload);
     await fetchAccounts();
   }, [fetchAccounts]);
 
-  const updateAccount = useCallback(async (id: string, payload: UpdateAccountPayload, avatar?: File | null) => {
+  const updateAccount = useCallback(async (id: string, payload: UpdateAccountPayload) => {
     await accountApi.update(id, payload);
-    if (avatar) await accountApi.uploadAvatar(id, avatar);
     await fetchAccounts();
   }, [fetchAccounts]);
 

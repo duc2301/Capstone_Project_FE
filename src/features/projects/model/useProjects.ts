@@ -17,7 +17,7 @@ export interface ProjectGroupDraft {
 export interface CreateProjectWithGroupsInput {
   projectName: string;
   projectCode?: string;
-  projectImageUrl?: string;
+  projectImage?: File | null;
   projectDescription?: string;
   address?: string;
   latitude?: number;
@@ -42,47 +42,30 @@ export function useProjects(): UseProjectsReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Admin thấy toàn bộ dự án; người dùng thường gọi /projects/mine — BE đã lọc sẵn
+  // theo nhóm tham gia hoặc vai trò PM. KHÔNG lọc ở client (tránh lộ danh sách dự án
+  // của đơn vị khác qua network, và tránh N+1 request getParticipants cho từng dự án).
+  const loadProjects = useCallback(async (): Promise<Project[]> => {
+    const { data } = isAdmin ? await projectApi.getAll() : await projectApi.getMine();
+    return data.result ?? [];
+  }, [isAdmin]);
+
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await projectApi.getAll();
-      let allProjects = data.result ?? [];
-
-      if (!isAdmin && currentUser) {
-        const { data: grpData } = await groupApi.getAll();
-        const groups = grpData.result ?? [];
-        const myGroupIds = new Set(
-          groups
-            .filter((g) => g.members.some((m) => m.accountId === currentUser.accountId))
-            .map((g) => g.id)
-        );
-
-        const participantsPromises = allProjects.map((p) =>
-          projectApi.getParticipants(p.id).catch(() => null)
-        );
-        const participantsResults = await Promise.all(participantsPromises);
-
-        allProjects = allProjects.filter((p, index) => {
-          if (p.managerAccountId === currentUser.accountId) return true;
-          const participants = participantsResults[index]?.data?.result ?? [];
-          return participants.some((part) => myGroupIds.has(part.groupId));
-        });
-      }
-
-      setProjects(allProjects);
+      setProjects(await loadProjects());
     } catch {
       setError(t('common.error'));
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, currentUser]);
+  }, [loadProjects]);
 
   const createProject = useCallback(async (input: CreateProjectWithGroupsInput) => {
     const { data: projectRes } = await projectApi.create({
       projectName: input.projectName,
       projectCode: input.projectCode,
-      projectImageUrl: input.projectImageUrl,
       projectDescription: input.projectDescription,
       address: input.address,
       latitude: input.latitude,
@@ -90,6 +73,8 @@ export function useProjects(): UseProjectsReturn {
     });
     const project = projectRes.result;
     if (!project) throw new Error('Project creation failed');
+
+    if (input.projectImage) await projectApi.uploadImage(project.id, input.projectImage);
 
     const groups = input.groups.filter((g) => g.name.trim());
     if (groups.length > 0) {
@@ -124,31 +109,8 @@ export function useProjects(): UseProjectsReturn {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await projectApi.getAll();
-        let allProjects = data.result ?? [];
-
-        if (!isAdmin && currentUser) {
-          const { data: grpData } = await groupApi.getAll();
-          const groups = grpData.result ?? [];
-          const myGroupIds = new Set(
-            groups
-              .filter((g) => g.members.some((m) => m.accountId === currentUser.accountId))
-              .map((g) => g.id)
-          );
-
-          const participantsPromises = allProjects.map((p) =>
-            projectApi.getParticipants(p.id).catch(() => null)
-          );
-          const participantsResults = await Promise.all(participantsPromises);
-
-          allProjects = allProjects.filter((p, index) => {
-            if (p.managerAccountId === currentUser.accountId) return true;
-            const participants = participantsResults[index]?.data?.result ?? [];
-            return participants.some((part) => myGroupIds.has(part.groupId));
-          });
-        }
-
-        if (!cancelled) setProjects(allProjects);
+        const result = await loadProjects();
+        if (!cancelled) setProjects(result);
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {
@@ -158,7 +120,7 @@ export function useProjects(): UseProjectsReturn {
     return () => {
       cancelled = true;
     };
-  }, [isAdmin, currentUser]);
+  }, [loadProjects]);
 
   return { projects, loading, error, fetchProjects, createProject, assignManager };
 }

@@ -173,13 +173,43 @@ export function IssueDetailPage() {
   }
 
   const layout = (
-    <div className="mx-auto flex h-[calc(100vh-140px)] max-w-[1600px] flex-col gap-4 xl:flex-row">
-      <main className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
-        <div className="absolute inset-0 bg-[#dcdad2]" />
-        {viewerContent}
-      </main>
+    // Nội dung dài cuộn trong từng ô
+    <div className="flex min-h-0 flex-1 flex-col gap-4 xl:flex-row">
+      {/* Cột trái: header + khung xem, giống trang chi tiết file */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <header className="flex shrink-0 flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <h1 className="heading-panel break-words">{fileName}</h1>
+              <p className="mt-0.5 text-xs text-text-muted">{t('issues.detail.title')}</p>
+            </div>
+          </div>
 
-      <aside className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[420px]">
+          <button
+            type="button"
+            onClick={goBackToFile}
+            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            {t('issues.page.backToFile')}
+          </button>
+        </header>
+
+        <main className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
+          <div className="absolute inset-0 bg-[#dcdad2]" />
+          {viewerContent}
+        </main>
+      </div>
+
+      {/* 400px: đồng nhất với panel trang chi tiết file */}
+      <aside className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
         {issueId && fileId ? (
           <IssueSidePanel issueId={issueId} fileItemId={fileId} onToast={showToast} markupSlot={markupSlot} />
         ) : null}
@@ -188,26 +218,8 @@ export function IssueDetailPage() {
   );
 
   return (
-    <div className="min-h-[calc(100vh-96px)] bg-[#fbf9f1] px-4 py-5 sm:px-6 lg:px-8">
-      <header className="mx-auto mb-4 flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <button
-            type="button"
-            onClick={goBackToFile}
-            className="flex items-center gap-1.5 rounded-full border border-card-border bg-card px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-            {t('issues.page.backToFile')}
-          </button>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.detail.title')}</p>
-            <h1 className="truncate font-display text-xl font-semibold text-text">{fileName}</h1>
-          </div>
-        </div>
-      </header>
-
+    // Nền + padding + max-width do AdminLayout lo; h-full để không cuộn trang
+    <div className="flex h-full flex-col">
       {canMarkupInline && fileId ? (
         <InlineMarkupProvider
           fileItemId={fileId}

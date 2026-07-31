@@ -39,7 +39,7 @@ export function ContractPackagesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-text lg:text-3xl">{t('admin.nav.packages')}</h1>
+        <h1 className="heading-page">{t('admin.nav.packages')}</h1>
         <p className="mt-1 text-sm text-text-muted">Danh sách tất cả gói thầu và hợp đồng trên hệ thống</p>
       </div>
 

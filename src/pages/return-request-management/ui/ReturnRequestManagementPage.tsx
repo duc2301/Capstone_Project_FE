@@ -62,7 +62,7 @@ export function ReturnRequestManagementPage() {
       )}
 
       <div>
-        <h1 className="font-heading text-2xl font-bold text-text lg:text-3xl">{t('returnRequests.page.title')}</h1>
+        <h1 className="heading-page">{t('returnRequests.page.title')}</h1>
         <p className="mt-1 text-sm text-text-muted">{t('returnRequests.page.description')}</p>
       </div>
 

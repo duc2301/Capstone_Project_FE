@@ -23,6 +23,7 @@ import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
+import { FilePermissionModal } from './FilePermissionModal';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
@@ -47,6 +48,10 @@ const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[
   { key: 'canVerify', label: () => t('documents.perm.verify') },
   { key: 'canApprove', label: () => t('documents.perm.approve') },
 ];
+
+/* Thư mục hệ thống ở Published được nhận file trực tiếp — khớp Domain/Common/CdeFolderNames.cs */
+const PACKAGES_FOLDER_NAME = 'Các gói thầu';
+const LEGAL_FOLDER_NAME = 'Hồ sơ pháp lý';
 
 /* Tìm node theo id trong cây */
 function findNode(nodes: FolderTreeNode[], id: string | null): FolderTreeNode | null {
@@ -120,6 +125,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
   const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
+  const [filePermissionFor, setFilePermissionFor] = useState<FileListItem | null>(null);
   const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
@@ -153,11 +159,19 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   };
 
   // Mở modal upload cho 1 folder (chỉ ô con WIP/Shared có quyền ghi).
+  // Chặn sớm cho khớp BE: chỉ WIP mới nhận file, trừ 2 thư mục hồ sơ hệ thống ở Published.
+  const canUploadTo = (node: FolderTreeNode) => {
+    if (node.parentFolderId === null) return false;
+    if (!node.permission.canEdit && !node.permission.canUpdate) return false;
+    if (node.area === CdeArea.Wip) return true;
+    if (node.area !== CdeArea.Published) return false;
+    if (node.name === LEGAL_FOLDER_NAME) return true;
+    return findNode(tree, node.parentFolderId)?.name === PACKAGES_FOLDER_NAME;
+  };
+
   const openUpload = (node: FolderTreeNode) => {
-    if (node.parentFolderId !== null && (node.permission.canEdit || node.permission.canUpdate))
-      setUploadFolder(node);
-    else
-      showToast(t('documents.selectFolderToCreate'), 'error');
+    if (canUploadTo(node)) setUploadFolder(node);
+    else showToast(t('documents.uploadWipOnly'), 'error');
   };
 
   const handleFileMenu = (e: React.MouseEvent, file: FileListItem) => {
@@ -286,7 +300,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const selectedCanManage = !!selected && selected.permission.canEdit && selected.parentFolderId !== null;
 
   return (
-    <div className="space-y-6">
+    // Header cố định, lưới 2 ô chiếm phần chiều cao còn lại
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
@@ -294,8 +309,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       )}
 
       {/* Header: tiêu đề + hành động */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="font-display text-2xl font-semibold text-primary">
+      <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="heading-tab">
           {t('projectDetail.tab.documents')}
         </h2>
         <div className="flex flex-wrap items-center gap-3">
@@ -353,7 +368,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           <p className="text-sm font-medium text-danger">{error}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_1fr]">
+        // Dữ liệu dài thì cuộn trong từng ô, không đẩy dài cả trang
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
           {/* Cây thư mục — chuột phải để mở menu thao tác */}
           <FolderTree
             tree={tree}
@@ -363,7 +379,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="min-w-0 rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
+          <div className="admin-scrollbar flex min-h-0 min-w-0 flex-col overflow-y-auto rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>
@@ -377,7 +393,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                       </svg>
                     </span>
-                    <h3 className="truncate text-xl font-normal text-text">{selected.name}</h3>
+                    <h3 className="heading-entity truncate">{selected.name}</h3>
                   </div>
 
                   {/* Nút thao tác nhanh trên thư mục đang chọn */}
@@ -532,6 +548,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onDetail={() => handleDetail(fileMenu.file)}
           onDownload={() => handleDownload(fileMenu.file)}
           onVersions={() => setVersionsFor(fileMenu.file)}
+          onPermission={() => setFilePermissionFor(fileMenu.file)}
           onSoon={() => showToast(t('documents.fileMenu.soon'))}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
           onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
@@ -550,6 +567,16 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           busy={returnRequestBusy}
           onClose={() => setReturnRequestFor(null)}
           onSubmit={handleReturnRequest}
+        />
+      )}
+
+      {/* Modal phân quyền tệp */}
+      {filePermissionFor && (
+        <FilePermissionModal
+          fileItemId={filePermissionFor.id}
+          fileName={filePermissionFor.name}
+          onClose={() => setFilePermissionFor(null)}
+          onSaved={() => showToast(t('filePermission.toast.updated'))}
         />
       )}
 

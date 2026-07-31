@@ -82,6 +82,23 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* ── Thang tiêu đề dùng chung ──────────────────────
+   Khai 1 nơi để mọi màn dùng cùng cỡ/font/màu, khỏi mỗi trang tự chế.
+   page/tab dùng chung một kiểu theo Figma (Playfair 600, màu primary),
+   chỉ khác cỡ: trang 32px, tab trong trang giữ 24px cho đỡ chiếm chỗ.
+   page   : tiêu đề trang
+   panel  : tiêu đề trang dạng thẻ header (chi tiết file/issue — giữ nhỏ cho đỡ tốn chỗ)
+   tab    : tiêu đề tab trong dự án
+   card   : nhãn khối bên trong thẻ
+   entity : tên đối tượng (nhóm, đối tác, thư mục...) */
+@layer components {
+  .heading-page   { @apply font-display text-[1.75rem] font-semibold leading-tight text-primary lg:text-[2rem] lg:leading-10; }
+  .heading-panel  { @apply font-heading text-xl font-semibold text-text; }
+  .heading-tab    { @apply font-display text-2xl font-semibold text-primary; }
+  .heading-card   { @apply font-display text-base font-medium text-primary; }
+  .heading-entity { @apply font-heading text-lg font-semibold text-text; }
+}
+
 /* ── Base ──────────────────────────────────────────── */
 html {
   font-size: 93.75%; /* 15px thay vì 16px — chữ toàn hệ thống nhỏ lại chút */

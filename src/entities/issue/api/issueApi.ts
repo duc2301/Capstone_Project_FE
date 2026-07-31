@@ -13,6 +13,7 @@ import type {
   IssuePriority,
   IssueStatus,
   IssueType,
+  ProjectIssueListItem,
 } from '../model/issue.types';
 
 interface RawIssueParticipant {
@@ -126,12 +127,64 @@ function mapIssueItem(item: RawIssueItem): IssueItem {
   };
 }
 
+interface RawProjectIssueListItem {
+  id: string;
+  projectId: string;
+  type: number | string;
+  title: string;
+  description?: string | null;
+  status: number | string;
+  priority: number | string;
+  raisedByAccountId?: string | null;
+  raisedByName?: string | null;
+  assignedToAccountId?: string | null;
+  assignedToName?: string | null;
+  dueDate?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  linkedFileItemId?: string | null;
+  linkedFileName?: string | null;
+  linkedFolderId?: string | null;
+  linkedFolderName?: string | null;
+}
+
+function mapProjectIssueListItem(item: RawProjectIssueListItem): ProjectIssueListItem {
+  return {
+    id: item.id,
+    projectId: item.projectId,
+    type: normalizeIssueType(item.type),
+    title: item.title,
+    description: item.description ?? null,
+    status: normalizeIssueStatus(item.status),
+    priority: normalizeIssuePriority(item.priority),
+    raisedByAccountId: item.raisedByAccountId ?? null,
+    raisedByName: item.raisedByName ?? null,
+    assignedToAccountId: item.assignedToAccountId ?? null,
+    assignedToName: item.assignedToName ?? null,
+    dueDate: item.dueDate ?? null,
+    createdAt: item.createdAt ?? null,
+    updatedAt: item.updatedAt ?? null,
+    linkedFileItemId: item.linkedFileItemId ?? null,
+    linkedFileName: item.linkedFileName ?? null,
+    linkedFolderId: item.linkedFolderId ?? null,
+    linkedFolderName: item.linkedFolderName ?? null,
+  };
+}
+
 export const issueApi = {
   getByFileItem: async (fileItemId: string): Promise<IssueItem[]> => {
     const { data } = await axiosInstance.get<ApiResponse<RawIssueItem[]>>(
       `/issues/by-file/${fileItemId}`,
     );
     return (unwrap(data) ?? []).map(mapIssueItem);
+  },
+
+  /** Issue toan du an; BE da loc theo quyen View thu muc cua nguoi goi. */
+  getByProject: async (projectId: string): Promise<ProjectIssueListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
+      `/issues/by-project/${projectId}`,
+    );
+    return (unwrap(data) ?? []).map(mapProjectIssueListItem);
   },
 
   getById: async (issueId: string): Promise<IssueItem> => {

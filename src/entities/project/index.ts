@@ -4,11 +4,14 @@ export type {
   AddParticipantPayload,
   AddParticipantsBulkPayload,
   AssignManagerPayload,
+  BepGroup,
+  BepPackage,
+  BepParseResult,
   CreateProjectPayload,
   Participant,
   Project,
   ProjectLocation,
-  ProjectModel,
-  UpdateParticipantStatusPayload
+  UpdateParticipantStatusPayload,
+  UpdateProjectPayload
 } from './model/project.types';
 

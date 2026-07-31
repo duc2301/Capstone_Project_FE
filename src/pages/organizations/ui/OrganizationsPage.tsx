@@ -120,7 +120,7 @@ export function OrganizationsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-display text-[28px] font-bold text-[#40562D]">
-            Quản lý doanh nghiệp
+            {t('org.title')}
           </h1>
           <p className="mt-1 text-[15px] text-[#73796B]">
             Quản lý các pháp nhân và đơn vị tham gia hệ thống

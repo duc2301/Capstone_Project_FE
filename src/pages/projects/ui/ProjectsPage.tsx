@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import type { BepParseResult } from '@/entities/project';
+import { projectApi } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreateProjectStepper, useProjectInvite, useProjects } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
@@ -45,6 +47,39 @@ export function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+  /* ── Khởi tạo nhanh từ BEP ── */
+  const bepInputRef = useRef<HTMLInputElement>(null);
+  const [bepData, setBepData] = useState<BepParseResult | undefined>(undefined);
+  const [parsing, setParsing] = useState(false);
+
+  const openBlankCreate = () => {
+    setBepData(undefined);
+    setCreating(true);
+  };
+
+  const closeCreate = () => {
+    setCreating(false);
+    setBepData(undefined);
+  };
+
+  const runBepParse = async (file: File) => {
+    setParsing(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await projectApi.parseBep(formData);
+      const result = data.result;
+      if (!result) throw new Error(t('projects.bep.failed'));
+      if (result.extractionEmpty) showToast(t('projects.bep.empty'), 'error');
+      setBepData(result);
+      setCreating(true);
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || t('projects.bep.failed'), 'error');
+    } finally {
+      setParsing(false);
+    }
+  };
+
   const accountNameById = useMemo(() => {
     const map = new Map<string, string>();
     accounts.forEach((a) => map.set(a.id, a.userName));
@@ -73,21 +108,59 @@ export function ProjectsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-text lg:text-3xl">{t('projects.title')}</h1>
+          <h1 className="heading-page">{t('projects.title')}</h1>
           <p className="mt-1 text-sm text-text-muted">{t('projects.subtitle')}</p>
         </div>
         {isAdmin && (
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="flex shrink-0 items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            {t('projects.createNew')}
-          </button>
+          <div className="flex shrink-0 items-center gap-3">
+            <input
+              ref={bepInputRef}
+              type="file"
+              accept=".pdf,.docx"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f) runBepParse(f);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => bepInputRef.current?.click()}
+              disabled={parsing}
+              className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-200 hover:bg-primary-ghost disabled:opacity-50"
+            >
+              {parsing ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
+                  </svg>
+                  {t('projects.bep.parsing')}
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  {t('projects.bep.quickCreate')}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={openBlankCreate}
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              {t('projects.createNew')}
+            </button>
+          </div>
         )}
       </div>
 
@@ -171,8 +244,13 @@ export function ProjectsPage() {
 
       {/* Create modal */}
       {creating && (
-        <Modal title={t('projects.modal.createTitle')} onClose={() => setCreating(false)}>
-          <CreateProjectStepper onComplete={handleStepperComplete} onCancel={() => setCreating(false)} />
+        <Modal title={t('projects.modal.createTitle')} onClose={closeCreate}>
+          <CreateProjectStepper
+            key={bepData ? 'bep' : 'blank'}
+            initialData={bepData}
+            onComplete={handleStepperComplete}
+            onCancel={closeCreate}
+          />
         </Modal>
       )}
     </div>

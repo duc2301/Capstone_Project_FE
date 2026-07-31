@@ -143,7 +143,7 @@ export default function PackageDetailPage() {
                 • {st.label}
               </span>
             </div>
-            <h1 className="text-3xl font-bold text-text lg:text-4xl">
+            <h1 className="heading-page">
               Gói thầu {pkg.name.toLowerCase()}
             </h1>
             <p className="mt-1 text-sm text-text-muted">

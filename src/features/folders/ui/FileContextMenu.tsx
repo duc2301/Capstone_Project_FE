@@ -9,6 +9,7 @@ interface FileContextMenuProps {
   onDetail: () => void;
   onDownload: () => void;
   onVersions: () => void;
+  onPermission: () => void;
   onSoon: () => void;
   canSubmitApproval: boolean;
   onSubmitApproval: () => void;
@@ -33,6 +34,7 @@ export function FileContextMenu({
   onDetail,
   onDownload,
   onVersions,
+  onPermission,
   onSoon,
   canSubmitApproval,
   onSubmitApproval,
@@ -76,7 +78,7 @@ export function FileContextMenu({
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>,
     }] : []),
     {
-      key: 'permission', label: t('documents.fileMenu.permission'), soon: true, onClick: onSoon,
+      key: 'permission', label: t('documents.fileMenu.permission'), onClick: onPermission,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
     },
     {

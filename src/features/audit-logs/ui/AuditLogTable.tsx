@@ -1,18 +1,18 @@
 import type { AuditLogItem } from '@/entities/audit-log';
 import { t } from '@/shared/lib/i18n';
-import { actionBadge, formatLogTime, scopeBadge } from '../model/auditFormat';
+import { actionBadge, formatLogClock, formatLogDate, moduleLabel } from '../model/auditFormat';
 
 interface Props {
   items: AuditLogItem[];
   loading: boolean;
-  /* Ẩn cột Phạm vi khi đang xem trong 1 dự án (đỡ nhiễu) */
-  showScopeColumn?: boolean;
 }
 
-export function AuditLogTable({ items, loading, showScopeColumn = true }: Props) {
+const thClass = 'px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-text-muted';
+
+export function AuditLogTable({ items, loading }: Props) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center rounded-xl border border-card-border bg-card py-12">
+      <div className="flex items-center justify-center rounded-2xl border border-card-border bg-card py-16">
         <svg className="h-6 w-6 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z" />
@@ -23,62 +23,68 @@ export function AuditLogTable({ items, loading, showScopeColumn = true }: Props)
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-card-border bg-card py-12 text-center">
+      <div className="rounded-2xl border border-card-border bg-card py-16 text-center">
         <p className="text-sm text-text-muted">{t('audit.empty')}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-card-border bg-card">
-      <table className="w-full min-w-[720px] border-collapse">
+    <div className="overflow-x-auto rounded-2xl border border-card-border bg-card shadow-card">
+      <table className="w-full min-w-[820px] border-collapse">
         <thead>
-          <tr className="border-b border-card-border bg-content-bg">
-            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-              {t('audit.col.time')}
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-              {t('audit.col.actor')}
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-              {t('audit.col.action')}
-            </th>
-            {showScopeColumn && (
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                {t('audit.col.scope')}
-              </th>
-            )}
-            <th className="w-full px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-              {t('audit.col.detail')}
-            </th>
+          <tr className="border-b border-card-border">
+            <th className={thClass}>{t('audit.col.time')}</th>
+            <th className={thClass}>{t('audit.col.user')}</th>
+            <th className={thClass}>{t('audit.col.action')}</th>
+            <th className={thClass}>{t('audit.col.module')}</th>
+            <th className={`${thClass} w-full`}>{t('audit.col.detail')}</th>
           </tr>
         </thead>
         <tbody>
-          {items.map((log) => {
+          {items.map((log, idx) => {
             const action = actionBadge(log.action);
-            const scope = scopeBadge(log.scope);
+            const initial = (log.actorName ?? '?').charAt(0).toUpperCase();
+            const isFirst = idx === 0;
             return (
-              <tr key={log.id} className="border-b border-card-border last:border-b-0 hover:bg-content-bg">
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                  {formatLogTime(log.createdAt)}
+              <tr key={log.id} className="border-b border-card-border last:border-b-0 transition-colors hover:bg-content-bg">
+                {/* Thời gian: ngày trên, giờ UTC dưới */}
+                <td className="whitespace-nowrap px-5 py-4 align-top">
+                  <p className="text-sm font-semibold text-text">{formatLogDate(log.createdAt)}</p>
+                  <p className="mt-0.5 text-xs text-text-muted">{formatLogClock(log.createdAt)}</p>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-text">
-                  {log.actorName ?? t('audit.unknownActor')}
+
+                {/* Người dùng: avatar chữ cái + tên */}
+                <td className="whitespace-nowrap px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
+                      {initial}
+                    </span>
+                    <p className="text-sm font-medium text-text">{log.actorName ?? t('audit.unknownActor')}</p>
+                  </div>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${action.className}`}>
+
+                {/* Thao tác: pill + chấm màu cùng tông chữ */}
+                <td className="whitespace-nowrap px-5 py-4">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${action.className}`}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
                     {action.label}
                   </span>
                 </td>
-                {showScopeColumn && (
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${scope.className}`}>
-                      {scope.label}
-                    </span>
-                  </td>
-                )}
-                <td className="px-4 py-3 text-sm text-text-secondary">
-                  {log.detail ?? `${log.entityType} · ${log.entityId}`}
+
+                {/* Phân hệ (suy diễn) */}
+                <td className="whitespace-nowrap px-5 py-4 text-sm text-text-secondary">
+                  {moduleLabel(log)}
+                </td>
+
+                {/* Chi tiết: dòng chính + phụ */}
+                <td className="px-5 py-4">
+                  <p className={`text-sm ${isFirst ? 'font-semibold text-warning' : 'font-medium text-text'}`}>
+                    {log.detail ?? `${log.entityType} · ${log.entityId}`}
+                  </p>
+                  {log.detail && log.entityType && (
+                    <p className="mt-0.5 text-xs text-text-muted">{log.entityType}</p>
+                  )}
                 </td>
               </tr>
             );

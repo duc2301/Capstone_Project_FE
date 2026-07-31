@@ -1265,10 +1265,10 @@ export const translations = {
   'docSearch.openHint': 'Bấm để mở xem chi tiết tài liệu',
 
   // ── Nhật ký hoạt động (audit log) ──────────────────────────────
-  'projectDetail.tab.audit': 'Nhật ký',
+  'projectDetail.tab.audit': 'Nhật ký hệ thống',
 
-  'audit.page.title': 'Nhật ký hoạt động hệ thống',
-  'audit.page.desc': 'Toàn bộ thao tác trên mọi dự án. Chỉ quản trị viên hệ thống xem được.',
+  'audit.page.title': 'Nhật ký kiểm toán hệ thống — BIM-CDE Portal',
+  'audit.page.desc': 'Theo dõi hoạt động toàn hệ thống phục vụ bảo mật và tuân thủ.',
   'audit.title': 'Nhật ký hoạt động',
   'audit.subtitle': 'Lịch sử thao tác được ghi lại tự động.',
   'audit.subtitle.system': 'Mọi thao tác trên tất cả dự án.',
@@ -1322,6 +1322,38 @@ export const translations = {
   'audit.action.rejectInvite': 'Từ chối mời',
   'audit.action.assign': 'Chỉ định',
   'audit.action.statusChange': 'Đổi trạng thái',
+
+  // Bố cục nhật ký kiểu bảng kiểm toán (mockup)
+  'audit.col.user': 'Người dùng',
+  'audit.col.module': 'Phân hệ',
+
+  'audit.filter.dateRange': 'Khoảng thời gian',
+  'audit.filter.eventType': 'Loại thao tác',
+  'audit.filter.allEvents': 'Tất cả sự kiện',
+  'audit.filter.user': 'Người dùng',
+  'audit.filter.userPlaceholder': 'Tìm kiếm theo tên hoặc email',
+  'audit.filter.userScope': 'Phạm vi người dùng',
+  'audit.filter.applyFull': 'Áp dụng bộ lọc',
+
+  'audit.range.today': 'Hôm nay',
+  'audit.range.7d': '7 ngày qua',
+  'audit.range.30d': '30 ngày qua',
+  'audit.range.90d': '90 ngày qua',
+  'audit.range.all': 'Tất cả',
+
+  // "Phân hệ" suy từ scope + entityType (BE chưa có field module)
+  'audit.module.system': 'Hệ thống',
+  'audit.module.project': 'Quản lý dự án',
+  'audit.module.permission': 'Phân quyền',
+  'audit.module.auth': 'Xác thực',
+  'audit.module.document': 'Tài liệu',
+  'audit.module.group': 'Đội nhóm',
+  'audit.module.other': 'Khác',
+
+  'audit.pagination.showing': 'Hiển thị',
+  'audit.pagination.to': 'đến',
+  'audit.pagination.of': 'trong số',
+  'audit.pagination.items': 'mục',
 
   // Cảnh báo AI check tên file vs nội dung (advisory)
   'fileWarn.title': 'Cảnh báo: tên file có thể không khớp nội dung',
@@ -1686,6 +1718,18 @@ export const translations = {
   'naming.detail.delete': 'Xóa bộ quy tắc',
   'naming.detail.deleteConfirm': 'Xóa bộ quy tắc này? Các thư mục đang áp dụng sẽ trở lại đặt tên tự do.',
   'naming.detail.description': 'Mô tả',
+
+  // Bố cục bảng tham số kiểu mockup
+  'naming.detail.paramsSubtitle': 'Tuân thủ nghiêm ngặt các tiêu chuẩn quốc gia cho tất cả các tệp tải lên.',
+  'naming.detail.addParam': 'Thêm tham số',
+  'naming.table.component': 'Thành phần',
+  'naming.table.format': 'Định dạng',
+  'naming.table.example': 'Ví dụ',
+  'naming.detail.locked': 'Đã khóa',
+  'naming.detail.applyInFolder': 'Áp dụng trong thư mục',
+  'naming.detail.applyFolderBtn': 'Áp dụng vào thư mục',
+  'naming.preview.title': 'Xem trước trực tiếp — Tuân thủ ISO',
+  'naming.preview.save': 'Lưu quy tắc đặt tên',
 
   'naming.field.codePlaceholder': 'VD: ORIG',
   'naming.field.namePlaceholder': 'VD: Đơn vị tạo tài liệu',

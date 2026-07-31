@@ -7,11 +7,11 @@ export function AuditLogsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="heading-page">{t('audit.page.title')}</h1>
-        <p className="mt-1 text-sm text-text-muted">{t('audit.page.desc')}</p>
+        <h1 className="font-display text-3xl font-semibold text-text lg:text-4xl">{t('audit.page.title')}</h1>
+        <p className="mt-1.5 text-sm text-text-muted">{t('audit.page.desc')}</p>
       </div>
 
-      <AuditLogPanel mode="system" subtitle={t('audit.subtitle.system')} />
+      <AuditLogPanel mode="system" />
     </div>
   );
 }

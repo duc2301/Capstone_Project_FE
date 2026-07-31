@@ -1024,11 +1024,7 @@ export function ProjectDetailPage() {
           Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
           BE tự lọc chỉ còn log của thư mục họ có quyền xem + nhóm họ tham gia. */}
       {tab === 'audit' && (
-        <AuditLogPanel
-          mode={canViewAllTabs ? 'project' : 'my'}
-          projectId={project.id}
-          subtitle={canViewAllTabs ? t('audit.subtitle.project') : t('audit.subtitle.my')}
-        />
+        <AuditLogPanel mode={canViewAllTabs ? 'project' : 'my'} projectId={project.id} />
       )}
 
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}

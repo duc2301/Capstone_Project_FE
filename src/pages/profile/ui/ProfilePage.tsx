@@ -2,20 +2,11 @@ import { useState } from 'react';
 
 import type { ChangePasswordPayload } from '@/entities/profile';
 import { useProfile } from '@/features/profile';
+import { UserAvatar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 /* ── Tab config ────────────────────────────────────── */
 type ProfileTab = 'info' | 'security' | 'notifications' | 'signature' | 'activity';
-
-/* ── Helper: initials ──────────────────────────────── */
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
 
 /* ── Main page ─────────────────────────────────────── */
 export function ProfilePage() {
@@ -41,7 +32,6 @@ export function ProfilePage() {
   const userName = profile?.userName ?? 'Người dùng';
   const email = profile?.email ?? '';
   const role = profile?.role ?? 'Member';
-  const initials = getInitials(userName);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(msg);
@@ -132,9 +122,13 @@ export function ProfilePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-white shadow-sm">
-                {initials}
-              </div>
+              <UserAvatar
+                userName={userName}
+                avatarUrl={profile?.avatarUrl}
+                size="xl"
+                rounded="full"
+                className="shadow-sm"
+              />
               <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-warning text-white shadow-sm hover:bg-warning-hover">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />

@@ -17,7 +17,7 @@ export interface ProjectGroupDraft {
 export interface CreateProjectWithGroupsInput {
   projectName: string;
   projectCode?: string;
-  projectImageUrl?: string;
+  projectImage?: File | null;
   projectDescription?: string;
   address?: string;
   latitude?: number;
@@ -66,7 +66,6 @@ export function useProjects(): UseProjectsReturn {
     const { data: projectRes } = await projectApi.create({
       projectName: input.projectName,
       projectCode: input.projectCode,
-      projectImageUrl: input.projectImageUrl,
       projectDescription: input.projectDescription,
       address: input.address,
       latitude: input.latitude,
@@ -74,6 +73,8 @@ export function useProjects(): UseProjectsReturn {
     });
     const project = projectRes.result;
     if (!project) throw new Error('Project creation failed');
+
+    if (input.projectImage) await projectApi.uploadImage(project.id, input.projectImage);
 
     const groups = input.groups.filter((g) => g.name.trim());
     if (groups.length > 0) {

@@ -11,7 +11,7 @@ import { t } from '@/shared/lib/i18n';
 /* ── Breadcrumb mapping ────────────────────────────── */
 const BREADCRUMB_MAP: Record<string, string> = {
   '/accounts': 'QUẢN LÝ NGƯỜI DÙNG',
-  '/organizations': 'QUẢN LÝ TỔ CHỨC',
+  '/organizations': 'QUẢN LÍ DOANH NGHIỆP VÀ ĐỐI TÁC',
   '/audit-log': 'NHẬT KÝ HOẠT ĐỘNG',
   '/profile': 'HỒ SƠ',
   '/dashboard': 'TỔNG QUAN',

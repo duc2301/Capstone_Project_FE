@@ -13,6 +13,7 @@ export interface Organization {
   isJointVenture?: boolean;
   jointVentureMemberIds?: string[];
   representativeOrganizationId?: string | null;
+  participatingProjectsCount?: number;
 }
 
 export interface CreateOrganizationPayload {

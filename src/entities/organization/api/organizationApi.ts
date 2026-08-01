@@ -17,4 +17,7 @@ export const organizationApi = {
 
   remove: (id: string) =>
     axiosInstance.delete<ApiResponse<null>>(`/organizations/${id}`),
+
+  getProjects: (id: string) =>
+    axiosInstance.get<ApiResponse<any[]>>(`/organizations/${id}/projects`),
 };

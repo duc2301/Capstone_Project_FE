@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { accountApi } from '@/entities/account/api/accountApi';
 import type { Organization } from '@/entities/organization';
 import {
   CreateOrganizationForm,
@@ -11,6 +12,7 @@ import {
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
+
 
 
 /* ── Modal wrapper ─────────────────────────────────── */
@@ -53,17 +55,47 @@ export function OrganizationsPage() {
   const [formMode, setFormMode] = useState<FormMode>('idle');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   /* ── Handlers ────────────────────────────────────── */
-  const handleCreate = async (payload: Parameters<typeof createOrganization>[0]) => {
-    await createOrganization(payload);
+  const handleCreate = async (payload: Parameters<typeof createOrganization>[0], selectedAccountIds?: string[]) => {
+    const newOrg = await createOrganization(payload);
+    if (newOrg && selectedAccountIds && selectedAccountIds.length > 0) {
+      await Promise.all(selectedAccountIds.map(accId => 
+        accountApi.update(accId, { organizationId: newOrg.id })
+      ));
+    }
     setFormMode('idle');
   };
 
-  const handleUpdate = async (id: string, payload: Parameters<typeof updateOrganization>[1]) => {
-    await updateOrganization(id, payload);
-    setFormMode('idle');
-    setSelectedOrg(null);
+  const handleUpdate = async (id: string, payload: Parameters<typeof updateOrganization>[1], selectedAccountIds?: string[], initialAccountIds?: string[]) => {
+    try {
+      await updateOrganization(id, payload);
+      
+      if (selectedAccountIds && initialAccountIds) {
+        const added = selectedAccountIds.filter(aid => !initialAccountIds.includes(aid));
+        const removed = initialAccountIds.filter(aid => !selectedAccountIds.includes(aid));
+        
+        const promises = [];
+        for (const accountId of added) {
+          promises.push(accountApi.update(accountId, { organizationId: id }));
+        }
+        for (const accountId of removed) {
+          promises.push(accountApi.update(accountId, { clearOrganization: true }));
+        }
+        
+        if (promises.length > 0) {
+          await Promise.all(promises);
+        }
+      }
+      
+      setFormMode('idle');
+      setSelectedOrg(null);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -87,6 +119,13 @@ export function OrganizationsPage() {
       (o.displayName || o.legalName || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [organizations, searchQuery]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, currentPage]);
 
   const stats = useMemo(() => {
     return {
@@ -196,7 +235,10 @@ export function OrganizationsPage() {
                 type="text"
                 placeholder="Tìm kiếm..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="appearance-none rounded-full border border-card-border bg-transparent px-4 py-2 text-[13px] font-medium text-text outline-none focus:border-[#647C54]"
               />
             </div>
@@ -274,16 +316,22 @@ export function OrganizationsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((org, index) => {
-                    // Mocking data based on index to show the UI variants
-                    const mockTypes = ['XÂY DỰNG', 'CƠ ĐIỆN', 'KIẾN TRÚC'];
-                    const mockType = mockTypes[index % mockTypes.length];
-                    const mockStatus = index === 1 ? 'Chờ duyệt' : index === 3 ? 'Tạm ngưng' : 'Đang hoạt động';
-                    const mockProjects = ['32', '08', '32', '05'][index % 4];
-                    const initials = (org.displayName || org.legalName || 'A').substring(0, 2).toUpperCase();
+                  paginatedList.map((org) => {
+                    const orgTypeName = orgTypes.find(t => t.id === org.organizationTypeId)?.name || 'Khác';
+                    const statusText = org.taxCode || org.isJointVenture ? 'Đang hoạt động' : 'Chờ duyệt';
+                    const projectsCount = org.participatingProjectsCount || 0;
+                    const rawName = (org.displayName || org.legalName || 'A').trim();
+                    const words = rawName.split(/\s+/);
+                    const initials = (words.length > 1 
+                      ? words[0][0] + words[1][0] 
+                      : words[0].substring(0, 2)).toUpperCase();
                     
                     return (
-                      <tr key={org.id} className="transition-colors duration-150 hover:bg-input-bg/50 group">
+                      <tr 
+                        key={org.id} 
+                        onClick={() => navigate(`/organizations/${org.id}`)}
+                        className="transition-colors duration-150 hover:bg-input-bg/50 group cursor-pointer"
+                      >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-card-border bg-[#F8F7F2] text-[14px] font-bold text-[#647C54]">
@@ -291,33 +339,42 @@ export function OrganizationsPage() {
                             </div>
                             <div>
                               <p className="font-bold text-[#2D3A28] text-[14px]">{org.displayName || org.legalName}</p>
-                              <p className="text-[12px] text-[#A3A89C] mt-0.5">ID: ORG-2024-{String(index + 42).padStart(3, '0')}</p>
+                              <p className="text-[12px] text-[#A3A89C] mt-0.5">ID: ORG-{org.id.substring(0, 6).toUpperCase()}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold tracking-wide ${getTypeBadgeStyle(mockType)}`}>
-                            {mockType}
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold tracking-wide ${getTypeBadgeStyle(orgTypeName)}`}>
+                            {orgTypeName}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-bold text-[#2D3A28] text-[14px] bg-[#F8F7F2] px-3 py-1 rounded-full">{mockProjects}</span>
+                          <span className="font-bold text-[#2D3A28] text-[14px] bg-[#F8F7F2] px-3 py-1 rounded-full">{projectsCount.toString().padStart(2, '0')}</span>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${getStatusDot(mockStatus)}`}></span>
-                            <span className="text-[13px] font-medium text-[#43493C]">{mockStatus}</span>
+                            <span className={`h-2 w-2 rounded-full ${getStatusDot(statusText)}`}></span>
+                            <span className="text-[13px] font-medium text-[#43493C]">{statusText}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-3 text-[#A3A89C]">
-                            <button onClick={() => navigate(`/organizations/${org.id}`)} className="transition hover:text-[#647C54]">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); navigate(`/organizations/${org.id}`); }} 
+                              className="transition hover:text-[#647C54]"
+                            >
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
-                            <button onClick={() => openEdit(org)} className="transition hover:text-[#647C54]">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); openEdit(org); }} 
+                              className="transition hover:text-[#647C54]"
+                            >
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                             </button>
-                            <button onClick={() => handleDelete(org.id)} className="transition hover:text-danger">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleDelete(org.id); }} 
+                              className="transition hover:text-danger"
+                            >
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             </button>
                           </div>
@@ -329,22 +386,43 @@ export function OrganizationsPage() {
               </tbody>
             </table>
             
-            {/* Pagination Footer */}
             {filtered.length > 0 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-card-border mt-2">
                 <span className="text-[13px] text-text-muted">
-                  Hiển thị 1 - {Math.min(3, filtered.length)} của 128 Doanh nghiệp
+                  Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} của {filtered.length} Doanh nghiệp
                 </span>
                 <div className="flex items-center gap-1">
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-input-bg">
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-input-bg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                   </button>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md bg-[#647C54] text-white font-medium text-[13px]">1</button>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md text-[#43493C] hover:bg-input-bg font-medium text-[13px]">2</button>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md text-[#43493C] hover:bg-input-bg font-medium text-[13px]">3</button>
-                  <span className="flex h-7 w-7 items-center justify-center text-text-muted text-[13px]">...</span>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md text-[#43493C] hover:bg-input-bg font-medium text-[13px]">12</button>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-input-bg">
+                  
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const page = idx + 1;
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <button 
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`flex h-7 w-7 items-center justify-center rounded-md font-medium text-[13px] transition ${currentPage === page ? 'bg-[#647C54] text-white shadow-sm' : 'text-[#43493C] hover:bg-input-bg'}`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="flex h-7 w-7 items-center justify-center text-text-muted text-[13px]">...</span>;
+                    }
+                    return null;
+                  })}
+
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-input-bg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </button>
                 </div>

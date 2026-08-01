@@ -359,7 +359,7 @@ export const translations = {
 
 
   // ── Organization CRUD ─────────────────────────────
-  'org.title': 'Quản lý tổ chức',
+  'org.title': 'Quản lí doanh nghiệp và đối tác',
   'org.description': 'Quản lý danh sách các đối tác, nhà thầu và đơn vị tham gia dự án.',
   'org.createNew': 'Thêm tổ chức mới',
   'org.modal.createTitle': 'Thêm tổ chức mới',

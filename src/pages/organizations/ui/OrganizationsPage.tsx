@@ -138,14 +138,9 @@ export function OrganizationsPage() {
     <div className="space-y-6">
       {/* ── Page Header ────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="heading-page">
-            {t('org.title')}
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            {t('org.description')}
-          </p>
-        </div>
+        <h1 className="heading-page">
+          {t('org.title')}
+        </h1>
         <div className="flex shrink-0 items-center gap-2">
           <button
             onClick={() => setFormMode('create-jv')}

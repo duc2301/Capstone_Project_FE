@@ -1,27 +1,10 @@
-import { Fragment } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useSession } from '@/entities/session';
 import { NotificationBell } from '@/features/notifications';
 import { useProfile } from '@/features/profile';
 import { UserAvatar } from '@/shared/components';
-import { useBreadcrumbTrail } from '@/shared/lib/breadcrumb';
 import { t } from '@/shared/lib/i18n';
-
-/* ── Breadcrumb mapping ────────────────────────────── */
-const BREADCRUMB_MAP: Record<string, string> = {
-  '/accounts': 'QUẢN LÝ NGƯỜI DÙNG',
-  '/organizations': 'QUẢN LÝ TỔ CHỨC',
-  '/audit-log': 'NHẬT KÝ HOẠT ĐỘNG',
-  '/profile': 'HỒ SƠ',
-  '/dashboard': 'TỔNG QUAN',
-  '/projects': 'DỰ ÁN CỦA TÔI',
-  '/notifications': 'THÔNG BÁO',
-  '/settings': 'CÀI ĐẶT',
-  '/teams': 'ĐỘI NGŨ',
-  '/documents': 'QUẢN LÝ TÀI LIỆU',
-  '/discussions': 'THẢO LUẬN',
-};
 
 interface AdminTopBarProps {
   onMenuToggle: () => void;
@@ -32,14 +15,10 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const navigate = useNavigate();
   const { currentUser } = useSession();
   const { profile } = useProfile();
-  // Trail động do page đặt (VD: chi tiết dự án); rỗng thì rơi về map tĩnh theo pathname.
-  const trail = useBreadcrumbTrail();
-  const pageLabel = BREADCRUMB_MAP[location.pathname] ?? '';
   const isHome = location.pathname === '/dashboard';
 
   return (
-    <header className="z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
-      {/* Left: hamburger + breadcrumb */}
+    <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
       <div className="flex items-center gap-4">
         {/* Mobile hamburger */}
         <button
@@ -71,29 +50,6 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
           </button>
         )}
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs font-semibold tracking-wider">
-          <span className="text-text-muted">{t('admin.topbar.breadcrumb.home')}</span>
-          {trail.length > 0
-            ? trail.map((item, index) => (
-              <Fragment key={`${item.label}-${index}`}>
-                <span className="text-text-muted">/</span>
-                {item.to ? (
-                  <Link to={item.to} className="text-text-muted transition-colors hover:text-primary">
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span className="max-w-[240px] truncate text-text font-bold">{item.label}</span>
-                )}
-              </Fragment>
-            ))
-            : pageLabel && (
-              <>
-                <span className="text-text-muted">/</span>
-                <span className="text-text font-bold">{pageLabel}</span>
-              </>
-            )}
-        </nav>
       </div>
 
       {/* Right: actions */}

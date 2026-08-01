@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage, CreateContractPackagePayload, UpdateContractPackagePayload } from '@/entities/contractPackage';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export function usePackages(projectId?: string) {
   const [packages, setPackages] = useState<ContractPackage[]>([]);
@@ -14,7 +15,7 @@ export function usePackages(projectId?: string) {
       const response = projectId 
         ? await contractPackageApi.getByProjectId(projectId)
         : await contractPackageApi.getAll();
-      setPackages(response.data?.result || []);
+      setPackages(sortByNewest(response.data?.result || [], (p) => p.createdAt));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch contract packages');
     } finally {

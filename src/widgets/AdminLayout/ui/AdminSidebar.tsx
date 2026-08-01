@@ -180,7 +180,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
         `}
       >
         {/* ── Brand (cố định) ─────────────────────── */}
-        <div className={`flex shrink-0 items-center bg-[#D7DBCA] px-4 py-3.5 ${isCompact ? 'justify-center' : 'justify-between px-5'}`}>
+        <div className={`flex h-12 shrink-0 items-center bg-[#D7DBCA] px-4 ${isCompact ? 'justify-center' : 'justify-between px-5'}`}>
           {!isCompact && (
             <span className="font-display text-xl font-bold text-primary tracking-tight">
               {t('brand.name')}

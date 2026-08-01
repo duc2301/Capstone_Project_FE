@@ -1,6 +1,6 @@
 import type { NotificationItem } from '@/entities/notification';
 import { t } from '@/shared/lib/i18n';
-import { formatDateTime, formatRelativeTime } from '../model/formatTime';
+import { formatDateTime, formatRelativeTime } from '@/shared/lib/format';
 import type { InvitationAction } from '../model/useInvitationActions';
 
 interface Props {

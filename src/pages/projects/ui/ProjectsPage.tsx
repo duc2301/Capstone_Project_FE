@@ -1,11 +1,23 @@
+import { isAxiosError } from 'axios';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { BepParseResult } from '@/entities/project';
 import { projectApi } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
-import { CreateProjectStepper, useProjectInvite, useProjects } from '@/features/projects';
+import type { ProjectFilter } from '@/features/projects';
+import {
+  CreateProjectStepper,
+  filterLabel,
+  matchesFilter,
+  PROJECT_FILTERS,
+  ProjectCard,
+  useProjects,
+} from '@/features/projects';
+import { PaginationBar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
+
+const PAGE_SIZE = 6;
 
 interface ModalProps {
   title: string;
@@ -16,9 +28,9 @@ function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-5xl animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
-        <div className="flex items-center justify-between border-b border-card-border px-7 py-5">
-          <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-5xl animate-scale-in flex-col rounded-3xl bg-card shadow-modal">
+        <div className="flex shrink-0 items-center justify-between px-8 pt-7 pb-1">
+          <h2 className="font-display text-2xl font-semibold text-primary">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -30,7 +42,7 @@ function Modal({ title, onClose, children }: ModalProps) {
             </svg>
           </button>
         </div>
-        <div className="max-h-[80vh] overflow-y-auto">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
       </div>
     </div>
   );
@@ -40,12 +52,13 @@ function Modal({ title, onClose, children }: ModalProps) {
 export function ProjectsPage() {
   const navigate = useNavigate();
   const { projects, loading, error } = useProjects();
-  const { accounts } = useProjectInvite();
   const { currentUser } = useSession();
   const isAdmin = isAccountAdmin(currentUser?.role);
 
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [filter, setFilter] = useState<ProjectFilter>('all');
+  const [page, setPage] = useState(1);
 
   /* ── Khởi tạo nhanh từ BEP ── */
   const bepInputRef = useRef<HTMLInputElement>(null);
@@ -73,18 +86,13 @@ export function ProjectsPage() {
       if (result.extractionEmpty) showToast(t('projects.bep.empty'), 'error');
       setBepData(result);
       setCreating(true);
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || t('projects.bep.failed'), 'error');
+    } catch (err) {
+      const message = isAxiosError(err) ? (err.response?.data as { message?: string })?.message : null;
+      showToast(message || t('projects.bep.failed'), 'error');
     } finally {
       setParsing(false);
     }
   };
-
-  const accountNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    accounts.forEach((a) => map.set(a.id, a.userName));
-    return map;
-  }, [accounts]);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -97,8 +105,23 @@ export function ProjectsPage() {
     window.location.href = `/projects/${projectId}`;
   };
 
+  const filtered = useMemo(
+    () => projects.filter((p) => matchesFilter(p, filter)),
+    [projects, filter],
+  );
+
+  const changeFilter = (next: ProjectFilter) => {
+    setFilter(next);
+    setPage(1);
+  };
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
   return (
-    <div className="space-y-6">
+    <div className="flex h-full flex-col gap-5">
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
@@ -106,11 +129,8 @@ export function ProjectsPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="heading-page">{t('projects.title')}</h1>
-          <p className="mt-1 text-sm text-text-muted">{t('projects.subtitle')}</p>
-        </div>
+      <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className="heading-page">{t('projects.title')}</h1>
         {isAdmin && (
           <div className="flex shrink-0 items-center gap-3">
             <input
@@ -164,6 +184,26 @@ export function ProjectsPage() {
         )}
       </div>
 
+      {!loading && !error && (
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          {PROJECT_FILTERS.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => changeFilter(item)}
+              aria-pressed={filter === item}
+              className={`rounded-[var(--radius-button)] px-6 py-2 text-sm font-semibold transition-colors ${
+                filter === item
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'border border-card-border bg-card text-text-secondary hover:bg-content-bg'
+              }`}
+            >
+              {filterLabel(item)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading && (
         <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
@@ -177,68 +217,29 @@ export function ProjectsPage() {
       )}
 
       {!loading && !error && (
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-card-border bg-input-bg">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.name')}</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.manager')}</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">{t('projects.col.actions')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-card-border">
-                {projects.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-16 text-center text-sm text-text-muted">
-                      {t('projects.empty')}
-                    </td>
-                  </tr>
-                ) : (
-                  projects.map((p) => (
-                    <tr
-                      key={p.id}
-                      onClick={() => navigate(`/projects/${p.id}`)}
-                      className="cursor-pointer transition-colors duration-150 hover:bg-primary-ghost"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {p.projectImageUrl ? (
-                            <img src={p.projectImageUrl} alt={p.projectName} className="w-10 h-10 rounded-md object-cover border border-card-border" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20">
-                              {p.projectName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-semibold text-text">{p.projectName}</div>
-                            {p.projectCode && <div className="text-xs text-text-muted mt-0.5">{p.projectCode}</div>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-text-muted">
-                        {p.managerAccountId
-                          ? accountNameById.get(p.managerAccountId) ?? p.managerAccountId
-                          : <span className="italic text-text-placeholder">{t('projects.noManager')}</span>}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/projects/${p.id}`);
-                          }}
-                          className="rounded-[var(--radius-button)] border border-primary px-4 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost"
-                        >
-                          {t('projects.manage')}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto pb-1 pr-1">
+            {pageItems.length === 0 ? (
+              <div className="flex h-full min-h-[240px] items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card">
+                <p className="text-sm text-text-muted">{t('projects.empty')}</p>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {pageItems.map((p) => (
+                  <ProjectCard key={p.id} project={p} onOpen={(id) => navigate(`/projects/${id}`)} />
+                ))}
+              </div>
+            )}
           </div>
+
+          <PaginationBar
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            unit={t('projects.pagination.projects')}
+            onChange={setPage}
+          />
         </div>
       )}
 

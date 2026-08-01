@@ -80,9 +80,6 @@ export function ViewerPage() {
           <h1 className="heading-page">
             {t('viewer.title')}
           </h1>
-          <p className="mt-2 font-jakarta text-sm text-[#43493C]">
-            {t('viewer.subtitle')}
-          </p>
         </div>
 
         {phase === 'idle' && <ModelDropzone onFile={upload} />}

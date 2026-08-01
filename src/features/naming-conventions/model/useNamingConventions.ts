@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { NamingConvention } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 interface UseNamingConventionsReturn {
   conventions: NamingConvention[];
@@ -24,7 +25,7 @@ export function useNamingConventions(projectId: string): UseNamingConventionsRet
     try {
       const { data } = await namingConventionApi.getByProject(projectId);
       if (isCancelled()) return;
-      setConventions(data.result ?? []);
+      setConventions(sortByNewest(data.result ?? [], (c) => c.createdAt));
     } catch {
       if (!isCancelled()) setError(t('naming.loadError'));
     } finally {

@@ -158,6 +158,7 @@ export interface LinkableFile {
   displayVersion: string | null;
   format: string | null;
   sizeBytes: number;
+  createdAt: string | null;
   updatedAt: string | null;
   /* Đã liên kết sẵn với file nguồn -> picker tick sẵn + khoá */
   alreadyLinked: boolean;

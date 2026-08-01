@@ -3,6 +3,7 @@ import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { useEffect, useState } from 'react';
 
 interface AssignPartnerFormProps {
@@ -26,7 +27,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
       try {
         const { data } = await organizationApi.getAll();
         if (!cancelled) {
-          setOrganizations(data.result ?? []);
+          setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
         }
       } catch (err) {
         if (!cancelled) {

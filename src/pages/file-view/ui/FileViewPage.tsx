@@ -14,6 +14,7 @@ import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
@@ -220,7 +221,7 @@ export function FileViewPage() {
         if (!cancelled) {
           setError(null);   // xoá lỗi còn sót của file trước khi chuyển sang file mới
           setInfo(viewResult);
-          setVersions(versionsResult.data.result ?? []);
+          setVersions(sortByNewest(versionsResult.data.result ?? [], (v) => v.createdAt));
           setFileListItem(currentFileResult);
           setFileApprovals(fileApprovalsResult);
         }
@@ -679,7 +680,7 @@ export function FileViewPage() {
             void refreshFileApprovals();
             void fetchView().then(setInfo).catch(() => undefined);
             if (fileId) {
-              void fileItemApi.getVersions(fileId).then((res) => setVersions(res.data.result ?? [])).catch(() => undefined);
+              void fileItemApi.getVersions(fileId).then((res) => setVersions(sortByNewest(res.data.result ?? [], (v) => v.createdAt))).catch(() => undefined);
             }
           }}
         />

@@ -9,6 +9,7 @@ import type { FolderContentsFileDto, FolderTreeNode } from "@/entities/folder";
 import { folderApi, toFolderTreeNode } from "@/entities/folder";
 import { issueApi } from "@/entities/issue";
 import { t } from "@/shared/lib/i18n";
+import { sortByNewest } from "@/shared/lib/sort";
 
 interface UseFolderFilesReturn {
   subfolders: FolderTreeNode[];
@@ -61,7 +62,7 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
         if (isCancelled()) return;
 
         setSubfolders((data.result?.subfolders ?? []).map(toFolderTreeNode));
-        const items = (data.result?.files ?? []).map(toFileListItem);
+        const items = sortByNewest((data.result?.files ?? []).map(toFileListItem), (f) => f.createdAt);
         setFiles(items);
 
         // Ghep co "Dang xu ly issue" bang 1 loi goi rieng (khong dong cham API cua FolderTreeService) —

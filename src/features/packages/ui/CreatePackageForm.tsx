@@ -6,7 +6,7 @@ import { useOrganizations } from '@/features/organizations';
 import { fileItemApi } from '@/entities/file-item';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
-import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
+import { numberToWordsVN } from '@/shared/lib/format';
 
 /* ── Trạng thái gói thầu (numeric union khớp BE) ── */
 const PACKAGE_STATUS_OPTIONS: { value: PackageStatus; labelKey: TranslationKey }[] = [

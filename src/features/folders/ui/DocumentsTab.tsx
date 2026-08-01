@@ -301,18 +301,14 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
 
   return (
     // Header cố định, lưới 2 ô chiếm phần chiều cao còn lại
-    <div className="flex min-h-0 flex-1 flex-col gap-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {toast && (
         <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
           <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
         </div>
       )}
 
-      {/* Header: tiêu đề + hành động */}
-      <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="heading-tab">
-          {t('projectDetail.tab.documents')}
-        </h2>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"

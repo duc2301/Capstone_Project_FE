@@ -6,10 +6,7 @@ import { t } from '@/shared/lib/i18n';
 export function AuditLogsPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="heading-page">{t('audit.page.title')}</h1>
-        <p className="mt-1 text-sm text-text-muted">{t('audit.page.desc')}</p>
-      </div>
+      <h1 className="heading-page">{t('audit.page.title')}</h1>
 
       <AuditLogPanel mode="system" subtitle={t('audit.subtitle.system')} />
     </div>

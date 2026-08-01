@@ -7,6 +7,7 @@ import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/
 import { IssueSidePanel } from '@/features/issues';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
@@ -60,7 +61,7 @@ export function IssueDetailPage() {
         const [viewResult, versionsResult] = await Promise.all([fetchView(), fileItemApi.getVersions(fileId)]);
         if (!cancelled) {
           setInfo(viewResult);
-          setVersions(versionsResult.data.result ?? []);
+          setVersions(sortByNewest(versionsResult.data.result ?? [], (v) => v.createdAt));
           setError(null);
         }
       } catch {

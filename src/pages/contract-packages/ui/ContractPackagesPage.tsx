@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage } from '@/entities/contractPackage';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { useProjects } from '@/features/projects';
 
 export function ContractPackagesPage() {
@@ -24,7 +25,7 @@ export function ContractPackagesPage() {
       try {
         const { data } = await contractPackageApi.getAll();
         if (!cancelled) {
-          setPackages(data.result ?? []);
+          setPackages(sortByNewest(data.result ?? [], (p) => p.createdAt));
         }
       } catch (err) {
         if (!cancelled) setError(t('common.error'));
@@ -38,10 +39,7 @@ export function ContractPackagesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="heading-page">{t('admin.nav.packages')}</h1>
-        <p className="mt-1 text-sm text-text-muted">Danh sách tất cả gói thầu và hợp đồng trên hệ thống</p>
-      </div>
+      <h1 className="heading-page">{t('admin.nav.packages')}</h1>
 
       {loading && (
         <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">

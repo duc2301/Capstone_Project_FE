@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { contractPackageApi } from '@/entities/contractPackage';
@@ -15,14 +15,18 @@ import { PackageFormModal, usePackages } from '@/features/packages';
 import type { AddGroupInput } from '@/features/projects';
 import {
   CreateGroupForm,
+  EditProjectForm,
   ManageProjectPanel,
+  ProjectPartnersTab,
+  statusMeta,
   useProjectDetail,
   useProjectGroups,
   useProjectInvite,
 } from '@/features/projects';
 import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
-import { clearBreadcrumbTrail, setBreadcrumbTrail } from '@/shared/lib/breadcrumb';
+import { UserAvatar } from '@/shared/components';
+import { formatDate, formatRelativeTime } from '@/shared/lib/format';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -72,44 +76,71 @@ function Modal({ title, onClose, children, maxWidth = 'max-w-2xl' }: ModalProps)
   );
 }
 
-function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string }) {
+function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <h3 className="heading-card">{title}</h3>
+    <div className="rounded-lg border border-card-border/50 bg-input-bg px-6 py-5">
+      <p className="text-[10px] uppercase tracking-[1px] text-text-secondary/60">{label}</p>
+      <p className="mt-1 truncate font-display text-[22px] leading-[33px] text-primary">{value}</p>
     </div>
   );
 }
 
-/* Ô số liệu nhanh (Gói thầu / Nhóm…) ở đầu tab Thông tin. */
-function StatTile({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) {
+function SidebarRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-card">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-2xl font-bold leading-none text-text">{value}</p>
-        <p className="mt-1.5 text-xs font-medium text-text-muted">{label}</p>
+    <div className="flex items-baseline justify-between gap-4">
+      <p className="shrink-0 text-sm font-semibold text-text-secondary">{label}</p>
+      <p className="text-right text-base font-medium text-text">{value}</p>
+    </div>
+  );
+}
+
+function ProjectMap({
+  latitude,
+  longitude,
+  label,
+}: {
+  latitude: number | null;
+  longitude: number | null;
+  label: string;
+}) {
+  if (latitude === null || longitude === null) {
+    return (
+      <div className="mt-4 flex h-40 items-center justify-center rounded-sm border border-card-border/50 bg-input-bg">
+        <p className="text-sm italic text-text-placeholder">{t('projectDetail.location.noCoordinates')}</p>
+      </div>
+    );
+  }
+
+  const delta = 0.01;
+  const bbox = [longitude - delta, latitude - delta, longitude + delta, latitude + delta].join(',');
+
+  return (
+    <div className="mt-4 space-y-2">
+      <div className="h-40 overflow-hidden rounded-sm border border-card-border/50">
+        <iframe
+          title={label}
+          src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude},${longitude}`}
+          className="h-[186px] w-full border-0"
+          loading="lazy"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <a
+          href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary transition-colors hover:text-primary-hover"
+        >
+          {t('projectDetail.location.openMap')}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </a>
+        <span className="text-[10px] text-text-placeholder">© OpenStreetMap</span>
       </div>
     </div>
   );
-}
-
-/* 1 dòng thông tin (nhãn trên, giá trị dưới) — dùng trong danh sách <dl> có gạch ngăn giữa các dòng. */
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="py-3.5 first:pt-0 last:pb-0">
-      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
-      <div className="mt-1 text-sm text-text">{value}</div>
-    </div>
-  );
-}
-
-function NotUpdated() {
-  return <span className="text-sm italic text-text-placeholder">{t('projectDetail.common.notUpdated')}</span>;
 }
 
 /* ── Group member row ──────────────────────────────────── */
@@ -510,7 +541,7 @@ export function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
 
-  const { project, loading, error, assignManager } = useProjectDetail(projectId);
+  const { project, loading, error, refresh, assignManager } = useProjectDetail(projectId);
   const { accounts, inviteMany } = useProjectInvite();
   const { groups, loading: groupsLoading, addGroup, removeGroup, refresh: refreshGroups } = useProjectGroups(projectId);
   const { organizations } = useOrganizations();
@@ -528,6 +559,7 @@ export function ProjectDetailPage() {
   const initialTab = (TABS.find((x) => x.id === searchParams.get('tab'))?.id ?? 'info') as TabId;
   const [tab, setTab] = useState<TabId>(initialTab);
   const [manageOpen, setManageOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [createPackageOpen, setCreatePackageOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<any>(null);
@@ -539,6 +571,28 @@ export function ProjectDetailPage() {
     if (!project?.managerAccountId) return null;
     return accounts.find((a) => a.id === project.managerAccountId)?.userName ?? project.managerAccountId;
   }, [accounts, project]);
+
+  const managerAccount = useMemo(
+    () => (project?.managerAccountId ? accounts.find((a) => a.id === project.managerAccountId) ?? null : null),
+    [accounts, project],
+  );
+
+  const memberCount = useMemo(() => {
+    const ids = new Set<string>();
+    groups.forEach((g) => g.members
+      .filter((m) => m.status === GroupMemberStatus.Active)
+      .forEach((m) => ids.add(m.accountId)));
+    return ids.size;
+  }, [groups]);
+
+  const contractValueText = useMemo(() => {
+    const total = packages.reduce((sum, p) => sum + (p.contractValue ?? 0), 0);
+    if (total <= 0) return null;
+    const fmt = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v);
+    if (total >= 1_000_000_000) return `${fmt(total / 1_000_000_000)} ${t('projectDetail.currency.billion')}`;
+    if (total >= 1_000_000) return `${fmt(total / 1_000_000)} ${t('projectDetail.currency.million')}`;
+    return `${fmt(total)} ${t('projectDetail.currency.dong')}`;
+  }, [packages]);
 
   const isAdmin = isAccountAdmin(currentUser?.role);
   const isManager = project?.managerAccountId === currentUser?.accountId;
@@ -552,19 +606,15 @@ export function ProjectDetailPage() {
         && m.status === GroupMemberStatus.Active,
     ));
 
-  // Breadcrumb topbar: TRANG CHỦ / DỰ ÁN / (tên dự án)
-  useEffect(() => {
-    if (!project) return;
-    setBreadcrumbTrail([
-      { label: t('admin.topbar.breadcrumb.projects'), to: '/projects' },
-      { label: project.projectName },
-    ]);
-    return () => clearBreadcrumbTrail();
-  }, [project]);
-
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleProjectSaved = async () => {
+    setEditOpen(false);
+    await refresh();
+    showToast(t('projectDetail.actions.saved'));
   };
 
   const handleAssign = async (payload: Parameters<typeof assignManager>[0]) => {
@@ -689,8 +739,29 @@ export function ProjectDetailPage() {
         </div>
       )}
 
+      <header className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-6 gap-y-1 pb-3">
+        <h1 className="heading-page text-text">{project.projectName}</h1>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm font-semibold text-text-secondary/80">
+          <span className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
+              <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
+            </svg>
+            {t('projectDetail.basic.code')}: {project.projectCode?.trim() || shortCode}
+          </span>
+          {project.updatedAt && (
+            <span className="flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              {t('projectDetail.header.updated')}: {formatRelativeTime(project.updatedAt)}
+            </span>
+          )}
+        </div>
+      </header>
+
       {/* Navbar dự án: kéo âm để huỷ padding của <main> cho thanh tab chạm mép */}
-      <nav className="-mx-6 -mt-6 mb-6 flex shrink-0 gap-1 overflow-x-auto border-b border-card-border bg-content-bg px-6 [scrollbar-width:none] lg:-mx-8 lg:-mt-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
+      <nav className="-mx-6 mb-4 flex shrink-0 gap-8 overflow-x-auto border-b border-card-border/60 px-6 [scrollbar-width:none] lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
         {TABS.filter((item) => (item.id === 'settings'
           ? isAdmin || isManager || isProjectLeader // quy tắc đặt tên: Admin/PM full, Leader bản rút gọn
           : canViewAllTabs || ['info', 'partners', 'teams', 'documents', 'issues', 'audit'].includes(item.id))).map((item) => (
@@ -698,9 +769,9 @@ export function ProjectDetailPage() {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`-mb-px shrink-0 border-b-2 px-6 py-2.5 text-sm transition-colors ${tab === item.id
-                ? 'border-primary font-bold text-primary'
-                : 'border-transparent font-medium text-text-secondary hover:text-primary'
+              className={`-mb-px shrink-0 border-b-2 py-3 text-sm font-semibold tracking-[0.01em] transition-colors ${tab === item.id
+                ? 'border-primary text-primary'
+                : 'border-transparent text-text-secondary/70 hover:text-primary'
                 }`}
             >
               {t(item.key)}
@@ -712,149 +783,172 @@ export function ProjectDetailPage() {
       <div className="admin-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
       {/* ── Tab: Thông tin ─────────────── */}
       {tab === 'info' && (
-        <div className="space-y-6">
-          <h2 className="heading-tab">{t('projectDetail.tab.info')}</h2>
-
-          {/* Số liệu nhanh */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatTile
-              value={String(packages.length)}
-              label={t('projectDetail.stats.packages')}
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16.5 9.4 7.5 4.21" />
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                  <path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
-                </svg>
-              }
-            />
-            <StatTile
-              value={String(groups.length)}
-              label={t('projectDetail.stats.groups')}
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              }
-            />
-            <div className="flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-card">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white">
-                {(managerName ?? '?').charAt(0).toUpperCase()}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-base font-bold leading-tight text-text">
-                  {managerName ?? t('projectDetail.stakeholders.noManager')}
-                </p>
-                <p className="mt-0.5 text-xs font-medium text-text-muted">{t('projectDetail.stats.manager')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Chi tiết */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Thông tin cơ bản (2/3) */}
-            <div className="rounded-2xl border border-card-border bg-card p-6 shadow-card lg:col-span-2">
-              <SectionHeading
-                icon={
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_384px]">
+          <div className="space-y-10">
+            <section className="relative overflow-hidden rounded-2xl border border-card-border/60">
+              {project.projectImageUrl?.trim() ? (
+                <img
+                  src={project.projectImageUrl}
+                  alt={project.projectName}
+                  className="h-[340px] w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-[340px] w-full items-center justify-center bg-primary-light">
+                  <span className="font-display text-6xl font-semibold text-primary/50">
+                    {project.projectName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[1px] text-white backdrop-blur-sm">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
+                    <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
                   </svg>
-                }
-                title={t('projectDetail.basic.title')}
-              />
-
-              {/* Ảnh dự án */}
-              <div className="mt-5">
-                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
-                  {t('projectDetail.basic.image')}
-                </p>
-                {project.projectImageUrl?.trim() ? (
-                  <img
-                    src={project.projectImageUrl}
-                    alt={project.projectName}
-                    className="mt-2 aspect-[16/7] w-full rounded-xl border border-card-border object-cover"
-                  />
-                ) : (
-                  <div className="mt-2 flex aspect-[16/7] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-card-border bg-input-bg/50 text-text-placeholder">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <span className="text-sm italic">{t('projectDetail.common.notUpdated')}</span>
-                  </div>
-                )}
-              </div>
-
-              <dl className="mt-5 divide-y divide-card-border/60">
-                <InfoRow
-                  label={t('projectDetail.basic.name')}
-                  value={<span className="font-semibold text-text">{project.projectName}</span>}
-                />
-                <InfoRow
-                  label={t('projectDetail.basic.code')}
-                  value={<span className="font-mono font-semibold text-[#8A5100]">{shortCode}</span>}
-                />
-                <InfoRow
-                  label={t('projectDetail.basic.owner')}
-                  value={project.ownerOrganizationName?.trim()
-                    ? <span className="font-semibold text-text">{project.ownerOrganizationName}</span>
-                    : <NotUpdated />}
-                />
-                <InfoRow
-                  label={t('projectDetail.basic.contactAddress')}
-                  value={project.contactAddress?.trim()
-                    ? <span className="text-text">{project.contactAddress}</span>
-                    : <NotUpdated />}
-                />
-                <InfoRow
-                  label={t('projectDetail.basic.location')}
-                  value={project.location?.address?.trim()
-                    ? (
-                      <span className="flex items-start gap-1.5">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-primary">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-                        </svg>
-                        <span className="text-text">{project.location.address}</span>
-                      </span>
-                    )
-                    : <NotUpdated />}
-                />
-                <InfoRow
-                  label={t('projectDetail.basic.description')}
-                  value={project.projectDescription?.trim()
-                    ? <span className="leading-relaxed text-text-secondary">{project.projectDescription}</span>
-                    : <NotUpdated />}
-                />
-              </dl>
-            </div>
-
-            {/* Bên liên quan (1/3) */}
-            <div className="rounded-2xl border border-card-border bg-card p-6 shadow-card">
-              <SectionHeading
-                icon={
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                }
-                title={t('projectDetail.stakeholders.title')}
-              />
-              <div className="mt-5 flex items-center gap-4 rounded-2xl border border-card-border/60 bg-input-bg/50 p-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base font-bold text-primary">
-                  {(managerName ?? '?').charAt(0).toUpperCase()}
+                  {t('projectDetail.basic.code')}: {project.projectCode?.trim() || shortCode}
                 </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('projectDetail.stakeholders.manager')}</p>
-                  <p className="truncate text-sm font-semibold text-text">
-                    {managerName ?? <span className="italic font-normal text-text-placeholder">{t('projectDetail.stakeholders.noManager')}</span>}
-                  </p>
+                <h2 className="mt-2 font-display text-3xl font-normal leading-tight text-white lg:text-[2.5rem]">
+                  {project.projectName}
+                </h2>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/80">
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                    </svg>
+                    {project.location?.address?.trim() || project.contactAddress?.trim() || t('projectDetail.common.notUpdated')}
+                  </span>
+                  {project.createdAt && (
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
+                      <span className="flex items-center gap-1.5">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        {t('projectDetail.basic.createdAt')}: {formatDate(project.createdAt)}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
-              <p className="mt-4 text-xs leading-relaxed text-text-muted">{t('projectDetail.stakeholders.otherParties')}</p>
+            </section>
+
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <StatBox label={t('projectDetail.stats.contractValue')} value={contractValueText ?? t('projectDetail.common.notUpdated')} />
+              <StatBox label={t('projectDetail.stats.members')} value={`${memberCount} ${t('projectDetail.stats.membersUnit')}`} />
+              <StatBox label={t('projectDetail.stats.packages')} value={String(packages.length)} />
+              <StatBox label={t('projectDetail.stats.groups')} value={String(groups.length)} />
             </div>
+
+            <section className="space-y-5">
+              <h3 className="font-display text-2xl font-normal text-primary lg:text-[2rem]">
+                {t('projectDetail.description.title')}
+              </h3>
+              <p className="max-w-3xl whitespace-pre-line text-base leading-[1.65] text-text/80">
+                {project.projectDescription?.trim() || t('projectDetail.description.empty')}
+              </p>
+            </section>
           </div>
+
+          <aside className="space-y-8">
+            <section>
+              <h3 className="border-b border-text/10 pb-4 text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary">
+                {t('projectDetail.sidebar.manager')}
+              </h3>
+              <div className="mt-6 flex items-center gap-4 rounded-lg border border-card-border/50 bg-input-bg p-3">
+                <UserAvatar
+                  userName={managerName ?? '?'}
+                  avatarUrl={managerAccount?.avatarUrl}
+                  size="lg"
+                  rounded="full"
+                  className="border-2 border-primary/20"
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-display text-xl font-normal text-text">
+                    {managerName ?? t('projectDetail.stakeholders.noManager')}
+                  </p>
+                  <p className="mt-0.5 text-sm font-medium text-primary">{t('projectDetail.stakeholders.manager')}</p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between border-b border-text/10 pb-4">
+                <h3 className="text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary">
+                  {t('projectDetail.sidebar.details')}
+                </h3>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase text-primary">
+                  {statusMeta(project.status).label}
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.6px] text-primary">
+                      {t('projectDetail.basic.owner')}
+                    </p>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-primary">
+                      <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" />
+                      <path d="M9 21v-6h6v6" />
+                    </svg>
+                  </div>
+                  <p className="mt-1.5 text-lg font-bold leading-snug text-primary">
+                    {project.ownerOrganizationName?.trim() || t('projectDetail.common.notUpdated')}
+                  </p>
+                </div>
+
+                <SidebarRow
+                  label={t('projectDetail.basic.contactAddress')}
+                  value={project.contactAddress?.trim() || t('projectDetail.common.notUpdated')}
+                />
+                <SidebarRow
+                  label={t('projectDetail.basic.createdAt')}
+                  value={project.createdAt ? formatDate(project.createdAt) : t('projectDetail.common.notUpdated')}
+                />
+                <SidebarRow
+                  label={t('projectDetail.basic.updatedAt')}
+                  value={project.updatedAt ? formatDate(project.updatedAt) : t('projectDetail.common.notUpdated')}
+                />
+              </div>
+            </section>
+
+            <section>
+              <h3 className="border-b border-text/10 pb-4 text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary">
+                {t('projectDetail.sidebar.location')}
+              </h3>
+
+              <div className="mt-6 flex items-start gap-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-primary">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                </svg>
+                <p className="text-sm font-semibold leading-snug text-text">
+                  {project.location?.address?.trim() || t('projectDetail.common.notUpdated')}
+                </p>
+              </div>
+
+              <ProjectMap
+                latitude={project.location?.latitude ?? null}
+                longitude={project.location?.longitude ?? null}
+                label={project.location?.address ?? project.projectName}
+              />
+            </section>
+
+            {canViewAllTabs && (
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-card-border/50 px-6 py-3 text-base font-medium text-text transition-colors hover:bg-content-bg"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
+                </svg>
+                {t('projectDetail.actions.edit')}
+              </button>
+            )}
+          </aside>
         </div>
       )}
 
@@ -931,94 +1025,7 @@ export function ProjectDetailPage() {
 
       {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
 
-      {tab === 'partners' && (
-        <div className="space-y-6">
-          <h2 className="heading-tab">
-            {t('projectDetail.tab.partners')}
-          </h2>
-          {projectPartners.length === 0 ? (
-            <div className="rounded-[20px] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
-              <p className="text-sm text-text-muted">{t('projectDetail.partners.empty')}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {projectPartners.map((partner) => (
-                <div key={partner.id} className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-                  <div className="flex items-start gap-4">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl font-bold text-primary">
-                      {(partner.displayName || partner.legalName).charAt(0).toUpperCase()}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h3
-                        className="heading-entity leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden"
-                        title={partner.displayName || partner.legalName}
-                      >
-                        {partner.displayName || partner.legalName}
-                      </h3>
-                      <p className="text-sm text-text-muted truncate mt-0.5">{t('projectDetail.partners.taxCode')} {partner.taxCode}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mt-2 border-t border-card-border pt-4">
-                    {partner.email && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                          <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        <span className="text-text truncate" title={partner.email}>{partner.email}</span>
-                      </div>
-                    )}
-                    {partner.phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                        </svg>
-                        <span className="text-text truncate">{partner.phone}</span>
-                      </div>
-                    )}
-                    {partner.address && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0 mt-0.5">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                          <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        <span className="text-text line-clamp-2" title={partner.address}>{partner.address}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Nhóm mà đối tác này quản lí */}
-                  {(() => {
-                    const partnerGroups = groups.filter((g) => g.organizationId === partner.id);
-                    if (partnerGroups.length === 0) return null;
-                    return (
-                      <div className="border-t border-card-border pt-4">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-text-muted">{t('projectDetail.partners.groupsLabel')}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {partnerGroups.map((g) => (
-                            <span
-                              key={g.id}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-                            >
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                              </svg>
-                              {g.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {tab === 'partners' && <ProjectPartnersTab partners={projectPartners} groups={groups} />}
 
       {/* ── Tab: Nhật ký hoạt động ──────
           Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
@@ -1137,6 +1144,21 @@ export function ProjectDetailPage() {
             onAssign={handleAssign}
             onInvite={handleInvite}
             onAssignPartner={handleAssignPartner}
+          />
+        </Modal>
+      )}
+
+      {editOpen && (
+        <Modal
+          title={t('projectDetail.actions.editTitle')}
+          onClose={() => setEditOpen(false)}
+          maxWidth="max-w-4xl"
+        >
+          <EditProjectForm
+            project={project}
+            organizations={organizations}
+            onSaved={handleProjectSaved}
+            onCancel={() => setEditOpen(false)}
           />
         </Modal>
       )}

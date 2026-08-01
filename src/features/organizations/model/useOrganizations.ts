@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CreateOrganizationPayload, Organization, UpdateOrganizationPayload } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 interface UseOrganizationsReturn {
   organizations: Organization[];
@@ -24,7 +25,7 @@ export function useOrganizations(): UseOrganizationsReturn {
     setError(null);
     try {
       const { data } = await organizationApi.getAll();
-      setOrganizations(data.result ?? []);
+      setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
     } catch {
       setError(t('common.error'));
     } finally {
@@ -53,7 +54,7 @@ export function useOrganizations(): UseOrganizationsReturn {
     (async () => {
       try {
         const { data } = await organizationApi.getAll();
-        if (!cancelled) setOrganizations(data.result ?? []);
+        if (!cancelled) setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {

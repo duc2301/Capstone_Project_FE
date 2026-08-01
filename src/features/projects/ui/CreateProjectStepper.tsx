@@ -12,9 +12,10 @@ import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import type { BepParseResult } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
-import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
+import { numberToWordsVN } from '@/shared/lib/format';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { CreatePackageForm } from '../../packages/ui/CreatePackageForm';
 import { AddressField } from './AddressField';
 
@@ -72,21 +73,6 @@ const STEP_LABEL_KEYS: TranslationKey[] = [
 /** Thư mục hệ thống nhận hồ sơ pháp lý — do FolderBootstrapService (BE) tạo sẵn. */
 const LEGAL_FOLDER_NAME = 'Hồ sơ pháp lý';
 const LEGAL_FOLDER_PATH = `/Published/${LEGAL_FOLDER_NAME}`;
-
-const STEP_ICONS = [
-  // 1 - info
-  <svg key="s1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>,
-  // 2 - upload
-  <svg key="s2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>,
-  // 3 - file-text
-  <svg key="s3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>,
-  // 4 - users
-  <svg key="s4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
-  // 5 - building
-  <svg key="s5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2" /><line x1="9" y1="22" x2="9" y2="2" /><line x1="15" y1="22" x2="15" y2="2" /></svg>,
-  // 6 - check-circle
-  <svg key="s6" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>,
-];
 
 const DEFAULT_GROUP_KEYS: TranslationKey[] = [
   'projects.defaultGroup.owner',
@@ -173,7 +159,7 @@ const matchOrg = (name: string | null | undefined, orgs: Organization[]): Organi
 };
 
 const inputCls =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+  'w-full rounded-xl border border-card-border bg-card px-4 py-3 text-sm text-text shadow-[0_1px_2px_rgba(27,28,23,0.03)] outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/15';
 
 // removed emptyPkg()
 
@@ -196,7 +182,7 @@ function fmtFileSize(bytes: number): string {
 
 function SectionLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-sm font-medium text-text-secondary mb-1.5">
+    <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.08em] text-text-secondary">
       {children}
       {required && <span className="text-danger ml-1">*</span>}
     </label>
@@ -297,6 +283,7 @@ export interface CreateProjectStepperProps {
 
 export function CreateProjectStepper({ onComplete, onCancel, initialData }: CreateProjectStepperProps) {
   const [step, setStep] = useState(0);
+  const [maxStep, setMaxStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -312,8 +299,8 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       accountApi.getAll()
     ])
       .then(([orgRes, accRes]) => {
-        setOrganizations(orgRes.data.result ?? []);
-        setAccounts(accRes.data.result ?? []);
+        setOrganizations(sortByNewest(orgRes.data.result ?? [], (o) => o.createdAt));
+        setAccounts(sortByNewest(accRes.data.result ?? [], (a) => a.createdAt));
       })
       .catch(() => { })
       .finally(() => setOrgsLoading(false));
@@ -361,9 +348,14 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
     }
   }, [step, state]);
 
+  const goToStep = (target: number) => {
+    setStep(target);
+    setMaxStep((m) => Math.max(m, target));
+  };
+
   const next = () => {
     if (step < STEP_COUNT - 1 && canProceed) {
-      setStep(step + 1);
+      goToStep(step + 1);
     }
   };
   const prev = () => { if (step > 0) setStep(step - 1); };
@@ -530,33 +522,38 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
      ══════════════════════════════════════════════════════════ */
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full min-h-0 flex-col">
       {/* ── Stepper Header ── */}
-      <div className="px-8 pt-6 pb-4">
-        <div className="flex items-center justify-between">
+      <div className="shrink-0 px-8 pt-6 pb-7">
+        <div className="flex items-start">
           {STEP_LABEL_KEYS.map((labelKey, i) => {
             const isActive = i === step;
             const isDone = i < step;
+            const isVisited = i <= maxStep;
+            const canJump = isDone || (isVisited && canProceed);
             return (
               <React.Fragment key={i}>
                 {i > 0 && (
-                  <div className={`flex-1 h-0.5 mx-2 transition-colors duration-300 ${isDone ? 'bg-primary' : 'bg-card-border'}`} />
+                  <div className={`mt-4 h-0.5 min-w-4 flex-1 transition-colors duration-300 ${i <= maxStep ? 'bg-primary' : 'bg-card-border'}`} />
                 )}
                 <button
                   type="button"
-                  onClick={() => { if (isDone) setStep(i); }}
-                  disabled={!isDone && !isActive}
-                  className={`flex flex-col items-center gap-1.5 group ${isDone ? 'cursor-pointer' : isActive ? 'cursor-default' : 'cursor-not-allowed'}`}
+                  onClick={() => { if (canJump) goToStep(i); }}
+                  disabled={!canJump && !isActive}
+                  className={`flex w-24 shrink-0 flex-col items-center gap-2 ${canJump && !isActive ? 'cursor-pointer' : isActive ? 'cursor-default' : 'cursor-not-allowed'}`}
                 >
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${isActive ? 'border-primary bg-primary text-white shadow-lg shadow-primary/25 scale-110' :
-                    isDone ? 'border-primary bg-primary/10 text-primary' :
-                      'border-card-border bg-card text-text-muted'
-                    }`}>
-                    {isDone ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    ) : STEP_ICONS[i]}
-                  </div>
-                  <span className={`text-[11px] font-medium whitespace-nowrap transition-colors ${isActive ? 'text-primary font-bold' : isDone ? 'text-primary' : 'text-text-muted'
+                  <span className="relative">
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ${isActive ? 'bg-primary text-white' :
+                      isVisited ? 'bg-primary/15 text-primary' :
+                        'bg-content-bg text-text-placeholder'
+                      }`}>
+                      {isDone ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      ) : i + 1}
+                    </span>
+                    {isActive && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#8A5100]" />}
+                  </span>
+                  <span className={`text-center text-[11px] leading-tight transition-colors ${isActive ? 'font-semibold text-text' : isVisited ? 'text-primary' : 'text-text-muted'
                     }`}>{t(labelKey)}</span>
                 </button>
               </React.Fragment>
@@ -566,7 +563,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       </div>
 
       {/* ── Step Content ── */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto px-8 py-6">
         {step === 0 && (
           <Step1ProjectInfo
             state={state}
@@ -598,12 +595,12 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
       </div>
 
       {/* ── Footer ── */}
-      <div className="flex items-center justify-between border-t border-card-border px-8 py-5 bg-card">
+      <div className="flex shrink-0 items-center justify-between border-t border-card-border/60 px-8 py-5 bg-card">
         <button
           type="button"
           onClick={step === 0 ? onCancel : prev}
           disabled={submitting}
-          className="flex items-center gap-2 rounded-xl border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg disabled:opacity-50"
+          className="flex items-center gap-2 rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-medium text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-50"
         >
           {step === 0 ? (
             t('account.cancel')
@@ -615,16 +612,12 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
           )}
         </button>
 
-        <div className="flex items-center gap-2 text-sm text-text-muted">
-          {t('projects.stepper.stepLabel')} <span className="font-bold text-primary">{step + 1}</span> / {STEP_COUNT}
-        </div>
-
         {step < STEP_COUNT - 1 ? (
           <button
             type="button"
             onClick={next}
             disabled={!canProceed}
-            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-7 py-3 text-sm font-semibold text-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all duration-200 hover:bg-primary-hover disabled:opacity-50 disabled:shadow-none"
           >
             {t('projects.stepper.next')}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
@@ -634,7 +627,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 rounded-xl bg-primary px-7 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-7 py-3 text-sm font-semibold text-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all duration-200 hover:bg-primary-hover disabled:opacity-50 disabled:shadow-none"
           >
             {submitting ? (
               <>
@@ -680,14 +673,9 @@ function Step1ProjectInfo({
   }, []);
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
-      <div>
-        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.step1')}</h3>
-        <p className="text-sm text-text-muted">{t('projects.stepper.s1.subtitle')}</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
+    <div className="grid animate-fade-in gap-8 lg:grid-cols-2">
+      <div className="space-y-5">
+        <div>
           <SectionLabel required>{t('projects.form.name')}</SectionLabel>
           <input
             value={state.projectName}
@@ -697,7 +685,8 @@ function Step1ProjectInfo({
             className={inputCls}
           />
         </div>
-        <div className="space-y-1.5">
+
+        <div>
           <SectionLabel>{t('projects.stepper.s1.code')}</SectionLabel>
           <input
             value={state.projectCode}
@@ -706,86 +695,48 @@ function Step1ProjectInfo({
             className={inputCls}
           />
         </div>
-      </div>
 
-      {/* Chủ đầu tư — trường thông tin đầu tiên của BEP, lưu FK sang Organizations */}
-      <div className="space-y-1.5">
-        <SectionLabel>{t('projects.form.owner')}</SectionLabel>
-        <select
-          value={state.ownerOrganizationId}
-          onChange={(e) => update('ownerOrganizationId', e.target.value)}
-          disabled={orgsLoading}
-          className={inputCls}
-        >
-          <option value="">{orgsLoading ? t('common.loading') : t('projects.form.ownerSelect')}</option>
-          {organizations.map((org) => (
-            <option key={org.id} value={org.id}>
-              {org.displayName || org.legalName}{org.taxCode ? ` (MST: ${org.taxCode})` : ''}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-1.5">
-        <SectionLabel>{t('projects.stepper.s1.image')}</SectionLabel>
-        <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-card-border overflow-hidden bg-content-bg flex items-center justify-center relative group">
-          {projectImagePreview ? (
-            <>
-              <img src={projectImagePreview} alt={t('projects.stepper.s1.image')} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                <button
-                  type="button"
-                  onClick={() => pickProjectImage(null)}
-                  title={t('projects.stepper.s1.removeImage')}
-                  className="text-white hover:text-danger bg-black/50 p-2 rounded-full transition-colors"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                </button>
-              </div>
-            </>
-          ) : (
-            <label className="cursor-pointer text-text-muted hover:text-primary transition-colors flex flex-col items-center justify-center w-full h-full gap-2 p-2">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-              <span className="text-xs font-semibold text-center leading-tight">{t('projects.stepper.s1.addImage')}</span>
-              <input
-                type="file"
-                accept="image/png, image/jpeg, image/jpg, image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  pickProjectImage(file ?? null);
-                }}
-              />
-            </label>
-          )}
+        <div>
+          <SectionLabel>{t('projects.form.description')}</SectionLabel>
+          <textarea
+            value={state.projectDescription}
+            onChange={(e) => update('projectDescription', e.target.value)}
+            placeholder={t('projects.stepper.s1.descPlaceholder')}
+            rows={3}
+            className={inputCls}
+          />
         </div>
-      </div>
 
-      <div className="space-y-1.5">
-        <SectionLabel>{t('projects.form.description')}</SectionLabel>
-        <textarea
-          value={state.projectDescription}
-          onChange={(e) => update('projectDescription', e.target.value)}
-          placeholder={t('projects.stepper.s1.descPlaceholder')}
-          rows={3}
-          className={inputCls}
-        />
-      </div>
+        {/* Chủ đầu tư — trường thông tin đầu tiên của BEP, lưu FK sang Organizations */}
+        <div>
+          <SectionLabel>{t('projects.form.owner')}</SectionLabel>
+          <select
+            value={state.ownerOrganizationId}
+            onChange={(e) => update('ownerOrganizationId', e.target.value)}
+            disabled={orgsLoading}
+            className={inputCls}
+          >
+            <option value="">{orgsLoading ? t('common.loading') : t('projects.form.ownerSelect')}</option>
+            {organizations.map((org) => (
+              <option key={org.id} value={org.id}>
+                {org.displayName || org.legalName}{org.taxCode ? ` (MST: ${org.taxCode})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Địa chỉ liên hệ — TÁCH khỏi địa điểm công trình bên dưới */}
-      <div className="space-y-1.5">
-        <SectionLabel>{t('projects.form.contactAddress')}</SectionLabel>
-        <input
-          value={state.contactAddress}
-          onChange={(e) => update('contactAddress', e.target.value)}
-          placeholder={t('projects.form.contactAddress')}
-          className={inputCls}
-        />
-        <p className="text-xs text-text-muted">{t('projects.form.contactAddressHint')}</p>
-      </div>
+        {/* Địa chỉ liên hệ — TÁCH khỏi địa điểm công trình bên dưới */}
+        <div>
+          <SectionLabel>{t('projects.form.contactAddress')}</SectionLabel>
+          <input
+            value={state.contactAddress}
+            onChange={(e) => update('contactAddress', e.target.value)}
+            placeholder={t('projects.form.contactAddress')}
+            className={inputCls}
+          />
+          <p className="mt-1.5 text-xs text-text-muted">{t('projects.form.contactAddressHint')}</p>
+        </div>
 
-      <div className="space-y-2 border-t border-card-border pt-5">
-        <h4 className="font-heading text-sm font-bold text-text">{t('projects.form.location')}</h4>
         <AddressField
           value={{ address: state.address, latitude: state.latitude, longitude: state.longitude }}
           onChange={(loc) => {
@@ -794,6 +745,46 @@ function Step1ProjectInfo({
             update('longitude', loc.longitude);
           }}
         />
+      </div>
+
+      <div className="flex flex-col">
+        <SectionLabel>{t('projects.stepper.s1.image')}</SectionLabel>
+        <div className="group relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-card-border bg-content-bg/60">
+            {projectImagePreview ? (
+              <>
+                <img src={projectImagePreview} alt={t('projects.stepper.s1.image')} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => pickProjectImage(null)}
+                    title={t('projects.stepper.s1.removeImage')}
+                    className="rounded-full bg-black/50 p-2 text-white transition-colors hover:text-danger"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 p-4 text-text-muted transition-colors hover:text-primary">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary/50">
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+                  <polyline points="12 16 12 10" />
+                  <polyline points="9 13 12 10 15 13" />
+                </svg>
+                <span className="text-sm font-semibold">{t('projects.stepper.s1.addImage')}</span>
+                <span className="text-xs text-text-placeholder">{t('projects.stepper.s1.imageHint')}</span>
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    pickProjectImage(file ?? null);
+                  }}
+                />
+              </label>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -806,7 +797,7 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.step2')}</h3>
+        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.step2')}</h3>
         <p className="text-sm text-text-muted">
           {t('projects.stepper.s2.desc')}{' '}
           {t('projects.stepper.s2.savedToPrefix')}{' '}
@@ -864,7 +855,7 @@ function Step3PackageInfo({
   return (
     <div className="space-y-8 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s3.title')}</h3>
+        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s3.title')}</h3>
         <p className="text-sm text-text-muted">{t('projects.stepper.s3.subtitle')}</p>
       </div>
 
@@ -1010,7 +1001,7 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s4.title')}</h3>
+          <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s4.title')}</h3>
           <p className="text-sm text-text-muted">{t('projects.stepper.s4.subtitle')}</p>
         </div>
         <button
@@ -1085,7 +1076,7 @@ function Step5Partners({
   return (
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s5.title')}</h3>
+        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s5.title')}</h3>
         <p className="text-sm text-text-muted">{t('projects.stepper.s5.subtitle')}</p>
       </div>
 
@@ -1174,7 +1165,7 @@ function Step6Summary({
   return (
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="text-lg font-bold text-text mb-1">{t('projects.stepper.s6.title')}</h3>
+        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s6.title')}</h3>
         <p className="text-sm text-text-muted">{t('projects.stepper.s6.subtitle')}</p>
       </div>
 

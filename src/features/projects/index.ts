@@ -1,3 +1,11 @@
+export {
+  filterLabel,
+  matchesFilter,
+  PROJECT_FILTERS,
+  projectAddress,
+  statusMeta,
+} from './model/projectFormat';
+export type { ProjectFilter } from './model/projectFormat';
 export { useProjectDetail } from './model/useProjectDetail';
 export { useProjectGroups } from './model/useProjectGroups';
 export type { AddGroupInput } from './model/useProjectGroups';
@@ -10,7 +18,10 @@ export { AssignManagerForm } from './ui/AssignManagerForm';
 export { CreateGroupForm } from './ui/CreateGroupForm';
 export { CreateProjectForm } from './ui/CreateProjectForm';
 export { CreateProjectStepper } from './ui/CreateProjectStepper';
+export { EditProjectForm } from './ui/EditProjectForm';
 export { InviteMemberForm } from './ui/InviteMemberForm';
+export { ProjectCard } from './ui/ProjectCard';
+export { ProjectPartnersTab } from './ui/ProjectPartnersTab';
 export { ManageProjectPanel } from './ui/ManageProjectPanel';
 
 

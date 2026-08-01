@@ -24,9 +24,7 @@ export function DashboardPage() {
           <h1 className="heading-page">
             {t(greetingKey as TranslationKey)}, {firstName} <span role="img" aria-label="wave">👋</span>
           </h1>
-          <p className="mt-2 text-text-muted">
-            {t('dashboard.subtitle')} · {todayStr}
-          </p>
+          <p className="mt-2 text-text-muted">{todayStr}</p>
         </div>
         <div className="flex items-center gap-2 rounded-full bg-warning-light px-4 py-2 text-sm font-medium text-warning">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

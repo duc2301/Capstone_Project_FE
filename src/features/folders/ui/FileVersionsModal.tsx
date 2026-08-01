@@ -4,6 +4,7 @@ import type { FileVersion } from '@/entities/file-item';
 import { fileItemApi } from '@/entities/file-item';
 import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 import { formatDate, formatSize } from '../model/fileFormat';
 
@@ -30,7 +31,7 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
     async (isCancelled: () => boolean = () => false) => {
       try {
         const { data } = await fileItemApi.getVersions(fileItemId);
-        if (!isCancelled()) setVersions(data.result ?? []);
+        if (!isCancelled()) setVersions(sortByNewest(data.result ?? [], (v) => v.createdAt));
       } catch {
         if (!isCancelled()) setError(t('common.error'));
       } finally {

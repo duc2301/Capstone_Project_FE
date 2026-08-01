@@ -1,6 +1,6 @@
 import type { NotificationItem, NotificationLinkType } from '@/entities/notification';
 import { t } from '@/shared/lib/i18n';
-import { formatRelativeTime } from '../model/formatTime';
+import { formatRelativeTime } from '@/shared/lib/format';
 import type { InvitationAction } from '../model/useInvitationActions';
 
 interface Props {

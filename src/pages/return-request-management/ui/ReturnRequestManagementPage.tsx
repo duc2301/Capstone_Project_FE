@@ -61,10 +61,7 @@ export function ReturnRequestManagementPage() {
         </div>
       )}
 
-      <div>
-        <h1 className="heading-page">{t('returnRequests.page.title')}</h1>
-        <p className="mt-1 text-sm text-text-muted">{t('returnRequests.page.description')}</p>
-      </div>
+      <h1 className="heading-page">{t('returnRequests.page.title')}</h1>
 
       {loading ? (
         <div className="flex items-center justify-center rounded-(--radius-card) border border-card-border bg-card py-20 shadow-card">

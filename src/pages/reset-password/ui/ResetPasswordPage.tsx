@@ -6,7 +6,7 @@ const HERO_IMAGE =
 
 function BrandPanel() {
   return (
-    <aside className="relative hidden flex-col justify-end overflow-hidden bg-[#406623] p-12 lg:flex">
+    <aside className="relative hidden flex-col justify-end overflow-hidden bg-primary p-12 lg:flex">
       <div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url("${HERO_IMAGE}")` }}
@@ -20,10 +20,10 @@ function BrandPanel() {
       />
       <div className="relative z-[2] flex max-w-[512px] flex-col gap-6">
         <div className="flex flex-col gap-3">
-          <h2 className="font-display text-[48px] font-bold leading-[1.14] tracking-[-1px] text-white">
+          <h2 className="heading-hero text-white">
             Đặt lại mật khẩu
           </h2>
-          <p className="font-jakarta text-lg leading-7 text-white/80">
+          <p className="text-lg leading-7 text-white/80">
             Tạo mật khẩu mới mạnh và an toàn để bảo vệ tài khoản của bạn.
           </p>
         </div>

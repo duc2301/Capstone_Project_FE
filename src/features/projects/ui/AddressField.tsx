@@ -43,7 +43,7 @@ export function AddressField({ value, onChange }: Props) {
 
   return (
     <div className="space-y-2">
-      <label htmlFor="project-address" className="block text-[11px] font-bold uppercase tracking-[0.08em] text-text-secondary">
+      <label htmlFor="project-address" className="block text-xs font-bold uppercase tracking-[0.08em] text-text-secondary">
         {t('projects.form.address')}
       </label>
       <div className="flex gap-2">

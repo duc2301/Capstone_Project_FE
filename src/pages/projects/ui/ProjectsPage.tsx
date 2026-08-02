@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { BepParseResult } from '@/entities/project';
 import { projectApi } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
+import { CreatePackageForm } from '@/features/packages';
 import type { ProjectFilter } from '@/features/projects';
 import {
   CreateProjectStepper,
@@ -14,7 +15,7 @@ import {
   ProjectCard,
   useProjects,
 } from '@/features/projects';
-import { PaginationBar } from '@/shared/components';
+import { PaginationBar, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 const PAGE_SIZE = 6;
@@ -28,9 +29,9 @@ function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-5xl animate-scale-in flex-col rounded-3xl bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-5xl animate-scale-in flex-col rounded-[var(--radius-card)] bg-card shadow-modal">
         <div className="flex shrink-0 items-center justify-between px-8 pt-7 pb-1">
-          <h2 className="font-display text-2xl font-semibold text-primary">{title}</h2>
+          <h2 className="heading-tab">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -56,7 +57,6 @@ export function ProjectsPage() {
   const isAdmin = isAccountAdmin(currentUser?.role);
 
   const [creating, setCreating] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [filter, setFilter] = useState<ProjectFilter>('all');
   const [page, setPage] = useState(1);
 
@@ -94,10 +94,7 @@ export function ProjectsPage() {
     }
   };
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const handleStepperComplete = (projectId: string) => {
     setCreating(false);
@@ -122,11 +119,7 @@ export function ProjectsPage() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[60]" />
 
       {/* Header */}
       <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -251,6 +244,14 @@ export function ProjectsPage() {
             initialData={bepData}
             onComplete={handleStepperComplete}
             onCancel={closeCreate}
+            renderPackageForm={(ctx) => (
+              <CreatePackageForm
+                accounts={ctx.accounts}
+                initialData={ctx.initialData}
+                onSubmit={ctx.onSubmit}
+                onCancel={ctx.onCancel}
+              />
+            )}
           />
         </Modal>
       )}

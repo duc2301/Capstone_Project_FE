@@ -65,7 +65,7 @@ export function ApprovalDetailModal({ approvalId, onClose, fallbackProjectId, cu
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
       <div className="absolute inset-0 animate-fade-in" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[92vh] w-full max-w-6xl animate-scale-in overflow-hidden rounded-3xl bg-[#fbf9f1] shadow-modal">
+      <div className="relative z-10 flex max-h-[92vh] w-full max-w-6xl animate-scale-in overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         {loading ? (
           <div className="flex min-h-[520px] w-full items-center justify-center">
             <p className="text-sm text-text-muted">{t('common.loading')}</p>
@@ -138,7 +138,7 @@ function ApprovalDetailContent({
           <div className="flex min-w-0 items-start gap-3">
             <FileIcon />
             <div className="min-w-0">
-              <h2 className="break-words font-display text-xl font-semibold text-text">{detail.fileName}</h2>
+              <h2 className="heading-section break-words text-text">{detail.fileName}</h2>
               <p className="mt-1 text-xs text-text-muted">{t('approvals.detail.subtitle')}</p>
             </div>
           </div>
@@ -146,11 +146,11 @@ function ApprovalDetailContent({
           <span className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
         </header>
 
-        <section className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
-          <div className="flex min-h-[470px] items-center justify-center bg-[#dcdad2] p-6">
+        <section className="overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
+          <div className="flex min-h-[470px] items-center justify-center bg-viewer-canvas p-6">
             <div className="flex w-full max-w-xl flex-col items-center rounded-3xl bg-white p-8 text-center shadow-sm">
               <FileIcon />
-              <h3 className="mt-4 max-w-full break-words font-display text-lg font-semibold text-text">{detail.fileName}</h3>
+              <h3 className="heading-entity mt-4 max-w-full break-words">{detail.fileName}</h3>
               <p className="mt-2 max-w-md text-xs text-text-muted">{t('approvals.detail.previewHint')}</p>
 
               <div className="mt-6 grid w-full gap-3 sm:grid-cols-2">
@@ -167,7 +167,7 @@ function ApprovalDetailContent({
       <aside className="flex max-h-[92vh] flex-col border-t border-card-border bg-card lg:border-l lg:border-t-0">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-5">
           <div>
-            <h3 className="font-heading text-base font-bold text-text">{t('approvals.detail.panelTitle')}</h3>
+            <h3 className="heading-card">{t('approvals.detail.panelTitle')}</h3>
             <p className="mt-1 text-xs text-text-muted">{t('approvals.detail.panelSubtitle')}</p>
           </div>
           <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
@@ -188,7 +188,7 @@ function ApprovalDetailContent({
           </section>
 
           <section className="border-t border-card-border/70 pt-5">
-            <h4 className="text-sm font-bold text-text">{t('approvals.detail.timelineTitle')}</h4>
+            <h4 className="heading-label">{t('approvals.detail.timelineTitle')}</h4>
             <div className="relative mt-4 space-y-4">
               <div className="absolute bottom-4 left-4 top-4 w-0.5 bg-card-border/70" />
               <TimelineItem
@@ -231,12 +231,12 @@ function ApprovalDetailContent({
           </section>
         </div>
 
-        <div className="flex gap-3 border-t border-card-border bg-[#f0eee6] p-4">
+        <div className="flex gap-3 border-t border-card-border bg-surface-sand-light p-4">
           {canSign && (
             <button
               type="button"
               onClick={handleSignNow}
-              className="flex-1 rounded-xl bg-warning px-5 py-3 text-sm font-bold text-white transition-colors hover:opacity-90"
+              className="flex-1 rounded-[var(--radius-button)] bg-warning px-5 py-3 text-sm font-bold text-white transition-colors hover:opacity-90"
             >
               {t('smartca.action.sign')}
             </button>
@@ -245,7 +245,7 @@ function ApprovalDetailContent({
             type="button"
             disabled={!canViewFile}
             onClick={handleViewFile}
-            className="flex-1 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-[var(--radius-button)] bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t('approvals.detail.viewFile')}
           </button>
@@ -257,7 +257,7 @@ function ApprovalDetailContent({
 
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-card-border bg-[#fbf9f1] p-4 text-left">
+    <div className="rounded-2xl border border-card-border bg-page-cream p-4 text-left">
       <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold text-text">{value}</p>
     </div>
@@ -292,10 +292,10 @@ function TimelineItem({ title, badge, body, time, active = false, tone = 'succes
       <div className={`min-w-0 flex-1 rounded-2xl border p-3.5 shadow-sm ${active ? 'border-card-border bg-white' : 'border-card-border/70 bg-white/60 opacity-80'}`}>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h5 className="min-w-0 break-words text-xs font-bold text-text">{title}</h5>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${toneClass}`}>{badge}</span>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-bold uppercase tracking-wider ${toneClass}`}>{badge}</span>
         </div>
         <p className="mt-2 break-words text-xs font-medium text-text-secondary">{body}</p>
-        <p className="mt-3 border-t border-card-border/60 pt-3 text-[11px] text-text-muted">{time}</p>
+        <p className="mt-3 border-t border-card-border/60 pt-3 text-xs text-text-muted">{time}</p>
       </div>
     </div>
   );

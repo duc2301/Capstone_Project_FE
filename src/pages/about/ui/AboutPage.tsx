@@ -14,11 +14,11 @@ const CLOUD_IMAGE =
 function HeroSection() {
   return (
     <section className="flex flex-col items-center gap-6 text-center">
-      <h1 className="max-w-[896px] font-display text-[40px] font-bold leading-[1.14] tracking-[-1.12px] text-[#1B1C17] md:text-[56px] md:leading-[64px]">
+      <h1 className="heading-hero max-w-[896px]">
         {t('about.hero.titleLead')}
-        <span className="block text-[#406623]">{t('about.hero.titleAccent')}</span>
+        <span className="block text-primary">{t('about.hero.titleAccent')}</span>
       </h1>
-      <p className="max-w-[672px] font-jakarta text-lg leading-7 text-[#43493C]">
+      <p className="max-w-[672px] text-lg leading-7 text-text-secondary">
         {t('about.hero.subtitle')}
       </p>
     </section>
@@ -67,7 +67,7 @@ const CLOUD_CARDS: CloudCard[] = [
 
 function SectionIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#587F39]">
+    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-bright">
       {children}
     </span>
   );
@@ -83,10 +83,10 @@ function CloudSection() {
           </svg>
         </SectionIcon>
         <div className="flex flex-col">
-          <h2 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+          <h2 className="heading-page">
             {t('about.cloud.title')}
           </h2>
-          <p className="font-jakarta text-base text-[#43493C]">{t('about.cloud.subtitle')}</p>
+          <p className="text-base text-text-secondary">{t('about.cloud.subtitle')}</p>
         </div>
       </div>
 
@@ -99,10 +99,10 @@ function CloudSection() {
             >
               <span className="mt-1 shrink-0">{card.icon}</span>
               <div className="flex flex-col gap-2">
-                <h3 className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#1B1C17]">
+                <h3 className="heading-label">
                   {t(card.titleKey)}
                 </h3>
-                <p className="font-jakarta text-base leading-6 text-[#43493C]">{t(card.descKey)}</p>
+                <p className="text-base leading-6 text-text-secondary">{t(card.descKey)}</p>
               </div>
             </article>
           ))}
@@ -196,13 +196,13 @@ function ZonesSection() {
   return (
     <section className="flex flex-col gap-16">
       <div className="flex flex-col items-center gap-4 text-center">
-        <span className="rounded-full bg-[#E4E3DB] px-4 py-1.5 font-jakarta text-xs font-medium tracking-[0.6px] text-[#43493C]">
+        <span className="rounded-full bg-surface-sand px-4 py-1.5 text-xs font-medium tracking-[0.6px] text-text-secondary">
           {t('about.zones.badge')}
         </span>
-        <h2 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+        <h2 className="heading-page">
           {t('about.zones.title')}
         </h2>
-        <p className="max-w-[672px] font-jakarta text-base text-[#43493C]">
+        <p className="max-w-[672px] text-base text-text-secondary">
           {t('about.zones.subtitle')}
         </p>
       </div>
@@ -211,7 +211,7 @@ function ZonesSection() {
         {DATA_ZONES.map((zone) => (
           <article
             key={zone.titleKey}
-            className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-[#C3C9B9]/30 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
+            className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-border-sage/30 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
           >
             <div
               className="absolute -right-16 -top-16 h-32 w-32 rounded-bl-full"
@@ -223,13 +223,13 @@ function ZonesSection() {
             >
               {zone.icon}
             </span>
-            <h3 className="relative font-display text-2xl font-semibold leading-8 text-[#1B1C17]">
+            <h3 className="heading-tab relative">
               {t(zone.titleKey)}
             </h3>
-            <p className="relative flex-1 font-jakarta text-base leading-6 text-[#43493C]">
+            <p className="relative flex-1 text-base leading-6 text-text-secondary">
               {t(zone.descKey)}
             </p>
-            <span className="relative w-fit rounded-full bg-[#E4E3DB] px-3 py-1 font-jakarta text-xs font-medium tracking-[0.6px] text-[#43493C]">
+            <span className="relative w-fit rounded-full bg-surface-sand px-3 py-1 text-xs font-medium tracking-[0.6px] text-text-secondary">
               {t(zone.accessKey)}
             </span>
           </article>
@@ -331,7 +331,7 @@ function ZoneTags({ zones }: { zones: ZoneId[] }) {
         return (
           <span
             key={zone}
-            className="rounded px-2 py-1 font-jakarta text-[10px] leading-none"
+            className="rounded px-2 py-1 text-2xs leading-none"
             style={{ backgroundColor: tag.bg, color: tag.color }}
           >
             {t(tag.labelKey)}
@@ -346,24 +346,24 @@ function RolesSection() {
   return (
     <section className="flex flex-col gap-10">
       <div className="flex max-w-[672px] flex-col gap-4">
-        <h2 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+        <h2 className="heading-page">
           {t('about.roles.title')}
         </h2>
-        <p className="font-jakarta text-base text-[#43493C]">{t('about.roles.subtitle')}</p>
+        <p className="text-base text-text-secondary">{t('about.roles.subtitle')}</p>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-[#C3C9B9]/30 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-        <div className="hidden grid-cols-[1.2fr_2fr_1.6fr_0.9fr] gap-4 border-b border-[#C3C9B9]/30 bg-[#F6F4EC] px-8 py-4 md:grid">
-          <span className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+      <div className="overflow-hidden rounded-3xl border border-border-sage/30 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        <div className="hidden grid-cols-[1.2fr_2fr_1.6fr_0.9fr] gap-4 border-b border-border-sage/30 bg-page-cream-alt px-8 py-4 md:grid">
+          <span className="text-sm font-semibold tracking-[0.14px] text-text-secondary">
             {t('about.roles.col.role')}
           </span>
-          <span className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+          <span className="text-sm font-semibold tracking-[0.14px] text-text-secondary">
             {t('about.roles.col.responsibility')}
           </span>
-          <span className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+          <span className="text-sm font-semibold tracking-[0.14px] text-text-secondary">
             {t('about.roles.col.zones')}
           </span>
-          <span className="text-right font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+          <span className="text-right text-sm font-semibold tracking-[0.14px] text-text-secondary">
             {t('about.roles.col.permission')}
           </span>
         </div>
@@ -371,7 +371,7 @@ function RolesSection() {
         {ROLE_ROWS.map((role) => (
           <div
             key={role.nameKey}
-            className="grid grid-cols-1 gap-4 border-b border-[#C3C9B9]/10 px-6 py-6 last:border-b-0 md:grid-cols-[1.2fr_2fr_1.6fr_0.9fr] md:items-center md:px-8"
+            className="grid grid-cols-1 gap-4 border-b border-border-sage/10 px-6 py-6 last:border-b-0 md:grid-cols-[1.2fr_2fr_1.6fr_0.9fr] md:items-center md:px-8"
           >
             <div className="flex items-center gap-4">
               <span
@@ -380,15 +380,15 @@ function RolesSection() {
               >
                 {role.icon}
               </span>
-              <span className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#1B1C17]">
+              <span className="text-sm font-semibold tracking-[0.14px] text-text-strong">
                 {t(role.nameKey)}
               </span>
             </div>
-            <p className="font-jakarta text-base leading-6 text-[#43493C]">{t(role.descKey)}</p>
+            <p className="text-base leading-6 text-text-secondary">{t(role.descKey)}</p>
             <ZoneTags zones={role.zones} />
             <div className="md:flex md:justify-end">
               <span
-                className="w-fit rounded-full px-3 py-1 font-jakarta text-xs font-medium tracking-[0.6px]"
+                className="w-fit rounded-full px-3 py-1 text-xs font-medium tracking-[0.6px]"
                 style={
                   role.permissionStrong
                     ? { backgroundColor: '#406623', color: '#FFFFFF' }

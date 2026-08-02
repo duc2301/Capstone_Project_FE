@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage, CreateContractPackagePayload, UpdateContractPackagePayload } from '@/entities/contractPackage';
+import { getApiErrorMessage } from '@/shared/api';
+import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
 export function usePackages(projectId?: string) {
@@ -16,8 +18,8 @@ export function usePackages(projectId?: string) {
         ? await contractPackageApi.getByProjectId(projectId)
         : await contractPackageApi.getAll();
       setPackages(sortByNewest(response.data?.result || [], (p) => p.createdAt));
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch contract packages');
+    } catch (err) {
+      setError(getApiErrorMessage(err, t('common.error')));
     } finally {
       setLoading(false);
     }

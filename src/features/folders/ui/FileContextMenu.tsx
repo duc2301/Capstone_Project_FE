@@ -94,7 +94,7 @@ export function FileContextMenu({
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose(); }} />
-      <div ref={clampRef} className="fixed z-50 min-w-52 animate-scale-in rounded-xl border border-card-border bg-card py-1.5 shadow-dropdown" style={{ top: y, left: x }}>
+      <div ref={clampRef} className="fixed z-50 min-w-52 animate-scale-in rounded-[var(--radius-card)] border border-card-border bg-card py-1.5 shadow-dropdown" style={{ top: y, left: x }}>
         {items.map((it) => (
           <button
             key={it.key}
@@ -104,7 +104,7 @@ export function FileContextMenu({
           >
             {it.icon}
             <span className="flex-1">{it.label}</span>
-            {it.soon && <span className="text-[10px] text-text-placeholder">•••</span>}
+            {it.soon && <span className="text-2xs text-text-placeholder">•••</span>}
           </button>
         ))}
       </div>

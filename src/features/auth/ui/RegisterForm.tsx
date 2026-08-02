@@ -9,15 +9,15 @@ import { useRegister } from '../model/useRegister';
 import { useGoogleLogin } from '../model/useGoogleLogin';
 
 const INPUT_BASE =
-  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white px-4 font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
+  'h-12 w-full rounded-xl border border-border-sage bg-white px-4 text-base text-text-strong placeholder:text-text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
 const LABEL_CLASS =
-  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
+  'text-sm font-semibold tracking-[0.14px] text-text-secondary';
 
 function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-2 text-[#406623]">
+    <div className="flex items-center gap-2 text-primary">
       {icon}
-      <h2 className="font-jakarta text-sm font-semibold uppercase tracking-[0.7px]">
+      <h2 className="heading-eyebrow">
         {title}
       </h2>
     </div>
@@ -101,13 +101,13 @@ function PasswordField({
           onClick={() => setVisible((prev) => !prev)}
           tabIndex={-1}
           aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#73796B] transition-colors hover:text-[#43493C]"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
         >
           <EyeIcon open={visible} />
         </button>
       </div>
       {hintKey && (
-        <p className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#73796B]">
+        <p className="text-xs font-medium tracking-[0.6px] text-text-muted">
           {t(hintKey)}
         </p>
       )}
@@ -138,10 +138,10 @@ export function RegisterForm() {
   return (
     <div className="flex w-full max-w-[896px] flex-col gap-5">
       <header className="flex flex-col items-center gap-1 text-center">
-        <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+        <h1 className="heading-page">
           {t('register.title')}
         </h1>
-        <p className="max-w-[512px] font-jakarta text-base text-[#73796B]">
+        <p className="max-w-[512px] text-base text-text-muted">
           {t('register.subtitle')}
         </p>
       </header>
@@ -149,7 +149,7 @@ export function RegisterForm() {
       <form
         id="register-form"
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 rounded-3xl border border-[#C3C9B9] bg-white px-6 pb-5 pt-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-10 md:pb-5 md:pt-5"
+        className="flex flex-col gap-4 rounded-3xl border border-border-sage bg-white px-6 pb-5 pt-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-10 md:pb-5 md:pt-5"
       >
         {error && (
           <div
@@ -160,7 +160,7 @@ export function RegisterForm() {
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4M12 16h.01" />
             </svg>
-            <span className="font-jakarta text-sm text-red-600">{error}</span>
+            <span className="text-sm text-red-600">{error}</span>
           </div>
         )}
 
@@ -202,7 +202,7 @@ export function RegisterForm() {
           </div>
         </section>
 
-        <div className="h-px bg-[#C3C9B9]/30" />
+        <div className="h-px bg-border-sage/30" />
 
         <section className="flex flex-col gap-4">
           <SectionHeader icon={<ShieldIcon />} title={t('register.section.security')} />
@@ -232,17 +232,17 @@ export function RegisterForm() {
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-1 h-5 w-5 shrink-0 rounded border-[#C3C9B9] text-[#406623] accent-[#406623] focus:ring-[#406623]"
+            className="mt-1 h-5 w-5 shrink-0 rounded border-border-sage text-primary accent-primary focus:ring-primary"
           />
-          <span className="font-jakarta text-base text-[#43493C]">
+          <span className="text-base text-text-secondary">
             {t('register.agreeTerms')}
           </span>
         </label>
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#C3C9B9]/30 pt-4 sm:flex-row">
-          <p className="font-jakarta text-base text-[#73796B]">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-border-sage/30 pt-4 sm:flex-row">
+          <p className="text-base text-text-muted">
             {t('register.haveAccount')}{' '}
-            <Link to="/login" className="font-semibold text-[#406623] transition-colors hover:underline">
+            <Link to="/login" className="font-semibold text-primary transition-colors hover:underline">
               {t('register.signIn')}
             </Link>
           </p>
@@ -250,7 +250,7 @@ export function RegisterForm() {
             id="register-submit-btn"
             type="submit"
             disabled={loading || !agreed}
-            className="flex items-center justify-center rounded-full bg-[#406623] px-12 py-3 font-jakarta text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center justify-center rounded-[var(--radius-button)] bg-primary px-12 py-3 text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? '...' : t('register.submit')}
           </button>
@@ -259,9 +259,9 @@ export function RegisterForm() {
 
       <div className="flex flex-col items-center gap-3 w-full max-w-[896px]">
         <div className="relative flex w-full items-center">
-          <div className="flex-1 border-t border-[#C3C9B9]/40" />
-          <span className="mx-3 font-jakarta text-xs text-[#73796B]">hoặc đăng ký nhanh hơn</span>
-          <div className="flex-1 border-t border-[#C3C9B9]/40" />
+          <div className="flex-1 border-t border-border-sage/40" />
+          <span className="mx-3 text-xs text-text-muted">{t('auth.register.orQuick')}</span>
+          <div className="flex-1 border-t border-border-sage/40" />
         </div>
 
         {gError && (
@@ -273,7 +273,7 @@ export function RegisterForm() {
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4M12 16h.01" />
             </svg>
-            <span className="font-jakarta text-sm text-red-600">{gError}</span>
+            <span className="text-sm text-red-600">{gError}</span>
           </div>
         )}
 
@@ -293,7 +293,7 @@ export function RegisterForm() {
         />
 
         {gLoading && (
-          <p className="font-jakarta text-xs text-[#73796B]">Đang xử lý...</p>
+          <p className="text-xs text-text-muted">{t('common.processing')}</p>
         )}
       </div>
     </div>

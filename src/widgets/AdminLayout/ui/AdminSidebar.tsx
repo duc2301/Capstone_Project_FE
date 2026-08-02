@@ -180,7 +180,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
         `}
       >
         {/* ── Brand (cố định) ─────────────────────── */}
-        <div className={`flex h-12 shrink-0 items-center bg-[#D7DBCA] px-4 ${isCompact ? 'justify-center' : 'justify-between px-5'}`}>
+        <div className={`flex h-12 shrink-0 items-center bg-sage-tint-alt px-4 ${isCompact ? 'justify-center' : 'justify-between px-5'}`}>
           {!isCompact && (
             <span className="font-display text-xl font-bold text-primary tracking-tight">
               {t('brand.name')}
@@ -191,7 +191,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
             onClick={onToggleCollapse}
             title={isCompact ? t('admin.sidebar.expand') : t('admin.sidebar.collapse')}
             aria-label={isCompact ? t('admin.sidebar.expand') : t('admin.sidebar.collapse')}
-            className="hidden h-7 w-7 items-center justify-center rounded-lg text-primary/70 transition-colors hover:bg-black/5 hover:text-primary lg:flex"
+            className="hidden h-7 w-7 items-center justify-center rounded-[var(--radius-button)] text-primary/70 transition-colors hover:bg-black/5 hover:text-primary lg:flex"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {isCompact ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
@@ -204,7 +204,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
           {visibleSections.map((section, idx) => (
             <div key={section.titleKey ?? `top-${idx}`} className={idx === 0 ? '' : 'mt-4'}>
               {section.titleKey && !isCompact && (
-                <p className="px-5 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-text/60">
+                <p className="px-5 pb-1 text-2xs font-bold uppercase tracking-wider text-sidebar-text/60">
                   {t(section.titleKey)}
                 </p>
               )}
@@ -241,7 +241,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
                       {/* truncate: nhãn dài không xuống dòng làm vỡ layout, quá dài thì cắt bằng "…" */}
                       {!isCompact && <span className="flex-1 truncate">{t(item.labelKey)}</span>}
                       {!isCompact && badge !== undefined && badge > 0 && (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold text-white">
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-2xs font-bold text-white">
                           {badge > 99 ? '99+' : badge}
                         </span>
                       )}
@@ -260,7 +260,7 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: A
             onClick={logout}
             disabled={loggingOut}
             title={isCompact ? t('admin.sidebar.logout') : undefined}
-            className={`flex w-full items-center gap-2.5 rounded-xl py-2 text-sm font-medium text-sidebar-text transition-all duration-200 hover:bg-white/[0.06] hover:text-white disabled:opacity-50 ${isCompact ? 'justify-center px-0' : 'px-3.5'}`}
+            className={`flex w-full items-center gap-2.5 rounded-[var(--radius-button)] py-2 text-sm font-medium text-sidebar-text transition-all duration-200 hover:bg-white/[0.06] hover:text-white disabled:opacity-50 ${isCompact ? 'justify-center px-0' : 'px-3.5'}`}
           >
             <IconLogout />
             {!isCompact && <span>{t('admin.sidebar.logout')}</span>}

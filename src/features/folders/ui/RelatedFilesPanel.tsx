@@ -78,7 +78,7 @@ export function RelatedFilesPanel({ projectId, fileItemId, folderId }: RelatedFi
                   >
                     <p className="truncate text-sm font-medium text-primary hover:underline">{file.name}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${area.className}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${area.className}`}>
                         {area.label}
                       </span>
                       <span className="text-xs text-text-muted">{file.folderName}</span>

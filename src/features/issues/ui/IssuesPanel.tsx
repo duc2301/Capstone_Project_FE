@@ -58,13 +58,13 @@ export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, on
               <button
                 type="button"
                 onClick={() => openIssue(issue.id)}
-                className="w-full rounded-xl border border-card-border bg-card p-3 text-left transition-colors hover:bg-content-bg"
+                className="w-full rounded-[var(--radius-card)] border border-card-border bg-card p-3 text-left transition-colors hover:bg-content-bg"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${issueStatusBadge(issue.status).className}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${issueStatusBadge(issue.status).className}`}>
                     {issueStatusBadge(issue.status).label}
                   </span>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${issuePriorityBadge(issue.priority).className}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${issuePriorityBadge(issue.priority).className}`}>
                     {issuePriorityBadge(issue.priority).label}
                   </span>
                 </div>

@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import type { ImportedNamingField, NamingConvention } from '@/entities/naming-convention';
 import { NAMING_DELIMITERS, namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
-import { Modal } from '@/shared/components/modal';
+import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { ImportPreviewEditor } from './ImportPreviewEditor';
@@ -15,7 +15,7 @@ interface CreateConventionModalProps {
 }
 
 const inputClass =
-  'w-full rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus';
+  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus';
 const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted';
 
 /* Modal tạo bộ quy tắc 2 bước:
@@ -206,7 +206,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+            className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
           >
             {t('naming.cancel')}
           </button>
@@ -215,7 +215,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
               type="button"
               onClick={handleNext}
               disabled={busy}
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t('naming.createModal.next')} →
             </button>

@@ -13,7 +13,7 @@ export function Modal({ title, onClose, children, maxWidth = 'max-w-2xl' }: Moda
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className={`relative z-10 w-full ${maxWidth} animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal`}>
         <div className="flex items-center justify-between border-b border-card-border px-7 py-5">
-          <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
+          <h2 className="heading-entity">{title}</h2>
           <button
             type="button"
             onClick={onClose}

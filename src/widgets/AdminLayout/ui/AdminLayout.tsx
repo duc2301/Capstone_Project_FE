@@ -48,9 +48,9 @@ export function AdminLayout({ children }: Props) {
       <div className={`flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ${collapsed ? 'lg:ml-[64px]' : 'lg:ml-[240px]'}`}>
         <AdminTopBar onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
-        <main className="admin-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-clip px-6 pt-4 pb-5 lg:px-8 lg:pt-5">
+        <main className="admin-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-clip p-6 lg:p-8">
           {/* h-full để trang con dùng được h-full thay vì tính calc(100vh - ...) */}
-          <div className="mx-auto flex h-full max-w-[1400px] flex-col">
+          <div className="mx-auto flex h-full max-w-[1600px] flex-col">
             <Suspense fallback={<ContentFallback />}>
               {children}
             </Suspense>

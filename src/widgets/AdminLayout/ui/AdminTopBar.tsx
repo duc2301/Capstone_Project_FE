@@ -18,13 +18,13 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const isHome = location.pathname === '/dashboard';
 
   return (
-    <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-[#C3C9B9] bg-[#FBF9F1] px-8 backdrop-blur-[6px]">
+    <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border-sage bg-page-cream px-8 backdrop-blur-[6px]">
       <div className="flex items-center gap-4">
         {/* Mobile hamburger */}
         <button
           type="button"
           onClick={onMenuToggle}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-card hover:text-text lg:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)] text-text-muted transition-colors hover:bg-card hover:text-text lg:hidden"
           aria-label="Toggle menu"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

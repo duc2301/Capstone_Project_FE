@@ -1,8 +1,13 @@
 export { UserAvatar } from './avatar';
 export type { UserAvatarSize } from './avatar';
+export { ConfirmDialog } from './confirm';
 export { MarkupNoteFilter } from './markup';
 export type { MarkupAuthorOption, MarkupStatusFilter } from './markup';
 export { Modal } from './modal';
 export type { ModalProps } from './modal';
 export { Pagination, PaginationBar } from './pagination';
 export type { PaginationBarProps, PaginationProps } from './pagination';
+export { ActionIconButton, ActionPillButton, DeleteIcon, EditIcon, RowActions, ViewIcon } from './table';
+export type { ActionIconTone, ActionPillTone } from './table';
+export { Toast, useToast } from './toast';
+export type { ToastMessage, ToastType } from './toast';

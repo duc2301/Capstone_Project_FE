@@ -50,7 +50,7 @@ function GroupSelectAllRow({ groupName, checked, indeterminate, disabled, onTogg
         className="h-4 w-4 accent-primary"
       />
       <span className="min-w-0 flex-1 truncate text-sm font-bold text-text">{groupName}</span>
-      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Nhóm</span>
+      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t('approvals.submit.group')}</span>
     </label>
   );
 }
@@ -106,12 +106,12 @@ export function SubmitApprovalModal({
 
   const handleSubmit = () => {
     if (!targetZone) {
-      setError('Không xác định được vùng chuyển đến.');
+      setError(t('approvals.submit.noTargetZone'));
       return;
     }
 
     if (effectiveRequiresSignature && mustAssignSigners && signerAccountIds.length === 0) {
-      setError('Vui lòng chọn ít nhất một người ký.');
+      setError(t('approvals.submit.needSigner'));
       return;
     }
 
@@ -127,9 +127,9 @@ export function SubmitApprovalModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-lg flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-lg flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <h2 className="font-heading text-lg font-bold text-text">{t('approvals.submitModal.title')}</h2>
+          <h2 className="heading-entity">{t('approvals.submitModal.title')}</h2>
           <button type="button" onClick={onClose} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -143,25 +143,25 @@ export function SubmitApprovalModal({
             <input
               readOnly
               value={fileName}
-              className="rounded-(--radius-input) border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
             />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Vùng hiện tại</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('approvals.submit.currentZone')}</span>
               <input
                 readOnly
                 value={currentZone}
-                className="rounded-(--radius-input) border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Vùng chuyển đến</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('approvals.submit.targetZone')}</span>
               <input
                 readOnly
                 value={targetZone ?? ''}
-                className="rounded-(--radius-input) border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
               />
             </label>
           </div>
@@ -186,14 +186,14 @@ export function SubmitApprovalModal({
 
           {effectiveRequiresSignature && mustAssignSigners && (
             <div className="space-y-3 rounded-xl border border-card-border bg-content-bg/40 p-3.5">
-              <p className="text-sm font-semibold text-text">Người ký bắt buộc</p>
+              <p className="text-sm font-semibold text-text">{t('approvals.submit.requiredSigner')}</p>
               <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
                 {loadingSigners ? (
-                  <p className="rounded-xl border border-card-border bg-card px-3.5 py-3 text-sm text-text-muted">
+                  <p className="rounded-[var(--radius-card)] border border-card-border bg-card px-3.5 py-3 text-sm text-text-muted">
                     {t('common.loading')}
                   </p>
                 ) : signerGroups.length === 0 ? (
-                  <p className="rounded-xl border border-card-border bg-card px-3.5 py-3 text-sm text-text-muted">
+                  <p className="rounded-[var(--radius-card)] border border-card-border bg-card px-3.5 py-3 text-sm text-text-muted">
                     Chưa có nhóm hoặc thành viên để chọn.
                   </p>
                 ) : signerGroups.map((group) => {
@@ -208,7 +208,7 @@ export function SubmitApprovalModal({
                   const hasPartialSelection = selectedMemberCount > 0 && selectedMemberCount < activeMemberIds.length;
 
                   return (
-                    <div key={group.id} className="rounded-xl border border-card-border bg-card p-3">
+                    <div key={group.id} className="rounded-[var(--radius-card)] border border-card-border bg-card p-3">
                       <GroupSelectAllRow
                         groupName={group.name}
                         checked={allGroupMembersSelected}
@@ -219,7 +219,7 @@ export function SubmitApprovalModal({
 
                       <div className="mt-3 space-y-2 border-t border-card-border pt-3">
                         {activeMembers.length === 0 ? (
-                          <p className="text-xs text-text-muted">Nhóm này chưa có Leader active.</p>
+                          <p className="text-xs text-text-muted">{t('approvals.submit.noLeader')}</p>
                         ) : activeMembers.map((member) => (
                           <label key={`${group.id}-${member.accountId}`} className="flex items-start gap-2.5 rounded-lg px-2 py-1.5 hover:bg-content-bg">
                             <input
@@ -253,7 +253,7 @@ export function SubmitApprovalModal({
                 <button
                   type="button"
                   onClick={submitErrorAction.onClick}
-                  className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-danger/20"
+                  className="rounded-[var(--radius-button)] bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-danger/20"
                 >
                   {submitErrorAction.label}
                 </button>
@@ -263,14 +263,14 @@ export function SubmitApprovalModal({
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
             {t('approvals.submitModal.cancel')}
           </button>
           <button
             type="button"
             disabled={busy}
             onClick={handleSubmit}
-            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : t('approvals.submitModal.submit')}
           </button>

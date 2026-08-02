@@ -16,7 +16,7 @@ export interface Organization {
 }
 
 export interface CreateOrganizationPayload {
-  taxCode: string;
+  taxCode?: string;
   legalName: string;
   displayName?: string;
   organizationTypeId: string;

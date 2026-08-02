@@ -8,9 +8,9 @@ import { useLogin } from '../model/useLogin';
 import { useGoogleLogin } from '../model/useGoogleLogin';
 
 const INPUT_BASE =
-  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
+  'h-12 w-full rounded-xl border border-border-sage bg-white text-base text-text-strong placeholder:text-text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
 const LABEL_CLASS =
-  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
+  'text-sm font-semibold tracking-[0.14px] text-text-secondary';
 
 function MailIcon() {
   return (
@@ -63,15 +63,15 @@ export function LoginForm() {
   return (
     <div className="flex w-full max-w-[448px] flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+        <h1 className="heading-page">
           Chào mừng trở lại
         </h1>
-        <p className="font-jakarta text-base text-[#43493C]">
+        <p className="text-base text-text-secondary">
           Vui lòng đăng nhập để truy cập dự án của bạn.
         </p>
       </header>
 
-      <div className="flex flex-col gap-4 rounded-3xl border border-[#C3C9B9]/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+      <div className="flex flex-col gap-4 rounded-3xl border border-border-sage/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
         <form id="login-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && (
             <div
@@ -82,7 +82,7 @@ export function LoginForm() {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
-              <span className="font-jakarta text-sm text-red-600">{error}</span>
+              <span className="text-sm text-red-600">{error}</span>
             </div>
           )}
 
@@ -91,7 +91,7 @@ export function LoginForm() {
               Email công việc
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#73796B]">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
                 <MailIcon />
               </span>
               <input
@@ -114,13 +114,13 @@ export function LoginForm() {
               </label>
               <Link
                 to="/forgot-password"
-                className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#406623] transition-colors hover:underline"
+                className="text-xs font-medium tracking-[0.6px] text-primary transition-colors hover:underline"
               >
                 {t('login.forgotPassword')}
               </Link>
             </div>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#73796B]">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
                 <LockIcon />
               </span>
               <input
@@ -138,7 +138,7 @@ export function LoginForm() {
                 onClick={() => setShowPassword((prev) => !prev)}
                 tabIndex={-1}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#73796B] transition-colors hover:text-[#43493C]"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
               >
                 <EyeIcon open={showPassword} />
               </button>
@@ -150,9 +150,9 @@ export function LoginForm() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-5 w-5 rounded border-[#C3C9B9] text-[#406623] accent-[#406623] focus:ring-[#406623]"
+              className="h-5 w-5 rounded border-border-sage text-primary accent-primary focus:ring-primary"
             />
-            <span className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+            <span className="text-sm font-semibold tracking-[0.14px] text-text-secondary">
               {t('login.rememberMe')}
             </span>
           </label>
@@ -161,7 +161,7 @@ export function LoginForm() {
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#406623] font-jakarta text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-primary text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span>{loading ? '...' : t('login.submit')}</span>
             {!loading && (
@@ -172,11 +172,11 @@ export function LoginForm() {
           </button>
         </form>
 
-        <div className="border-t border-[#C3C9B9]/30 pt-4 flex flex-col gap-3">
+        <div className="border-t border-border-sage/30 pt-4 flex flex-col gap-3">
           <div className="relative flex items-center">
-            <div className="flex-1 border-t border-[#C3C9B9]/40" />
-            <span className="mx-3 font-jakarta text-xs text-[#73796B]">hoặc</span>
-            <div className="flex-1 border-t border-[#C3C9B9]/40" />
+            <div className="flex-1 border-t border-border-sage/40" />
+            <span className="mx-3 text-xs text-text-muted">{t('common.or')}</span>
+            <div className="flex-1 border-t border-border-sage/40" />
           </div>
 
           {gError && (
@@ -188,7 +188,7 @@ export function LoginForm() {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
-              <span className="font-jakarta text-sm text-red-600">{gError}</span>
+              <span className="text-sm text-red-600">{gError}</span>
             </div>
           )}
 
@@ -210,14 +210,14 @@ export function LoginForm() {
           </div>
 
           {gLoading && (
-            <p className="text-center font-jakarta text-xs text-[#73796B]">Đang xử lý...</p>
+            <p className="text-center text-xs text-text-muted">{t('common.processing')}</p>
           )}
         </div>
       </div>
 
-      <p className="text-center font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+      <p className="text-center text-sm font-semibold tracking-[0.14px] text-text-secondary">
         {t('login.noAccount')}{' '}
-        <Link to="/register" className="text-[#406623] transition-colors hover:underline">
+        <Link to="/register" className="text-primary transition-colors hover:underline">
           {t('login.signUp')}
         </Link>
       </p>

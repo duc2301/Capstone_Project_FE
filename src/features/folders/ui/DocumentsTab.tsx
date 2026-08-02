@@ -5,11 +5,11 @@ import { approvalApi, approvalErrorMessage, isTeamPermissionError, type Approval
 import type { DocumentSearchResult } from '@/entities/document-search';
 import type { EffectivePermission, FolderTreeNode } from '@/entities/folder';
 import { CdeArea, folderErrorMessage } from '@/entities/folder';
+import type { Group } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
-import { FolderNamingInfoModal } from '@/features/naming-conventions';
-import { useProjectGroups } from '@/features/projects';
+import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -18,7 +18,7 @@ import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-trans
 
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderFiles } from '../model/useFolderFiles';
-import { useFolderTree } from '../model/useFolderTree';
+import { useFolderTree } from '@/entities/folder';
 import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
@@ -37,6 +37,16 @@ import { UploadModal } from './UploadModal';
 
 interface DocumentsTabProps {
   projectId: string;
+  /* Nhóm của dự án — trang cha đã tải sẵn, truyền xuống để khỏi gọi API lần hai. */
+  signerGroups: Group[];
+  signerGroupsLoading: boolean;
+  /* Modal quy tắc đặt tên thuộc feature khác — trang cha dựng và truyền vào. */
+  renderNamingModal?: (ctx: {
+    folder: FolderTreeNode;
+    canManage: boolean;
+    close: () => void;
+    notify: (message: string) => void;
+  }) => React.ReactNode;
 }
 
 /* Các quyền (theo thứ tự hiển thị) → nhãn i18n */
@@ -85,13 +95,17 @@ function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
   return null;
 }
 
-export function DocumentsTab({ projectId }: DocumentsTabProps) {
+export function DocumentsTab({
+  projectId,
+  signerGroups,
+  signerGroupsLoading,
+  renderNamingModal,
+}: DocumentsTabProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
-  const { groups: signerGroups, loading: signerGroupsLoading } = useProjectGroups(projectId);
   const { currentUser } = useSession();
 
   // Gate thô cho nút gán/kế thừa/tùy chỉnh naming: Admin hoặc Leader active của 1 group
@@ -111,7 +125,6 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const [uploadFolder, setUploadFolder] = useState<FolderTreeNode | null>(null);
   const [fileMenu, setFileMenu] = useState<{ file: FileListItem; x: number; y: number } | null>(null);
@@ -133,10 +146,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   const selected = findNode(tree, selectedId);
   const selectedTargetZone = selected ? nextApprovalTargetZone(selected.area) : null;
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const handleContextMenu = (e: React.MouseEvent, node: FolderTreeNode) => {
     e.preventDefault();
@@ -302,11 +312,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
   return (
     // Header cố định, lưới 2 ô chiếm phần chiều cao còn lại
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[60]" />
 
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
@@ -343,7 +349,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           <button
             type="button"
             onClick={handleNewFolderClick}
-            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -356,11 +362,11 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center rounded-(--radius-card) border border-card-border bg-card py-20 shadow-card">
+        <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         </div>
       ) : error ? (
-        <div className="rounded-(--radius-card) border border-danger/20 bg-danger-light p-6 text-center">
+        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
           <p className="text-sm font-medium text-danger">{error}</p>
         </div>
       ) : (
@@ -375,7 +381,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="admin-scrollbar flex min-h-0 min-w-0 flex-col overflow-y-auto rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
+          <div className="admin-scrollbar flex min-h-0 min-w-0 flex-col overflow-y-auto rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>
@@ -494,22 +500,13 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
         />
       )}
 
-      {/* Modal quy tắc đặt tên của thư mục (+ kế thừa từ thư mục cha) */}
-      {namingFor && (
-        <FolderNamingInfoModal
-          folder={namingFor}
-          canManage={canManageNaming}
-          onClose={() => setNamingFor(null)}
-          onInherited={() => {
-            setNamingFor(null);
-            showToast(t('naming.folder.inherited'));
-          }}
-          onCustomized={() => {
-            setNamingFor(null);
-            showToast(t('naming.folder.customized'));
-          }}
-        />
-      )}
+      {/* Modal quy tắc đặt tên của thư mục — do trang cha dựng (thuộc feature khác) */}
+      {namingFor && renderNamingModal?.({
+        folder: namingFor,
+        canManage: canManageNaming,
+        close: () => setNamingFor(null),
+        notify: (message) => showToast(message),
+      })}
 
       {/* Modal phân quyền thư mục */}
       {permissionFor && (

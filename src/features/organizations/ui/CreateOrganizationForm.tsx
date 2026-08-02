@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import type { Organization, CreateOrganizationPayload } from '@/entities/organization';
 import type { OrganizationType, CreateOrganizationTypePayload } from '@/entities/organization-type';
+import { getApiErrorMessage } from '@/shared/api';
+import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 const OTHER_VALUE = '__other__';
@@ -30,6 +32,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     representativeOrganizationId: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const { toast, showToast } = useToast();
   const [isOtherType, setIsOtherType] = useState(false);
   const [customTypeName, setCustomTypeName] = useState('');
 
@@ -51,10 +54,10 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
           email: result.data.email || prev.email,
         }));
       } else {
-        alert('Không tìm thấy doanh nghiệp với mã số thuế này.');
+        showToast(t('org.lookup.notFound'), 'error');
       }
     } catch {
-      alert('Không thể kết nối dịch vụ tra cứu MST. Bạn có thể nhập thủ công.');
+      showToast(t('org.lookup.serviceError'), 'error');
     } finally {
       setLookingUp(false);
     }
@@ -87,7 +90,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     e.preventDefault();
     setSubmitting(true);
     try {
-      let finalPayload: any = { ...form };
+      let finalPayload: CreateOrganizationPayload = { ...form };
       if (!finalPayload.taxCode) finalPayload.taxCode = undefined;
       if (!finalPayload.displayName) finalPayload.displayName = undefined;
       if (!finalPayload.address) finalPayload.address = undefined;
@@ -99,24 +102,16 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
         const code = customTypeName.trim().replace(/\s+/g, '');
         const created = await onCreateOrgType({ code, name: customTypeName.trim() });
         if (!created) {
-          alert('Tạo loại tổ chức thất bại. Vui lòng thử lại.');
+          showToast(t('org.orgType.createError'), 'error');
           return;
         }
         finalPayload = { ...finalPayload, organizationTypeId: created.id };
       }
 
       await onSubmit(finalPayload);
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      let errorMsg = error.response?.data?.message;
-      if (!errorMsg && error.response?.data?.errors) {
-        const errors = error.response.data.errors as Record<string, string[]>;
-        errorMsg = Object.values(errors).flat().join('\n');
-      }
-      if (!errorMsg && error.response?.data) {
-        errorMsg = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
-      }
-      alert(errorMsg || 'Có lỗi xảy ra khi lưu. Vui lòng kiểm tra lại thông tin.');
+      showToast(getApiErrorMessage(error, t('org.save.error')), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -137,16 +132,16 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
               <input
                 id="create-taxCode"
                 name="taxCode"
-                value={form.taxCode}
+                value={form.taxCode ?? ''}
                 onChange={handleChange}
                 onBlur={() => {
-                  if (form.taxCode.length >= 10 && !form.legalName) handleLookup();
+                  if ((form.taxCode?.length ?? 0) >= 10 && !form.legalName) handleLookup();
                 }}
                 placeholder={t('org.taxCodePlaceholder')}
                 required
                 maxLength={13}
                 pattern="^\d{10,13}$"
-                title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
+                title={t('org.form.taxCodeHint')}
                 className={inputClass}
               />
               <button
@@ -155,7 +150,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                 disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
                 className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
               >
-                {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
+                {lookingUp ? t('org.form.lookingUp') : t('org.form.lookup')}
               </button>
             </div>
           </div>
@@ -230,7 +225,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
               <button
                 type="button"
                 onClick={handleBackToSelect}
-                title="Quay lại chọn từ danh sách"
+                title={t('org.form.backToList')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -245,7 +240,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
         {/* --- Joint Venture Fields --- */}
         {isJv && (
           <div className="sm:col-span-2 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-5 space-y-4 mt-2">
-            <h3 className="text-sm font-bold text-primary">Cấu trúc Liên danh</h3>
+            <h3 className="heading-label text-primary">{t('org.form.jvStructure')}</h3>
             <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-text-secondary">
@@ -267,7 +262,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                     }}
                     className={inputClass}
                   >
-                    <option value="">+ Thêm đối tác vào liên danh...</option>
+                    <option value="">{t('org.form.addJvPartner')}</option>
                     {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.displayName || org.legalName}
@@ -317,7 +312,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                   required={isJv}
                   className={inputClass}
                 >
-                  <option value=""> Chọn đơn vị đại diện </option>
+                  <option value="">{t('org.form.selectLeadUnit')}</option>
                   {(form.jointVentureMemberIds || []).map((orgId) => {
                     const org = organizations.find((o) => o.id === orgId);
                     return (
@@ -362,7 +357,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
             placeholder={t('org.phonePlaceholder')}
             maxLength={11}
             pattern="^\d{10,11}$"
-            title="Số điện thoại phải bao gồm từ 10 đến 11 chữ số"
+            title={t('org.form.phoneHint')}
             className={inputClass}
           />
         </div>
@@ -411,6 +406,8 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
           )}
         </button>
       </div>
+
+      <Toast toast={toast} className="z-[80]" />
     </form>
   );
 }

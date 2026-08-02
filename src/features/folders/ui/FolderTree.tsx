@@ -55,7 +55,7 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
       <div
         onContextMenu={(e) => onContextMenu?.(e, node)}
         style={{ paddingLeft: 8 + depth * 12 }}
-        className={`flex min-w-full items-center gap-1.5 rounded-lg pr-2 text-[13px] transition-colors ${
+        className={`flex min-w-full items-center gap-1.5 rounded-lg pr-2 text-sm transition-colors ${
           isSelected
             ? 'bg-primary-light font-semibold text-primary'
             : isRoot
@@ -165,7 +165,7 @@ export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: Folder
 
   return (
     // Cây dài thì cuộn trong khung, không kéo dài cả trang
-    <div className="flex h-full min-h-0 flex-col rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
+    <div className="flex h-full min-h-0 flex-col rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 shadow-card">
       {tree.length === 0 ? (
         <p className="px-2 py-6 text-center text-sm text-text-muted">{t('documents.empty')}</p>
       ) : (

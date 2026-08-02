@@ -104,7 +104,7 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
 
       {/* ── Vị trí dự án (ProjectLocation) — geocode miễn phí qua OpenStreetMap ── */}
       <div className="space-y-2 border-t border-card-border pt-5">
-        <h3 className="font-heading text-sm font-bold text-text">{t('projects.form.location')}</h3>
+        <h3 className="heading-label">{t('projects.form.location')}</h3>
         <AddressField
           value={{ address, latitude, longitude }}
           onChange={(loc) => {
@@ -119,7 +119,7 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
       <div className="space-y-3 border-t border-card-border pt-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-heading text-sm font-bold text-text">{t('projects.groups.title')}</h3>
+            <h3 className="heading-label">{t('projects.groups.title')}</h3>
             <p className="mt-1 text-xs text-text-muted">{t('projects.groups.hint')}</p>
           </div>
           <button

@@ -33,7 +33,7 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
         )}
 
         <span
-          className={`absolute left-3 top-3 inline-flex items-center gap-2 rounded-[var(--radius-badge)] px-3 py-1 text-[10px] font-bold uppercase tracking-[1px] shadow-sm ${status.badgeClass}`}
+          className={`absolute left-3 top-3 inline-flex items-center gap-2 rounded-[var(--radius-badge)] px-3 py-1 text-2xs font-bold uppercase tracking-[1px] shadow-sm ${status.badgeClass}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
           {status.label}
@@ -41,7 +41,7 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col p-6">
-        <p className="text-[10px] font-bold uppercase tracking-[1px] text-primary/60">
+        <p className="text-2xs font-bold uppercase tracking-[1px] text-primary/60">
           {t('projects.card.code')}: {project.projectCode?.trim() || t('projects.card.noCode')}
         </p>
 

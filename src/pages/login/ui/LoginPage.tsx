@@ -22,7 +22,7 @@ function FeatureIcon() {
 
 function LoginBrandPanel() {
   return (
-    <aside className="relative hidden flex-col justify-end overflow-hidden bg-[#406623] p-12 lg:flex">
+    <aside className="relative hidden flex-col justify-end overflow-hidden bg-primary p-12 lg:flex">
       <div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url("${HERO_IMAGE}")` }}
@@ -37,10 +37,10 @@ function LoginBrandPanel() {
 
       <div className="relative z-[2] flex max-w-[512px] flex-col gap-8">
         <div className="flex flex-col gap-4">
-          <h2 className="font-display text-[56px] font-bold leading-[1.14] tracking-[-1.12px] text-white">
+          <h2 className="heading-hero text-white">
             {t('login.brand.heading')}
           </h2>
-          <p className="font-jakarta text-lg leading-7 text-[#E4E3DB]/90">
+          <p className="text-lg leading-7 text-surface-sand/90">
             {t('login.brand.subtitle')}
           </p>
         </div>
@@ -52,10 +52,10 @@ function LoginBrandPanel() {
                 <FeatureIcon />
               </span>
               <div className="flex flex-col gap-1">
-                <span className="font-jakarta text-sm font-semibold tracking-[0.14px] text-white">
+                <span className="text-sm font-semibold tracking-[0.14px] text-white">
                   {t(feature.titleKey)}
                 </span>
-                <span className="font-jakarta text-xs font-medium tracking-[0.6px] text-[#C3C9B9]">
+                <span className="text-xs font-medium tracking-[0.6px] text-border-sage">
                   {t(feature.descKey)}
                 </span>
               </div>

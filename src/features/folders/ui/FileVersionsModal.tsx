@@ -71,10 +71,10 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 w-full max-w-lg animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">
-            <h2 className="font-heading text-lg font-bold text-text">{t('documents.versions.title')}</h2>
+            <h2 className="heading-entity">{t('documents.versions.title')}</h2>
             <p className="truncate text-xs text-text-muted">{fileName}</p>
           </div>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
@@ -105,7 +105,7 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
                     <p className="text-sm font-medium text-text">
                       {formatSize(v.fileSizeBytes)} · {v.format.toUpperCase()}
                       {isCurrent(v) && (
-                        <span className="ml-2 rounded-full bg-success-light px-2 py-0.5 text-[10px] font-semibold text-success">
+                        <span className="ml-2 rounded-full bg-success-light px-2 py-0.5 text-2xs font-semibold text-success">
                           {t('documents.versions.current')}
                         </span>
                       )}
@@ -132,9 +132,9 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
 
         {/* Hộp xác nhận khôi phục phiên bản */}
         {confirmVersion && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-(--radius-card-lg) bg-black/30 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm animate-scale-in rounded-(--radius-card-lg) bg-card p-5 shadow-modal">
-              <h3 className="font-heading text-base font-bold text-text">{t('documents.versions.confirmTitle')}</h3>
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[var(--radius-card-lg)] bg-black/30 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm animate-scale-in rounded-[var(--radius-card-lg)] bg-card p-5 shadow-modal">
+              <h3 className="heading-card">{t('documents.versions.confirmTitle')}</h3>
               <p className="mt-2 text-sm text-text-muted">
                 {t('documents.versions.confirmDesc').replace('{version}', confirmVersion.displayVersion)}
               </p>

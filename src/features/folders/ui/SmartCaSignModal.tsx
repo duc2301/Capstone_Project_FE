@@ -273,12 +273,12 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
   const canCreateSignRequest = !!userId.trim() && !!certificateSerial && !creatingRequest && !generatingSignedPdf;
 
   return (
-    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-[#dcdad2]/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-viewer-canvas/60 p-4 backdrop-blur-sm">
       <div className="absolute inset-0 animate-fade-in" onClick={creatingRequest ? undefined : onClose} />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[600px] animate-scale-in flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[600px] animate-scale-in flex-col overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="border-b border-card-border/70 px-6 py-5">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold text-text">{t('smartca.signModal.title')}</h2>
+            <h2 className="heading-tab text-text">{t('smartca.signModal.title')}</h2>
             <button type="button" onClick={onClose} disabled={creatingRequest} className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -327,7 +327,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
                   type="button"
                   disabled={loadingCertificates}
                   onClick={handleGetCertificates}
-                  className="self-end rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  className="self-end rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loadingCertificates ? t('common.loading') : t('smartca.signModal.getCertificates')}
                 </button>
@@ -352,7 +352,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
                 </label>
 
                 {selectedCertificate && (
-                  <div className="rounded-xl border border-card-border bg-[#f6f4ec] p-4 text-xs text-text-secondary">
+                  <div className="rounded-xl border border-card-border bg-page-cream-alt p-4 text-xs text-text-secondary">
                     <p className="font-semibold text-text">{selectedCertificate.subject ?? selectedCertificate.serialNumber}</p>
                     <p className="mt-1">{t('smartca.signModal.validTo')}: {formatDateTime(selectedCertificate.validTo)}</p>
                     <p className="mt-1">{t('smartca.signModal.certificateStatus')}: {selectedCertificate.status ?? '-'}</p>
@@ -403,13 +403,13 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
           )}
         </div>
 
-        <div className="flex gap-3 border-t border-card-border bg-[#f6f4ec]/70 p-6">
+        <div className="flex gap-3 border-t border-card-border bg-page-cream-alt/70 p-6">
           {!hasSignedSuccessfully && !hasAlreadySignedButWaitingForOthers && (
             <button
               type="button"
               disabled={!canCreateSignRequest}
               onClick={handleCreateSignRequest}
-              className="h-12 flex-1 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-12 flex-1 rounded-[var(--radius-button)] bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {creatingRequest || generatingSignedPdf ? t('common.loading') : t('smartca.signModal.createSignRequest')}
             </button>
@@ -418,7 +418,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
             type="button"
             onClick={onClose}
             disabled={creatingRequest}
-            className={`${hasSignedSuccessfully || hasAlreadySignedButWaitingForOthers ? 'flex-1 bg-primary text-white hover:bg-primary-hover' : 'border border-card-border text-text-secondary hover:bg-content-bg'} h-12 rounded-xl px-6 text-base font-medium transition-colors disabled:opacity-40`}
+            className={`${hasSignedSuccessfully || hasAlreadySignedButWaitingForOthers ? 'flex-1 bg-primary text-white hover:bg-primary-hover' : 'border border-card-border text-text-secondary hover:bg-content-bg'} h-12 rounded-[var(--radius-button)] px-6 text-base font-medium transition-colors disabled:opacity-40`}
           >
             {hasSignedSuccessfully || hasAlreadySignedButWaitingForOthers ? t('smartca.success.close') : t('smartca.signModal.cancel')}
           </button>
@@ -441,17 +441,17 @@ function SmartCaSuccessView({
 
   return (
     <section className="flex flex-col items-center text-center">
-      <div className="relative mt-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-primary/20 bg-[#f6f4ec] text-primary">
+      <div className="relative mt-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-primary/20 bg-page-cream-alt text-primary">
         <span className="absolute -inset-6 rounded-full bg-primary/10" />
         <svg className="relative z-10" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </div>
 
-      <h3 className="mt-8 font-display text-2xl font-semibold text-primary">{t('smartca.success.title')}</h3>
+      <h3 className="heading-tab mt-8">{t('smartca.success.title')}</h3>
       <p className="mt-2 max-w-md text-base text-text-secondary">{t('smartca.success.desc')}</p>
 
-      <div className="mt-8 w-full rounded-2xl border border-card-border bg-[#f6f4ec] p-5 text-left">
+      <div className="mt-8 w-full rounded-2xl border border-card-border bg-page-cream-alt p-5 text-left">
         <InfoRow label={t('smartca.success.fileName')} value={approval.fileName} />
         {signedFile && (
           <>
@@ -476,14 +476,14 @@ function SmartCaSuccessView({
 function SmartCaWaitingForOthersView({ approval }: { approval: ApprovalListItem }) {
   return (
     <section className="flex flex-col items-center text-center">
-      <div className="relative mt-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-warning/30 bg-[#f6f4ec] text-warning">
+      <div className="relative mt-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-warning/30 bg-page-cream-alt text-warning">
         <span className="absolute -inset-6 rounded-full bg-warning/10" />
         <svg className="relative z-10" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
         </svg>
       </div>
 
-      <h3 className="mt-8 font-display text-2xl font-semibold text-warning">{t('smartca.waiting.title')}</h3>
+      <h3 className="heading-tab mt-8 text-warning">{t('smartca.waiting.title')}</h3>
       <p className="mt-2 max-w-md text-base text-text-secondary">{t('smartca.waiting.desc')}</p>
 
       <div className="mt-8 w-full">
@@ -507,7 +507,7 @@ function MethodButton({ label, active = false, disabled = false }: { label: stri
     <button
       type="button"
       disabled={disabled}
-      className={`h-10 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+      className={`h-10 rounded-[var(--radius-button)] border px-3 text-sm font-semibold transition-colors ${
         active
           ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
           : 'border-card-border text-text-secondary hover:bg-content-bg'

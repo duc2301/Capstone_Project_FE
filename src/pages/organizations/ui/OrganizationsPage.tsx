@@ -7,6 +7,8 @@ import {
   useOrganizations,
   useOrganizationTypes,
 } from '@/features/organizations';
+import { getApiErrorMessage } from '@/shared/api';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
@@ -50,7 +52,7 @@ function Modal({ title, onClose, children }: ModalProps) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <div className="relative z-10 w-full max-w-2xl max-h-[90vh] animate-scale-in overflow-y-auto rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-card-border bg-card px-7 py-5">
-          <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
+          <h2 className="heading-entity">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -89,9 +91,21 @@ export function OrganizationsPage() {
     setSelectedOrg(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('org.deleteConfirm'))) return;
-    await deleteOrganization(id);
+  const { toast, showToast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteOrganization(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('org.deleteError')), 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openEdit = (org: Organization) => {
@@ -135,7 +149,7 @@ export function OrganizationsPage() {
   }, [organizations, now]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* ── Page Header ────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="heading-page">
@@ -255,24 +269,24 @@ export function OrganizationsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-card-border bg-input-bg">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                <tr className="table-head bg-input-bg">
+                  <th className="px-6 py-4">
                     {t('org.col.taxCode')}
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                  <th className="px-6 py-4">
                     {t('org.col.name')}
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                  <th className="px-6 py-4">
                     {t('org.type')}
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                  <th className="px-6 py-4">
                     {t('org.col.contact')}
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                  <th className="px-6 py-4">
                     {t('org.col.createdAt')}
                   </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.actions')}
+                  <th className="px-6 py-4 text-right">
+                    {t('common.col.actions')}
                   </th>
                 </tr>
               </thead>
@@ -338,30 +352,20 @@ export function OrganizationsPage() {
                         {org.createdAt ? new Date(org.createdAt).toLocaleDateString('vi-VN') : '—'}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
+                        <RowActions>
+                          <ActionIconButton
+                            label={t('common.action.edit')}
+                            tone="primary"
+                            icon={<EditIcon />}
                             onClick={() => openEdit(org)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-all duration-150 hover:bg-primary-light hover:text-primary"
-                            title="Chỉnh sửa"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(org.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-all duration-150 hover:bg-danger-light hover:text-danger"
-                            title="Xóa"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              <line x1="10" y1="11" x2="10" y2="17" />
-                              <line x1="14" y1="11" x2="14" y2="17" />
-                            </svg>
-                          </button>
-                        </div>
+                          />
+                          <ActionIconButton
+                            label={t('common.action.delete')}
+                            tone="danger"
+                            icon={<DeleteIcon />}
+                            onClick={() => setDeleteTarget(org.id)}
+                          />
+                        </RowActions>
                       </td>
                     </tr>
                   ))
@@ -381,7 +385,7 @@ export function OrganizationsPage() {
       
       {/* ── Create Joint Venture Modal ───────────────────────────── */}
       {formMode === 'create-jv' && (
-        <Modal title="Thêm liên danh mới" onClose={closeForm}>
+        <Modal title={t('org.modal.createJvTitle')} onClose={closeForm}>
           <CreateOrganizationForm mode="joint-venture" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}
@@ -398,6 +402,19 @@ export function OrganizationsPage() {
             onCreateOrgType={createOrgType}
           />
         </Modal>
+      )}
+
+      <Toast toast={toast} className="z-[80]" />
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('common.action.delete')}
+          message={t('org.deleteConfirm')}
+          confirmLabel={t('common.action.delete')}
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

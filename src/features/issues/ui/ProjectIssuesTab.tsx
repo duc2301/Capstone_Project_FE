@@ -11,7 +11,7 @@ const STATUS_FILTERS: (IssueStatus | 'all')[] = ['all', 'Open', 'InProgress', 'A
 const PRIORITY_FILTERS: (IssuePriority | 'all')[] = ['all', 'Low', 'Medium', 'High', 'Critical'];
 
 const selectCls =
-  'rounded-(--radius-input) border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-primary';
+  'rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-primary';
 
 interface Props {
   projectId: string;
@@ -81,18 +81,18 @@ export function ProjectIssuesTab({ projectId }: Props) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center rounded-(--radius-card) border border-card-border bg-card py-20 shadow-card">
+        <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         </div>
       ) : error ? (
-        <div className="rounded-(--radius-card) border border-danger/20 bg-danger-light p-6 text-center">
+        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
           <p className="text-sm font-medium text-danger">{error}</p>
         </div>
       ) : (
-        <div className="admin-scrollbar min-h-0 flex-1 overflow-auto rounded-(--radius-card) border border-card-border bg-card shadow-card">
+        <div className="admin-scrollbar min-h-0 flex-1 overflow-auto rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-input-bg">
-              <tr className="border-b border-card-border text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+              <tr className="table-head">
                 <th className="px-5 py-3">{t('projectIssues.col.title')}</th>
                 <th className="px-5 py-3">{t('projectIssues.col.priority')}</th>
                 <th className="px-5 py-3">{t('projectIssues.col.status')}</th>

@@ -18,6 +18,7 @@ export { AssignManagerForm } from './ui/AssignManagerForm';
 export { CreateGroupForm } from './ui/CreateGroupForm';
 export { CreateProjectForm } from './ui/CreateProjectForm';
 export { CreateProjectStepper } from './ui/CreateProjectStepper';
+export type { PackageFormSlotContext } from './ui/CreateProjectStepper';
 export { EditProjectForm } from './ui/EditProjectForm';
 export { InviteMemberForm } from './ui/InviteMemberForm';
 export { ProjectCard } from './ui/ProjectCard';

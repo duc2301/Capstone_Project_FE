@@ -149,7 +149,7 @@ export function FolderContextMenu({
       <div className="fixed inset-0 z-40" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose(); }} />
       <div
         ref={clampRef}
-        className="fixed z-50 min-w-44 animate-scale-in rounded-xl border border-card-border bg-card py-1.5 shadow-dropdown"
+        className="fixed z-50 min-w-44 animate-scale-in rounded-[var(--radius-card)] border border-card-border bg-card py-1.5 shadow-dropdown"
         style={{ top: y, left: x }}
       >
         {items.length === 0 ? (

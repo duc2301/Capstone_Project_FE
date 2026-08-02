@@ -36,7 +36,7 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between border-b border-card-border px-4 py-3">
-        <h2 className="font-heading text-sm font-bold text-text">{t('notification.title')}</h2>
+        <h2 className="heading-label">{t('notification.title')}</h2>
       </div>
 
       {loading && notifications.length === 0 ? (

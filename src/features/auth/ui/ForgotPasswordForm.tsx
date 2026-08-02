@@ -1,13 +1,14 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { t } from '@/shared/lib/i18n';
 
 import { useForgotPassword } from '../model/useForgotPassword';
 
 const INPUT_BASE =
-  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
+  'h-12 w-full rounded-xl border border-border-sage bg-white text-base text-text-strong placeholder:text-text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
 const LABEL_CLASS =
-  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
+  'text-sm font-semibold tracking-[0.14px] text-text-secondary';
 
 function MailIcon() {
   return (
@@ -39,21 +40,21 @@ export function ForgotPasswordForm() {
   if (success) {
     return (
       <div className="flex w-full max-w-[448px] flex-col items-center gap-6 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#406623]/10 text-[#406623]">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
           <CheckCircleIcon />
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-[28px] font-semibold text-[#1B1C17]">
+          <h1 className="heading-page">
             Kiểm tra email của bạn
           </h1>
-          <p className="font-jakarta text-base text-[#43493C]">
+          <p className="text-base text-text-secondary">
             Nếu email <strong>{email}</strong> tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.
-            Link có hiệu lực trong <strong>15 phút</strong>.
+            Link có hiệu lực trong <strong>{t('auth.otpExpiry')}</strong>.
           </p>
         </div>
         <Link
           to="/login"
-          className="font-jakarta text-sm font-semibold text-[#406623] transition-colors hover:underline"
+          className="text-sm font-semibold text-primary transition-colors hover:underline"
         >
           ← Quay lại đăng nhập
         </Link>
@@ -64,15 +65,15 @@ export function ForgotPasswordForm() {
   return (
     <div className="flex w-full max-w-[448px] flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+        <h1 className="heading-page">
           Quên mật khẩu?
         </h1>
-        <p className="font-jakarta text-base text-[#43493C]">
+        <p className="text-base text-text-secondary">
           Nhập email của bạn và chúng tôi sẽ gửi link để đặt lại mật khẩu.
         </p>
       </header>
 
-      <div className="flex flex-col gap-4 rounded-3xl border border-[#C3C9B9]/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+      <div className="flex flex-col gap-4 rounded-3xl border border-border-sage/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
         <form id="forgot-password-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && (
             <div
@@ -83,7 +84,7 @@ export function ForgotPasswordForm() {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
-              <span className="font-jakarta text-sm text-red-600">{error}</span>
+              <span className="text-sm text-red-600">{error}</span>
             </div>
           )}
 
@@ -92,7 +93,7 @@ export function ForgotPasswordForm() {
               Email công việc
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#73796B]">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
                 <MailIcon />
               </span>
               <input
@@ -112,7 +113,7 @@ export function ForgotPasswordForm() {
             id="forgot-password-submit-btn"
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#406623] font-jakarta text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-primary text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span>{loading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}</span>
             {!loading && (
@@ -124,9 +125,9 @@ export function ForgotPasswordForm() {
         </form>
       </div>
 
-      <p className="text-center font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+      <p className="text-center text-sm font-semibold tracking-[0.14px] text-text-secondary">
         Nhớ mật khẩu rồi?{' '}
-        <Link to="/login" className="text-[#406623] transition-colors hover:underline">
+        <Link to="/login" className="text-primary transition-colors hover:underline">
           Đăng nhập
         </Link>
       </p>

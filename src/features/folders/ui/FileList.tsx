@@ -96,7 +96,7 @@ function DotsButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted opacity-0 transition-all hover:bg-content-bg hover:text-text focus-visible:opacity-100 group-hover:opacity-100"
+      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-button)] text-text-muted opacity-0 transition-all hover:bg-content-bg hover:text-text focus-visible:opacity-100 group-hover:opacity-100"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" />
@@ -117,14 +117,14 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-            <th className="py-2.5 pr-3 font-bold">{t('documents.files.colName')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colVersion')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colType')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colStatus')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colSize')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colModified')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colAuthor')}</th>
+          <tr className="table-head">
+            <th className="py-2.5 pr-3">{t('documents.files.colName')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colVersion')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colType')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colStatus')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colSize')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colModified')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colAuthor')}</th>
           </tr>
         </thead>
         <tbody>

@@ -164,7 +164,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
               </span>
             )}
           </div>
-          <h2 className="font-heading text-lg font-bold text-text">{issue.title}</h2>
+          <h2 className="heading-entity">{issue.title}</h2>
           {issue.description && <p className="text-sm text-text-secondary">{issue.description}</p>}
           <p className="text-xs text-text-muted">
             {t('issues.detail.raisedBy')}: {issue.raisedByName ?? t('issues.unknownUser')} · {formatIssueDateTime(issue.createdAt)}
@@ -182,7 +182,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
               type="button"
               disabled={busy}
               onClick={handleResolve}
-              className="rounded-lg bg-success px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-[var(--radius-button)] bg-success px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t('issues.detail.markResolved')}
             </button>
@@ -209,7 +209,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
               value={returnReason}
               onChange={(e) => setReturnReason(e.target.value)}
               placeholder={t('returnRequests.modal.reasonPlaceholder')}
-              className="w-full resize-none rounded-(--radius-input) border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus"
+              className="w-full resize-none rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus"
             />
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setShowReturnForm(false)} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-text-secondary hover:bg-content-bg">
@@ -219,7 +219,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
                 type="button"
                 disabled={busy || !returnReason.trim()}
                 onClick={handleSubmitReturnRequest}
-                className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-[var(--radius-button)] bg-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t('returnRequests.modal.submit')}
               </button>
@@ -254,13 +254,13 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
               </button>
 
               {showParticipantPicker && (
-                <div className="absolute z-10 mt-2 w-72 rounded-xl border border-card-border bg-card p-2 shadow-dropdown">
+                <div className="absolute z-10 mt-2 w-72 rounded-[var(--radius-card)] border border-card-border bg-card p-2 shadow-dropdown">
                   <input
                     autoFocus
                     value={participantQuery}
                     onChange={(e) => setParticipantQuery(e.target.value)}
                     placeholder={t('issues.detail.addParticipantPlaceholder')}
-                    className="mb-2 w-full rounded-(--radius-input) border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus"
+                    className="mb-2 w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus"
                   />
                   <div className="max-h-56 overflow-y-auto">
                     {membersLoading ? (

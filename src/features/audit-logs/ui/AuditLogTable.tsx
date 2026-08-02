@@ -12,7 +12,7 @@ interface Props {
 export function AuditLogTable({ items, loading, showScopeColumn = true }: Props) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center rounded-xl border border-card-border bg-card py-12">
+      <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-12">
         <svg className="h-6 w-6 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z" />
@@ -23,32 +23,32 @@ export function AuditLogTable({ items, loading, showScopeColumn = true }: Props)
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-card-border bg-card py-12 text-center">
+      <div className="rounded-[var(--radius-card)] border border-card-border bg-card py-12 text-center">
         <p className="text-sm text-text-muted">{t('audit.empty')}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-card-border bg-card">
+    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-card-border bg-card">
       <table className="w-full min-w-[720px] border-collapse">
         <thead>
-          <tr className="border-b border-card-border bg-content-bg">
-            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+          <tr className="table-head bg-content-bg">
+            <th className="px-4 py-3">
               {t('audit.col.time')}
             </th>
-            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+            <th className="px-4 py-3">
               {t('audit.col.actor')}
             </th>
-            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+            <th className="px-4 py-3">
               {t('audit.col.action')}
             </th>
             {showScopeColumn && (
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+              <th className="px-4 py-3">
                 {t('audit.col.scope')}
               </th>
             )}
-            <th className="w-full px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+            <th className="w-full px-4 py-3">
               {t('audit.col.detail')}
             </th>
           </tr>

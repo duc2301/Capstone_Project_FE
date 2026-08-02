@@ -16,7 +16,7 @@ const SCOPES = [LogScope.System, LogScope.Project, LogScope.Group];
 const ACTIONS = Object.values(AuditAction);
 
 const inputClass =
-  'rounded-xl border border-card-border bg-card px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary';
+  'rounded-[var(--radius-input)] border border-card-border bg-card px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary';
 
 export function AuditLogFilters({ value, onApply, showScopeFilter = true }: Props) {
   const [draft, setDraft] = useState<AuditLogQuery>(value);
@@ -31,7 +31,7 @@ export function AuditLogFilters({ value, onApply, showScopeFilter = true }: Prop
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-card-border bg-card p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-card)] border border-card-border bg-card p-4">
       {showScopeFilter && (
         <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-text-muted">{t('audit.filter.scope')}</span>
@@ -92,7 +92,7 @@ export function AuditLogFilters({ value, onApply, showScopeFilter = true }: Prop
       <button
         type="button"
         onClick={clear}
-        className="rounded-xl border border-card-border px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+        className="rounded-[var(--radius-button)] border border-card-border px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
       >
         {t('audit.filter.clear')}
       </button>

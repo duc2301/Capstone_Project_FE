@@ -75,13 +75,13 @@ export function IssueDiscussionPanel({
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t('issues.discussion.placeholder')}
-              className="max-h-32 min-h-11 flex-1 resize-none rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="max-h-32 min-h-11 flex-1 resize-none rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
             />
             <button
               type="button"
               disabled={posting || !text.trim()}
               onClick={handleSend}
-              className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" />
@@ -100,7 +100,7 @@ function MessageBubble({ message, mine }: { message: DiscussionMessage; mine: bo
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
       <div className="mb-1 flex items-center gap-2 px-1">
         <span className="text-xs font-semibold text-text">{mine ? t('issues.discussion.you') : message.authorName ?? message.authorAccountId}</span>
-        <span className="text-[11px] text-text-muted">{formatIssueDateTime(message.createdAt)}</span>
+        <span className="text-xs text-text-muted">{formatIssueDateTime(message.createdAt)}</span>
       </div>
       <div
         className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${mine

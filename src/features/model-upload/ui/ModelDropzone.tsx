@@ -48,19 +48,19 @@ export function ModelDropzone({ onFile }: Props) {
       }}
       className={`flex w-full max-w-2xl flex-col items-center gap-5 rounded-3xl border-2 border-dashed px-8 py-16 text-center transition-colors ${
         isDragging
-          ? 'border-[#406623] bg-[#406623]/[0.06]'
-          : 'border-[#C3C9B9] bg-white/60'
+          ? 'border-primary bg-primary/[0.06]'
+          : 'border-border-sage bg-white/60'
       }`}
     >
-      <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#406623]/10">
+      <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
         <UploadIcon />
       </span>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-display text-2xl font-semibold text-[#1B1C17]">
+        <h2 className="heading-tab">
           {t('viewer.dropzone.title')}
         </h2>
-        <p className="font-jakarta text-sm text-[#43493C]">
+        <p className="text-sm text-text-secondary">
           {t('viewer.dropzone.hint')}
         </p>
       </div>
@@ -68,7 +68,7 @@ export function ModelDropzone({ onFile }: Props) {
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="rounded-xl bg-[#406623] px-8 py-3 font-jakarta text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-[#34521c]"
+        className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-primary-hover"
       >
         {t('viewer.dropzone.button')}
       </button>
@@ -81,7 +81,7 @@ export function ModelDropzone({ onFile }: Props) {
         onChange={(event) => handleFiles(event.target.files)}
       />
 
-      <p className="max-w-md font-jakarta text-xs leading-5 text-[#43493C]/70">
+      <p className="max-w-md text-xs leading-5 text-text-secondary/70">
         {t('viewer.dropzone.formats')}: {SUPPORTED_EXTENSIONS.join(', ')}
       </p>
     </div>

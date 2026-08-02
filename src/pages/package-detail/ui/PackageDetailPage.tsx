@@ -1,20 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { contractPackageApi } from '@/entities/contractPackage';
+import { contractPackageApi, parseWorkTypes, workTypeLabel } from '@/entities/contractPackage';
 import type { ContractPackage } from '@/entities/contractPackage';
-import { PackageFormModal } from '@/features/packages';
+import { packageStatusMeta, PackageFormModal } from '@/features/packages';
+import { useProjectDetail } from '@/features/projects';
 import { useAccounts } from '@/features/accounts';
 import { fileItemApi } from '@/entities/file-item';
-
-/* ── Status mapping ── */
-const STATUS_MAP: Record<number, { label: string; cls: string }> = {
-  0: { label: 'Nháp', cls: 'bg-gray-100 text-gray-600' },
-  1: { label: 'Chờ bắt đầu', cls: 'bg-warning-light text-warning' },
-  2: { label: 'Đang thực hiện', cls: 'bg-success-light text-success' },
-  3: { label: 'Hoàn thành', cls: 'bg-primary-light text-primary' },
-  4: { label: 'Tạm dừng', cls: 'bg-danger-light text-danger' },
-  5: { label: 'Đang soát xét', cls: 'bg-info-light text-info' },
-};
+import type { FolderContentsFileDto } from '@/entities/folder';
+import { Toast, useToast } from '@/shared/components';
+import { t } from '@/shared/lib/i18n';
 
 function fmtCurrency(val: number | undefined, cur = 'VND') {
   if (val === undefined) return '';
@@ -29,6 +23,15 @@ function fmtDate(d?: string) {
   return new Date(d).toLocaleDateString('vi-VN');
 }
 
+function computeElapsedPercent(startDate: string | undefined, endDate: string | undefined, now: number): number {
+  if (!startDate || !endDate) return 0;
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+  if (now <= start) return 0;
+  if (now >= end) return 100;
+  return Math.round(((now - start) / (end - start)) * 100);
+}
+
 
 export default function PackageDetailPage() {
   const { projectId, packageId } = useParams<{ projectId: string; packageId: string }>();
@@ -37,15 +40,12 @@ export default function PackageDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { accounts } = useAccounts();
+  const { project } = useProjectDetail(projectId);
   const [now] = useState(() => Date.now());
-  const [docFiles, setDocFiles] = useState<any[]>([]);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [docFiles, setDocFiles] = useState<FolderContentsFileDto[]>([]);
   const [viewFileUrl, setViewFileUrl] = useState<{ url: string; name: string; type: string } | null>(null);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const loadData = () => {
     if (!packageId) return;
@@ -77,34 +77,21 @@ export default function PackageDetailPage() {
     loadData();
   }, [packageId]);
 
-  const st = STATUS_MAP[pkg?.status ?? 0] ?? STATUS_MAP[0];
+  const st = packageStatusMeta(pkg?.status ?? 0);
 
-  const workTypeTags = useMemo(() => {
-    if (!pkg?.workTypes) return [];
-    return pkg.workTypes.split(',').map((t) => t.trim()).filter(Boolean);
-  }, [pkg?.workTypes]);
+  const workTypeTags = parseWorkTypes(pkg?.workTypes);
 
-  const vatAmount = useMemo(() => {
-    if (!pkg?.contractValue || !pkg?.taxRate) return 0;
-    return (pkg.contractValue * pkg.taxRate) / 100;
-  }, [pkg?.contractValue, pkg?.taxRate]);
+  const vatAmount = pkg?.contractValue && pkg?.taxRate
+    ? (pkg.contractValue * pkg.taxRate) / 100
+    : 0;
 
   const total = (pkg?.contractValue ?? 0) + vatAmount;
 
-  const durationDays = useMemo(() => {
-    if (!pkg?.startDate || !pkg?.endDate) return null;
-    const diff = new Date(pkg.endDate).getTime() - new Date(pkg.startDate).getTime();
-    return Math.round(diff / (1000 * 60 * 60 * 24));
-  }, [pkg?.startDate, pkg?.endDate]);
+  const durationDays = pkg?.startDate && pkg?.endDate
+    ? Math.round((new Date(pkg.endDate).getTime() - new Date(pkg.startDate).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
 
-  const progressPct = useMemo(() => {
-    if (!pkg?.startDate || !pkg?.endDate) return 0;
-    const start = new Date(pkg.startDate).getTime();
-    const end = new Date(pkg.endDate).getTime();
-    if (now <= start) return 0;
-    if (now >= end) return 100;
-    return Math.round(((now - start) / (end - start)) * 100);
-  }, [pkg?.startDate, pkg?.endDate, now]);
+  const progressPct = computeElapsedPercent(pkg?.startDate, pkg?.endDate, now);
 
   if (loading) {
     return (
@@ -117,19 +104,19 @@ export default function PackageDetailPage() {
   if (!pkg) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
-        <p className="text-lg text-text-muted">Không tìm thấy gói thầu.</p>
+        <p className="text-lg text-text-muted">{t('packageDetail.notFound')}</p>
         <button
           onClick={() => navigate(-1)}
           className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
         >
-          Quay lại
+          {t('packageDetail.back')}
         </button>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-12">
+    <div className="space-y-6 pb-8">
 
 
       {/* ── Header ── */}
@@ -139,15 +126,15 @@ export default function PackageDetailPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">{pkg.code}</span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${st.cls}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${st.badgeClass}`}>
                 • {st.label}
               </span>
             </div>
             <h1 className="heading-page">
-              Gói thầu {pkg.name.toLowerCase()}
+              {pkg.name}
             </h1>
             <p className="mt-1 text-sm text-text-muted">
-              Dự án: (ID: {projectId?.slice(0, 8)})
+              {t('packageDetail.project')}: {project?.projectName ?? '—'}
             </p>
           </div>
         </div>
@@ -157,24 +144,24 @@ export default function PackageDetailPage() {
               const w = window.open('', '_blank');
               if (!w) return;
               w.document.write(`<html><head><title>Báo cáo gói thầu - ${pkg.name}</title><style>body{font-family:sans-serif;padding:40px}h1{font-size:24px}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}.label{color:#888;font-size:12px;text-transform:uppercase}</style></head><body>`);
-              w.document.write(`<h1>BÁO CÁO GÓI THẦU</h1>`);
+              w.document.write(`<h1>${t('packageDetail.report.title')}</h1>`);
               w.document.write(`<table>`);
-              w.document.write(`<tr><th>Mã gói thầu</th><td>${pkg.code}</td><th>Tên gói thầu</th><td>${pkg.name}</td></tr>`);
-              w.document.write(`<tr><th>Trạng thái</th><td>${st.label}</td><th>Mặc định</th><td>${pkg.isDefault ? 'Có' : 'Không'}</td></tr>`);
-              w.document.write(`<tr><th>Ngày bắt đầu</th><td>${fmtDate(pkg.startDate)}</td><th>Ngày kết thúc</th><td>${fmtDate(pkg.endDate)}</td></tr>`);
-              w.document.write(`<tr><th>Giá trị hợp đồng</th><td>${fmtCurrency(pkg.contractValue, pkg.currency ?? 'VND')}</td><th>Thuế VAT</th><td>${pkg.taxRate ?? 10}%</td></tr>`);
-              w.document.write(`<tr><th>Tổng giá trị</th><td colspan="3">${fmtCurrency(total, pkg.currency ?? 'VND')}</td></tr>`);
-              if (pkg.description) w.document.write(`<tr><th>Mô tả</th><td colspan="3">${pkg.description}</td></tr>`);
-              if (pkg.scopeDescription) w.document.write(`<tr><th>Phạm vi</th><td colspan="3">${pkg.scopeDescription}</td></tr>`);
-              if (pkg.workTypes) w.document.write(`<tr><th>Loại công việc</th><td colspan="3">${pkg.workTypes}</td></tr>`);
-              if (pkg.notes) w.document.write(`<tr><th>Ghi chú kỹ thuật</th><td colspan="3">${pkg.notes}</td></tr>`);
+              w.document.write(`<tr><th>${t('packageDetail.report.code')}</th><td>${pkg.code}</td><th>${t('packageDetail.report.name')}</th><td>${pkg.name}</td></tr>`);
+              w.document.write(`<tr><th>${t('packageDetail.report.status')}</th><td>${st.label}</td><th>${t('packageDetail.report.isDefault')}</th><td>${pkg.isDefault ? t('packageDetail.report.yes') : t('packageDetail.report.no')}</td></tr>`);
+              w.document.write(`<tr><th>${t('packageDetail.report.startDate')}</th><td>${fmtDate(pkg.startDate)}</td><th>${t('packageDetail.report.endDate')}</th><td>${fmtDate(pkg.endDate)}</td></tr>`);
+              w.document.write(`<tr><th>${t('packageDetail.report.contractValue')}</th><td>${fmtCurrency(pkg.contractValue, pkg.currency ?? 'VND')}</td><th>${t('packageDetail.report.tax')}</th><td>${pkg.taxRate ?? 10}%</td></tr>`);
+              w.document.write(`<tr><th>${t('packageDetail.report.total')}</th><td colspan="3">${fmtCurrency(total, pkg.currency ?? 'VND')}</td></tr>`);
+              if (pkg.description) w.document.write(`<tr><th>${t('packageDetail.report.description')}</th><td colspan="3">${pkg.description}</td></tr>`);
+              if (pkg.scopeDescription) w.document.write(`<tr><th>${t('packageDetail.report.scope')}</th><td colspan="3">${pkg.scopeDescription}</td></tr>`);
+              if (pkg.workTypes) w.document.write(`<tr><th>${t('packageDetail.report.workTypes')}</th><td colspan="3">${workTypeTags.map(workTypeLabel).join(', ')}</td></tr>`);
+              if (pkg.notes) w.document.write(`<tr><th>${t('packageDetail.report.notes')}</th><td colspan="3">${pkg.notes}</td></tr>`);
               if (pkg.assignments && pkg.assignments.length > 0) {
                 const a = pkg.assignments[0];
-                w.document.write(`<tr><th>Đơn vị thi công</th><td>${a.organizationName ?? ''}</td><th>Người đại diện</th><td>${a.representativeName ?? ''}</td></tr>`);
-                w.document.write(`<tr><th>Số hợp đồng</th><td>${a.contractNumber ?? ''}</td><th>Ngày ký</th><td>${fmtDate(a.contractSignDate)}</td></tr>`);
+                w.document.write(`<tr><th>${t('packageDetail.report.contractor')}</th><td>${a.organizationName ?? ''}</td><th>${t('packageDetail.report.representative')}</th><td>${a.representativeName ?? ''}</td></tr>`);
+                w.document.write(`<tr><th>${t('packageDetail.report.contractNumber')}</th><td>${a.contractNumber ?? ''}</td><th>${t('packageDetail.report.signDate')}</th><td>${fmtDate(a.contractSignDate)}</td></tr>`);
               }
               w.document.write(`</table>`);
-              w.document.write(`<p style="margin-top:40px;color:#888;font-size:12px">Xuất lúc: ${new Date().toLocaleString('vi-VN')}</p>`);
+              w.document.write(`<p style="margin-top:40px;color:#888;font-size:12px">${t('packageDetail.report.exportedAt')}: ${new Date().toLocaleString('vi-VN')}</p>`);
               w.document.write(`</body></html>`);
               w.document.close();
               w.print();
@@ -187,7 +174,7 @@ export default function PackageDetailPage() {
               <line x1="16" y1="13" x2="8" y2="13" />
               <line x1="16" y1="17" x2="8" y2="17" />
             </svg>
-            Xuất báo cáo
+            {t('packageDetail.export')}
           </button>
           <button
             onClick={() => setIsEditModalOpen(true)}
@@ -197,7 +184,7 @@ export default function PackageDetailPage() {
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
-            Chỉnh sửa gói thầu
+            {t('packageDetail.edit')}
           </button>
         </div>
       </div>
@@ -206,30 +193,30 @@ export default function PackageDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* ── Top Left: Thông tin chi tiết ── */}
         <div className="lg:col-span-2">
-          <div className="h-full rounded-2xl border border-card-border bg-card p-6 shadow-card">
+          <div className="h-full rounded-[var(--radius-card)] border border-card-border bg-card p-6 shadow-card">
             <div className="flex items-center gap-2 mb-6">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
-              <h2 className="text-lg font-bold text-text">Thông tin chi tiết</h2>
+              <h2 className="heading-entity">{t('packageDetail.details')}</h2>
             </div>
 
             <div className="grid grid-cols-2 gap-6 mb-6">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">MÃ GÓI THẦU</span>
+                <span className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.code')}</span>
                 <p className="font-mono text-base font-bold text-text mt-1">{pkg.code}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">TÊN GÓI THẦU</span>
+                <span className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.name')}</span>
                 <p className="text-base font-bold text-text mt-1">{pkg.name}</p>
               </div>
             </div>
 
             {pkg.description && (
               <div className="mb-6">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">MÔ TẢ CHI TIẾT</span>
+                <span className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.description')}</span>
                 <p className="mt-2 text-sm text-text leading-relaxed">{pkg.description}</p>
               </div>
             )}
@@ -238,11 +225,11 @@ export default function PackageDetailPage() {
               <div className="border-t border-card-border pt-6">
                 {workTypeTags.length > 0 && (
                   <div className="mb-4">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">PHÂN LOẠI & PHẠM VI</span>
+                    <span className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.workTypes')}</span>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {workTypeTags.map((tag) => (
                         <span key={tag} className="rounded-lg border border-card-border bg-content-bg px-3 py-1.5 text-xs font-semibold text-text">
-                          {tag}
+                          {workTypeLabel(tag)}
                         </span>
                       ))}
                     </div>
@@ -250,13 +237,13 @@ export default function PackageDetailPage() {
                 )}
 
                 {pkg.scopeDescription && (
-                  <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#F8F7F4] p-4">
+                  <div className="mt-4 flex items-start gap-3 rounded-xl bg-input-bg p-4">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted mt-0.5 shrink-0">
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                       <line x1="9" y1="3" x2="9" y2="21" />
                     </svg>
                     <div>
-                      <span className="text-xs font-bold text-text">Khối lượng chính:</span>
+                      <span className="text-xs font-bold text-text">{t('packageDetail.scopeLabel')}</span>
                       <p className="text-sm text-text mt-1">{pkg.scopeDescription}</p>
                     </div>
                   </div>
@@ -275,12 +262,12 @@ export default function PackageDetailPage() {
                 <circle cx="12" cy="12" r="2" />
                 <path d="M6 12h.01M18 12h.01" />
               </svg>
-              <h3 className="text-xl font-bold">Giá trị hợp đồng</h3>
+              <h3 className="heading-section">{t('packageDetail.contractValue')}</h3>
             </div>
 
-            <div className="space-y-4 text-[15px] mt-8">
+            <div className="space-y-4 text-base mt-8">
               <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                <span className="text-white/80">Giá trị gốc ({pkg.currency ?? 'VND'})</span>
+                <span className="text-white/80">{t('packageDetail.baseValue')} ({pkg.currency ?? 'VND'})</span>
                 <span className="font-semibold tracking-wide">{fmtCurrency(pkg.contractValue, '').trim()}</span>
               </div>
               <div className="flex justify-between items-center border-b border-white/20 pb-4">
@@ -288,7 +275,7 @@ export default function PackageDetailPage() {
                 <span className="font-semibold tracking-wide">{fmtCurrency(vatAmount, '').trim()}</span>
               </div>
               <div className="pt-4 mt-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#E8D7B0] mb-2">TỔNG CỘNG BAO GỒM THUẾ</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-accent-amber-soft mb-2">{t('packageDetail.totalWithTax')}</p>
                 <div className="flex items-baseline gap-2 mt-1 flex-wrap">
                   <span 
                     className="text-2xl xl:text-3xl font-semibold tracking-tight break-all"
@@ -296,7 +283,7 @@ export default function PackageDetailPage() {
                   >
                     {new Intl.NumberFormat('vi-VN').format(total)}
                   </span>
-                  <span className="text-sm font-medium text-[#E8D7B0] uppercase shrink-0">{pkg.currency ?? 'VND'}</span>
+                  <span className="text-sm font-medium text-accent-amber-soft uppercase shrink-0">{pkg.currency ?? 'VND'}</span>
                 </div>
               </div>
             </div>
@@ -305,7 +292,7 @@ export default function PackageDetailPage() {
 
         {/* ── Middle Left: Tiến độ thực hiện ── */}
         <div className="lg:col-span-2">
-          <div className="h-full rounded-2xl border border-card-border bg-card p-6 shadow-card">
+          <div className="h-full rounded-[var(--radius-card)] border border-card-border bg-card p-6 shadow-card">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
@@ -314,9 +301,9 @@ export default function PackageDetailPage() {
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                <h2 className="text-lg font-bold text-text">Tiến độ thực hiện</h2>
+                <h2 className="heading-entity">{t('packageDetail.progress')}</h2>
               </div>
-              <span className="text-sm font-bold text-primary">Hoàn thành: {progressPct}%</span>
+              <span className="text-sm font-bold text-primary">{t('packageDetail.elapsed')}: {progressPct}%</span>
             </div>
 
             <div className="relative h-10 w-full overflow-hidden rounded-full bg-content-bg">
@@ -324,8 +311,8 @@ export default function PackageDetailPage() {
                 className="absolute inset-y-0 left-0 flex items-center justify-center rounded-full bg-primary transition-all duration-500"
                 style={{ width: `${Math.max(progressPct, 15)}%` }}
               >
-                <span className="text-[10px] font-bold text-white uppercase tracking-wider">
-                  {pkg.status === 2 ? 'IN PROGRESS' : st.label.toUpperCase()}
+                <span className="text-2xs font-bold text-white uppercase tracking-wider">
+                  {st.label.toUpperCase()}
                 </span>
               </div>
             </div>
@@ -342,7 +329,7 @@ export default function PackageDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">NGÀY BẮT ĐẦU</p>
+                  <p className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.startDate')}</p>
                   <p className="text-sm font-bold text-text mt-0.5">{fmtDate(pkg.startDate)}</p>
                 </div>
               </div>
@@ -355,8 +342,8 @@ export default function PackageDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">THỜI GIAN</p>
-                  <p className="text-sm font-bold text-text mt-0.5">{durationDays ? `${durationDays} Ngày` : '—'}</p>
+                  <p className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.duration')}</p>
+                  <p className="text-sm font-bold text-text mt-0.5">{durationDays ? `${durationDays} ${t('packageDetail.days')}` : '—'}</p>
                 </div>
               </div>
 
@@ -368,7 +355,7 @@ export default function PackageDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">DỰ KIẾN KẾT THÚC</p>
+                  <p className="text-2xs font-bold uppercase tracking-wider text-text-muted">{t('packageDetail.col.endDate')}</p>
                   <p className="text-sm font-bold text-text mt-0.5">{fmtDate(pkg.endDate)}</p>
                 </div>
               </div>
@@ -378,21 +365,21 @@ export default function PackageDetailPage() {
 
         {/* ── Middle Right: Đơn vị thi công ── */}
         <div className="lg:col-span-1">
-          <div className="h-full rounded-2xl border border-card-border bg-card p-6 shadow-card flex flex-col">
+          <div className="h-full rounded-[var(--radius-card)] border border-card-border bg-card p-6 shadow-card flex flex-col">
             <div className="flex items-center gap-2 mb-6">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
               </svg>
-              <h3 className="text-lg font-bold text-text">Đơn vị thi công</h3>
+              <h3 className="heading-entity">{t('packageDetail.contractor')}</h3>
             </div>
 
             {pkg.assignments && pkg.assignments.length > 0 ? (
               <div className="flex flex-col flex-1 h-full">
                 <div className="mb-6">
-                  <h4 className="text-base font-bold text-text">{pkg.assignments[0].organizationName || 'Chưa rõ tên Đơn vị'}</h4>
+                  <h4 className="heading-card text-text">{pkg.assignments[0].organizationName || t('packageDetail.contractor.unnamed')}</h4>
                   {pkg.assignments[0].organizationCode && (
-                    <p className="text-[10px] text-text-placeholder mt-1">Mã đối tác: {pkg.assignments[0].organizationCode}</p>
+                    <p className="text-2xs text-text-placeholder mt-1">{t('packageDetail.contractor.code')}: {pkg.assignments[0].organizationCode}</p>
                   )}
                 </div>
 
@@ -403,8 +390,8 @@ export default function PackageDetailPage() {
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                     <div>
-                      <p className="text-sm font-bold text-text">{pkg.assignments[0].representativeName || 'Chưa cập nhật'}</p>
-                      <p className="text-[10px] text-text-placeholder">{pkg.assignments[0].position || 'Đại diện pháp luật'}</p>
+                      <p className="text-sm font-bold text-text">{pkg.assignments[0].representativeName || t('packageDetail.contractor.noRepresentative')}</p>
+                      <p className="text-2xs text-text-placeholder">{pkg.assignments[0].position || t('packageDetail.contractor.legalRep')}</p>
                     </div>
                   </div>
                   {pkg.assignments[0].representativeEmail && (
@@ -429,15 +416,15 @@ export default function PackageDetailPage() {
                 <div className="border-t border-card-border pt-4 mt-auto">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-placeholder mb-1">SỐ HỢP ĐỒNG</p>
-                      <p className="text-sm font-bold text-[#8C6B20]">{pkg.assignments[0].contractNumber || 'Chưa ký'}</p>
+                      <p className="text-2xs font-bold uppercase tracking-wider text-text-placeholder mb-1">{t('packageDetail.col.contractNumber')}</p>
+                      <p className="text-sm font-bold text-accent-gold">{pkg.assignments[0].contractNumber || t('packageDetail.unsigned')}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-placeholder mb-1">NGÀY KÝ</p>
+                      <p className="text-2xs font-bold uppercase tracking-wider text-text-placeholder mb-1">{t('packageDetail.col.signDate')}</p>
                       <p className="text-sm text-text">{fmtDate(pkg.assignments[0].contractSignDate) || '—'}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-placeholder mb-1">MÃ SỐ THUẾ</p>
+                      <p className="text-2xs font-bold uppercase tracking-wider text-text-placeholder mb-1">{t('packageDetail.col.taxCode')}</p>
                       <p className="text-sm text-text">{pkg.assignments[0].vatCode || '—'}</p>
                     </div>
                   </div>
@@ -449,8 +436,8 @@ export default function PackageDetailPage() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto mb-2 text-text-muted opacity-50">
                     <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                   </svg>
-                  <p className="text-sm font-semibold text-text-muted">Chưa có dữ liệu</p>
-                  <p className="text-xs text-text-placeholder mt-1">Sẽ cập nhật khi có PackageAssignment</p>
+                  <p className="text-sm font-semibold text-text-muted">{t('packageDetail.noData')}</p>
+                  <p className="text-xs text-text-placeholder mt-1">{t('packageDetail.noContractor')}</p>
                 </div>
               </div>
             )}
@@ -460,16 +447,16 @@ export default function PackageDetailPage() {
         {/* ── Bottom Full Width: Ghi chú kỹ thuật & Attachments ── */}
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           {pkg.notes && (
-            <div className="flex flex-col h-full rounded-2xl border border-card-border bg-card p-6 shadow-card">
+            <div className="flex flex-col h-full rounded-[var(--radius-card)] border border-card-border bg-card p-6 shadow-card">
               <div className="flex items-center gap-2 mb-4">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                <h3 className="text-lg font-bold text-text">Ghi chú kỹ thuật</h3>
+                <h3 className="heading-entity">{t('packageDetail.notes')}</h3>
               </div>
               <div className="flex-1 rounded-2xl border border-dashed border-card-border bg-content-bg p-5">
-                <p className="text-[13px] text-text leading-relaxed whitespace-pre-wrap break-words">
+                <p className="text-sm text-text leading-relaxed whitespace-pre-wrap break-words">
                   {pkg.notes}
                 </p>
               </div>
@@ -483,7 +470,7 @@ export default function PackageDetailPage() {
                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
                 <polyline points="13 2 13 9 20 9" />
               </svg>
-              <h3 className="text-lg font-bold text-text">Tài liệu đính kèm</h3>
+              <h3 className="heading-entity">{t('packageDetail.attachments')}</h3>
             </div>
             {docFiles && docFiles.length > 0 ? (
               <div className="space-y-3">
@@ -518,7 +505,7 @@ export default function PackageDetailPage() {
                             setViewFileUrl({ url: viewUrl, name: file.name || 'document', type: blobType });
                           } catch (err) {
                             console.error("Xem file thất bại", err);
-                            alert("Xem file thất bại");
+                            showToast(t('file.view.error'), 'error');
                           }
                         }}
                         className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
@@ -545,7 +532,7 @@ export default function PackageDetailPage() {
                             window.URL.revokeObjectURL(downloadUrl);
                           } catch (err) {
                             console.error("Tải file thất bại", err);
-                            alert("Tải file thất bại");
+                            showToast(t('file.download.error'), 'error');
                           }
                         }}
                         className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-text border border-card-border shadow-sm hover:bg-gray-50 transition-colors"
@@ -566,7 +553,7 @@ export default function PackageDetailPage() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-placeholder mb-2">
                   <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
                 </svg>
-                <p className="text-sm font-semibold text-text-muted">Chưa có tài liệu</p>
+                <p className="text-sm font-semibold text-text-muted">{t('packageDetail.noAttachments')}</p>
               </div>
             )}
           </div>
@@ -580,7 +567,7 @@ export default function PackageDetailPage() {
         projectId={projectId!}
         initialData={pkg || undefined}
         accounts={accounts}
-        onSuccess={(msg, _packageId) => {
+        onSuccess={(msg) => {
           showToast(msg, 'success');
           setIsEditModalOpen(false);
           loadData();
@@ -589,25 +576,21 @@ export default function PackageDetailPage() {
       />
 
       {/* ── Toast ── */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[60]" />
 
       {/* View File Modal */}
       {viewFileUrl && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-content-bg w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-4 border-b border-card-border bg-white">
-              <h3 className="font-bold text-lg text-text truncate pr-4">{viewFileUrl.name}</h3>
+              <h3 className="heading-entity truncate pr-4">{viewFileUrl.name}</h3>
               <button
                 onClick={() => {
                   window.URL.revokeObjectURL(viewFileUrl.url);
                   setViewFileUrl(null);
                 }}
                 className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-full transition-colors"
-                title="Đóng"
+                title={t('common.close')}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
@@ -623,7 +606,7 @@ export default function PackageDetailPage() {
                   title={viewFileUrl.name}
                 >
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
-                    <p className="text-text-muted">Trình duyệt của bạn không hỗ trợ xem trực tiếp tệp này.</p>
+                    <p className="text-text-muted">{t('packageDetail.previewUnsupported')}</p>
                     <a href={viewFileUrl.url} download={viewFileUrl.name} className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
                       Tải xuống
                     </a>

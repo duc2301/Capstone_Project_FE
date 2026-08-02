@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { namingConventionApi } from '@/entities/naming-convention';
+import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { useNamingConventions } from '../model/useNamingConventions';
@@ -21,12 +22,8 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
   const { conventions, loading, error, refetch, upsert } = useNamingConventions(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const selected = conventions.find((c) => c.id === selectedId) ?? null;
 
@@ -48,11 +45,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[60]" />
 
       {selected ? (
         <ConventionDetail
@@ -137,12 +130,12 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
             <div className={`${cardClass} overflow-x-auto`}>
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-card-border text-text-muted">
-                    <th className="pb-3 font-semibold">{t('naming.table.name')}</th>
-                    <th className="pb-3 text-center font-semibold">{t('naming.table.delimiter')}</th>
-                    <th className="pb-3 text-center font-semibold">{t('naming.table.fields')}</th>
-                    <th className="pb-3 font-semibold">{t('naming.table.folders')}</th>
-                    <th className="pb-3 text-center font-semibold">{t('naming.table.status')}</th>
+                  <tr className="table-head">
+                    <th className="pb-3">{t('naming.table.name')}</th>
+                    <th className="pb-3 text-center">{t('naming.table.delimiter')}</th>
+                    <th className="pb-3 text-center">{t('naming.table.fields')}</th>
+                    <th className="pb-3">{t('naming.table.folders')}</th>
+                    <th className="pb-3 text-center">{t('naming.table.status')}</th>
                     <th className="pb-3" />
                   </tr>
                 </thead>

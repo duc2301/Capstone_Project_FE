@@ -20,10 +20,10 @@ export function ReturnRequestModal({ fileName, currentZone, busy, onClose, onSub
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className="relative z-10 w-full max-w-md animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 w-full max-w-md animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">
-            <h2 className="font-heading text-lg font-bold text-text">{t('returnRequests.modal.title')}</h2>
+            <h2 className="heading-entity">{t('returnRequests.modal.title')}</h2>
             <p className="truncate text-xs text-text-muted">{fileName}</p>
           </div>
           <button type="button" onClick={onClose} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
@@ -39,7 +39,7 @@ export function ReturnRequestModal({ fileName, currentZone, busy, onClose, onSub
             <input
               readOnly
               value={zoneLabel(currentZone)}
-              className="rounded-(--radius-input) border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
             />
           </label>
 
@@ -52,13 +52,13 @@ export function ReturnRequestModal({ fileName, currentZone, busy, onClose, onSub
               onChange={(e) => setReason(e.target.value)}
               disabled={busy}
               placeholder={t('returnRequests.modal.reasonPlaceholder')}
-              className="resize-none rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="resize-none rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
             />
           </label>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
             {t('returnRequests.modal.cancel')}
           </button>
           <button

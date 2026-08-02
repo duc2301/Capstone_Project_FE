@@ -94,7 +94,7 @@ function SelectBox({ checked }: { checked: boolean }) {
       </svg>
     </span>
   ) : (
-    <span className="h-5 w-5 shrink-0 rounded-md border-2 border-card-border bg-card" />
+    <span className="h-5 w-5 shrink-0 rounded-[var(--radius-card)] border-2 border-card-border bg-card" />
   );
 }
 
@@ -109,7 +109,7 @@ function PermissionTick({ granted, onToggle }: { granted: boolean; onToggle: () 
           </svg>
         </span>
       ) : (
-        <span className="h-5 w-5 rounded-md border-2 border-card-border bg-card transition-colors group-hover:border-success" />
+        <span className="h-5 w-5 rounded-[var(--radius-card)] border-2 border-card-border bg-card transition-colors group-hover:border-success" />
       )}
     </button>
   );
@@ -127,7 +127,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t('folderPermission.searchPlaceholder')}
-        className="w-full rounded-(--radius-input) border border-input-border bg-input-bg py-2 pl-9 pr-3 text-sm text-text outline-none focus:border-input-focus"
+        className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg py-2 pl-9 pr-3 text-sm text-text outline-none focus:border-input-focus"
       />
     </div>
   );
@@ -235,8 +235,8 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
       <div className="flex-1 overflow-y-auto px-6 py-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto_1fr]">
           {/* Panel trái: Nhóm hữu dụng */}
-          <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
-            <h3 className="text-sm font-bold text-text">{t('folderPermission.available.title')}</h3>
+          <section className="flex min-w-0 flex-col rounded-[var(--radius-card)] border border-card-border bg-content-bg/40 p-4">
+            <h3 className="heading-label">{t('folderPermission.available.title')}</h3>
             <p className="mb-3 text-xs text-text-muted">
               {t('folderPermission.chosen')} {availableChecked.size}/{available.length}
             </p>
@@ -307,8 +307,8 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
           </div>
 
           {/* Panel phải: Nhóm được chọn */}
-          <section className="flex min-w-0 flex-col rounded-(--radius-card) border border-card-border bg-content-bg/40 p-4">
-            <h3 className="text-sm font-bold text-text">{t('folderPermission.selected.title')}</h3>
+          <section className="flex min-w-0 flex-col rounded-[var(--radius-card)] border border-card-border bg-content-bg/40 p-4">
+            <h3 className="heading-label">{t('folderPermission.selected.title')}</h3>
             <p className="mb-3 text-xs text-text-muted">
               {t('folderPermission.chosen')} {selectedChecked.size}/{selected.length}
             </p>
@@ -325,7 +325,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
                     <span />
                     <span />
                     {PERMISSION_FLAGS.map((f) => (
-                      <span key={f.key} className="text-center text-[10px] font-bold leading-tight text-text-muted">
+                      <span key={f.key} className="text-center text-2xs font-bold leading-tight text-text-muted">
                         {f.label()}
                       </span>
                     ))}
@@ -365,7 +365,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+          className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
         >
           {t('documents.action.cancel')}
         </button>
@@ -373,7 +373,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
           type="button"
           disabled={saving}
           onClick={handleSave}
-          className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? t('folderPermission.saving') : t('folderPermission.update')}
         </button>
@@ -391,11 +391,11 @@ export function PermissionGroupsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">
-            <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
+            <h2 className="heading-entity">{title}</h2>
             <p className="truncate text-xs text-text-muted">{resourceName}</p>
           </div>
           <button type="button" onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
@@ -415,7 +415,7 @@ export function PermissionGroupsModal({
               )}
             </div>
             <div className="flex justify-end border-t border-card-border px-6 py-4">
-              <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
+              <button type="button" onClick={onClose} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
                 {t('documents.action.cancel')}
               </button>
             </div>

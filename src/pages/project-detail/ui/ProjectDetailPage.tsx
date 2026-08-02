@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import type { ContractPackage } from '@/entities/contractPackage';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
 import { groupApi, GroupMemberStatus } from '@/entities/group';
@@ -9,9 +10,9 @@ import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
 import { ProjectIssuesTab } from '@/features/issues';
-import { NamingConventionSettings } from '@/features/naming-conventions';
+import { FolderNamingInfoModal, NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
-import { PackageFormModal, usePackages } from '@/features/packages';
+import { packageStatusMeta, PackageFormModal, usePackages } from '@/features/packages';
 import type { AddGroupInput } from '@/features/projects';
 import {
   CreateGroupForm,
@@ -25,7 +26,7 @@ import {
 } from '@/features/projects';
 import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
-import { UserAvatar } from '@/shared/components';
+import { ActionIconButton, DeleteIcon, EditIcon, Modal, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
 import { formatDate, formatRelativeTime } from '@/shared/lib/format';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
@@ -43,44 +44,14 @@ const TABS: { id: TabId; key: TranslationKey }[] = [
 ];
 
 const cardClass =
-  'rounded-[20px] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
+  'rounded-[var(--radius-card-lg)] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
 
 /* ── Small presentational helpers ──────────────────────── */
-interface ModalProps {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-  maxWidth?: string;
-}
-function Modal({ title, onClose, children, maxWidth = 'max-w-2xl' }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative z-10 w-full ${maxWidth} animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal`}>
-        <div className="flex items-center justify-between border-b border-card-border px-7 py-5">
-          <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="max-h-[70vh] overflow-y-auto px-7 py-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-card-border/50 bg-input-bg px-6 py-5">
-      <p className="text-[10px] uppercase tracking-[1px] text-text-secondary/60">{label}</p>
-      <p className="mt-1 truncate font-display text-[22px] leading-[33px] text-primary">{value}</p>
+      <p className="text-2xs uppercase tracking-[1px] text-text-secondary/60">{label}</p>
+      <p className="mt-1 truncate font-display text-xl leading-[33px] text-primary">{value}</p>
     </div>
   );
 }
@@ -137,7 +108,7 @@ function ProjectMap({
             <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
           </svg>
         </a>
-        <span className="text-[10px] text-text-placeholder">© OpenStreetMap</span>
+        <span className="text-2xs text-text-placeholder">© OpenStreetMap</span>
       </div>
     </div>
   );
@@ -205,7 +176,7 @@ function MemberRow({
           {menuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-10 z-50 w-48 rounded-xl border border-card-border bg-card p-1 shadow-dropdown animate-fade-in">
+              <div className="absolute right-0 top-10 z-50 w-48 rounded-[var(--radius-card)] border border-card-border bg-card p-1 shadow-dropdown animate-fade-in">
                 <button
                   onClick={() => {
                     const newRole = isLeader ? GroupMemberRole.Member : GroupMemberRole.Leader;
@@ -265,7 +236,7 @@ function GroupCard({
   const partnerNames = partner ? (partner.displayName || partner.legalName) : '';
 
   return (
-    <div className="flex flex-col gap-4 rounded-[20px] border border-[#C3C9B9] bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+    <div className="flex flex-col gap-4 rounded-[var(--radius-card-lg)] border border-border-sage bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -281,38 +252,29 @@ function GroupCard({
             {group.description && <p className="text-sm text-text-muted mt-0.5">{group.description}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <RowActions>
           {isAdminOrManager && (
-            <button
+            <ActionIconButton
+              label={t('projectDetail.teams.editGroup')}
+              tone="primary"
+              icon={<EditIcon />}
               onClick={() => {
                 setEditingName(group.name);
                 setEditingDesc(group.description || '');
                 setEditingOrgId(group.organizationId || null);
                 setEditGroupModalOpen(true);
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-            </button>
+            />
           )}
           {isAdmin && (
-            <button
-              title={t('projectDetail.teams.removeGroup')}
+            <ActionIconButton
+              label={t('projectDetail.teams.removeGroup')}
+              tone="danger"
+              icon={<DeleteIcon />}
               onClick={() => setRemoveConfirmOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-danger-light hover:text-danger transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                <line x1="10" y1="11" x2="10" y2="17" />
-                <line x1="14" y1="11" x2="14" y2="17" />
-              </svg>
-            </button>
+            />
           )}
-        </div>
+        </RowActions>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -562,8 +524,7 @@ export function ProjectDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [createPackageOpen, setCreatePackageOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<any>(null);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [editingPackage, setEditingPackage] = useState<ContractPackage | null>(null);
 
   const { packages, loading: pkgLoading } = usePackages(projectId);
 
@@ -606,10 +567,7 @@ export function ProjectDetailPage() {
         && m.status === GroupMemberStatus.Active,
     ));
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const handleProjectSaved = async () => {
     setEditOpen(false);
@@ -733,11 +691,7 @@ export function ProjectDetailPage() {
 
   return (
     <>
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[60]" />
 
       <header className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-6 gap-y-1 pb-3">
         <h1 className="heading-page text-text">{project.projectName}</h1>
@@ -801,14 +755,14 @@ export function ProjectDetailPage() {
               )}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-6">
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[1px] text-white backdrop-blur-sm">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-2xs font-bold uppercase tracking-[1px] text-white backdrop-blur-sm">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
                     <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
                   </svg>
                   {t('projectDetail.basic.code')}: {project.projectCode?.trim() || shortCode}
                 </span>
-                <h2 className="mt-2 font-display text-3xl font-normal leading-tight text-white lg:text-[2.5rem]">
+                <h2 className="heading-tab mt-2 text-white lg:text-[2.5rem]">
                   {project.projectName}
                 </h2>
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/80">
@@ -842,7 +796,7 @@ export function ProjectDetailPage() {
             </div>
 
             <section className="space-y-5">
-              <h3 className="font-display text-2xl font-normal text-primary lg:text-[2rem]">
+              <h3 className="heading-page">
                 {t('projectDetail.description.title')}
               </h3>
               <p className="max-w-3xl whitespace-pre-line text-base leading-[1.65] text-text/80">
@@ -853,7 +807,7 @@ export function ProjectDetailPage() {
 
           <aside className="space-y-8">
             <section>
-              <h3 className="border-b border-text/10 pb-4 text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary">
+              <h3 className="heading-eyebrow border-b border-text/10 pb-4">
                 {t('projectDetail.sidebar.manager')}
               </h3>
               <div className="mt-6 flex items-center gap-4 rounded-lg border border-card-border/50 bg-input-bg p-3">
@@ -875,10 +829,10 @@ export function ProjectDetailPage() {
 
             <section>
               <div className="flex items-center justify-between border-b border-text/10 pb-4">
-                <h3 className="text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary">
+                <h3 className="heading-eyebrow">
                   {t('projectDetail.sidebar.details')}
                 </h3>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase text-primary">
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
                   {statusMeta(project.status).label}
                 </span>
               </div>
@@ -915,7 +869,7 @@ export function ProjectDetailPage() {
             </section>
 
             <section>
-              <h3 className="border-b border-text/10 pb-4 text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary">
+              <h3 className="heading-eyebrow border-b border-text/10 pb-4">
                 {t('projectDetail.sidebar.location')}
               </h3>
 
@@ -992,11 +946,11 @@ export function ProjectDetailPage() {
           </div>
 
           {groupsLoading ? (
-            <div className="flex items-center justify-center rounded-[20px] border border-card-border bg-card py-14 shadow-card">
+            <div className="flex items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border bg-card py-14 shadow-card">
               <p className="text-sm text-text-muted">{t('common.loading')}</p>
             </div>
           ) : groups.length === 0 ? (
-            <div className="rounded-[20px] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
+            <div className="rounded-[var(--radius-card-lg)] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
               <p className="text-sm text-text-muted">{t('projectDetail.teams.empty')}</p>
             </div>
           ) : (
@@ -1021,7 +975,28 @@ export function ProjectDetailPage() {
       )}
 
       {/* ── Tab: Tài liệu (cây thư mục CDE) ───────────── */}
-      {tab === 'documents' && <DocumentsTab projectId={project.id} />}
+      {tab === 'documents' && (
+        <DocumentsTab
+          projectId={project.id}
+          signerGroups={groups}
+          signerGroupsLoading={groupsLoading}
+          renderNamingModal={({ folder, canManage, close, notify }) => (
+            <FolderNamingInfoModal
+              folder={folder}
+              canManage={canManage}
+              onClose={close}
+              onInherited={() => {
+                close();
+                notify(t('naming.folder.inherited'));
+              }}
+              onCustomized={() => {
+                close();
+                notify(t('naming.folder.customized'));
+              }}
+            />
+          )}
+        />
+      )}
 
       {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
 
@@ -1047,7 +1022,7 @@ export function ProjectDetailPage() {
       {tab === 'packages' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="heading-tab">Danh sách gói thầu</h2>
+            <h2 className="heading-tab">{t('projectDetail.packages.listTitle')}</h2>
             <button
               onClick={() => {
                 setEditingPackage(null);
@@ -1066,30 +1041,31 @@ export function ProjectDetailPage() {
           <div className={`${cardClass} overflow-x-auto`}>
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-card-border text-text-muted">
-                  <th className="pb-3 font-semibold">Tên gói thầu</th>
-                  <th className="pb-3 font-semibold">Mã gói</th>
-                  <th className="pb-3 font-semibold">Đơn vị thực hiện</th>
-                  <th className="pb-3 font-semibold">Ngày bắt đầu</th>
-                  <th className="pb-3 font-semibold">Ngày kết thúc</th>
-                  <th className="pb-3 font-semibold">Trạng thái</th>
-                  <th className="pb-3 font-semibold text-center">Thao tác</th>
+                <tr className="table-head">
+                  <th className="pb-3">{t('packages.col.name')}</th>
+                  <th className="pb-3">{t('packages.col.code')}</th>
+                  <th className="pb-3">{t('packages.col.contractor')}</th>
+                  <th className="pb-3">{t('packages.col.startDate')}</th>
+                  <th className="pb-3">{t('packages.col.endDate')}</th>
+                  <th className="pb-3">{t('packages.col.status')}</th>
+                  <th className="pb-3 text-right">{t('common.col.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-card-border text-text">
                 {pkgLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-text-muted italic">Đang tải...</td>
+                    <td colSpan={7} className="py-8 text-center text-text-muted italic">{t('common.loading')}</td>
                   </tr>
                 ) : packages.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-text-muted italic">Chưa có gói thầu nào.</td>
+                    <td colSpan={7} className="py-8 text-center text-text-muted italic">{t('packages.empty')}</td>
                   </tr>
                 ) : packages.map(p => {
-                  const mainContractor = p.assignments?.find(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor');
+                  const mainContractor = p.assignments?.find(a => Number(a.role) === 0 || String(a.role) === 'MainContractor');
                   const partnerName = mainContractor
-                    ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || 'Đang cập nhật')
-                    : 'Chưa phân công';
+                    ? (organizations.find(o => o.id === mainContractor.organizationId)?.displayName || t('packages.contractor.updating'))
+                    : t('packages.contractor.unassigned');
+                  const pkgStatus = packageStatusMeta(p.status);
                   return (
                     <tr key={p.id} className="hover:bg-card-hover transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}/packages/${p.id}`)}>
                       <td className="py-4 font-medium text-primary max-w-[200px] truncate" title={p.name}>
@@ -1100,28 +1076,30 @@ export function ProjectDetailPage() {
                       <td className="py-4">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
                       <td className="py-4">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
                       <td className="py-4">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${p.status === 3 || p.status === 4 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
-                          {p.status === 0 ? 'Khởi tạo' : p.status === 1 ? 'Đang thực hiện' : p.status === 3 ? 'Hoàn thành' : 'Đóng'}
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pkgStatus.badgeClass}`}>
+                          {pkgStatus.label}
                         </span>
                       </td>
-                      <td className="py-4 text-center">
-                        <button
-                          className="text-primary hover:underline font-semibold"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              const res = await contractPackageApi.getById(p.id);
-                              if (res.data?.result) {
-                                setEditingPackage(res.data.result);
-                                setCreatePackageOpen(true);
+                      <td className="py-4">
+                        <RowActions>
+                          <ActionIconButton
+                            label={t('packages.action.edit')}
+                            tone="primary"
+                            icon={<EditIcon />}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const res = await contractPackageApi.getById(p.id);
+                                if (res.data?.result) {
+                                  setEditingPackage(res.data.result);
+                                  setCreatePackageOpen(true);
+                                }
+                              } catch (error) {
+                                console.error('Failed to fetch package details', error);
                               }
-                            } catch (error) {
-                              console.error('Failed to fetch package details', error);
-                            }
-                          }}
-                        >
-                          Sửa
-                        </button>
+                            }}
+                          />
+                        </RowActions>
                       </td>
                     </tr>
                   )
@@ -1181,7 +1159,7 @@ export function ProjectDetailPage() {
         initialData={editingPackage || undefined}
         accounts={accounts}
         onSuccess={(msg, packageId) => {
-          setToast({ msg, type: 'success' });
+          showToast(msg);
           if (packageId) {
             window.location.href = `/projects/${project.id}/packages/${packageId}`;
           } else {
@@ -1190,7 +1168,7 @@ export function ProjectDetailPage() {
             window.location.href = url.toString();
           }
         }}
-        onError={(msg) => setToast({ msg, type: 'error' })}
+        onError={(msg) => showToast(msg, 'error')}
       />
       </div>
     </>

@@ -11,7 +11,8 @@ import {
   UpdateAccountForm,
   useAccounts,
 } from '@/features/accounts';
-import { PaginationBar, UserAvatar } from '@/shared/components';
+import { getApiErrorMessage } from '@/shared/api';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, PaginationBar, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'edit';
@@ -40,7 +41,7 @@ function StatCard({ icon, value, label, color, bgColor }: StatCardProps) {
         {icon}
       </div>
       <div className="min-w-0 space-y-0.5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.6px] text-text-muted">{label}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.6px] text-text-muted">{label}</p>
         <p className="font-display text-xl font-semibold text-text">{formatCount(value)}</p>
       </div>
     </div>
@@ -64,7 +65,7 @@ function Modal({ title, description, onClose, children }: ModalProps) {
         onClick={onClose}
       />
       {/* Dialog — cao tối đa 88vh, nội dung cuộn bên trong chứ không đẩy dài trang */}
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl animate-scale-in flex-col rounded-3xl bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl animate-scale-in flex-col rounded-[var(--radius-card)] bg-card shadow-modal">
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between gap-6 border-b border-card-border px-8 py-6">
           <div className="min-w-0 space-y-1">
@@ -93,7 +94,7 @@ function RoleBadge({ account }: { account: Account }) {
   if (isProjectManager(account)) {
     return (
       <div className="space-y-1">
-        <span className="inline-flex items-center rounded-[var(--radius-badge)] bg-[#D3EABC] px-2.5 py-0.5 text-[11px] font-bold tracking-[0.4px] text-[#4E623E]">
+        <span className="inline-flex items-center rounded-[var(--radius-badge)] bg-primary-tint px-2.5 py-0.5 text-xs font-bold tracking-[0.4px] text-primary-deep">
           {t('account.role.pm')}
         </span>
         <p className="truncate text-xs text-text-muted" title={managedProjectsLabel(account)}>
@@ -106,7 +107,7 @@ function RoleBadge({ account }: { account: Account }) {
   const adminBadge = isAdmin(account);
   return (
     <span
-      className={`inline-flex items-center rounded-[var(--radius-badge)] px-2.5 py-0.5 text-[11px] font-bold tracking-[0.4px] ${
+      className={`inline-flex items-center rounded-[var(--radius-badge)] px-2.5 py-0.5 text-xs font-bold tracking-[0.4px] ${
         adminBadge ? 'bg-primary/10 text-primary' : 'bg-content-bg text-text-secondary'
       }`}
     >
@@ -120,9 +121,6 @@ interface UserRowProps {
   onEdit: (account: Account) => void;
   onDelete: (id: string) => void;
 }
-
-const actionButtonClass =
-  'flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-150';
 
 function UserRow({ account, onEdit, onDelete }: UserRowProps) {
   const status = statusMeta(account.status);
@@ -170,37 +168,21 @@ function UserRow({ account, onEdit, onDelete }: UserRowProps) {
         </div>
       </td>
 
-      {/* Thao tác */}
       <td className="px-6 py-3">
-        <div className="flex items-center justify-end gap-2">
-          {/* Sửa */}
-          <button
-            type="button"
+        <RowActions>
+          <ActionIconButton
+            label={t('account.update')}
+            tone="primary"
+            icon={<EditIcon />}
             onClick={() => onEdit(account)}
-            className={`${actionButtonClass} text-primary hover:bg-primary-light`}
-            title={t('account.update')}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
-
-          {/* Xoá */}
-          <button
-            type="button"
+          />
+          <ActionIconButton
+            label={t('account.delete')}
+            tone="danger"
+            icon={<DeleteIcon />}
             onClick={() => onDelete(account.id)}
-            className={`${actionButtonClass} text-danger hover:bg-danger-light`}
-            title={t('account.delete')}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-          </button>
-        </div>
+          />
+        </RowActions>
       </td>
     </tr>
   );
@@ -230,9 +212,21 @@ export function AccountsPage() {
     setSelectedAccount(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('account.deleteConfirm'))) return;
-    await deleteAccount(id);
+  const { toast, showToast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteAccount(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('account.deleteError')), 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openEdit = (account: Account) => {
@@ -388,21 +382,21 @@ export function AccountsPage() {
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
             <table className="w-full min-w-[780px] text-sm">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-card-border/60 bg-content-bg">
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                <tr className="table-head bg-content-bg">
+                  <th className="px-6 py-3.5">
                     {t('account.column.user')}
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                  <th className="px-5 py-3.5">
                     {t('account.column.organization')}
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                  <th className="px-5 py-3.5">
                     {t('account.role')}
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                  <th className="px-5 py-3.5">
                     {t('account.status')}
                   </th>
-                  <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
-                    {t('account.actions')}
+                  <th className="px-6 py-3.5 text-right">
+                    {t('common.col.actions')}
                   </th>
                 </tr>
               </thead>
@@ -428,7 +422,7 @@ export function AccountsPage() {
                       key={account.id}
                       account={account}
                       onEdit={openEdit}
-                      onDelete={handleDelete}
+                      onDelete={setDeleteTarget}
                     />
                   ))
                 )}
@@ -473,6 +467,19 @@ export function AccountsPage() {
             onCancel={closeForm}
           />
         </Modal>
+      )}
+
+      <Toast toast={toast} className="z-[80]" />
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('account.delete')}
+          message={t('account.deleteConfirm')}
+          confirmLabel={t('account.delete')}
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

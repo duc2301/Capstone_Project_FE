@@ -58,9 +58,9 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg animate-scale-in flex-col overflow-hidden rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg animate-scale-in flex-col overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <h2 className="font-heading text-lg font-bold text-text">{t('issues.create.title')}</h2>
+          <h2 className="heading-entity">{t('issues.create.title')}</h2>
           <button type="button" onClick={onClose} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -77,7 +77,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               onChange={(e) => setTitle(e.target.value)}
               disabled={busy}
               placeholder={t('issues.create.titlePlaceholder')}
-              className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
             />
           </label>
 
@@ -88,7 +88,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
                 value={type}
                 onChange={(e) => setType(e.target.value as IssueType)}
                 disabled={busy}
-                className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
+                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
               >
                 <option value="Issue">{t('issues.type.issue')}</option>
                 <option value="Rfi">{t('issues.type.rfi')}</option>
@@ -101,7 +101,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as IssuePriority)}
                 disabled={busy}
-                className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
+                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
               >
                 <option value="Low">{t('issues.priority.low')}</option>
                 <option value="Medium">{t('issues.priority.medium')}</option>
@@ -117,7 +117,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               disabled={busy || membersLoading}
-              className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
+              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
             >
               <option value="">{t('issues.create.assigneePlaceholder')}</option>
               {assignableMembers.map((m) => (
@@ -134,7 +134,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               onChange={(e) => setDescription(e.target.value)}
               disabled={busy}
               placeholder={t('issues.create.descriptionPlaceholder')}
-              className="resize-none rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="resize-none rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
             />
           </label>
 
@@ -146,14 +146,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
             {t('issues.create.cancel')}
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleSubmit}
-            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : t('issues.create.submit')}
           </button>

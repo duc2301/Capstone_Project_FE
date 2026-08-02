@@ -9,9 +9,9 @@ import { t } from '@/shared/lib/i18n';
 import { AddressField } from './AddressField';
 
 const inputCls =
-  'w-full rounded-xl border border-card-border bg-card px-4 py-3 text-sm text-text shadow-[0_1px_2px_rgba(27,28,23,0.03)] outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/15';
+  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 
-const labelCls = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.08em] text-text-secondary';
+const labelCls = 'mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-text-secondary';
 
 interface Props {
   project: Project;

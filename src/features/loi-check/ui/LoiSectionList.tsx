@@ -20,7 +20,7 @@ export function LoiSectionList({ sections }: { sections: LoiSection[] }) {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-heading text-base font-bold text-text">{t('loi.report.title')}</h3>
+        <h3 className="heading-card">{t('loi.report.sections')}</h3>
         <label className="flex shrink-0 items-center gap-2 text-xs text-text-muted">
           <input
             type="checkbox"
@@ -41,8 +41,8 @@ export function LoiSectionList({ sections }: { sections: LoiSection[] }) {
             <section key={section.section}>
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
-                <h4 className="flex-1 text-sm font-bold text-text">{sectionLabel(section.section)}</h4>
-                <span className={`text-[11px] font-bold uppercase tracking-wide ${tone.text}`}>
+                <h4 className="heading-label flex-1">{sectionLabel(section.section)}</h4>
+                <span className={`text-xs font-bold uppercase tracking-wide ${tone.text}`}>
                   {severityLabel(section.severity)}
                 </span>
               </div>

@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Account } from '@/entities/account';
-import { accountApi } from '@/entities/account/api/accountApi';
-import type { CreateContractPackagePayload } from '@/entities/contractPackage';
+import { accountApi } from '@/entities/account';
+import type { ContractPackage, CreateContractPackagePayload } from '@/entities/contractPackage';
 import { contractPackageApi } from '@/entities/contractPackage';
 import { fileItemApi } from '@/entities/file-item';
 import type { FolderTreeNodeDto } from '@/entities/folder';
@@ -12,11 +12,11 @@ import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import type { BepParseResult } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
+import { getApiErrorMessage } from '@/shared/api';
 import { numberToWordsVN } from '@/shared/lib/format';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
-import { CreatePackageForm } from '../../packages/ui/CreatePackageForm';
 import { AddressField } from './AddressField';
 
 /* ══════════════════════════════════════════════════════════════
@@ -159,7 +159,7 @@ const matchOrg = (name: string | null | undefined, orgs: Organization[]): Organi
 };
 
 const inputCls =
-  'w-full rounded-xl border border-card-border bg-card px-4 py-3 text-sm text-text shadow-[0_1px_2px_rgba(27,28,23,0.03)] outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/15';
+  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 
 // removed emptyPkg()
 
@@ -182,7 +182,7 @@ function fmtFileSize(bytes: number): string {
 
 function SectionLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.08em] text-text-secondary">
+    <label className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-text-secondary">
       {children}
       {required && <span className="text-danger ml-1">*</span>}
     </label>
@@ -274,14 +274,23 @@ function FileDropzone({
    Main Component
    ══════════════════════════════════════════════════════════════ */
 
+/* Form gói thầu nằm ở feature khác — trang cha dựng rồi truyền vào qua slot này. */
+export interface PackageFormSlotContext {
+  accounts: Account[];
+  initialData?: ContractPackage;
+  onSubmit: (payload: CreateContractPackagePayload, files: File[]) => Promise<void>;
+  onCancel: () => void;
+}
+
 export interface CreateProjectStepperProps {
   onComplete: (projectId: string) => void;
   onCancel: () => void;
   /** Kết quả AI đọc BEP để prefill sẵn các bước (khởi tạo nhanh). */
   initialData?: BepParseResult;
+  renderPackageForm: (ctx: PackageFormSlotContext) => React.ReactNode;
 }
 
-export function CreateProjectStepper({ onComplete, onCancel, initialData }: CreateProjectStepperProps) {
+export function CreateProjectStepper({ onComplete, onCancel, initialData, renderPackageForm }: CreateProjectStepperProps) {
   const [step, setStep] = useState(0);
   const [maxStep, setMaxStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -493,7 +502,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
 
       setSubmitProgress(t('projects.stepper.progress.done'));
       onComplete(createdProjectId!);
-    } catch (err: any) {
+    } catch (err) {
       if (createdProjectId) {
         try {
           await projectApi.delete(createdProjectId);
@@ -501,7 +510,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
           console.error("Failed to rollback project creation", deleteErr);
         }
       }
-      setSubmitError(err?.response?.data?.message || err?.message || t('common.error'));
+      setSubmitError(getApiErrorMessage(err, t('common.error')));
     } finally {
       setSubmitting(false);
     }
@@ -551,9 +560,9 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                       ) : i + 1}
                     </span>
-                    {isActive && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#8A5100]" />}
+                    {isActive && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent-amber" />}
                   </span>
-                  <span className={`text-center text-[11px] leading-tight transition-colors ${isActive ? 'font-semibold text-text' : isVisited ? 'text-primary' : 'text-text-muted'
+                  <span className={`text-center text-xs leading-tight transition-colors ${isActive ? 'font-semibold text-text' : isVisited ? 'text-primary' : 'text-text-muted'
                     }`}>{t(labelKey)}</span>
                 </button>
               </React.Fragment>
@@ -579,6 +588,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData }: Crea
             update={update}
             accounts={accounts}
             organizations={organizations}
+            renderPackageForm={renderPackageForm}
           />
         )}
         {step === 3 && <Step4Groups state={state} update={update} />}
@@ -797,7 +807,7 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div>
-        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.step2')}</h3>
+        <h3 className="heading-section mb-1">{t('projects.stepper.step2')}</h3>
         <p className="text-sm text-text-muted">
           {t('projects.stepper.s2.desc')}{' '}
           {t('projects.stepper.s2.savedToPrefix')}{' '}
@@ -827,12 +837,13 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
    Step 3: Gói thầu & Hợp đồng
    ══════════════════════════════════════════════════════════════ */
 function Step3PackageInfo({
-  state, update, accounts, organizations,
+  state, update, accounts, organizations, renderPackageForm,
 }: {
   state: StepperState;
   update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void;
   accounts: Account[];
   organizations: Organization[];
+  renderPackageForm: (ctx: PackageFormSlotContext) => React.ReactNode;
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPackageId, setEditingPackageId] = useState<string | null>(null);
@@ -855,14 +866,14 @@ function Step3PackageInfo({
   return (
     <div className="space-y-8 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s3.title')}</h3>
+        <h3 className="heading-section mb-1">{t('projects.stepper.s3.title')}</h3>
         <p className="text-sm text-text-muted">{t('projects.stepper.s3.subtitle')}</p>
       </div>
 
       <section className="space-y-4">
         <div className="flex items-center gap-2 border-b border-card-border pb-3">
           <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">1</span>
-          <h4 className="text-sm font-semibold text-primary">{t('projects.stepper.s3.listTitle')}</h4>
+          <h4 className="heading-label text-primary">{t('projects.stepper.s3.listTitle')}</h4>
         </div>
 
         {state.packages.length === 0 ? (
@@ -872,7 +883,7 @@ function Step3PackageInfo({
         ) : (
           <div className="space-y-3">
             {state.packages.map((pkgItem) => (
-              <div key={pkgItem.id} className="flex items-center justify-between p-4 rounded-xl border border-card-border bg-card">
+              <div key={pkgItem.id} className="flex items-center justify-between p-4 rounded-[var(--radius-card)] border border-card-border bg-card">
                 <div>
                   <h5 className="font-bold text-text text-lg">{pkgItem.payload.name}</h5>
                   <div className="text-sm text-text-muted mt-2 space-y-1">
@@ -937,41 +948,39 @@ function Step3PackageInfo({
       {/* Package Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card shadow-2xl">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[var(--radius-card)] bg-card shadow-2xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-card-border bg-card/80 px-6 py-4 backdrop-blur-xl">
-              <h3 className="text-xl font-bold text-text">{editingPackageId ? t('projects.stepper.s3.modalEdit') : t('projects.stepper.s3.modalAdd')}</h3>
+              <h3 className="heading-section text-text">{editingPackageId ? t('projects.stepper.s3.modalEdit') : t('projects.stepper.s3.modalAdd')}</h3>
               <button onClick={() => setIsFormOpen(false)} className="rounded-full p-2 text-text-muted transition-colors hover:bg-content-bg hover:text-text">
                 &times;
               </button>
             </div>
             <div className="p-6">
-              <CreatePackageForm
-                accounts={accounts}
-                initialData={
-                  editingPackageId
-                    ? (() => {
-                      const pkgState = state.packages.find((p) => p.id === editingPackageId);
-                      if (!pkgState) return undefined;
-                      const p = pkgState.payload;
-                      return {
-                        ...p,
-                        id: editingPackageId,
-                        assignments: p.contractorOrganizationId ? [{
-                          id: `draft-0`,
-                          organizationId: p.contractorOrganizationId,
-                          role: 0,
-                          representativeAccountId: p.representativeAccountId,
-                          contractNumber: p.contractNumber,
-                          contractSignDate: p.contractSignDate,
-                          position: p.contractJobTitle,
-                        }] : []
-                      } as any;
-                    })()
-                    : undefined
-                }
-                onSubmit={handlePackageSubmit}
-                onCancel={() => setIsFormOpen(false)}
-              />
+              {renderPackageForm({
+                accounts,
+                initialData: editingPackageId
+                  ? (() => {
+                    const pkgState = state.packages.find((p) => p.id === editingPackageId);
+                    if (!pkgState) return undefined;
+                    const p = pkgState.payload;
+                    return {
+                      ...p,
+                      id: editingPackageId,
+                      assignments: p.contractorOrganizationId ? [{
+                        id: `draft-0`,
+                        organizationId: p.contractorOrganizationId,
+                        role: 0,
+                        representativeAccountId: p.representativeAccountId,
+                        contractNumber: p.contractNumber,
+                        contractSignDate: p.contractSignDate,
+                        position: p.contractJobTitle,
+                      }] : []
+                    } as unknown as ContractPackage;
+                  })()
+                  : undefined,
+                onSubmit: handlePackageSubmit,
+                onCancel: () => setIsFormOpen(false),
+              })}
             </div>
           </div>
         </div>
@@ -1001,13 +1010,13 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s4.title')}</h3>
+          <h3 className="heading-section mb-1">{t('projects.stepper.s4.title')}</h3>
           <p className="text-sm text-text-muted">{t('projects.stepper.s4.subtitle')}</p>
         </div>
         <button
           type="button"
           onClick={addGroup}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+          className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           {t('projects.stepper.s4.add')}
@@ -1021,7 +1030,7 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
       ) : (
         <div className="space-y-3">
           {groups.map((group, idx) => (
-            <div key={group.key} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl border border-card-border bg-card shadow-sm hover:border-primary/40 hover:shadow-md transition-all group/item">
+            <div key={group.key} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-[var(--radius-card)] border border-card-border bg-card shadow-sm hover:border-primary/40 hover:shadow-md transition-all group/item">
               <div className="flex w-8 h-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold shadow-sm">
                 {idx + 1}
               </div>
@@ -1030,13 +1039,13 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
                   value={group.name}
                   onChange={(e) => updateGroup(group.key, { name: e.target.value })}
                   placeholder={t('projects.stepper.s4.namePlaceholder')}
-                  className="w-full rounded-lg border border-transparent bg-input-bg/60 px-3.5 py-2 text-sm text-text outline-none transition-all hover:bg-input-bg focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/20 placeholder:text-text-placeholder font-medium"
+                  className="w-full rounded-[var(--radius-card)] border border-transparent bg-input-bg/60 px-3.5 py-2 text-sm text-text outline-none transition-all hover:bg-input-bg focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/20 placeholder:text-text-placeholder font-medium"
                 />
                 <input
                   value={group.description}
                   onChange={(e) => updateGroup(group.key, { description: e.target.value })}
                   placeholder={t('projects.stepper.s4.descPlaceholder')}
-                  className="w-full rounded-lg border border-transparent bg-input-bg/60 px-3.5 py-2 text-sm text-text outline-none transition-all hover:bg-input-bg focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/20 placeholder:text-text-placeholder"
+                  className="w-full rounded-[var(--radius-card)] border border-transparent bg-input-bg/60 px-3.5 py-2 text-sm text-text outline-none transition-all hover:bg-input-bg focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/20 placeholder:text-text-placeholder"
                 />
               </div>
               <button
@@ -1076,7 +1085,7 @@ function Step5Partners({
   return (
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s5.title')}</h3>
+        <h3 className="heading-section mb-1">{t('projects.stepper.s5.title')}</h3>
         <p className="text-sm text-text-muted">{t('projects.stepper.s5.subtitle')}</p>
       </div>
 
@@ -1093,7 +1102,7 @@ function Step5Partners({
           {groups.map((group) => {
             const selectedOrg = organizations.find((o) => o.id === group.organizationId);
             return (
-              <div key={group.key} className="rounded-xl border border-card-border bg-card transition-all hover:border-primary/30 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center">
+              <div key={group.key} className="rounded-[var(--radius-card)] border border-card-border bg-card transition-all hover:border-primary/30 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center">
                 <div className="flex items-center gap-3 p-4 md:w-5/12 md:border-r border-card-border bg-content-bg/50">
                   <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
@@ -1165,12 +1174,12 @@ function Step6Summary({
   return (
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       <div>
-        <h3 className="font-display text-xl font-semibold text-primary mb-1">{t('projects.stepper.s6.title')}</h3>
+        <h3 className="heading-section mb-1">{t('projects.stepper.s6.title')}</h3>
         <p className="text-sm text-text-muted">{t('projects.stepper.s6.subtitle')}</p>
       </div>
 
       {/* Project Info */}
-      <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
+      <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
           {t('projects.stepper.step1')}
@@ -1185,7 +1194,7 @@ function Step6Summary({
       </div>
 
       {/* Mandatory files */}
-      <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
+      <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
           {t('projects.stepper.s6.legalFiles')}
@@ -1206,7 +1215,7 @@ function Step6Summary({
 
       {/* Packages info */}
       {state.packages.length > 0 && (
-        <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
+        <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-5 space-y-3">
           <div className="flex items-center gap-2 text-primary font-bold text-sm">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
             {t('projects.stepper.s6.packages')} ({state.packages.length})
@@ -1255,7 +1264,7 @@ function Step6Summary({
       )}
 
       {/* Groups */}
-      <div className="rounded-xl border border-card-border bg-card p-5 space-y-3">
+      <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
           {t('projects.stepper.s6.groups')} ({validGroups.length})

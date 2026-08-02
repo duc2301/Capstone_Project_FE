@@ -181,11 +181,11 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-card-border px-6 py-4">
           <div>
-            <h2 className="font-display text-xl font-semibold text-primary">{t('documents.uploadModal.title')}</h2>
+            <h2 className="heading-section">{t('documents.uploadModal.title')}</h2>
             <p className="text-xs text-text-muted">{t('brand.name')}</p>
           </div>
           <button type="button" onClick={onClose} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
@@ -226,7 +226,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               </div>
 
               {/* Tệp ngoại lệ: giữ tên gốc, không áp quy tắc (văn bản hành chính...) */}
-              <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-card-border bg-card px-3.5 py-2.5">
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-card)] border border-card-border bg-card px-3.5 py-2.5">
                 <input
                   type="checkbox"
                   checked={bypass}
@@ -253,7 +253,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
                       {field.required && !field.locked && <span className="text-danger">*</span>}
                     </label>
                     {field.locked ? (
-                      <div className="flex items-center gap-2 rounded-(--radius-input) border border-card-border bg-content-bg/60 px-3 py-2 text-sm text-text-secondary" title={field.lockedValue?.displayName}>
+                      <div className="flex items-center gap-2 rounded-[var(--radius-input)] border border-card-border bg-content-bg/60 px-3 py-2 text-sm text-text-secondary" title={field.lockedValue?.displayName}>
                         <span className="font-mono font-bold">{field.lockedValue?.code}</span>
                         <span className="truncate text-xs text-text-muted">{field.lockedValue?.displayName}</span>
                       </div>
@@ -274,7 +274,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
                                 return nextSet;
                               });
                           }}
-                          className={`w-full rounded-(--radius-input) border px-3 py-2 text-sm text-text outline-none disabled:opacity-50 ${
+                          className={`w-full rounded-[var(--radius-input)] border px-3 py-2 text-sm text-text outline-none disabled:opacity-50 ${
                             mismatchIds.has(field.id)
                               ? 'border-danger bg-danger-light/30 focus:border-danger'
                               : 'border-input-border bg-card focus:border-input-focus'
@@ -297,7 +297,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               {/* Xem trước tên tệp */}
               <div>
                 <p className="mb-1 text-xs font-bold uppercase tracking-wider text-text-muted">{t('naming.upload.preview')}</p>
-                <div className="rounded-xl border border-card-border bg-card px-3.5 py-2.5">
+                <div className="rounded-[var(--radius-card)] border border-card-border bg-card px-3.5 py-2.5">
                   {previewBase ? (
                     <p className="truncate font-mono text-sm font-semibold text-primary">{previewBase}{previewExt}</p>
                   ) : (
@@ -401,7 +401,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
         <div className="flex items-center justify-between gap-3 border-t border-card-border px-6 py-4">
           <span className="text-xs text-text-muted">{doneCount}/{items.length} {t('documents.uploadModal.done').toLowerCase()}</span>
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} disabled={busy} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+            <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
               {t('documents.uploadModal.cancel')}
             </button>
             <button
@@ -409,7 +409,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               onClick={handleUpload}
               disabled={busy || !hasPending || blockedByNaming}
               title={blockedByNaming ? t('naming.upload.missingRequired') : undefined}
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
               {busy ? t('documents.uploadModal.uploading') : t('documents.uploadModal.submit')}

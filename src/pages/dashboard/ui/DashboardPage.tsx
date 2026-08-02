@@ -17,7 +17,7 @@ export function DashboardPage() {
   const firstName = currentUser?.userName?.split(' ').pop() || 'User';
 
   return (
-    <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
+    <div className="space-y-6 pb-8">
       {/* ── Greeting Banner ─────────────────────────── */}
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
@@ -40,7 +40,7 @@ export function DashboardPage() {
       {/* ── Stats Cards ─────────────────────────────── */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Projects */}
-        <div className="flex flex-col rounded-2xl border border-card-border bg-card p-5 shadow-sm">
+        <div className="flex flex-col rounded-[var(--radius-card)] border border-card-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-light text-primary">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -108,7 +108,7 @@ export function DashboardPage() {
           {/* Urgent Tasks */}
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-text">
+              <h2 className="heading-entity flex items-center gap-2">
                 <span className="text-xl">🔥</span> {t('dashboard.urgent.title')}
               </h2>
               <button className="text-sm font-medium text-text-muted hover:text-primary">
@@ -117,7 +117,7 @@ export function DashboardPage() {
             </div>
             <div className="flex flex-col gap-3">
               {stats.urgentTasks.map((task) => (
-                <div key={task.id} className="flex flex-col gap-4 rounded-xl border border-card-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div key={task.id} className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-card-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-4 sm:items-center">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${task.isWarning ? 'bg-warning-light text-warning' : 'bg-danger-light text-danger'}`}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -138,7 +138,7 @@ export function DashboardPage() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-text">{task.title}</h3>
+                      <h3 className="heading-label">{task.title}</h3>
                       <div className="mt-1 flex items-center gap-3 text-xs font-medium text-text-muted">
                         <span className="rounded bg-content-bg px-2 py-0.5 text-text-secondary">{task.projectCode}</span>
                         <span className="flex items-center gap-1">
@@ -151,7 +151,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  <button className="flex items-center justify-center gap-1 rounded-lg border border-card-border px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-content-bg">
+                  <button className="flex items-center justify-center gap-1 rounded-[var(--radius-button)] border border-card-border px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-content-bg">
                     Xử lý
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="5" y1="12" x2="19" y2="12" />
@@ -166,14 +166,14 @@ export function DashboardPage() {
           {/* Project Progress */}
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-text">{t('dashboard.progress.title')}</h2>
+              <h2 className="heading-entity">{t('dashboard.progress.title')}</h2>
               <button className="text-sm font-medium text-text-muted hover:text-primary">
                 Tất cả dự án
               </button>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {stats.projectProgress.map((project) => (
-                <div key={project.id} className="flex flex-col justify-between rounded-xl border border-card-border bg-card p-5">
+                <div key={project.id} className="flex flex-col justify-between rounded-[var(--radius-card)] border border-card-border bg-card p-5">
                   <div>
                     <div className="mb-2 flex items-center justify-between">
                       <span className="rounded bg-content-bg px-2 py-1 text-xs font-bold text-text-muted">{project.code}</span>
@@ -185,10 +185,10 @@ export function DashboardPage() {
                         </svg>
                       </button>
                     </div>
-                    <h3 className="mb-4 font-semibold text-text">{project.name}</h3>
+                    <h3 className="heading-label mb-4">{project.name}</h3>
                     
                     <div className="mb-1 flex items-center justify-between text-xs font-bold text-text">
-                      <span>Tiến độ tổng</span>
+                      <span>{t('dashboard.progressTotal')}</span>
                       <span className="text-primary">{project.progress}%</span>
                     </div>
                     <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-content-bg">
@@ -197,15 +197,15 @@ export function DashboardPage() {
 
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex flex-col items-center justify-center rounded-lg bg-content-bg p-2 text-center">
-                        <span className="mb-1 text-[10px] font-bold text-text-muted">WIP</span>
+                        <span className="mb-1 text-2xs font-bold text-text-muted">WIP</span>
                         <span className="font-bold text-text">{project.wip}</span>
                       </div>
                       <div className="flex flex-col items-center justify-center rounded-lg bg-content-bg p-2 text-center">
-                        <span className="mb-1 text-[10px] font-bold text-text-muted">SHARED</span>
+                        <span className="mb-1 text-2xs font-bold text-text-muted">SHARED</span>
                         <span className="font-bold text-text">{project.shared}</span>
                       </div>
                       <div className="flex flex-col items-center justify-center rounded-lg bg-warning-light p-2 text-center">
-                        <span className="mb-1 text-[10px] font-bold text-warning">PUB</span>
+                        <span className="mb-1 text-2xs font-bold text-warning">PUB</span>
                         <span className="font-bold text-warning">{project.pub}</span>
                       </div>
                     </div>
@@ -214,7 +214,7 @@ export function DashboardPage() {
                   <div className="mt-5 flex items-center justify-between pt-4 border-t border-card-border">
                     <div className="flex -space-x-2">
                       {project.members.map((m: string, i: number) => (
-                        <div key={i} className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-card text-[10px] font-bold ${i === 2 ? 'bg-primary-light text-primary' : 'bg-primary text-white'}`}>
+                        <div key={i} className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-card text-2xs font-bold ${i === 2 ? 'bg-primary-light text-primary' : 'bg-primary text-white'}`}>
                           {m}
                         </div>
                       ))}
@@ -234,7 +234,7 @@ export function DashboardPage() {
         <div className="flex flex-col gap-8">
           
           {/* Activity Feed */}
-          <section className="flex flex-col overflow-hidden rounded-2xl border border-card-border bg-card">
+          <section className="flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card">
             <div className="border-b border-card-border p-4">
               <div className="flex items-center gap-4">
                 <button className="border-b-2 border-primary pb-2 text-sm font-bold text-primary">
@@ -274,14 +274,14 @@ export function DashboardPage() {
           </section>
 
           {/* Calendar placeholder to match mockup */}
-          <section className="rounded-2xl border border-card-border bg-card p-5">
-            <h2 className="mb-4 text-lg font-bold text-text">{t('dashboard.calendar.title')}</h2>
+          <section className="rounded-[var(--radius-card)] border border-card-border bg-card p-5">
+            <h2 className="heading-entity mb-4">{t('dashboard.calendar.title')}</h2>
             
             {/* Week View Mock */}
             <div className="mb-6 flex justify-between text-center">
               {['S','M','T','W','T','F','S'].map((day, i) => (
                 <div key={i} className={`flex flex-col items-center gap-1 ${i === 5 ? 'text-primary' : 'text-text-muted'}`}>
-                  <span className="text-[10px] font-bold">{day}</span>
+                  <span className="text-2xs font-bold">{day}</span>
                   <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${i === 5 ? 'bg-primary text-white' : i === 3 ? 'text-text relative after:absolute after:bottom-1 after:h-1 after:w-1 after:rounded-full after:bg-danger' : 'text-text'}`}>
                     {17 + i}
                   </span>
@@ -293,20 +293,20 @@ export function DashboardPage() {
               <div className="flex items-center gap-4 rounded-xl bg-content-bg p-3">
                 <div className="flex flex-col items-center justify-center rounded bg-white px-3 py-1 text-danger shadow-sm">
                   <span className="text-sm font-bold">14:00</span>
-                  <span className="text-[10px] font-bold">SÁNG</span>
+                  <span className="text-2xs font-bold">{t('dashboard.schedule.morning')}</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-text">Họp review thiết kế</h4>
+                  <h4 className="heading-label">Họp review thiết kế</h4>
                   <span className="text-xs text-text-muted">Phòng họp ảo BIM 01</span>
                 </div>
               </div>
               <div className="flex items-center gap-4 rounded-xl bg-primary-light p-3">
                 <div className="flex flex-col items-center justify-center rounded bg-white px-3 py-1 text-primary shadow-sm">
                   <span className="text-sm font-bold">16:30</span>
-                  <span className="text-[10px] font-bold">CHIỀU</span>
+                  <span className="text-2xs font-bold">{t('dashboard.schedule.afternoon')}</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-primary">Phê duyệt MEP Tầng 5</h4>
+                  <h4 className="heading-label text-primary">Phê duyệt MEP Tầng 5</h4>
                   <span className="text-xs text-primary/70">Hạn cuối nộp báo cáo</span>
                 </div>
               </div>

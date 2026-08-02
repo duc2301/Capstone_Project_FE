@@ -24,7 +24,7 @@ function SectionLabel({ icon, children }: { icon: React.ReactNode; children: Rea
   return (
     <div className="flex items-center gap-2 text-text-muted">
       {icon}
-      <span className="text-[11px] font-bold uppercase tracking-[1px]">{children}</span>
+      <span className="text-xs font-bold uppercase tracking-[1px]">{children}</span>
     </div>
   );
 }
@@ -219,14 +219,14 @@ export function UpdateAccountForm({ account, onSubmit, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-card-border bg-card px-8 py-3 text-sm font-semibold text-text-secondary transition-all duration-200 hover:border-text-muted hover:bg-content-bg"
+          className="rounded-[var(--radius-button)] border border-card-border bg-card px-8 py-3 text-sm font-semibold text-text-secondary transition-all duration-200 hover:border-text-muted hover:bg-content-bg"
         >
           {t('account.cancel')}
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-[var(--radius-button)] bg-primary px-8 py-3 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? (
             <span className="flex items-center gap-2">

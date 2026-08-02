@@ -49,7 +49,7 @@ export function NotificationRow({
         </span>
 
         {isPendingInvite && (
-          <span className="shrink-0 rounded-[var(--radius-badge)] bg-warning-light px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warning">
+          <span className="shrink-0 rounded-[var(--radius-badge)] bg-warning-light px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-warning">
             {t('notification.invitation.badge')}
           </span>
         )}

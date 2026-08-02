@@ -85,7 +85,7 @@ export function ProjectPartnersTab({ partners, groups }: Props) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6">
-      <div className="flex shrink-0 flex-col gap-4 rounded-2xl border border-card-border/50 bg-card/50 p-4 backdrop-blur-[2px] sm:flex-row sm:items-center">
+      <div className="flex shrink-0 flex-col gap-4 rounded-[var(--radius-card)] border border-card-border/50 bg-card/50 p-4 backdrop-blur-[2px] sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
           <svg
             width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -98,14 +98,14 @@ export function ProjectPartnersTab({ partners, groups }: Props) {
             value={query}
             onChange={(e) => resetTo(() => setQuery(e.target.value))}
             placeholder={t('projectDetail.partners.searchPlaceholder')}
-            className="w-full rounded-xl border border-card-border bg-card py-3 pl-12 pr-4 text-base text-text outline-none transition-all placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/15"
+            className="w-full rounded-[var(--radius-card)] border border-card-border bg-card py-3 pl-12 pr-4 text-base text-text outline-none transition-all placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/15"
           />
         </div>
 
         <select
           value={groupFilter}
           onChange={(e) => resetTo(() => setGroupFilter(e.target.value))}
-          className="shrink-0 rounded-xl border border-card-border/50 bg-card px-4 py-3 text-sm font-semibold text-text-secondary outline-none transition-colors focus:border-primary"
+          className="shrink-0 rounded-[var(--radius-card)] border border-card-border/50 bg-card px-4 py-3 text-sm font-semibold text-text-secondary outline-none transition-colors focus:border-primary"
         >
           <option value="all">{t('projectDetail.partners.allGroups')}</option>
           {groups.map((g) => (
@@ -115,7 +115,7 @@ export function ProjectPartnersTab({ partners, groups }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
+        <div className="rounded-[var(--radius-card)] border border-dashed border-card-border bg-card/70 p-10 text-center shadow-card">
           <p className="text-sm text-text-muted">{t('projectDetail.partners.empty')}</p>
         </div>
       ) : (
@@ -153,12 +153,12 @@ function PartnerCard({ card, onDetail }: { card: PartnerCardData; onDetail: () =
   const name = orgName(organization);
 
   return (
-    <article className="flex flex-col rounded-2xl border border-card-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-shadow hover:shadow-card-hover">
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-card-border/50 bg-[#F0EEE6] font-display text-xl font-semibold text-primary">
+    <article className="flex flex-col rounded-[var(--radius-card)] border border-card-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-shadow hover:shadow-card-hover">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-card-border/50 bg-surface-sand-light font-display text-xl font-semibold text-primary">
         {name.charAt(0).toUpperCase()}
       </span>
 
-      <h3 className="mt-6 line-clamp-2 font-display text-lg font-normal leading-snug text-text" title={name}>
+      <h3 className="heading-entity mt-6 line-clamp-2" title={name}>
         {name}
       </h3>
       <p className="mt-1 text-xs font-medium tracking-[0.6px] text-text-secondary/70">
@@ -201,7 +201,7 @@ function PartnerCard({ card, onDetail }: { card: PartnerCardData; onDetail: () =
         <button
           type="button"
           onClick={onDetail}
-          className="rounded-lg bg-primary px-7 py-2.5 text-base font-normal text-white transition-colors hover:bg-primary-hover"
+          className="rounded-[var(--radius-button)] bg-primary px-7 py-2.5 text-base font-normal text-white transition-colors hover:bg-primary-hover"
         >
           {t('projectDetail.partners.detail')}
         </button>
@@ -262,7 +262,7 @@ function PartnerDetail({ card }: { card: PartnerCardData }) {
                             <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z" />
                           </svg>
                           {m.userName}
-                          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                          <span className="rounded-full bg-white/20 px-2 py-0.5 text-2xs font-bold uppercase tracking-wider">
                             {t('projects.role.leader')}
                           </span>
                         </span>

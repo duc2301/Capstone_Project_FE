@@ -76,11 +76,11 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
       {/* ── Nhóm ────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-text">Nhóm</label>
+        <label className="text-sm font-semibold text-text">{t('projectDetail.partners.group')}</label>
         {loadingGroups ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : groups.length === 0 ? (
-          <p className="text-sm text-text-muted">Chưa có nhóm nào trong dự án.</p>
+          <p className="text-sm text-text-muted">{t('projectDetail.partners.noGroups')}</p>
         ) : (
           <div className="flex flex-wrap gap-3">
             {groups.map((group) => {
@@ -113,11 +113,11 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
       {/* ── Chọn tổ chức (đối tác) ──────────────────────── */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-text">Chọn tổ chức (đối tác)</label>
+        <label className="text-sm font-semibold text-text">{t('projectDetail.partners.selectOrg')}</label>
         {loadingOrgs ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : organizations.length === 0 ? (
-          <p className="text-sm text-text-muted">Không có tổ chức nào.</p>
+          <p className="text-sm text-text-muted">{t('projectDetail.partners.noOrgs')}</p>
         ) : (
           <div className="flex flex-col gap-3 max-h-60 overflow-y-auto admin-scrollbar pr-2">
             {organizations.map((org) => {

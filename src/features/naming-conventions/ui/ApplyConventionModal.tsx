@@ -4,9 +4,9 @@ import type { FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
 import type { NamingConvention } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
-import { useFolderTree } from '@/features/folders';
+import { useFolderTree } from '@/entities/folder';
 import { getApiErrorMessage } from '@/shared/api';
-import { Modal } from '@/shared/components/modal';
+import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 interface ApplyConventionModalProps {
@@ -126,7 +126,7 @@ export function ApplyConventionModal({ convention, projectId, onClose, onApplied
               <button
                 type="button"
                 onClick={selectAll}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost"
+                className="rounded-[var(--radius-button)] px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost"
               >
                 {t('naming.apply.selectAll')}
               </button>
@@ -140,7 +140,7 @@ export function ApplyConventionModal({ convention, projectId, onClose, onApplied
               <span className="ml-auto text-xs text-text-muted">{checked.size} {t('naming.foldersUnit')}</span>
             </div>
 
-            <div className="max-h-72 overflow-y-auto rounded-(--radius-card) border border-card-border bg-card p-2">
+            <div className="max-h-72 overflow-y-auto rounded-[var(--radius-card)] border border-card-border bg-card p-2">
               <CheckNode node={wipRoot} depth={0} checked={checked} assignedIds={assignedIds} onToggle={toggle} />
             </div>
 
@@ -163,7 +163,7 @@ export function ApplyConventionModal({ convention, projectId, onClose, onApplied
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+            className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
           >
             {t('naming.cancel')}
           </button>

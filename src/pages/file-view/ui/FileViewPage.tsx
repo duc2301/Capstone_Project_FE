@@ -7,12 +7,11 @@ import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-it
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
 import { useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
-import { isRequiredSigner, RelatedFilesPanel } from '@/features/folders';
-import { formatSize } from '@/features/folders/model/fileFormat';
-import { SmartCaSignModal } from '@/features/folders/ui/SmartCaSignModal';
+import { formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal } from '@/features/folders';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
+import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -78,7 +77,7 @@ function InlineContent({ info }: { info: FileViewInfo }) {
 
   if (info.contentType?.startsWith('image/')) {
     return (
-      <div className="flex h-full items-center justify-center overflow-auto bg-[#dcdad2] p-8">
+      <div className="flex h-full items-center justify-center overflow-auto bg-viewer-canvas p-8">
         <img src={info.url} alt={info.fileName} className="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
       </div>
     );
@@ -136,7 +135,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
-      <div className="break-words text-[13px] font-medium text-text">{value}</div>
+      <div className="break-words text-sm font-medium text-text">{value}</div>
     </div>
   );
 }
@@ -179,7 +178,6 @@ export function FileViewPage() {
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const latestVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
 
@@ -349,21 +347,16 @@ export function FileViewPage() {
     signatureApprovals.some((approval) => approval.isSigned),
   );
 
-  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  }, []);
+  const { toast, showToast } = useToast();
 
   const openSignaturePlacement = useCallback(async () => {
     if (!requiresSignature) return;
     if (!isVisualSignableFile) {
-      setToast({ msg: t('smartca.error.pdfOnly'), type: 'error' });
-      setTimeout(() => setToast(null), 3000);
+      showToast(t('smartca.error.pdfOnly'), 'error');
       return;
     }
     if (!signableApproval) {
-      setToast({ msg: t('fileView.signatureHistory.noPendingSignature'), type: 'error' });
-      setTimeout(() => setToast(null), 3000);
+      showToast(t('fileView.signatureHistory.noPendingSignature'), 'error');
       return;
     }
 
@@ -450,9 +443,9 @@ export function FileViewPage() {
           role="status"
           aria-live="polite"
         >
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-card px-8 py-6 shadow-modal">
+          <div className="flex flex-col items-center gap-3 rounded-[var(--radius-card)] bg-card px-8 py-6 shadow-modal">
             <Spinner />
-            <p className="font-jakarta text-sm font-medium text-text">{t('fileView.switching')}</p>
+            <p className="text-sm font-medium text-text">{t('fileView.switching')}</p>
           </div>
         </div>
       )}
@@ -460,7 +453,7 @@ export function FileViewPage() {
       {/* gap-4 + aside 400px: giữ đồng nhất với trang chi tiết issue */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 xl:flex-row">
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <header className="flex shrink-0 flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+          <header className="flex shrink-0 flex-col gap-3 rounded-[var(--radius-card)] border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <FileIcon danger={format === 'PDF'} size="sm" />
               <div className="min-w-0">
@@ -478,7 +471,7 @@ export function FileViewPage() {
               <button
                 type="button"
                 onClick={goBack}
-                className="whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
+                className="whitespace-nowrap rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
               >
                 {t('fileView.back')}
               </button>
@@ -486,27 +479,27 @@ export function FileViewPage() {
                 type="button"
                 onClick={handleDownload}
                 disabled={!info}
-                className="whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="whitespace-nowrap rounded-[var(--radius-button)] bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t('fileView.download.button')}
               </button>
             </div>
           </header>
 
-          <section className="relative min-h-[420px] flex-1 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:min-h-0">
-            <div className="absolute inset-0 bg-[#dcdad2]" />
+          <section className="relative min-h-[420px] flex-1 overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card xl:min-h-0">
+            <div className="absolute inset-0 bg-viewer-canvas" />
 
             {loading ? (
               // Đang chuyển file thì overlay chặn ở trên đã báo rồi -> khỏi spinner thứ hai lấp ló dưới lớp mờ.
               switchingFile ? null : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                   <Spinner />
-                  <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
+                  <p className="text-sm text-text-muted">{t('common.loading')}</p>
                 </div>
               )
             ) : error ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
+                <p className="text-sm font-medium text-danger">{error}</p>
               </div>
             ) : isModelReady ? (
               <div className="absolute inset-0 bg-card">
@@ -518,10 +511,10 @@ export function FileViewPage() {
             ) : isModelProcessing ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
                 <Spinner />
-                <h3 className="font-jakarta text-base font-semibold text-text">{t('fileView.model.processing.title')}</h3>
-                <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
+                <h3 className="heading-card text-text">{t('fileView.model.processing.title')}</h3>
+                <p className="max-w-md text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
                 {info?.viewerProgress ? (
-                  <p className="font-jakarta text-sm font-medium text-primary">{info.viewerProgress}</p>
+                  <p className="text-sm font-medium text-primary">{info.viewerProgress}</p>
                 ) : null}
               </div>
             ) : isModelFailed ? (
@@ -575,7 +568,7 @@ export function FileViewPage() {
         </main>
 
         {/* Panel cao bằng khung xem file, nội dung cuộn bên trong */}
-        <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
+        <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card xl:w-[400px]">
           <div className="flex shrink-0 items-center justify-between border-b border-card-border px-2">
             <PanelTabButton
               active={activePanelTab === 'properties'}
@@ -664,11 +657,7 @@ export function FileViewPage() {
         </aside>
       </div>
 
-      {toast && (
-        <div className={`fixed right-6 top-20 z-[80] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[80]" />
 
       {signFor && (
         <SmartCaSignModal
@@ -748,12 +737,12 @@ function PanelTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex h-14 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
+      className={`relative flex h-14 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
         }`}
     >
       {label}
       {badge ? (
-        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? 'bg-primary text-white' : 'bg-danger text-white'}`}>
+        <span className={`rounded-full px-1.5 py-0.5 text-2xs font-bold ${active ? 'bg-primary text-white' : 'bg-danger text-white'}`}>
           {badge}
         </span>
       ) : null}
@@ -824,7 +813,7 @@ function FilePropertiesPanel({
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-jakarta text-base font-bold text-text">{t('fileView.details.title')}</h2>
+        <h2 className="heading-card text-text">{t('fileView.details.title')}</h2>
         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>{statusMeta.label}</span>
       </div>
 
@@ -862,7 +851,7 @@ function FilePropertiesPanel({
       </div>
 
       <div className="mt-6 border-t border-card-border/70 pt-5">
-        <h3 className="text-sm font-bold text-text">{t('fileView.details.history')}</h3>
+        <h3 className="heading-label">{t('fileView.details.history')}</h3>
         <div className="mt-4 space-y-4">
           {versions.slice(0, 4).map((version) => (
             <div key={version.id} className="flex gap-3">
@@ -906,14 +895,14 @@ function SignatureHistoryPanel({
 }) {
   return (
     <div>
-      <h2 className="font-jakarta text-base font-bold text-text">{t('fileView.signatureHistory.title')}</h2>
+      <h2 className="heading-card text-text">{t('fileView.signatureHistory.title')}</h2>
       <p className="mt-1 text-sm text-text-muted">{t('fileView.signatureHistory.desc')}</p>
 
       {requiresSignature && canSign && (
         <button
           type="button"
           onClick={onStartPlacement}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#8a5100] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#744500]"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-accent-amber px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-accent-amber-strong"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 20h9" />
@@ -999,8 +988,8 @@ function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListIte
       </span>
       <div className="flex-1 rounded-2xl border border-card-border bg-white/80 p-4 shadow-sm">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-sm font-bold text-text">{title}</h3>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${toneClass}`}>
+          <h3 className="heading-label">{title}</h3>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-bold uppercase tracking-wide ${toneClass}`}>
             {approvalStatusLabel(approval.status)}
           </span>
         </div>
@@ -1129,9 +1118,9 @@ function SignaturePlacementOverlay({
   };
 
   return (
-    <div className="absolute inset-0 z-20 overflow-hidden bg-[#dcdad2]/95">
-      <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-4 rounded-2xl border border-white/60 bg-card/80 px-5 py-3 shadow-dropdown backdrop-blur">
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{t('smartca.placement.toolbarLabel')}</span>
+    <div className="absolute inset-0 z-20 overflow-hidden bg-viewer-canvas/95">
+      <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-4 rounded-[var(--radius-card)] border border-white/60 bg-card/80 px-5 py-3 shadow-dropdown backdrop-blur">
+        <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{t('smartca.placement.toolbarLabel')}</span>
         <SignatureToolButton
           label={t('smartca.placement.resetPosition')}
           onClick={() => onChange(getDefaultSignaturePosition(pageSize))}
@@ -1171,7 +1160,7 @@ function SignaturePlacementOverlay({
           type="button"
           onClick={onClose}
           disabled={busy}
-          className="ml-auto rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+          className="ml-auto rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
         >
           {t('smartca.signModal.cancel')}
         </button>
@@ -1187,9 +1176,9 @@ function SignaturePlacementOverlay({
           }
           className="relative max-h-full max-w-full bg-white shadow-card"
         >
-          <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-[#fbf9f1]/90 px-5 py-3 shadow-sm backdrop-blur">
+          <div className="absolute left-7 right-7 top-5 z-10 flex items-center justify-between rounded-xl border border-white/70 bg-page-cream/90 px-5 py-3 shadow-sm backdrop-blur">
             <div className="min-w-0">
-              <p className="truncate font-jakarta text-base font-bold text-primary">{fileName}</p>
+              <p className="truncate text-base font-bold text-primary">{fileName}</p>
               <p className="text-xs text-text-muted">{t('smartca.placement.previewDocument')}</p>
             </div>
             <span className="rounded-full bg-success-light px-3 py-1 text-xs font-semibold text-success">
@@ -1205,7 +1194,7 @@ function SignaturePlacementOverlay({
               className="absolute inset-0 h-full w-full border-0 bg-white"
             />
           ) : (
-            <div className="absolute inset-10 flex items-center justify-center rounded-2xl border border-card-border bg-[#f6f4ec] text-sm font-semibold text-text-muted">
+            <div className="absolute inset-10 flex items-center justify-center rounded-2xl border border-card-border bg-page-cream-alt text-sm font-semibold text-text-muted">
               {t('smartca.placement.noPreview')}
             </div>
           )}
@@ -1232,8 +1221,8 @@ function SignaturePlacementOverlay({
       </div>
 
       <div className="absolute bottom-6 right-6 z-30 w-[220px] rounded-2xl border border-white bg-white/75 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
-        <h3 className="font-jakarta text-sm font-semibold text-text">{t('smartca.placement.confirmTitle')}</h3>
-        <p className="mt-1.5 text-[11px] font-medium leading-4 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
+        <h3 className="heading-label">{t('smartca.placement.confirmTitle')}</h3>
+        <p className="mt-1.5 text-xs font-medium leading-4 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
         <div className="mt-3 space-y-2">
           <button
             type="button"
@@ -1247,7 +1236,7 @@ function SignaturePlacementOverlay({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="w-full rounded-xl border border-card-border px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+            className="w-full rounded-[var(--radius-button)] border border-card-border px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
           >
             {t('smartca.signModal.cancel')}
           </button>
@@ -1262,7 +1251,7 @@ function SignatureToolButton({ label, onClick }: { label: string; onClick?: () =
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg px-3 py-1.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
+      className="rounded-[var(--radius-button)] px-3 py-1.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
     >
       {label}
     </button>
@@ -1278,7 +1267,7 @@ function SignatureTimelineItem({ title, body, muted = false }: { title: string; 
         </svg>
       </span>
       <div className="flex-1 rounded-2xl border border-card-border bg-white/80 p-4 shadow-sm">
-        <h3 className="text-sm font-bold text-text">{title}</h3>
+        <h3 className="heading-label">{title}</h3>
         <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
       </div>
     </div>
@@ -1307,16 +1296,16 @@ function EmptyViewerState({
   disabled = false,
 }: EmptyViewerStateProps) {
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-3xl bg-card/90 p-8 text-center shadow-card">
+    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[var(--radius-card)] bg-card/90 p-8 text-center shadow-card">
       <FileIcon danger={danger} />
-      <h3 className="font-jakarta text-base font-semibold text-text">{title}</h3>
-      <p className="font-jakarta text-sm text-text-muted">{desc}</p>
+      <h3 className="heading-card text-text">{title}</h3>
+      <p className="text-sm text-text-muted">{desc}</p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={onPrimary}
           disabled={disabled}
-          className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
+          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
           {primaryLabel}
         </button>
@@ -1324,7 +1313,7 @@ function EmptyViewerState({
           <button
             type="button"
             onClick={onSecondary}
-            className="rounded-full border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+            className="rounded-[var(--radius-button)] border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
           >
             {secondaryLabel}
           </button>

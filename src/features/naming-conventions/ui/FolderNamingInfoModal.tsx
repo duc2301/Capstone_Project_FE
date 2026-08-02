@@ -4,7 +4,7 @@ import type { FolderTreeNode } from '@/entities/folder';
 import type { FolderNamingConvention } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
-import { Modal } from '@/shared/components/modal';
+import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { FolderFieldSelectionEditor } from './FolderFieldSelectionEditor';

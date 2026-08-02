@@ -201,14 +201,14 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-card-border bg-card px-8 py-3 text-sm font-semibold text-text-secondary transition-all duration-200 hover:border-text-muted hover:bg-content-bg"
+          className="rounded-[var(--radius-button)] border border-card-border bg-card px-8 py-3 text-sm font-semibold text-text-secondary transition-all duration-200 hover:border-text-muted hover:bg-content-bg"
         >
           {t('account.cancel')}
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-[var(--radius-button)] bg-primary px-8 py-3 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? (
             <span className="flex items-center gap-2">

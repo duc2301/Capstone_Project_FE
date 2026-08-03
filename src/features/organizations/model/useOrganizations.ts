@@ -8,7 +8,7 @@ interface UseOrganizationsReturn {
   loading: boolean;
   error: string | null;
   fetchOrganizations: () => Promise<void>;
-  createOrganization: (payload: CreateOrganizationPayload) => Promise<void>;
+  createOrganization: (payload: CreateOrganizationPayload) => Promise<Organization | null>;
   updateOrganization: (id: string, payload: UpdateOrganizationPayload) => Promise<void>;
   deleteOrganization: (id: string) => Promise<void>;
 }
@@ -17,8 +17,9 @@ export function useOrganizations(): UseOrganizationsReturn {
   const { organizations, loading, error, refresh } = useOrganizationList();
 
   const createOrganization = useCallback(async (payload: CreateOrganizationPayload) => {
-    await organizationApi.create(payload);
+    const res = await organizationApi.create(payload);
     await refresh();
+    return res.data.result;
   }, [refresh]);
 
   const updateOrganization = useCallback(async (id: string, payload: UpdateOrganizationPayload) => {

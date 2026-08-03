@@ -13,6 +13,7 @@ export interface Organization {
   isJointVenture?: boolean;
   jointVentureMemberIds?: string[];
   representativeOrganizationId?: string | null;
+  participatingProjectsCount?: number;
 }
 
 export interface CreateOrganizationPayload {
@@ -39,4 +40,16 @@ export interface UpdateOrganizationPayload {
   isJointVenture?: boolean;
   jointVentureMemberIds?: string[];
   representativeOrganizationId?: string | null;
+}
+
+/* Dự án mà 1 tổ chức tham gia (BE trả ProjectResponseDTO). Chỉ khai các field FE dùng —
+   entities không import chéo entities/project theo luật FSD. */
+export interface OrganizationProject {
+  id: string;
+  projectName: string;
+  projectCode: string | null;
+  projectImageUrl: string | null;
+  status: number;
+  ownerOrganizationId: string | null;
+  managerAccountId: string | null;
 }

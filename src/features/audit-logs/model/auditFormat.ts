@@ -1,3 +1,4 @@
+import type { AuditLogItem } from '@/entities/audit-log';
 import { AuditAction, LogScope } from '@/entities/audit-log';
 import { t } from '@/shared/lib/i18n';
 import type { TranslationKey } from '@/shared/lib/i18n';
@@ -34,6 +35,21 @@ export function actionBadge(action: number) {
     : { label: String(action), className: 'bg-content-bg text-text-muted' };
 }
 
+/* Mức chú ý của một dòng nhật ký — dùng để tô màu cột "Chi tiết".
+ * Bám đúng nhóm màu của ACTION_META ở trên, KHÔNG tô theo vị trí dòng:
+ *  danger  = mất dữ liệu / chặn (Xoá, Từ chối duyệt, Từ chối lời mời)
+ *  warning = đổi quyền truy cập — thứ kiểm toán viên soi đầu tiên
+ *  normal  = thao tác nghiệp vụ thường ngày */
+export function detailTone(action: number): 'danger' | 'warning' | 'normal' {
+  if (
+    action === AuditAction.Delete
+    || action === AuditAction.Reject
+    || action === AuditAction.RejectInvite
+  ) return 'danger';
+  if (action === AuditAction.PermissionChange) return 'warning';
+  return 'normal';
+}
+
 const SCOPE_META: Record<number, { key: TranslationKey; className: string }> = {
   [LogScope.System]: { key: 'audit.scope.system', className: 'bg-danger-light text-danger' },
   [LogScope.Project]: { key: 'audit.scope.project', className: 'bg-primary-ghost text-primary' },
@@ -47,17 +63,68 @@ export function scopeBadge(scope: number) {
     : { label: String(scope), className: 'bg-content-bg text-text-muted' };
 }
 
-/* BE trả UTC (DateTime.UtcNow) không kèm hậu tố Z -> ép về UTC trước khi đổi sang giờ máy. */
-export function formatLogTime(iso: string | null): string {
-  if (!iso) return '—';
+/* "Phân hệ" (module) — mockup có cột này nhưng BE chưa lưu field module.
+ * Suy ra từ hành động + loại đối tượng + phạm vi (ưu tiên cái rõ nghĩa nhất). */
+function moduleKey(log: Pick<AuditLogItem, 'scope' | 'action' | 'entityType'>): TranslationKey {
+  const et = (log.entityType ?? '').toLowerCase();
+
+  // 1) Theo hành động rõ nghĩa
+  if (log.action === AuditAction.PermissionChange) return 'audit.module.permission';
+  if (
+    log.action === AuditAction.Invite
+    || log.action === AuditAction.AcceptInvite
+    || log.action === AuditAction.RejectInvite
+    || log.action === AuditAction.Assign
+  ) return 'audit.module.group';
+
+  // 2) Theo loại đối tượng
+  if (/permission|role|grant/.test(et)) return 'audit.module.permission';
+  if (/account|auth|login|session|token|credential/.test(et)) return 'audit.module.auth';
+  if (/file|folder|document|version|markup|issue/.test(et)) return 'audit.module.document';
+  if (/group|team|member|invitation|invite/.test(et)) return 'audit.module.group';
+  if (/project|package|organization|contract/.test(et)) return 'audit.module.project';
+
+  // 3) Theo phạm vi log
+  if (log.scope === LogScope.System) return 'audit.module.system';
+  if (log.scope === LogScope.Group) return 'audit.module.group';
+  if (log.scope === LogScope.Project) return 'audit.module.project';
+  return 'audit.module.other';
+}
+
+export function moduleLabel(log: Pick<AuditLogItem, 'scope' | 'action' | 'entityType'>): string {
+  return t(moduleKey(log));
+}
+
+/* BE trả UTC (DateTime.UtcNow) không kèm hậu tố Z -> ép về UTC. */
+function parseUtc(iso: string | null): Date | null {
+  if (!iso) return null;
   const normalized = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : `${iso}Z`;
   const d = new Date(normalized);
-  if (Number.isNaN(d.getTime())) return '—';
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/* Ngày (đổi sang giờ máy) — vd "24 thg 10, 2023". */
+export function formatLogDate(iso: string | null): string {
+  const d = parseUtc(iso);
+  if (!d) return '—';
+  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/* Giờ theo UTC + hậu tố "UTC" — vd "14:32:05 UTC" (khớp mockup). */
+export function formatLogClock(iso: string | null): string {
+  const d = parseUtc(iso);
+  if (!d) return '—';
+  const clock = d.toLocaleTimeString('en-GB', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC',
+  });
+  return `${clock} UTC`;
+}
+
+/* Giữ lại cho nơi cần 1 dòng ngày+giờ gộp. */
+export function formatLogTime(iso: string | null): string {
+  const d = parseUtc(iso);
+  if (!d) return '—';
   return d.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }

@@ -8,7 +8,7 @@ export function AuditLogsPage() {
     <div className="space-y-6 pb-8">
       <h1 className="heading-page">{t('audit.page.title')}</h1>
 
-      <AuditLogPanel mode="system" subtitle={t('audit.subtitle.system')} />
+      <AuditLogPanel mode="system" />
     </div>
   );
 }

@@ -21,6 +21,7 @@ const VerifyOtpPage = lazy(() => import('@/pages/verify-otp').then((m) => ({ def
 const DashboardPage = lazy(() => import('@/pages/dashboard').then((m) => ({ default: m.DashboardPage })));
 const AccountsPage = lazy(() => import('@/pages/accounts').then((m) => ({ default: m.AccountsPage })));
 const OrganizationsPage = lazy(() => import('@/pages/organizations').then((m) => ({ default: m.OrganizationsPage })));
+const OrganizationDetailsPage = lazy(() => import('@/pages/organization-details').then((m) => ({ default: m.OrganizationDetailsPage })));
 const ProfilePage = lazy(() => import('@/pages/profile').then((m) => ({ default: m.ProfilePage })));
 const ProjectsPage = lazy(() => import('@/pages/projects').then((m) => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('@/pages/project-detail').then((m) => ({ default: m.ProjectDetailPage })));
@@ -87,6 +88,18 @@ export const AppRoutes = () => {
               <RequireAdmin>
                 <AdminLayout>
                   <OrganizationsPage />
+                </AdminLayout>
+              </RequireAdmin>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/organizations/:orgId"
+          element={
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminLayout>
+                  <OrganizationDetailsPage />
                 </AdminLayout>
               </RequireAdmin>
             </RequireAuth>

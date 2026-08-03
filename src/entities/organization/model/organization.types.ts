@@ -4,6 +4,7 @@ export interface Organization {
   taxCode: string;
   legalName: string;
   displayName: string | null;
+  internationalName: string | null;
   organizationTypeId: string;
   address: string | null;
   phone: string | null;
@@ -20,6 +21,7 @@ export interface CreateOrganizationPayload {
   taxCode?: string;
   legalName: string;
   displayName?: string;
+  internationalName?: string;
   organizationTypeId: string;
   address?: string;
   phone?: string;
@@ -33,6 +35,7 @@ export interface UpdateOrganizationPayload {
   taxCode?: string;
   legalName?: string;
   displayName?: string;
+  internationalName?: string;
   organizationTypeId?: string;
   address?: string;
   phone?: string;
@@ -42,14 +45,10 @@ export interface UpdateOrganizationPayload {
   representativeOrganizationId?: string | null;
 }
 
-/* Dự án mà 1 tổ chức tham gia (BE trả ProjectResponseDTO). Chỉ khai các field FE dùng —
-   entities không import chéo entities/project theo luật FSD. */
-export interface OrganizationProject {
-  id: string;
-  projectName: string;
-  projectCode: string | null;
-  projectImageUrl: string | null;
-  status: number;
-  ownerOrganizationId: string | null;
-  managerAccountId: string | null;
+export interface TaxCodeLookupResult {
+  taxCode: string;
+  legalName: string;
+  internationalName: string;
+  shortName: string;
+  address: string;
 }

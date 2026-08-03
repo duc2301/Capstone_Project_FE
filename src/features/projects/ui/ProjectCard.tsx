@@ -6,9 +6,10 @@ import { projectAddress, statusMeta } from '../model/projectFormat';
 interface ProjectCardProps {
   project: Project;
   onOpen: (projectId: string) => void;
+  meta?: { label: string; value: string };
 }
 
-export function ProjectCard({ project, onOpen }: ProjectCardProps) {
+export function ProjectCard({ project, onOpen, meta }: ProjectCardProps) {
   const status = statusMeta(project.status);
   const address = projectAddress(project);
 
@@ -64,6 +65,13 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
           </svg>
           <span className="line-clamp-1">{address ?? t('projects.card.noAddress')}</span>
         </div>
+
+        {meta && (
+          <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+            <span className="text-text-placeholder">{meta.label}</span>
+            <span className="font-semibold text-text">{meta.value}</span>
+          </div>
+        )}
 
         <div className="mt-auto flex justify-end border-t border-card-border/60 pt-4">
           <button

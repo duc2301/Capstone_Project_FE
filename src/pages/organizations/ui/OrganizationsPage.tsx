@@ -27,21 +27,6 @@ type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
 
 const PAGE_SIZE = 10;
 
-/* ── Stat card ─────────────────────────────────────── */
-interface StatCardProps {
-  value: number;
-  label: string;
-}
-
-function StatCard({ value, label }: StatCardProps) {
-  return (
-    <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-5 shadow-card">
-      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
-      <p className="font-display text-2xl font-semibold text-primary">{value}</p>
-    </div>
-  );
-}
-
 /* ── Main page ─────────────────────────────────────── */
 export function OrganizationsPage() {
   const navigate = useNavigate();
@@ -132,18 +117,6 @@ export function OrganizationsPage() {
   const currentPage = Math.min(page, pageCount);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  /* ── Stats ───────────────────────────────────────── */
-  const [now] = useState(() => Date.now());
-  const stats = useMemo(() => {
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    return {
-      total: organizations.length,
-      jointVentures: organizations.filter((o) => o.isJointVenture).length,
-      uniqueTypes: new Set(organizations.map((o) => o.organizationTypeId)).size,
-      recent: organizations.filter((o) => o.createdAt && now - new Date(o.createdAt).getTime() < thirtyDays).length,
-    };
-  }, [organizations, now]);
-
   const orgTypeName = (organizationTypeId: string) =>
     orgTypes.find((ot) => ot.id === organizationTypeId)?.name ?? t('org.typeOther');
 
@@ -184,16 +157,6 @@ export function OrganizationsPage() {
           </button>
         </div>
       </div>
-
-      {/* ── Statistics Cards ───────────────────────── */}
-      {!loading && !error && (
-        <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard value={stats.total} label={t('org.stats.total')} />
-          <StatCard value={stats.jointVentures} label={t('org.stats.jointVentures')} />
-          <StatCard value={stats.uniqueTypes} label={t('org.stats.byType')} />
-          <StatCard value={stats.recent} label={t('org.stats.recent')} />
-        </div>
-      )}
 
       {/* ── Toolbar ────────────────────────────────── */}
       {!loading && !error && (
@@ -336,14 +299,14 @@ export function OrganizationsPage() {
 
       {/* ── Create Modal ───────────────────────────── */}
       {formMode === 'create' && (
-        <Modal title={t('org.modal.createTitle')} onClose={closeForm}>
+        <Modal title={t('org.modal.createTitle')} onClose={closeForm} flush>
           <CreateOrganizationForm mode="organization" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}
 
       {/* ── Create Joint Venture Modal ─────────────── */}
       {formMode === 'create-jv' && (
-        <Modal title={t('org.modal.createJvTitle')} onClose={closeForm}>
+        <Modal title={t('org.modal.createJvTitle')} onClose={closeForm} flush>
           <CreateOrganizationForm mode="joint-venture" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}

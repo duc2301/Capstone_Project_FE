@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import type { Organization, CreateOrganizationPayload } from '@/entities/organization';
+import { lookupTaxCode, TAX_CODE_MAX_LENGTH, TAX_CODE_MIN_LENGTH } from '@/entities/organization';
 import type { OrganizationType, CreateOrganizationTypePayload } from '@/entities/organization-type';
 import { accountApi } from '@/entities/account';
 import type { Account } from '@/entities/account';
 import { getApiErrorMessage } from '@/shared/api';
+import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
 const OTHER_VALUE = '__other__';
+
+const STEP_LABEL_KEYS: TranslationKey[] = ['org.step.info', 'org.step.team'];
 
 interface Props {
   mode: 'organization' | 'joint-venture';
@@ -28,6 +32,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     taxCode: '',
     legalName: '',
     displayName: '',
+    internationalName: '',
     organizationTypeId: '',
     address: '',
     phone: '',
@@ -47,6 +52,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
   const [isOtherType, setIsOtherType] = useState(false);
   const [customTypeName, setCustomTypeName] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   // Fetch accounts for step 2
   useEffect(() => {
@@ -62,28 +68,27 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
   }, [step, accounts.length]);
 
   const handleLookup = async () => {
-    if (!form.taxCode || form.taxCode.length < 10) return;
+    setLookupError(null);
     setLookingUp(true);
-    try {
-      const response = await fetch(`https://api.vietqr.io/v2/business/${form.taxCode}`);
-      const result = await response.json();
-      if (result.code === '00' && result.data) {
-        setForm((prev) => ({
-          ...prev,
-          legalName: result.data.name || prev.legalName,
-          displayName: result.data.shortName || result.data.name || prev.displayName,
-          address: result.data.address || prev.address,
-          phone: result.data.phone || prev.phone,
-          email: result.data.email || prev.email,
-        }));
-      } else {
-        alert('Không tìm thấy doanh nghiệp với mã số thuế này.');
-      }
-    } catch {
-      alert('Không thể kết nối dịch vụ tra cứu MST. Bạn có thể nhập thủ công.');
-    } finally {
-      setLookingUp(false);
+    const outcome = await lookupTaxCode(form.taxCode ?? '');
+    setLookingUp(false);
+
+    if (outcome.status === 'notFound') {
+      setLookupError(t('org.lookup.notFound'));
+      return;
     }
+    if (outcome.status === 'unavailable') {
+      setLookupError(t('org.lookup.serviceError'));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      legalName: outcome.data.legalName || prev.legalName,
+      displayName: outcome.data.shortName || outcome.data.legalName || prev.displayName,
+      internationalName: outcome.data.internationalName || prev.internationalName,
+      address: outcome.data.address || prev.address,
+    }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -119,20 +124,15 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
   };
 
   const handleNext = () => {
-    if (validateStep1()) {
-      setStep(2);
-    } else {
-      alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
+    if (!validateStep1()) {
+      setSubmitError(t('org.form.missingRequired'));
+      return;
     }
+    setSubmitError(null);
+    setStep(2);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (step === 1 && !isJv) {
-      // Allow saving directly from step 1 or force to step 2?
-      // Since design has step 2, if they submit here, we just save without team members.
-    }
-    
+  const submitForm = async () => {
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -150,7 +150,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
         const code = customTypeName.trim().replace(/\s+/g, '');
         const created = await onCreateOrgType({ code, name: customTypeName.trim() });
         if (!created) {
-          setSubmitError(t('org.createTypeError'));
+          setSubmitError(t('org.orgType.createError'));
           return;
         }
         finalPayload = { ...finalPayload, organizationTypeId: created.id };
@@ -158,10 +158,20 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
       await onSubmit(finalPayload, selectedAccountIds);
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, t('org.saveError')));
+      setSubmitError(getApiErrorMessage(error, t('org.save.error')));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting) return;
+    if (step === 1 && !isJv) {
+      handleNext();
+      return;
+    }
+    void submitForm();
   };
 
   const inputClass = 'field-input';
@@ -178,33 +188,51 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {submitError && (
-        <p className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-light px-4 py-2.5 text-sm font-medium text-danger">
-          {submitError}
-        </p>
-      )}
-
-      
+    <form onSubmit={handleSubmit} className="flex h-full min-h-0 flex-col">
       {/* --- STEP HEADER --- */}
       {!isJv && (
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-card-border">
-          <div className="flex items-center gap-2">
-             <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold text-sm ${step === 1 ? 'bg-primary text-white' : 'bg-primary/20 text-primary'}`}>
-                1
-             </div>
-             <span className={`text-sm font-semibold ${step === 1 ? 'text-primary' : 'text-text-muted'}`}>Thiết lập Doanh nghiệp</span>
-          </div>
-          <div className="h-0.5 w-16 bg-card-border"></div>
-          <div className="flex items-center gap-2">
-             <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold text-sm ${step === 2 ? 'bg-primary text-white' : 'bg-input-border text-text-placeholder'}`}>
-                2
-             </div>
-             <span className={`text-sm font-semibold ${step === 2 ? 'text-primary' : 'text-text-muted'}`}>Thiết lập đội ngũ</span>
+        <div className="shrink-0 border-b border-card-border px-8 pt-6 pb-7">
+          <div className="flex items-start">
+            {STEP_LABEL_KEYS.map((labelKey, i) => {
+              const stepNumber = i + 1;
+              const isActive = stepNumber === step;
+              const isDone = stepNumber < step;
+              const canJump = isDone;
+              return (
+                <Fragment key={labelKey}>
+                  {i > 0 && (
+                    <div className={`mt-4 h-0.5 min-w-4 flex-1 transition-colors duration-300 ${stepNumber <= step ? 'bg-primary' : 'bg-card-border'}`} />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { if (canJump) setStep(stepNumber as 1 | 2); }}
+                    disabled={!canJump && !isActive}
+                    className={`flex w-28 shrink-0 flex-col items-center gap-2 ${canJump ? 'cursor-pointer' : isActive ? 'cursor-default' : 'cursor-not-allowed'}`}
+                  >
+                    <span className="relative">
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ${
+                        isActive ? 'bg-primary text-white'
+                          : isDone ? 'bg-primary/15 text-primary'
+                            : 'bg-content-bg text-text-placeholder'
+                      }`}>
+                        {isDone ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : stepNumber}
+                      </span>
+                      {isActive && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent-amber" />}
+                    </span>
+                    <span className={`text-center text-xs leading-tight transition-colors ${
+                      isActive ? 'font-semibold text-text' : isDone ? 'text-primary' : 'text-text-muted'
+                    }`}>{t(labelKey)}</span>
+                  </button>
+                </Fragment>
+              );
+            })}
           </div>
         </div>
       )}
 
+      <div className="admin-scrollbar min-h-0 flex-1 space-y-6 overflow-y-auto px-8 py-6">
       {/* --- STEP 1: ORGANIZATION DETAILS --- */}
       {step === 1 && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -221,31 +249,32 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                   value={form.taxCode}
                   onChange={handleChange}
                   onBlur={() => {
-                    if ((form.taxCode?.length ?? 0) >= 10 && !form.legalName) handleLookup();
+                    if ((form.taxCode?.length ?? 0) >= TAX_CODE_MIN_LENGTH && !form.legalName) handleLookup();
                   }}
                   placeholder={t('org.taxCodePlaceholder')}
                   required={!isJv}
-                  maxLength={13}
+                  maxLength={TAX_CODE_MAX_LENGTH}
                   pattern="^\d{10,13}$"
-                  title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
+                  title={t('org.form.taxCodeHint')}
                   className={inputClass}
                 />
                 <button
                   type="button"
                   onClick={handleLookup}
-                  disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
+                  disabled={lookingUp || !form.taxCode || form.taxCode.length < TAX_CODE_MIN_LENGTH}
                   className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
                 >
-                  {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
+                  {lookingUp ? t('org.form.lookingUp') : t('org.form.lookup')}
                 </button>
               </div>
+              {lookupError && <span className="field-hint text-danger">{lookupError}</span>}
             </div>
           )}
 
           {/* Legal Name */}
           <div className="space-y-1.5">
             <label htmlFor="create-legalName" className="field-label">
-              {isJv ? 'Tên liên danh' : t('org.legalName')} <span className="text-danger">*</span>
+              {isJv ? t('org.jvLegalName') : t('org.legalName')} <span className="text-danger">*</span>
             </label>
             <input
               id="create-legalName"
@@ -275,62 +304,29 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
             />
           </div>
 
-          {/* Organization Type — dropdown hoặc input tại chỗ */}
-          <div className={`space-y-1.5 ${isJv ? 'sm:col-span-2' : ''}`}>
-            <label htmlFor="create-orgType" className="field-label">
-              {t('org.type')} <span className="text-danger">*</span>
+          <div className="space-y-1.5">
+            <label htmlFor="create-internationalName" className="field-label">
+              {t('org.internationalName')}
             </label>
-            {!isOtherType ? (
-              <select
-                id="create-orgType"
-                value={form.organizationTypeId}
-                onChange={handleTypeSelect}
-                required
-                className={inputClass}
-              >
-                <option value="">{t('org.selectType')}</option>
-                {orgTypes.filter((ot) => ot.isActive).map((ot) => (
-                  <option key={ot.id} value={ot.id}>{ot.name}</option>
-                ))}
-                {onCreateOrgType && (
-                  <option value={OTHER_VALUE}>{t('org.typeOther')}</option>
-                )}
-              </select>
-            ) : (
-              <div className="relative">
-                <input
-                  id="create-orgType"
-                  value={customTypeName}
-                  onChange={(e) => setCustomTypeName(e.target.value)}
-                  placeholder={t('org.typeOtherPlaceholder')}
-                  required
-                  maxLength={200}
-                  autoFocus
-                  className={inputClass}
-                />
-                <button
-                  type="button"
-                  onClick={handleBackToSelect}
-                  title="Quay lại chọn từ danh sách"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            )}
+            <input
+              id="create-internationalName"
+              name="internationalName"
+              value={form.internationalName ?? ''}
+              onChange={handleChange}
+              placeholder={t('org.internationalNamePlaceholder')}
+              maxLength={300}
+              className={inputClass}
+            />
           </div>
 
           {/* --- Joint Venture Fields --- */}
           {isJv && (
             <div className="sm:col-span-2 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-5 space-y-4 mt-2">
-              <h3 className="text-sm font-bold text-primary">Cấu trúc Liên danh</h3>
+              <h3 className="heading-label text-primary">{t('org.form.jvStructure')}</h3>
               <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
                 <div className="space-y-2">
                   <label className="field-label">
-                    Thành viên liên danh <span className="text-danger">*</span>
+                    {t('org.form.jvMembers')} <span className="text-danger">*</span>
                   </label>
                   <div className="space-y-3 relative">
                     <select
@@ -348,7 +344,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                       }}
                       className={inputClass}
                     >
-                      <option value="">+ Thêm đối tác vào liên danh...</option>
+                      <option value="">{t('org.form.addJvPartner')}</option>
                       {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
                         <option key={org.id} value={org.id}>
                           {org.displayName || org.legalName}
@@ -390,7 +386,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
                 <div className="space-y-2">
                   <label className="field-label">
-                    Đơn vị đứng đầu (Đại diện) liên danh <span className="text-danger">*</span>
+                    {t('org.form.jvLeadUnit')} <span className="text-danger">*</span>
                   </label>
                   <select
                     value={form.representativeOrganizationId || ''}
@@ -398,7 +394,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                     required={isJv}
                     className={inputClass}
                   >
-                    <option value=""> Chọn đơn vị đại diện </option>
+                    <option value="">{t('org.form.selectLeadUnit')}</option>
                     {(form.jointVentureMemberIds || []).map((orgId) => {
                       const org = organizations.find((o) => o.id === orgId);
                       return (
@@ -429,6 +425,56 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
             />
           </div>
 
+          <p className="field-hint sm:col-span-2">{t('org.lookup.noContact')}</p>
+
+          {/* Organization Type — dropdown hoặc input tại chỗ */}
+          <div className="space-y-1.5">
+            <label htmlFor="create-orgType" className="field-label">
+              {t('org.type')} <span className="text-danger">*</span>
+            </label>
+            {!isOtherType ? (
+              <select
+                id="create-orgType"
+                value={form.organizationTypeId}
+                onChange={handleTypeSelect}
+                required
+                className={inputClass}
+              >
+                <option value="">{t('org.selectType')}</option>
+                {orgTypes.filter((ot) => ot.isActive).map((ot) => (
+                  <option key={ot.id} value={ot.id}>{ot.name}</option>
+                ))}
+                {onCreateOrgType && (
+                  <option value={OTHER_VALUE}>{t('org.typeOther')}</option>
+                )}
+              </select>
+            ) : (
+              <div className="relative">
+                <input
+                  id="create-orgType"
+                  value={customTypeName}
+                  onChange={(e) => setCustomTypeName(e.target.value)}
+                  placeholder={t('org.typeOtherPlaceholder')}
+                  required
+                  maxLength={200}
+                  autoFocus
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={handleBackToSelect}
+                  title={t('org.form.backToList')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Phone */}
           <div className="space-y-1.5">
             <label htmlFor="create-phone" className="field-label">
@@ -443,7 +489,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
               placeholder={t('org.phonePlaceholder')}
               maxLength={11}
               pattern="^\d{10,11}$"
-              title="Số điện thoại phải bao gồm từ 10 đến 11 chữ số"
+              title={t('org.form.phoneHint')}
               className={inputClass}
             />
           </div>
@@ -471,8 +517,8 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
         <div className="space-y-4">
            <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-text text-base">Chọn thành viên</h3>
-                <p className="text-sm text-text-muted mt-0.5">Thêm thành viên vào doanh nghiệp để cùng quản lý dự án.</p>
+                <h3 className="heading-card text-text">{t('org.team.title')}</h3>
+                <p className="field-hint mt-0.5">{t('org.team.desc')}</p>
               </div>
            </div>
 
@@ -482,7 +528,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                type="text"
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder="Tìm theo tên hoặc email..."
+               placeholder={t('org.team.search')}
                className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
              />
            </div>
@@ -491,7 +537,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
               <div className="max-h-[300px] overflow-y-auto">
                  {filteredAccounts.length === 0 ? (
                     <div className="p-8 text-center text-sm text-text-muted">
-                      Không tìm thấy thành viên nào.
+                      {t('org.team.empty')}
                     </div>
                  ) : (
                     <div className="divide-y divide-card-border">
@@ -522,13 +568,20 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
            </div>
            
            <div className="pt-2 text-sm text-text-muted font-medium">
-             Đã chọn: <span className="text-primary font-bold">{selectedAccountIds.length}</span> thành viên
+             {t('org.team.selected')}: <span className="font-bold text-primary">{selectedAccountIds.length}</span> {t('org.team.selectedUnit')}
            </div>
         </div>
       )}
+      </div>
+
+      {submitError && (
+        <p className="shrink-0 border-t border-danger/30 bg-danger-light px-8 py-3 text-sm font-medium text-danger">
+          {submitError}
+        </p>
+      )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between gap-3 border-t border-card-border pt-5">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-card-border bg-card px-8 py-5">
         <div>
            {step === 2 && !isJv && (
              <button
@@ -536,7 +589,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                 onClick={() => setStep(1)}
                 className="btn-modal-ghost"
              >
-                Quay lại
+                {t('org.form.back')}
              </button>
            )}
         </div>
@@ -551,15 +604,18 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
           
           {step === 1 && !isJv ? (
              <button
+                key="next"
                 type="button"
                 onClick={handleNext}
-                className="flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-primary-deep"
+                className="btn-modal-primary flex items-center gap-2"
               >
-                Tiếp tục
+                {t('org.form.next')}
              </button>
           ) : (
             <button
-              type="submit"
+              key="submit"
+              type="button"
+              onClick={() => { if (!submitting) void submitForm(); }}
               disabled={submitting}
               className="btn-modal-primary flex items-center gap-2"
             >
@@ -572,7 +628,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                   {t('account.save')}
                 </span>
               ) : (
-                'Hoàn tất'
+                t('org.form.finish')
               )}
             </button>
           )}

@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { organizationApi } from '@/entities/organization';
 import { accountApi } from '@/entities/account';
-import type { Organization, OrganizationProject, UpdateOrganizationPayload } from '@/entities/organization';
-import type { ProjectStatus } from '@/entities/project';
+import type { Organization, UpdateOrganizationPayload } from '@/entities/organization';
+import { projectApi } from '@/entities/project';
+import type { Project } from '@/entities/project';
 import type { Account } from '@/entities/account';
 
 import { statusMeta as accountStatusMeta } from '@/features/accounts';
 import { useOrganizationTypes, useOrganizations, UpdateOrganizationForm } from '@/features/organizations';
-import { statusMeta as projectStatusMeta } from '@/features/projects';
+import { ProjectCard } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
 import { ConfirmDialog, Modal, PaginationBar, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
@@ -27,7 +28,7 @@ export function OrganizationDetailsPage() {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [availableAccounts, setAvailableAccounts] = useState<Account[]>([]);
-  const [participatingProjects, setParticipatingProjects] = useState<OrganizationProject[]>([]);
+  const [participatingProjects, setParticipatingProjects] = useState<Project[]>([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [addingMember, setAddingMember] = useState(false);
   const [removeMemberId, setRemoveMemberId] = useState<string | null>(null);
@@ -41,13 +42,13 @@ export function OrganizationDetailsPage() {
     if (accRes.data.isSuccess && accRes.data.result) {
       const allAccs = accRes.data.result;
       setMembers(allAccs.filter((acc: Account) => acc.organizationId === id));
-      setAvailableAccounts(allAccs.filter((acc: Account) => !acc.organizationId || acc.organizationId !== id));
+      setAvailableAccounts(allAccs.filter((acc: Account) => !acc.organizationId));
     }
   }, [id]);
 
   const fetchParticipatingProjects = useCallback(async () => {
     if (!id) return;
-    const projRes = await organizationApi.getProjects(id);
+    const projRes = await projectApi.getByOrganization(id);
     if (projRes.data.isSuccess && projRes.data.result) {
       setParticipatingProjects(projRes.data.result);
     }
@@ -225,56 +226,51 @@ export function OrganizationDetailsPage() {
       </div>
 
       {/* ── Tab Content ────────────────────────────── */}
-      <div className="pt-2">
+      <div className="admin-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pt-2">
         {activeTab === 'general' && <GeneralTab organization={organization} orgTypeName={orgTypeName} />}
         {activeTab === 'members' && <MembersTab members={members} onOpenAddMember={() => setIsAddMemberModalOpen(true)} onRemoveMember={setRemoveMemberId} />}
         {activeTab === 'projects' && <ProjectsTab projects={orgProjects} organization={organization} members={members} />}
       </div>
 
       {isAddMemberModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[var(--radius-card-lg)] bg-card p-6 shadow-modal">
-            <h2 className="heading-entity mb-4">{t('orgDetail.invite.title')}</h2>
-            <div className="mb-6 max-h-60 overflow-y-auto rounded-[var(--radius-card)] border border-card-border p-2">
-              {availableAccounts.length === 0 ? (
-                <p className="p-4 text-center text-sm text-text-muted">{t('orgDetail.invite.empty')}</p>
-              ) : (
-                availableAccounts.map(acc => (
-                  <label key={acc.id} className="flex cursor-pointer items-center gap-3 p-3 hover:bg-input-bg rounded-lg transition">
-                    <input
-                      type="checkbox"
-                      checked={selectedAccountIds.includes(acc.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedAccountIds([...selectedAccountIds, acc.id]);
-                        else setSelectedAccountIds(selectedAccountIds.filter(id => id !== acc.id));
-                      }}
-                      className="h-4 w-4 rounded border-card-border text-primary focus:ring-primary"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-text">{acc.userName}</p>
-                      <p className="text-xs text-text-muted">{acc.email}</p>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsAddMemberModalOpen(false)}
-                className="btn-modal-ghost"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleAddMembers}
-                disabled={addingMember || selectedAccountIds.length === 0}
-                className="flex items-center gap-2 btn-modal-primary disabled:opacity-50"
-              >
-                {addingMember ? t('orgDetail.invite.saving') : t('orgDetail.invite.submit')}
-              </button>
-            </div>
+        <Modal title={t('orgDetail.invite.title')} onClose={() => setIsAddMemberModalOpen(false)} maxWidth="max-w-lg">
+          <p className="field-hint mb-4">{t('orgDetail.invite.desc')}</p>
+          <div className="mb-6 max-h-60 overflow-y-auto rounded-[var(--radius-card)] border border-card-border p-2">
+            {availableAccounts.length === 0 ? (
+              <p className="modal-text p-4 text-center text-text-muted">{t('orgDetail.invite.empty')}</p>
+            ) : (
+              availableAccounts.map(acc => (
+                <label key={acc.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition hover:bg-input-bg">
+                  <input
+                    type="checkbox"
+                    checked={selectedAccountIds.includes(acc.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedAccountIds([...selectedAccountIds, acc.id]);
+                      else setSelectedAccountIds(selectedAccountIds.filter(id => id !== acc.id));
+                    }}
+                    className="h-4 w-4 rounded border-card-border text-primary focus:ring-primary"
+                  />
+                  <div className="flex-1">
+                    <p className="modal-text font-medium text-text">{acc.userName}</p>
+                    <p className="field-hint">{acc.email}</p>
+                  </div>
+                </label>
+              ))
+            )}
           </div>
-        </div>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setIsAddMemberModalOpen(false)} className="btn-modal-ghost">
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={handleAddMembers}
+              disabled={addingMember || selectedAccountIds.length === 0}
+              className="btn-modal-primary"
+            >
+              {addingMember ? t('orgDetail.invite.saving') : t('orgDetail.invite.submit')}
+            </button>
+          </div>
+        </Modal>
       )}
 
       {isEditModalOpen && (
@@ -310,7 +306,7 @@ export function OrganizationDetailsPage() {
 function GeneralTab({ organization, orgTypeName }: { organization: Organization, orgTypeName: string }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Card 1 */}
         <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-sm">
           <div className="flex items-center gap-2 text-primary font-bold text-base mb-6">
@@ -331,22 +327,6 @@ function GeneralTab({ organization, orgTypeName }: { organization: Organization,
               <p className="mt-1 text-sm text-text font-medium">{orgTypeName}</p>
             </div>
           </div>
-        </div>
-
-        {/* Card 2 */}
-        <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-sm flex flex-col items-center text-center">
-          <div className="flex items-center gap-2 text-primary font-bold text-base mb-6 w-full justify-start">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            {t('orgDetail.representative.title')}
-          </div>
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-card-border text-text-muted mb-4">
-             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <p className="font-display text-base font-bold text-primary uppercase">{t('orgDetail.representative.empty')}</p>
-          <p className="text-sm text-text-muted mt-1 mb-4">{t('orgDetail.representative.caption')}</p>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-light/30 px-3 py-1.5 text-xs font-medium text-success">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
         </div>
 
         {/* Card 3 */}
@@ -436,12 +416,13 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
       <div className="overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-sm pb-2">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-card-border bg-input-bg">
-                <th className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider text-text-placeholder">{t('orgDetail.members.colMember')}</th>
-                <th className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider text-text-placeholder">{t('orgDetail.members.colProjects')}</th>
-                <th className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider text-text-placeholder">{t('orgDetail.members.colActivity')}</th>
-                <th className="px-6 py-5 text-center text-xs font-bold uppercase tracking-wider text-text-placeholder">{t('common.col.actions')}</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="table-head bg-content-bg">
+                <th className="px-6 py-3.5">{t('orgDetail.members.colMember')}</th>
+                <th className="px-6 py-3.5">{t('orgDetail.members.colProjects')}</th>
+                <th className="px-6 py-3.5">{t('account.status')}</th>
+                <th className="px-6 py-3.5">{t('orgDetail.members.colActivity')}</th>
+                <th className="px-6 py-3.5 text-right">{t('common.col.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-card-border">
@@ -483,7 +464,7 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
                     <td className="px-6 py-4 text-text-muted">
                       {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString('vi-VN') : t('orgDetail.members.recently')}
                     </td>
-                    <td className="px-6 py-4 text-center text-text-placeholder">
+                    <td className="px-6 py-4 text-right text-text-placeholder">
                       <button onClick={() => onRemoveMember(m.id)} className="hover:text-danger p-1" title={t('orgDetail.members.remove')}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       </button>
@@ -508,7 +489,7 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
   );
 }
 
-function ProjectsTab({ projects, organization, members }: { projects: OrganizationProject[], organization: Organization | null, members: Account[] }) {
+function ProjectsTab({ projects, organization, members }: { projects: Project[], organization: Organization | null, members: Account[] }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -546,67 +527,33 @@ function ProjectsTab({ projects, organization, members }: { projects: Organizati
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.length === 0 ? (
-           <div className="col-span-full py-8 text-center text-text-muted">
-             {searchQuery ? t('orgDetail.projects.noResults') : t('orgDetail.projects.empty')}
-           </div>
-        ) : (
-          paginatedList.map((p, i) => {
+      {filtered.length === 0 ? (
+        <div className="flex min-h-[240px] items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card">
+          <p className="text-sm text-text-muted">
+            {searchQuery ? t('orgDetail.projects.noResults') : t('orgDetail.projects.empty')}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {paginatedList.map((p) => {
             let roleText = t('orgDetail.projects.rolePartner');
             if (organization && p.ownerOrganizationId === organization.id) {
               roleText = t('orgDetail.projects.roleOwner');
-            } else if (members.some(m => m.id === p.managerAccountId)) {
+            } else if (members.some((m) => m.id === p.managerAccountId)) {
               roleText = t('orgDetail.projects.roleManager');
             }
 
             return (
-              <div key={i} className="group flex flex-col overflow-hidden rounded-[20px] border border-card-border bg-card shadow-sm transition-all hover:shadow-md">
-                {/* Image & Status Badge */}
-                <div className="relative h-40 w-full bg-card-border overflow-hidden">
-                  {p.projectImageUrl ? (
-                    <img src={p.projectImageUrl} alt={p.projectName} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-card-border to-border-sage"></div>
-                  )}
-                  <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-primary/90 backdrop-blur-md px-3 py-1.5">
-                    <span className={`h-1.5 w-1.5 rounded-full ${projectStatusMeta(p.status as ProjectStatus).dotClass}`}></span>
-                    <span className="text-2xs font-bold uppercase tracking-wider text-white">
-                      {projectStatusMeta(p.status as ProjectStatus).label}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card Body */}
-                <div className="flex flex-1 flex-col p-5">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <h4 className="font-bold text-text text-base leading-tight line-clamp-2 font-serif">{p.projectName}</h4>
-                    {p.projectCode && (
-                      <span className="shrink-0 rounded-full bg-content-bg px-3 py-1 text-xs font-medium text-primary">
-                        {p.projectCode}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mb-6 space-y-2.5 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-placeholder">{t('orgDetail.projects.roleLabel')}</span>
-                      <span className="font-medium text-text">{roleText}</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => navigate(`/projects/${p.id}`)}
-                    className="mt-auto w-full rounded-[14px] border border-card-border bg-transparent py-2.5 text-sm font-medium text-text transition hover:bg-content-bg"
-                  >
-                    {t('orgDetail.projects.view')}
-                  </button>
-                </div>
-              </div>
+              <ProjectCard
+                key={p.id}
+                project={p}
+                onOpen={(id) => navigate(`/projects/${id}`)}
+                meta={{ label: t('orgDetail.projects.roleLabel'), value: roleText }}
+              />
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       <PaginationBar
           page={currentPage}

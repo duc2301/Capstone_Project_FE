@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import type { Organization, UpdateOrganizationPayload } from '@/entities/organization';
+import { lookupTaxCode, TAX_CODE_MAX_LENGTH, TAX_CODE_MIN_LENGTH } from '@/entities/organization';
 import type { OrganizationType, CreateOrganizationTypePayload } from '@/entities/organization-type';
 import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
@@ -21,6 +22,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
     taxCode: organization.taxCode,
     legalName: organization.legalName,
     displayName: organization.displayName ?? '',
+    internationalName: organization.internationalName ?? '',
     organizationTypeId: organization.organizationTypeId,
     address: organization.address ?? '',
     phone: organization.phone ?? '',
@@ -35,30 +37,30 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
   const [isOtherType, setIsOtherType] = useState(false);
   const [customTypeName, setCustomTypeName] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   const handleLookup = async () => {
-    if (!form.taxCode || form.taxCode.length < 10) return;
+    setLookupError(null);
     setLookingUp(true);
-    try {
-      const response = await fetch(`https://api.vietqr.io/v2/business/${form.taxCode}`);
-      const result = await response.json();
-      if (result.code === '00' && result.data) {
-        setForm((prev) => ({
-          ...prev,
-          legalName: result.data.name || prev.legalName,
-          displayName: result.data.shortName || result.data.name || prev.displayName,
-          address: result.data.address || prev.address,
-          phone: result.data.phone || prev.phone,
-          email: result.data.email || prev.email,
-        }));
-      } else {
-        alert('Không tìm thấy doanh nghiệp với mã số thuế này.');
-      }
-    } catch {
-      alert('Không thể kết nối dịch vụ tra cứu MST. Bạn có thể nhập thủ công.');
-    } finally {
-      setLookingUp(false);
+    const outcome = await lookupTaxCode(form.taxCode ?? '');
+    setLookingUp(false);
+
+    if (outcome.status === 'notFound') {
+      setLookupError(t('org.lookup.notFound'));
+      return;
     }
+    if (outcome.status === 'unavailable') {
+      setLookupError(t('org.lookup.serviceError'));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      legalName: outcome.data.legalName || prev.legalName,
+      displayName: outcome.data.shortName || outcome.data.legalName || prev.displayName,
+      internationalName: outcome.data.internationalName || prev.internationalName,
+      address: outcome.data.address || prev.address,
+    }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -103,7 +105,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
         const code = customTypeName.trim().replace(/\s+/g, '');
         const created = await onCreateOrgType({ code, name: customTypeName.trim() });
         if (!created) {
-          setSubmitError(t('org.createTypeError'));
+          setSubmitError(t('org.orgType.createError'));
           return;
         }
         finalPayload = { ...finalPayload, organizationTypeId: created.id };
@@ -111,7 +113,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
       await onSubmit(organization.id, finalPayload, undefined, undefined);
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, t('org.saveError')));
+      setSubmitError(getApiErrorMessage(error, t('org.save.error')));
     } finally {
       setSubmitting(false);
     }
@@ -141,27 +143,28 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                   value={form.taxCode ?? ''}
                   onChange={handleChange}
                   placeholder={t('org.taxCodePlaceholder')}
-                  maxLength={13}
+                  maxLength={TAX_CODE_MAX_LENGTH}
                   pattern="^\d{10,13}$"
-                  title="Mã số thuế phải bao gồm từ 10 đến 13 chữ số"
+                  title={t('org.form.taxCodeHint')}
                   className={inputClass}
                 />
                 <button
                   type="button"
                   onClick={handleLookup}
-                  disabled={lookingUp || !form.taxCode || form.taxCode.length < 10}
+                  disabled={lookingUp || !form.taxCode || form.taxCode.length < TAX_CODE_MIN_LENGTH}
                   className="shrink-0 rounded-[var(--radius-button)] border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
                 >
-                  {lookingUp ? 'Đang tìm...' : 'Tra cứu'}
+                  {lookingUp ? t('org.form.lookingUp') : t('org.form.lookup')}
                 </button>
               </div>
+              {lookupError && <span className="field-hint text-danger">{lookupError}</span>}
             </div>
           )}
 
           {/* Legal Name */}
           <div className="space-y-1.5">
             <label htmlFor="edit-legalName" className="field-label">
-              {organization.isJointVenture ? 'Tên liên danh' : t('org.legalName')}
+              {organization.isJointVenture ? t('org.jvLegalName') : t('org.legalName')}
             </label>
             <input
               id="edit-legalName"
@@ -190,61 +193,29 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
             />
           </div>
 
-          {/* Organization Type — dropdown hoặc input tại chỗ */}
-          <div className={`space-y-1.5 ${organization.isJointVenture ? 'sm:col-span-2' : ''}`}>
-            <label htmlFor="edit-orgType" className="field-label">
-              {t('org.type')}
+          <div className="space-y-1.5">
+            <label htmlFor="edit-internationalName" className="field-label">
+              {t('org.internationalName')}
             </label>
-            {!isOtherType ? (
-              <select
-                id="edit-orgType"
-                value={form.organizationTypeId ?? ''}
-                onChange={handleTypeSelect}
-                className={inputClass}
-              >
-                <option value="">{t('org.selectType')}</option>
-                {orgTypes.filter((ot) => ot.isActive).map((ot) => (
-                  <option key={ot.id} value={ot.id}>{ot.name}</option>
-                ))}
-                {onCreateOrgType && (
-                  <option value={OTHER_VALUE}>{t('org.typeOther')}</option>
-                )}
-              </select>
-            ) : (
-              <div className="relative">
-                <input
-                  id="edit-orgType"
-                  value={customTypeName}
-                  onChange={(e) => setCustomTypeName(e.target.value)}
-                  placeholder={t('org.typeOtherPlaceholder')}
-                  required
-                  maxLength={200}
-                  autoFocus
-                  className={inputClass}
-                />
-                <button
-                  type="button"
-                  onClick={handleBackToSelect}
-                  title="Quay lại chọn từ danh sách"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            )}
+            <input
+              id="edit-internationalName"
+              name="internationalName"
+              value={form.internationalName ?? ''}
+              onChange={handleChange}
+              placeholder={t('org.internationalNamePlaceholder')}
+              maxLength={300}
+              className={inputClass}
+            />
           </div>
 
           {/* --- Joint Venture Fields --- */}
           {organization.isJointVenture && (
             <div className="sm:col-span-2 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-5 space-y-4 mt-2">
-              <h3 className="text-sm font-bold text-primary">Cấu trúc Liên danh</h3>
+              <h3 className="heading-label text-primary">{t('org.form.jvStructure')}</h3>
               <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
                 <div className="space-y-2">
                   <label className="field-label">
-                    Thành viên liên danh <span className="text-danger">*</span>
+                    {t('org.form.jvMembers')} <span className="text-danger">*</span>
                   </label>
                   <div className="space-y-3 relative">
                     <select
@@ -262,7 +233,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                       }}
                       className={inputClass}
                     >
-                      <option value="">+ Thêm đối tác vào liên danh...</option>
+                      <option value="">{t('org.form.addJvPartner')}</option>
                       {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
                         <option key={org.id} value={org.id}>
                           {org.displayName || org.legalName}
@@ -304,7 +275,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
                 <div className="space-y-2">
                   <label className="field-label">
-                    Đơn vị đứng đầu (Đại diện) liên danh <span className="text-danger">*</span>
+                    {t('org.form.jvLeadUnit')} <span className="text-danger">*</span>
                   </label>
                   <select
                     value={form.representativeOrganizationId || ''}
@@ -312,7 +283,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                     required={organization.isJointVenture}
                     className={inputClass}
                   >
-                    <option value="">— Chọn đơn vị đại diện —</option>
+                    <option value="">{t('org.form.selectLeadUnit')}</option>
                     {(form.jointVentureMemberIds || []).map((orgId) => {
                       const org = organizations.find((o) => o.id === orgId);
                       return (
@@ -343,6 +314,55 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
             />
           </div>
 
+          <p className="field-hint sm:col-span-2">{t('org.lookup.noContact')}</p>
+
+          {/* Organization Type — dropdown hoặc input tại chỗ */}
+          <div className={`space-y-1.5 ${organization.isJointVenture ? 'sm:col-span-2' : ''}`}>
+            <label htmlFor="edit-orgType" className="field-label">
+              {t('org.type')}
+            </label>
+            {!isOtherType ? (
+              <select
+                id="edit-orgType"
+                value={form.organizationTypeId ?? ''}
+                onChange={handleTypeSelect}
+                className={inputClass}
+              >
+                <option value="">{t('org.selectType')}</option>
+                {orgTypes.filter((ot) => ot.isActive).map((ot) => (
+                  <option key={ot.id} value={ot.id}>{ot.name}</option>
+                ))}
+                {onCreateOrgType && (
+                  <option value={OTHER_VALUE}>{t('org.typeOther')}</option>
+                )}
+              </select>
+            ) : (
+              <div className="relative">
+                <input
+                  id="edit-orgType"
+                  value={customTypeName}
+                  onChange={(e) => setCustomTypeName(e.target.value)}
+                  placeholder={t('org.typeOtherPlaceholder')}
+                  required
+                  maxLength={200}
+                  autoFocus
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={handleBackToSelect}
+                  title={t('org.form.backToList')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Phone */}
           <div className="space-y-1.5">
             <label htmlFor="edit-phone" className="field-label">
@@ -357,7 +377,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
               placeholder={t('org.phonePlaceholder')}
               maxLength={11}
               pattern="^\d{10,11}$"
-              title="Số điện thoại phải bao gồm từ 10 đến 11 chữ số"
+              title={t('org.form.phoneHint')}
               className={inputClass}
             />
           </div>
@@ -403,7 +423,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                   {t('account.save')}
                 </span>
               ) : (
-                'Hoàn tất'
+                t('org.form.finish')
               )}
             </button>
       </div>

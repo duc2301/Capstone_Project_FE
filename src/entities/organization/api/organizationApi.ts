@@ -3,7 +3,6 @@ import { axiosInstance } from '@/shared/api';
 import type {
   CreateOrganizationPayload,
   Organization,
-  OrganizationProject,
   UpdateOrganizationPayload,
 } from '../model/organization.types';
 
@@ -22,7 +21,4 @@ export const organizationApi = {
 
   remove: (id: string) =>
     axiosInstance.delete<ApiResponse<null>>(`/organizations/${id}`),
-
-  getProjects: (id: string) =>
-    axiosInstance.get<ApiResponse<OrganizationProject[]>>(`/organizations/${id}/projects`),
 };

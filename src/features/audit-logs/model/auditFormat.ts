@@ -35,6 +35,16 @@ export function actionBadge(action: number) {
     : { label: String(action), className: 'bg-content-bg text-text-muted' };
 }
 
+export function detailTone(action: number): 'danger' | 'warning' | 'normal' {
+  if (
+    action === AuditAction.Delete
+    || action === AuditAction.Reject
+    || action === AuditAction.RejectInvite
+  ) return 'danger';
+  if (action === AuditAction.PermissionChange) return 'warning';
+  return 'normal';
+}
+
 const SCOPE_META: Record<number, { key: TranslationKey; className: string }> = {
   [LogScope.System]: { key: 'audit.scope.system', className: 'bg-danger-light text-danger' },
   [LogScope.Project]: { key: 'audit.scope.project', className: 'bg-primary-ghost text-primary' },

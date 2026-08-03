@@ -2,13 +2,13 @@ import { useCallback } from 'react';
 
 import type { NotificationItem } from '@/entities/notification';
 import { useNotifications } from '@/entities/notification';
+import { PaginationBar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { useInvitationActions } from '../model/useInvitationActions';
-import { useNotificationFeed } from '../model/useNotificationFeed';
+import { NOTIFICATION_PAGE_SIZE, useNotificationFeed } from '../model/useNotificationFeed';
 import { usePendingInvitations } from '../model/usePendingInvitations';
 import { NotificationFeedCard } from './NotificationFeedCard';
 import { NotificationFeedToolbar } from './NotificationFeedToolbar';
-import { NotificationPagination } from './NotificationPagination';
 
 const INVITATION_LINK_TYPE = 'ProjectInvitation';
 
@@ -74,9 +74,13 @@ export function NotificationFeed() {
               />
             ))}
 
-            <NotificationPagination
+            <PaginationBar
               page={feed.page}
               pageCount={feed.pageCount}
+              pageSize={NOTIFICATION_PAGE_SIZE}
+              total={feed.totalFiltered}
+              unit={t('notification.pagination.unit')}
+              variant="inline"
               onChange={feed.setPage}
             />
           </>

@@ -1,18 +1,25 @@
 import type { AuditLogItem } from '@/entities/audit-log';
 import { t } from '@/shared/lib/i18n';
-import { actionBadge, formatLogClock, formatLogDate, moduleLabel } from '../model/auditFormat';
+import { actionBadge, detailTone, formatLogClock, formatLogDate, moduleLabel } from '../model/auditFormat';
+
+const DETAIL_TONE_CLASS = {
+  danger: 'font-semibold text-danger',
+  warning: 'font-semibold text-warning',
+  normal: 'font-medium text-text',
+} as const;
 
 interface Props {
   items: AuditLogItem[];
   loading: boolean;
 }
 
-const thClass = 'px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-text-muted';
+const thClass = 'px-5 py-3.5';
+const firstThClass = 'px-6 py-3.5';
 
 export function AuditLogTable({ items, loading }: Props) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center rounded-2xl border border-card-border bg-card py-16">
+      <div className="flex min-h-0 flex-1 items-center justify-center py-20">
         <svg className="h-6 w-6 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z" />
@@ -23,18 +30,18 @@ export function AuditLogTable({ items, loading }: Props) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-card-border bg-card py-16 text-center">
+      <div className="min-h-0 flex-1 py-20 text-center">
         <p className="text-sm text-text-muted">{t('audit.empty')}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-card-border bg-card shadow-card">
-      <table className="w-full min-w-[820px] border-collapse">
-        <thead>
-          <tr className="border-b border-card-border">
-            <th className={thClass}>{t('audit.col.time')}</th>
+    <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
+      <table className="w-full min-w-[820px] text-sm">
+        <thead className="sticky top-0 z-10">
+          <tr className="table-head bg-content-bg">
+            <th className={firstThClass}>{t('audit.col.time')}</th>
             <th className={thClass}>{t('audit.col.user')}</th>
             <th className={thClass}>{t('audit.col.action')}</th>
             <th className={thClass}>{t('audit.col.module')}</th>
@@ -42,14 +49,13 @@ export function AuditLogTable({ items, loading }: Props) {
           </tr>
         </thead>
         <tbody>
-          {items.map((log, idx) => {
+          {items.map((log) => {
             const action = actionBadge(log.action);
             const initial = (log.actorName ?? '?').charAt(0).toUpperCase();
-            const isFirst = idx === 0;
             return (
               <tr key={log.id} className="border-b border-card-border last:border-b-0 transition-colors hover:bg-content-bg">
                 {/* Thời gian: ngày trên, giờ UTC dưới */}
-                <td className="whitespace-nowrap px-5 py-4 align-top">
+                <td className="whitespace-nowrap px-6 py-4 align-top">
                   <p className="text-sm font-semibold text-text">{formatLogDate(log.createdAt)}</p>
                   <p className="mt-0.5 text-xs text-text-muted">{formatLogClock(log.createdAt)}</p>
                 </td>
@@ -79,7 +85,7 @@ export function AuditLogTable({ items, loading }: Props) {
 
                 {/* Chi tiết: dòng chính + phụ */}
                 <td className="px-5 py-4">
-                  <p className={`text-sm ${isFirst ? 'font-semibold text-warning' : 'font-medium text-text'}`}>
+                  <p className={`text-sm ${DETAIL_TONE_CLASS[detailTone(log.action)]}`}>
                     {log.detail ?? `${log.entityType} · ${log.entityId}`}
                   </p>
                   {log.detail && log.entityType && (

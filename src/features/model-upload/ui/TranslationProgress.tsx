@@ -10,7 +10,7 @@ interface Props {
 function Spinner() {
   return (
     <svg
-      className="h-6 w-6 animate-spin text-[#406623]"
+      className="h-6 w-6 animate-spin text-primary"
       viewBox="0 0 24 24"
       fill="none"
     >
@@ -41,32 +41,32 @@ export function TranslationProgress({
   const percent = isUploading ? uploadProgress : null;
 
   return (
-    <div className="flex w-full max-w-xl flex-col items-center gap-5 rounded-3xl border border-[#E8E6E0] bg-white px-8 py-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+    <div className="flex w-full max-w-xl flex-col items-center gap-5 rounded-3xl border border-card-border bg-white px-8 py-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <Spinner />
 
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-xl font-semibold text-[#1B1C17]">
+        <h2 className="heading-tab">
           {isUploading
             ? t('viewer.upload.uploading')
             : t('viewer.upload.translating')}
         </h2>
         {fileName && (
-          <p className="max-w-md truncate font-jakarta text-sm text-[#43493C]">
+          <p className="max-w-md truncate text-sm text-text-secondary">
             {fileName}
           </p>
         )}
       </div>
 
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[#EAE8E0]">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-card-border">
         <div
-          className={`h-full rounded-full bg-[#406623] transition-all duration-300 ${
+          className={`h-full rounded-full bg-primary transition-all duration-300 ${
             percent === null ? 'w-1/3 animate-pulse' : ''
           }`}
           style={percent === null ? undefined : { width: `${percent}%` }}
         />
       </div>
 
-      <p className="font-jakarta text-xs text-[#43493C]/70">
+      <p className="text-xs text-text-secondary/70">
         {isUploading
           ? `${uploadProgress}%`
           : translateProgress || t('viewer.upload.translatingHint')}

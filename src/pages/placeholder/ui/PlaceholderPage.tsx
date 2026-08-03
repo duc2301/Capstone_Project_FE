@@ -9,7 +9,7 @@ interface PlaceholderPageProps {
 export function PlaceholderPage({ titleKey, descKey }: PlaceholderPageProps) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-light text-primary">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[var(--radius-card)] bg-primary-light text-primary">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2L2 7l10 5 10-5-10-5z" />
           <path d="M2 17l10 5 10-5" />

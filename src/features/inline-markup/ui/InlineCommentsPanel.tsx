@@ -28,7 +28,7 @@ export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-heading text-lg font-bold text-text">{t('markup.inline.title')}</h2>
+        <h2 className="heading-entity">{t('markup.inline.title')}</h2>
         <span className="rounded-full bg-content-bg px-2.5 py-0.5 text-xs font-semibold text-text-secondary">
           {t('markup.panel.openCount')}: {openCount}/{c.notes.length}
         </span>
@@ -97,22 +97,22 @@ function NoteRow({
     <li className={`overflow-hidden rounded-xl border transition-colors ${selected ? 'border-primary ring-1 ring-primary/40' : 'border-card-border'}`}>
       <button type="button" onClick={onJump} title={t('markup.inline.jumpHint')} className="block w-full px-3 py-2 text-left">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-semibold text-text-secondary">{t(typeLabelKey(note.markupType))}</span>
-          <span className="rounded-full bg-content-bg px-2 py-0.5 text-[10px] font-semibold text-text-muted">
+          <span className="text-xs font-semibold text-text-secondary">{t(typeLabelKey(note.markupType))}</span>
+          <span className="rounded-full bg-content-bg px-2 py-0.5 text-2xs font-semibold text-text-muted">
             {note.pageNumber ? `${t('markup.inline.page')} ${note.pageNumber}` : t('markup.inline.imageLabel')}
           </span>
         </div>
         {note.content ? <p className="break-words text-sm text-text">{note.content}</p> : null}
-        <p className="mt-1 text-[11px] text-text-muted">{note.authorName ?? '-'}</p>
+        <p className="mt-1 text-xs text-text-muted">{note.authorName ?? '-'}</p>
       </button>
       <div className="flex items-center gap-2 border-t border-card-border/60 px-3 py-1.5">
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${resolved ? 'bg-success-light text-success' : 'bg-warning-light text-warning'}`}>
+        <span className={`rounded-full px-2 py-0.5 text-2xs font-bold ${resolved ? 'bg-success-light text-success' : 'bg-warning-light text-warning'}`}>
           {resolved ? t('markup.status.resolved') : t('markup.status.open')}
         </span>
-        <button type="button" onClick={onResolve} className="ml-auto rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-text-secondary hover:bg-content-bg hover:text-text">
+        <button type="button" onClick={onResolve} className="ml-auto rounded-[var(--radius-button)] px-1.5 py-0.5 text-xs font-semibold text-text-secondary hover:bg-content-bg hover:text-text">
           {resolved ? t('markup.action.reopen') : t('markup.action.markDone')}
         </button>
-        <button type="button" onClick={onDelete} className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-danger hover:bg-danger-light">
+        <button type="button" onClick={onDelete} className="rounded-[var(--radius-button)] px-1.5 py-0.5 text-xs font-semibold text-danger hover:bg-danger-light">
           {t('markup.action.delete')}
         </button>
       </div>

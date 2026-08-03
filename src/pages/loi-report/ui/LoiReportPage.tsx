@@ -19,7 +19,7 @@ function formatDateTime(iso: string | null): string {
 
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-4 border-b border-card-border/60 px-4 py-2.5 last:border-0">
+    <div className="flex gap-4 border-b border-card-border px-5 py-3 last:border-0">
       <span className="w-44 shrink-0 text-sm font-semibold text-text">{label}</span>
       <span className="min-w-0 flex-1 break-words text-sm text-text-secondary">{value}</span>
     </div>
@@ -64,7 +64,7 @@ function useFileName(fileItemId: string | undefined): string | null {
 
 function MetaTable({ result, fileName }: { result: LoiCheckResult; fileName: string | null }) {
   return (
-    <div className="rounded-2xl border border-card-border bg-white/60">
+    <div className="rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
       {fileName && <MetaRow label={t('loi.report.fileName')} value={fileName} />}
       <MetaRow label={t('loi.checkedAt')} value={formatDateTime(result.checkedAt)} />
       <MetaRow label={t('loi.schema')} value={result.schemaName ?? '-'} />
@@ -78,15 +78,15 @@ function MetaTable({ result, fileName }: { result: LoiCheckResult; fileName: str
 
 function NotReady({ result }: { result: LoiCheckResult | null }) {
   if (result === null || result.status === LoiCheckStatus.None) {
-    return <p className="mt-8 text-sm text-text-muted">{t('loi.report.notReady')}</p>;
+    return <p className="text-sm text-text-muted">{t('loi.report.notReady')}</p>;
   }
 
   if (result.status === LoiCheckStatus.Pending || result.status === LoiCheckStatus.Processing) {
-    return <p className="mt-8 text-sm text-text-muted">{t('loi.running.desc')}</p>;
+    return <p className="text-sm text-text-muted">{t('loi.running.desc')}</p>;
   }
 
   return (
-    <div className="mt-8">
+    <div>
       <p className="text-sm font-semibold text-danger">{t('loi.failed.title')}</p>
       {result.error && <p className="mt-1 break-words text-xs text-text-muted">{result.error}</p>}
     </div>
@@ -102,21 +102,24 @@ export function LoiReportPage() {
   const ready = result !== null && result.status === LoiCheckStatus.Done;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
-      <Link to={backHref} className="text-sm font-semibold text-primary hover:underline">
-        {t('loi.report.back')}
-      </Link>
+    <div className="space-y-6 pb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="heading-page">{t('loi.report.title')}</h1>
+        <Link
+          to={backHref}
+          className="whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
+        >
+          {t('loi.report.back')}
+        </Link>
+      </div>
 
-      <h1 className="mt-3 font-heading text-2xl font-bold text-text">{t('loi.report.title')}</h1>
-      <p className="mt-1 text-sm text-text-muted">{t('loi.subtitle')}</p>
-
-      {loading && <p className="mt-8 text-sm text-text-muted">{t('loi.loading')}</p>}
-      {error && <p className="mt-8 text-sm font-medium text-danger">{error}</p>}
+      {loading && <p className="text-sm text-text-muted">{t('loi.loading')}</p>}
+      {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
       {!loading && !error && !ready && <NotReady result={result} />}
 
       {ready && (
-        <div className="mt-6 space-y-8">
+        <div className="space-y-6">
           <MetaTable result={result} fileName={fileName} />
           {/* Kết quả kiểm từ TRƯỚC khi có báo cáo phân lớp thì không có dữ liệu để dựng. */}
           {result.sections.length === 0 ? (

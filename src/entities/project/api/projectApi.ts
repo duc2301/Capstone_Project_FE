@@ -22,6 +22,9 @@ export const projectApi = {
   getById: (projectId: string) =>
     axiosInstance.get<ApiResponse<Project>>(`/projects/${projectId}`),
 
+  getByOrganization: (organizationId: string) =>
+    axiosInstance.get<ApiResponse<Project[]>>(`/organizations/${organizationId}/projects`),
+
   create: (payload: CreateProjectPayload) =>
     axiosInstance.post<ApiResponse<Project>>('/projects', payload),
 

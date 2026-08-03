@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { AssignedFolder, NamingConvention, NamingField } from '@/entities/naming-convention';
 import { NAMING_DELIMITERS, namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
-import { Modal } from '@/shared/components/modal';
+import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { ApplyConventionModal } from './ApplyConventionModal';
@@ -24,11 +24,10 @@ interface ConventionDetailProps {
   showToast: (msg: string, type?: 'success' | 'error') => void;
 }
 
-const inputClass =
-  'w-full rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus';
-const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted';
+const inputClass = 'field-input';
+const labelClass = 'field-label mb-1.5';
 const cardClass = 'rounded-[24px] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
-const nameThClass = 'pb-3 pr-4 text-[11px] font-bold uppercase tracking-wider text-text-muted';
+const nameThClass = 'pb-3 pr-4 text-xs font-bold uppercase tracking-wider text-text-muted';
 
 /* ── Modal sửa tên/delimiter ───────────────────────────── */
 function EditConventionModal({
@@ -56,7 +55,7 @@ function EditConventionModal({
                 key={d}
                 type="button"
                 onClick={() => setDelimiter(d)}
-                className={`flex h-10 w-12 items-center justify-center rounded-xl border font-mono text-lg font-bold transition-colors ${
+                className={`flex h-10 w-12 items-center justify-center rounded-[var(--radius-button)] border font-mono text-lg font-bold transition-colors ${
                   delimiter === d
                     ? 'border-primary bg-primary text-white'
                     : 'border-input-border bg-input-bg text-text-secondary hover:border-primary hover:text-primary'
@@ -68,14 +67,14 @@ function EditConventionModal({
           </div>
         </div>
         <div className="flex justify-end gap-3 border-t border-card-border pt-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('naming.cancel')}
           </button>
           <button
             type="button"
             onClick={() => onSave(name.trim(), delimiter)}
             disabled={busy || !name.trim()}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-modal-primary"
           >
             {busy ? t('common.loading') : t('common.saveChanges')}
           </button>
@@ -171,13 +170,13 @@ function FieldFormModal({
                     value={row.code}
                     onChange={(e) => patchRow(i, { code: e.target.value.toUpperCase() })}
                     placeholder={t('naming.editor.valueCode')}
-                    className="w-28 shrink-0 rounded-(--radius-input) border border-input-border bg-input-bg px-2.5 py-1.5 font-mono text-sm font-semibold uppercase text-text outline-none focus:border-input-focus"
+                    className="w-28 shrink-0 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-2.5 py-1.5 font-mono text-sm font-semibold uppercase text-text outline-none focus:border-input-focus"
                   />
                   <input
                     value={row.displayName}
                     onChange={(e) => patchRow(i, { displayName: e.target.value })}
                     placeholder={t('naming.editor.valueName')}
-                    className="min-w-0 flex-1 rounded-(--radius-input) border border-input-border bg-input-bg px-2.5 py-1.5 text-sm text-text outline-none focus:border-input-focus"
+                    className="min-w-0 flex-1 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-2.5 py-1.5 text-sm text-text outline-none focus:border-input-focus"
                   />
                   {isLockedRow && (
                     <span className="shrink-0 text-warning" title={t('naming.detail.lockHint')}>
@@ -211,7 +210,7 @@ function FieldFormModal({
           <button
             type="button"
             onClick={addRow}
-            className="mt-2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost"
+            className="mt-2 flex items-center gap-1.5 rounded-[var(--radius-button)] px-2 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-ghost"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {t('naming.editor.addValue')}
@@ -221,10 +220,10 @@ function FieldFormModal({
         {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 border-t border-card-border pt-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('naming.cancel')}
           </button>
-          <button type="button" onClick={submit} disabled={busy} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={submit} disabled={busy} className="btn-modal-primary">
             {busy ? t('common.loading') : t('common.saveChanges')}
           </button>
         </div>
@@ -414,12 +413,12 @@ export function ConventionDetail({
               type="button"
               onClick={onBack}
               title={t('naming.back')}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-content-bg hover:text-primary"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-text-muted transition-colors hover:bg-content-bg hover:text-primary"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
             </button>
             <div className="min-w-0">
-              <h2 className="truncate font-display text-2xl font-semibold text-primary">{convention.name}</h2>
+              <h2 className="heading-tab truncate">{convention.name}</h2>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-content-bg px-2.5 py-0.5 font-mono text-xs font-bold text-text-secondary" title={t('naming.table.delimiter')}>
                   {convention.delimiter}
@@ -458,7 +457,7 @@ export function ConventionDetail({
                   type="button"
                   onClick={() => setEditOpen(true)}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                   {t('naming.detail.edit')}
@@ -467,7 +466,7 @@ export function ConventionDetail({
                   type="button"
                   onClick={() => setConfirm({ kind: 'convention' })}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger-light disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger-light disabled:opacity-50"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                   {t('naming.detail.delete')}
@@ -482,7 +481,7 @@ export function ConventionDetail({
       <div className={cardClass}>
         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h3 className="font-display text-xl font-semibold text-primary">{t('naming.title')}</h3>
+            <h3 className="heading-section">{t('naming.title')}</h3>
             <p className="mt-1 text-sm text-text-muted">{t('naming.detail.paramsSubtitle')}</p>
           </div>
           {canConfigure && (
@@ -491,7 +490,7 @@ export function ConventionDetail({
                 type="button"
                 onClick={() => void handleDownloadTemplate()}
                 disabled={busy}
-                className="flex items-center gap-2 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
+                className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:opacity-50"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 {t('naming.downloadTemplate')}
@@ -500,7 +499,7 @@ export function ConventionDetail({
                 type="button"
                 onClick={() => setFieldForm({ field: null })}
                 disabled={busy}
-                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+                className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 {t('naming.detail.addParam')}
@@ -584,7 +583,7 @@ export function ConventionDetail({
                                   t('naming.toast.updated'),
                                 );
                               }}
-                              className="w-24 rounded-(--radius-input) border border-input-border bg-input-bg px-2 py-1.5 text-xs text-text outline-none focus:border-input-focus disabled:opacity-50"
+                              className="w-24 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-2 py-1.5 text-xs text-text outline-none focus:border-input-focus disabled:opacity-50"
                             >
                               <option value="">{t('naming.detail.noLock')}</option>
                               {activeValues.map((v) => (
@@ -625,7 +624,7 @@ export function ConventionDetail({
       <div className={cardClass}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">{t('naming.detail.applyInFolder')}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('naming.detail.applyInFolder')}</p>
             <p className="mt-1 text-xs text-text-muted">
               {t('naming.appliedFor')} {folderCount} {t('naming.foldersUnit')}
             </p>
@@ -635,7 +634,7 @@ export function ConventionDetail({
               type="button"
               onClick={() => setApplyOpen(true)}
               disabled={busy}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
               {t('naming.detail.applyFolderBtn')}
@@ -684,7 +683,7 @@ export function ConventionDetail({
       <div className={cardClass}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">{t('naming.preview.title')}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('naming.preview.title')}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {sortedFields.length === 0 ? (
                 <span className="text-sm text-text-muted">—</span>
@@ -702,7 +701,7 @@ export function ConventionDetail({
             <button
               type="button"
               onClick={onBack}
-              className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              className="flex shrink-0 items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
               {t('naming.preview.save')}
@@ -763,7 +762,7 @@ export function ConventionDetail({
               <button
                 type="button"
                 onClick={() => setCustomizeFolder(null)}
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+                className="btn-modal-ghost"
               >
                 {t('naming.cancel')}
               </button>

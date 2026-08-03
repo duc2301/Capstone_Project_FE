@@ -26,6 +26,8 @@ export interface IssueItem {
   raisedByName: string | null;
   assignedToAccountId: string | null;
   assignedToName: string | null;
+  assignedToOrganizationId: string | null;
+  dueDate: string | null;
   linkedFolderId: string | null;
   linkedFileItemId: string | null;
   createdAt: string | null;
@@ -68,14 +70,24 @@ export interface AssignableMember {
   groupName: string;
 }
 
+export interface AssignableOrganization {
+  organizationId: string;
+  organizationName: string;
+  groupNames: string[];
+}
+
 export interface CreateIssuePayload {
   projectId: string;
   type: IssueType;
   title: string;
-  description?: string;
-  status: IssueStatus;
+  description: string;
   priority: IssuePriority;
+  dueDate?: string;
   linkedFileItemId?: string;
   linkedFolderId?: string;
   assignedToAccountId?: string;
+  assignedToOrganizationId?: string;
 }
+
+export const ISSUE_TITLE_MIN = 8;
+export const ISSUE_DESCRIPTION_MIN = 15;

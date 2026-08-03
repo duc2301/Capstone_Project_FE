@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { LinkableFile } from '@/entities/file-item';
 import { fileItemApi } from '@/entities/file-item';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 interface UseLinkableFilesReturn {
   linkableFiles: LinkableFile[];
@@ -28,7 +29,7 @@ async function fetchLinkableFiles(
   try {
     const { data } = await fileItemApi.getLinkableFiles(folderId, excludeFileItemId);
     return data.isSuccess
-      ? { key, files: data.result ?? [], error: null }
+      ? { key, files: sortByNewest(data.result ?? [], (f) => f.createdAt), error: null }
       : { key, files: [], error: t('relatedFiles.pickerError') };
   } catch {
     return { key, files: [], error: t('relatedFiles.pickerError') };

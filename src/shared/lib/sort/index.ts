@@ -1,0 +1,1 @@
+export { sortByNewest } from './sortByNewest';

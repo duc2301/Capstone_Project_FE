@@ -4,6 +4,7 @@ import type { Account } from '@/entities/account';
 import { accountApi } from '@/entities/account';
 import { GroupMemberRole, invitationApi } from '@/entities/invitation';
 import { getApiErrorMessage } from '@/shared/api';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export interface InviteManyInput {
   projectId: string;
@@ -34,7 +35,7 @@ export function useProjectInvite(): UseProjectInviteReturn {
     (async () => {
       try {
         const accRes = await accountApi.getAll();
-        if (!cancelled) setAccounts(accRes.data.result ?? []);
+        if (!cancelled) setAccounts(sortByNewest(accRes.data.result ?? [], (a) => a.createdAt));
       } catch {
         console.error('Failed to fetch accounts');
       } finally {

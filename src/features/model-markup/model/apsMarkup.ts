@@ -4,6 +4,22 @@ const MARKUP_EXT_ID = 'Autodesk.Viewing.MarkupsCore';
 const THUMB_MAX_WIDTH = 480;
 const THUMB_QUALITY = 0.7;
 
+function bestEffort(label: string, action: () => void): void {
+  try {
+    action();
+  } catch (err) {
+    console.debug(`[apsMarkup] ${label} bỏ qua`, err);
+  }
+}
+
+async function bestEffortAsync(label: string, action: () => Promise<void>): Promise<void> {
+  try {
+    await action();
+  } catch (err) {
+    console.debug(`[apsMarkup] ${label} bỏ qua`, err);
+  }
+}
+
 export interface MarkupExt {
   show(): void;
   hide(): void;
@@ -36,12 +52,11 @@ export async function beginDraw(viewer: Viewer): Promise<void> {
 export function endDraw(viewer: Viewer): void {
   const ext = getMarkupExt(viewer);
   if (!ext) return;
-  try {
+  bestEffort('endDraw', () => {
     ext.leaveEditMode();
     ext.clear();
     ext.hide();
-  } catch {
-  }
+  });
 }
 
 interface BubbleLike {
@@ -68,7 +83,7 @@ function getCurrentViewableGuid(viewer: Viewer): string | null {
 
 async function switchViewableIfNeeded(viewer: Viewer, targetGuid: string | null): Promise<void> {
   if (!targetGuid) return;
-  try {
+  await bestEffortAsync('switchViewable', async () => {
     const currentNode = getModel(viewer)?.getDocumentNode?.();
     if (!currentNode || currentNode.data?.guid === targetGuid) return;
 
@@ -81,8 +96,7 @@ async function switchViewableIfNeeded(viewer: Viewer, targetGuid: string | null)
       doc as Autodesk.Viewing.Document,
       target as unknown as Autodesk.Viewing.BubbleNode,
     );
-  } catch {
-  }
+  });
 }
 
 export function captureViewpoint(viewer: Viewer): string {
@@ -96,10 +110,7 @@ export function captureViewpoint(viewer: Viewer): string {
 export function captureMarkupSvg(viewer: Viewer): string {
   const ext = getMarkupExt(viewer);
   if (!ext) return '';
-  try {
-    ext.leaveEditMode();
-  } catch {
-  }
+  bestEffort('captureMarkupSvg.leaveEditMode', () => ext.leaveEditMode());
   try {
     return ext.generateData() ?? '';
   } catch {
@@ -136,13 +147,12 @@ export function captureThumbnail(viewer: Viewer): Promise<string> {
           }
           ctx.drawImage(img, 0, 0, cw, ch);
           if (ext && typeof ext.renderToCanvas === 'function') {
-            try {
+            bestEffort('renderToCanvas', () => {
               ctx.save();
               ctx.scale(scale, scale);
               ext.renderToCanvas(ctx);
               ctx.restore();
-            } catch {
-            }
+            });
           }
           cleanup();
           resolve(canvas.toDataURL('image/jpeg', THUMB_QUALITY));
@@ -192,10 +202,7 @@ function waitRestoreState(viewer: Viewer, state: Record<string, unknown>): Promi
 
 export async function restoreNote(viewer: Viewer, viewpointJson: string | null, svg: string | null, layerId: string): Promise<void> {
   const ext = await loadMarkupExt(viewer);
-  try {
-    ext.leaveEditMode();
-  } catch {
-  }
+  bestEffort('restoreNote.leaveEditMode', () => ext.leaveEditMode());
   ext.clear();
 
   let camera: Record<string, unknown> | null = null;
@@ -219,10 +226,7 @@ export async function restoreNote(viewer: Viewer, viewpointJson: string | null, 
 
   if (svg) {
     ext.show();
-    try {
-      ext.loadMarkups(svg, layerId);
-    } catch {
-    }
+    bestEffort('loadMarkups', () => ext.loadMarkups(svg, layerId));
     viewer.setNavigationLock(true);
   } else {
     ext.hide();
@@ -233,9 +237,8 @@ export function hideMarkups(viewer: Viewer): void {
   viewer.setNavigationLock(false);
   const ext = getMarkupExt(viewer);
   if (!ext) return;
-  try {
+  bestEffort('hideMarkups', () => {
     ext.clear();
     ext.hide();
-  } catch {
-  }
+  });
 }

@@ -31,12 +31,9 @@ export function numberToWordsVN(number: number | string | null | undefined): str
   num = Math.round(num);
   if (num === 0) return 'Không đồng';
 
-  let so = '';
-  if (typeof number === 'string') {
-    so = number.replace(/[^0-9]/g, '');
-  } else {
-    so = Math.abs(num).toLocaleString('fullwide', { useGrouping: false });
-  }
+  let so = typeof number === 'string'
+    ? number.replace(/[^0-9]/g, '')
+    : Math.abs(num).toLocaleString('fullwide', { useGrouping: false });
 
   if (so.length > 18) {
     return 'Số quá lớn';

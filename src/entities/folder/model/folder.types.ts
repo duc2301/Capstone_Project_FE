@@ -12,10 +12,22 @@ export interface EffectivePermission {
   folderId: string;
   canView: boolean;
   canEdit: boolean;
-  canUpdate: boolean;
-  canDownload: boolean;
-  canVerify: boolean;
   canApprove: boolean;
+}
+
+export interface CurrentUserFolderPermissionDto {
+  folderId: string;
+  folderName: string;
+  permission: {
+    permissionId: string;
+    folderId: string;
+    folderName: string;
+    projectParticipantId: string | null;
+    canView: boolean;
+    canEdit: boolean;
+    canApprove: boolean;
+    status: number;
+  } | null;
 }
 
 /* Node thô từ GET /folder-tree/tree — BE hiện chưa trả owner/permission,

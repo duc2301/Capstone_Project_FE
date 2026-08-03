@@ -37,21 +37,21 @@ export function ModelViewer({ urn, className, onViewerReady }: Props) {
   }, [viewer, onViewerReady]);
 
   return (
-    <div className={`relative h-full w-full overflow-hidden bg-[#2b2b2b] ${className ?? ''}`}>
+    <div className={`relative h-full w-full overflow-hidden bg-viewer-shell ${className ?? ''}`}>
       <div ref={containerRef} className="absolute inset-0" />
 
       {status === 'loading' && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#2b2b2b]">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-viewer-shell">
           <Spinner />
-          <p className="font-jakarta text-sm text-white/80">
+          <p className="text-sm text-white/80">
             {t('viewer.status.loading')}
           </p>
         </div>
       )}
 
       {status === 'error' && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#2b2b2b] px-6 text-center">
-          <p className="font-jakarta text-sm font-medium text-red-300">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-viewer-shell px-6 text-center">
+          <p className="text-sm font-medium text-red-300">
             {error ?? t('viewer.error.load')}
           </p>
         </div>

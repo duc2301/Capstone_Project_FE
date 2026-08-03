@@ -13,9 +13,9 @@ export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-6xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-6xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <h2 className="font-heading text-lg font-bold text-text">{t('approvals.history.title')}</h2>
+          <h2 className="heading-entity">{t('approvals.history.title')}</h2>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -34,13 +34,13 @@ export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
             <div className="admin-scrollbar overflow-x-auto">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
-                  <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                    <th className="min-w-[220px] whitespace-nowrap py-2.5 pr-3 font-bold">{t('approvals.history.colFile')}</th>
-                    <th className="min-w-[150px] whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.history.colSender')}</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.history.colStatus')}</th>
-                    <th className="min-w-[150px] whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.history.colApprover')}</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.history.colApprovedAt')}</th>
-                    <th className="min-w-[180px] whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.history.colRejectReason')}</th>
+                  <tr className="table-head">
+                    <th className="min-w-[220px] whitespace-nowrap py-2.5 pr-3">{t('approvals.history.colFile')}</th>
+                    <th className="min-w-[150px] whitespace-nowrap px-3 py-2.5">{t('approvals.history.colSender')}</th>
+                    <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.history.colStatus')}</th>
+                    <th className="min-w-[150px] whitespace-nowrap px-3 py-2.5">{t('approvals.history.colApprover')}</th>
+                    <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.history.colApprovedAt')}</th>
+                    <th className="min-w-[180px] whitespace-nowrap px-3 py-2.5">{t('approvals.history.colRejectReason')}</th>
                   </tr>
                 </thead>
                 <tbody>

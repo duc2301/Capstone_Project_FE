@@ -2,14 +2,20 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage } from '@/entities/contractPackage';
+import { ActionPillButton, PaginationBar, RowActions } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
+import { packageStatusMeta } from '@/features/packages';
 import { useProjects } from '@/features/projects';
+
+const PAGE_SIZE = 20;
 
 export function ContractPackagesPage() {
   const navigate = useNavigate();
   const [packages, setPackages] = useState<ContractPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   
   const { projects } = useProjects();
   const projectMap = useMemo(() => {
@@ -24,9 +30,9 @@ export function ContractPackagesPage() {
       try {
         const { data } = await contractPackageApi.getAll();
         if (!cancelled) {
-          setPackages(data.result ?? []);
+          setPackages(sortByNewest(data.result ?? [], (p) => p.createdAt));
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {
         if (!cancelled) setLoading(false);
@@ -36,12 +42,13 @@ export function ContractPackagesPage() {
     return () => { cancelled = true; };
   }, []);
 
+  const pageCount = Math.max(1, Math.ceil(packages.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = packages.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="heading-page">{t('admin.nav.packages')}</h1>
-        <p className="mt-1 text-sm text-text-muted">Danh sách tất cả gói thầu và hợp đồng trên hệ thống</p>
-      </div>
+    <div className="flex h-full min-h-0 flex-col gap-5">
+      <h1 className="heading-page shrink-0">{t('admin.nav.packages')}</h1>
 
       {loading && (
         <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
@@ -56,27 +63,28 @@ export function ContractPackagesPage() {
       )}
 
       {!loading && !error && (
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-primary/10 bg-card shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-primary/5 border-b border-primary/10">
-                <tr>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-primary">Dự án</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-primary">Gói thầu</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-primary">Trạng thái</th>
-                  <th className="px-6 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-primary">Thao tác</th>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
+          <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
+            <table className="w-full min-w-[780px] text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="table-head bg-content-bg">
+                  <th className="px-6 py-3.5">{t('packages.col.project')}</th>
+                  <th className="px-5 py-3.5">{t('packages.col.package')}</th>
+                  <th className="px-5 py-3.5">{t('packages.col.status')}</th>
+                  <th className="px-5 py-3.5 text-right">{t('common.col.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-primary/5">
-                {packages.length === 0 ? (
+              <tbody className="divide-y divide-card-border">
+                {paged.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-16 text-center text-sm text-text-muted">
-                      Chưa có gói thầu nào
+                      {t('packages.empty')}
                     </td>
                   </tr>
                 ) : (
-                  packages.map((pkg) => {
+                  paged.map((pkg) => {
                     const project = projectMap.get(pkg.projectId);
+                    const status = packageStatusMeta(pkg.status);
                     return (
                       <tr
                         key={pkg.id}
@@ -99,31 +107,30 @@ export function ContractPackagesPage() {
                               </div>
                             </div>
                           ) : (
-                            <span className="text-text-muted">Không xác định</span>
+                            <span className="text-text-muted">{t('packages.project.unknown')}</span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-4">
                           <div className="font-semibold text-text">{pkg.name}</div>
-                          {pkg.code && <div className="text-xs text-text-muted mt-0.5">Số HĐ: {pkg.code}</div>}
+                          {pkg.code && <div className="text-xs text-text-muted mt-0.5">{t('packages.contractNo')}: {pkg.code}</div>}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
-                            pkg.status === 1 ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
-                          }`}>
-                            {pkg.status === 1 ? 'Đang thực hiện' : 'Khác'}
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-2xs font-semibold ${status.badgeClass}`}>
+                            {status.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/projects/${pkg.projectId}/packages/${pkg.id}`);
-                            }}
-                            className="rounded-[var(--radius-button)] border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-white"
-                          >
-                            Quản lý
-                          </button>
+                        <td className="px-5 py-4">
+                          <RowActions>
+                            <ActionPillButton
+                              tone="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/projects/${pkg.projectId}/packages/${pkg.id}`);
+                              }}
+                            >
+                              {t('packages.action.manage')}
+                            </ActionPillButton>
+                          </RowActions>
                         </td>
                       </tr>
                     );
@@ -132,6 +139,16 @@ export function ContractPackagesPage() {
               </tbody>
             </table>
           </div>
+
+          <PaginationBar
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={PAGE_SIZE}
+            total={packages.length}
+            unit={t('packages.paginationUnit')}
+            variant="inline"
+            onChange={setPage}
+          />
         </div>
       )}
     </div>

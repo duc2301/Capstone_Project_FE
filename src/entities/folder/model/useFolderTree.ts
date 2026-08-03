@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { FolderTreeNode } from '@/entities/folder';
-import { folderApi, toFolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
+
+import { folderApi } from '../api/folderApi';
+import { toFolderTreeNode } from './folder.mappers';
+import type { FolderTreeNode } from './folder.types';
 
 interface UseFolderTreeReturn {
   tree: FolderTreeNode[];

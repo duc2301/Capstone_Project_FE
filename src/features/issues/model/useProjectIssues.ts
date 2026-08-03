@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { IssuePriority, IssueStatus, ProjectIssueListItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export type IssueStatusFilter = 'all' | IssueStatus;
 export type IssuePriorityFilter = 'all' | IssuePriority;
@@ -21,7 +22,8 @@ export function useProjectIssues(projectId: string): UseProjectIssuesReturn {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    return issueApi.getByProject(projectId);
+    const items = await issueApi.getByProject(projectId);
+    return sortByNewest(items, (i) => i.createdAt);
   }, [projectId]);
 
   const reload = useCallback(async () => {

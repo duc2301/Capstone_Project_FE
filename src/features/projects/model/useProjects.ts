@@ -8,6 +8,7 @@ import type {
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export interface ProjectGroupDraft {
   name: string;
@@ -47,7 +48,7 @@ export function useProjects(): UseProjectsReturn {
   // của đơn vị khác qua network, và tránh N+1 request getParticipants cho từng dự án).
   const loadProjects = useCallback(async (): Promise<Project[]> => {
     const { data } = isAdmin ? await projectApi.getAll() : await projectApi.getMine();
-    return data.result ?? [];
+    return sortByNewest(data.result ?? [], (p) => p.createdAt);
   }, [isAdmin]);
 
   const fetchProjects = useCallback(async () => {

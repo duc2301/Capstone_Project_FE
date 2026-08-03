@@ -1,6 +1,6 @@
 import type { NotificationItem, NotificationLinkType } from '@/entities/notification';
 import { t } from '@/shared/lib/i18n';
-import { formatRelativeTime } from '../model/formatTime';
+import { formatRelativeTime } from '@/shared/lib/format';
 import type { InvitationAction } from '../model/useInvitationActions';
 
 interface Props {
@@ -77,7 +77,7 @@ export function NotificationFeedCard({
             )}
           </span>
           <span
-            className={`text-[15px] leading-snug text-text ${isRead ? 'font-medium' : 'font-semibold'}`}
+            className={`text-base leading-snug text-text ${isRead ? 'font-medium' : 'font-semibold'}`}
           >
             {message}
           </span>
@@ -94,7 +94,7 @@ export function NotificationFeedCard({
             type="button"
             onClick={onAccept}
             disabled={processing}
-            className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
+            className="rounded-[var(--radius-button)] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
           >
             {processingAction === 'accept'
               ? t('common.loading')
@@ -104,7 +104,7 @@ export function NotificationFeedCard({
             type="button"
             onClick={onReject}
             disabled={processing}
-            className="rounded-xl bg-content-bg px-4 py-2 text-xs font-medium text-text transition-colors hover:bg-card-border disabled:opacity-50"
+            className="rounded-[var(--radius-button)] bg-content-bg px-4 py-2 text-xs font-medium text-text transition-colors hover:bg-card-border disabled:opacity-50"
           >
             {processingAction === 'reject'
               ? t('common.loading')

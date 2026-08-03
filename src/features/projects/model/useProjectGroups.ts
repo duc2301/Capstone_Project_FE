@@ -4,6 +4,7 @@ import type { Group } from '@/entities/group';
 import { groupApi } from '@/entities/group';
 import { projectApi, ProjectParticipantRole, ProjectParticipantStatus } from '@/entities/project';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export interface AddGroupInput {
   name: string;
@@ -25,7 +26,7 @@ function activeGroups(participants: { groupId: string; status: number }[], group
       .filter((p) => p.status === ProjectParticipantStatus.Active)
       .map((p) => p.groupId),
   );
-  return groups.filter((g) => activeIds.has(g.id));
+  return sortByNewest(groups.filter((g) => activeIds.has(g.id)), (g) => g.createdAt);
 }
 
 export function useProjectGroups(projectId: string | undefined): UseProjectGroupsReturn {

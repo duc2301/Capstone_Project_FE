@@ -5,7 +5,9 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Playfair Display', ui-serif, Georgia, serif;
   --font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --font-jakarta: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Cỡ chữ phụ (nhỏ hơn text-xs) ──────────────────── */
+  --text-2xs: 10px;
 
   /* ── Sidebar ───────────────────────────────────────── */
   --color-sidebar: #406623;
@@ -42,6 +44,58 @@
   --color-info: #1976D2;
   --color-info-light: #E3F2FD;
 
+  /* ── Public / landing ──────────────────────────────── */
+  --color-page-cream: #FBF9F1;
+  --color-page-cream-alt: #F6F4EC;
+  --color-surface-sand: #E4E3DB;
+  --color-surface-sand-light: #F0EEE6;
+  --color-text-strong: #1B1C17;
+  --color-border-sage: #C3C9B9;
+  --color-danger-container: #FFDAD6;
+
+  /* ── Viewer / canvas ───────────────────────────────── */
+  --color-viewer-canvas: #DCDAD2;
+  --color-viewer-shell: #2B2B2B;
+  --color-viewer-shell-dark: #1F1F1F;
+
+  /* ── Accent: mốc/hổ phách (zone WIP, cảnh báo mềm) ── */
+  --color-accent-amber: #8A5100;
+  --color-accent-amber-strong: #744500;
+  --color-accent-amber-soft: #E8D7B0;
+  --color-accent-amber-bright: #FF8D28;
+  --color-accent-gold: #8C6B20;
+
+  /* ── Accent: xanh lá (biến thể của primary) ────────── */
+  --color-primary-bright: #587F39;
+  --color-primary-deep: #4E623E;
+  --color-primary-tint: #D3EABC;
+  --color-primary-tint-strong: #C2E09B;
+  --color-sage-tint: #DFE5D4;
+  --color-sage-tint-alt: #D7DBCA;
+  --color-footer-dark: #30312C;
+
+  /* ── Sắc thái phụ (icon minh hoạ, markup) ──────────── */
+  --color-danger-strong: #BA1A1A;
+  --color-danger-deep: #93000A;
+  --color-success-bright: #16A34A;
+  --color-accent-amber-tint: #FDF0DC;
+  --color-surface-sand-alt: #EAE8E0;
+  --color-primary-wash: #F9FFEC;
+  --color-markup-blue: #2563EB;
+
+  /* ── Màu icon theo loại tệp ────────────────────────── */
+  --color-file-pdf: #C0392B;
+  --color-file-ifc: #8A5100;
+  --color-file-rvt: #1F6FB2;
+  --color-file-dwg: #0E7C7B;
+  --color-file-model: #5B6E8C;
+  --color-file-doc: #2B5797;
+  --color-file-sheet: #1D6F42;
+  --color-file-slide: #C43E1C;
+  --color-file-image: #A6558E;
+  --color-file-archive: #8C6B20;
+  --color-file-other: #73796B;
+
   /* ── Inputs ────────────────────────────────────────── */
   --color-input-bg: #F8F7F2;
   --color-input-border: #D4D0C5;
@@ -51,7 +105,7 @@
   --radius-card: 16px;
   --radius-card-lg: 20px;
   --radius-input: 12px;
-  --radius-button: 9999px;
+  --radius-button: 12px;
   --radius-badge: 9999px;
   --radius-table: 16px;
 
@@ -92,11 +146,48 @@
    card   : nhãn khối bên trong thẻ
    entity : tên đối tượng (nhóm, đối tác, thư mục...) */
 @layer components {
+  .heading-hero   { @apply font-display text-[40px] font-bold leading-[1.14] tracking-[-1.12px] text-text md:text-[56px] md:leading-[64px]; }
   .heading-page   { @apply font-display text-[1.75rem] font-semibold leading-tight text-primary lg:text-[2rem] lg:leading-10; }
   .heading-panel  { @apply font-heading text-xl font-semibold text-text; }
   .heading-tab    { @apply font-display text-2xl font-semibold text-primary; }
-  .heading-card   { @apply font-display text-base font-medium text-primary; }
+  .heading-section{ @apply font-heading text-xl font-semibold text-primary; }
+  .heading-eyebrow{ @apply font-heading text-sm font-semibold uppercase tracking-[1.4px] text-text-secondary; }
+  .heading-card   { @apply font-heading text-base font-semibold text-primary; }
   .heading-entity { @apply font-heading text-lg font-semibold text-text; }
+  .heading-label  { @apply font-heading text-sm font-bold text-text; }
+  .table-head     { @apply border-b border-card-border text-left text-xs font-bold uppercase tracking-wider text-text-muted; }
+}
+
+/* ── Thang chữ trong thẻ/popup & form ───────────────── */
+@layer components {
+  .field-label { @apply block font-sans text-sm font-medium text-text-secondary; }
+  .field-hint  { @apply font-sans text-xs text-text-muted; }
+  .modal-text  { @apply font-sans text-sm text-text-secondary; }
+
+  .field-input {
+    @apply w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-2.5
+           font-sans text-sm text-text outline-none transition-colors
+           placeholder:text-text-placeholder
+           focus:border-primary focus:ring-2 focus:ring-primary/20
+           disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .field-input-readonly {
+    @apply w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-4 py-2.5
+           font-sans text-sm text-text-secondary outline-none;
+  }
+
+  .btn-modal-primary {
+    @apply rounded-[var(--radius-button)] bg-primary px-5 py-2.5 font-sans text-sm font-semibold text-white
+           transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-modal-ghost {
+    @apply rounded-[var(--radius-button)] border border-card-border bg-card px-5 py-2.5 font-sans text-sm font-semibold text-text-secondary
+           transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-modal-danger {
+    @apply rounded-[var(--radius-button)] bg-danger px-5 py-2.5 font-sans text-sm font-semibold text-white
+           transition-colors hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
 }
 
 /* ── Base ──────────────────────────────────────────── */

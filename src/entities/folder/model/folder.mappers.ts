@@ -1,8 +1,5 @@
 import type { FolderTreeNode, FolderTreeNodeDto } from './folder.types';
 
-/* API /folder-tree/tree mới chưa trả owner/permission cho từng node.
- * Tạm điền mặc định để UI hiện tại chạy được: owner = null, mọi quyền = true
- * (BE vẫn là nơi kiểm tra quyền thật khi thao tác). Sẽ gỡ khi BE trả đủ. */
 export function toFolderTreeNode(dto: FolderTreeNodeDto): FolderTreeNode {
   return {
     id: dto.id,
@@ -16,11 +13,8 @@ export function toFolderTreeNode(dto: FolderTreeNodeDto): FolderTreeNode {
     permission: {
       folderId: dto.id,
       canView: true,
-      canEdit: true,
-      canUpdate: true,
-      canDownload: true,
-      canVerify: true,
-      canApprove: true,
+      canEdit: false,
+      canApprove: false,
     },
     children: dto.children.map(toFolderTreeNode),
   };

@@ -1,6 +1,8 @@
 export { issueApi, issueErrorMessage } from './api/issueApi';
+export { ISSUE_DESCRIPTION_MIN, ISSUE_TITLE_MIN } from './model/issue.types';
 export type {
   AssignableMember,
+  AssignableOrganization,
   CreateIssuePayload,
   IssueAttachment,
   IssueItem,

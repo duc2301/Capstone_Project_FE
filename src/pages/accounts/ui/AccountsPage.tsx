@@ -11,7 +11,8 @@ import {
   UpdateAccountForm,
   useAccounts,
 } from '@/features/accounts';
-import { UserAvatar } from '@/shared/components';
+import { getApiErrorMessage } from '@/shared/api';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, PaginationBar, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'edit';
@@ -40,50 +41,8 @@ function StatCard({ icon, value, label, color, bgColor }: StatCardProps) {
         {icon}
       </div>
       <div className="min-w-0 space-y-0.5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.6px] text-text-muted">{label}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.6px] text-text-muted">{label}</p>
         <p className="font-display text-xl font-semibold text-text">{formatCount(value)}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Modal wrapper ─────────────────────────────────── */
-interface ModalProps {
-  title: string;
-  description?: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
-function Modal({ title, description, onClose, children }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-      />
-      {/* Dialog — cao tối đa 88vh, nội dung cuộn bên trong chứ không đẩy dài trang */}
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl animate-scale-in flex-col rounded-3xl bg-card shadow-modal">
-        {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-6 border-b border-card-border px-8 py-6">
-          <div className="min-w-0 space-y-1">
-            <h2 className="heading-page">{title}</h2>
-            {description && <p className="text-sm text-text-secondary">{description}</p>}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        {/* Body */}
-        <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto px-8 py-6">{children}</div>
       </div>
     </div>
   );
@@ -93,7 +52,7 @@ function RoleBadge({ account }: { account: Account }) {
   if (isProjectManager(account)) {
     return (
       <div className="space-y-1">
-        <span className="inline-flex items-center rounded-[var(--radius-badge)] bg-[#D3EABC] px-2.5 py-0.5 text-[11px] font-bold tracking-[0.4px] text-[#4E623E]">
+        <span className="inline-flex items-center rounded-[var(--radius-badge)] bg-primary-tint px-2.5 py-0.5 text-xs font-bold tracking-[0.4px] text-primary-deep">
           {t('account.role.pm')}
         </span>
         <p className="truncate text-xs text-text-muted" title={managedProjectsLabel(account)}>
@@ -106,7 +65,7 @@ function RoleBadge({ account }: { account: Account }) {
   const adminBadge = isAdmin(account);
   return (
     <span
-      className={`inline-flex items-center rounded-[var(--radius-badge)] px-2.5 py-0.5 text-[11px] font-bold tracking-[0.4px] ${
+      className={`inline-flex items-center rounded-[var(--radius-badge)] px-2.5 py-0.5 text-xs font-bold tracking-[0.4px] ${
         adminBadge ? 'bg-primary/10 text-primary' : 'bg-content-bg text-text-secondary'
       }`}
     >
@@ -120,9 +79,6 @@ interface UserRowProps {
   onEdit: (account: Account) => void;
   onDelete: (id: string) => void;
 }
-
-const actionButtonClass =
-  'flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-150';
 
 function UserRow({ account, onEdit, onDelete }: UserRowProps) {
   const status = statusMeta(account.status);
@@ -170,116 +126,23 @@ function UserRow({ account, onEdit, onDelete }: UserRowProps) {
         </div>
       </td>
 
-      {/* Thao tác */}
       <td className="px-6 py-3">
-        <div className="flex items-center justify-end gap-2">
-          {/* Sửa */}
-          <button
-            type="button"
+        <RowActions>
+          <ActionIconButton
+            label={t('account.update')}
+            tone="primary"
+            icon={<EditIcon />}
             onClick={() => onEdit(account)}
-            className={`${actionButtonClass} text-primary hover:bg-primary-light`}
-            title={t('account.update')}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
-
-          {/* Xoá */}
-          <button
-            type="button"
+          />
+          <ActionIconButton
+            label={t('account.delete')}
+            tone="danger"
+            icon={<DeleteIcon />}
             onClick={() => onDelete(account.id)}
-            className={`${actionButtonClass} text-danger hover:bg-danger-light`}
-            title={t('account.delete')}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-          </button>
-        </div>
+          />
+        </RowActions>
       </td>
     </tr>
-  );
-}
-
-function pageWindow(page: number, pageCount: number): (number | 'gap')[] {
-  if (pageCount <= 5) return Array.from({ length: pageCount }, (_, i) => i + 1);
-
-  const items: (number | 'gap')[] = [];
-  const from = Math.max(2, Math.min(page - 1, pageCount - 3));
-  const to = Math.min(pageCount - 1, Math.max(page + 1, 4));
-
-  items.push(1);
-  if (from > 2) items.push('gap');
-  for (let p = from; p <= to; p += 1) items.push(p);
-  if (to < pageCount - 1) items.push('gap');
-  items.push(pageCount);
-
-  return items;
-}
-
-interface PaginationProps {
-  page: number;
-  pageCount: number;
-  onChange: (page: number) => void;
-}
-
-function Pagination({ page, pageCount, onChange }: PaginationProps) {
-  const arrowClass =
-    'flex h-9 w-9 items-center justify-center rounded-full border border-card-border text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:cursor-not-allowed disabled:opacity-40';
-
-  return (
-    <nav className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => onChange(page - 1)}
-        disabled={page <= 1}
-        aria-label={t('account.pagination.prev')}
-        className={arrowClass}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-
-      {pageWindow(page, pageCount).map((item, index) =>
-        item === 'gap' ? (
-          <span key={`gap-${index}`} className="px-1 text-sm text-text-muted">
-            …
-          </span>
-        ) : (
-          <button
-            key={item}
-            type="button"
-            onClick={() => onChange(item)}
-            aria-current={item === page ? 'page' : undefined}
-            className={`flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-sm font-semibold transition-colors ${
-              item === page
-                ? 'bg-primary text-white shadow-sm'
-                : 'border border-card-border text-text-secondary hover:bg-content-bg'
-            }`}
-          >
-            {item}
-          </button>
-        ),
-      )}
-
-      <button
-        type="button"
-        onClick={() => onChange(page + 1)}
-        disabled={page >= pageCount}
-        aria-label={t('account.pagination.next')}
-        className={arrowClass}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </button>
-    </nav>
   );
 }
 
@@ -307,9 +170,21 @@ export function AccountsPage() {
     setSelectedAccount(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('account.deleteConfirm'))) return;
-    await deleteAccount(id);
+  const { toast, showToast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteAccount(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('account.deleteError')), 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openEdit = (account: Account) => {
@@ -364,29 +239,29 @@ export function AccountsPage() {
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
             value={stats.total}
             label={t('account.stats.total')}
-            color="#406623"
-            bgColor="#F0F5EB"
+            color="var(--color-primary)"
+            bgColor="var(--color-primary-ghost)"
           />
           <StatCard
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
             value={stats.active}
             label={t('account.stats.active')}
-            color="#4E623E"
-            bgColor="#D3EABC"
+            color="var(--color-primary-deep)"
+            bgColor="var(--color-primary-tint)"
           />
           <StatCard
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 1 4 1 4-1 4-1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>}
             value={stats.pending}
             label={t('account.stats.pending')}
-            color="#8A5100"
-            bgColor="#FDF0DC"
+            color="var(--color-accent-amber)"
+            bgColor="var(--color-accent-amber-tint)"
           />
           <StatCard
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>}
             value={stats.admin}
             label={t('account.stats.admin')}
-            color="#43493C"
-            bgColor="#EAE8E0"
+            color="var(--color-text-secondary)"
+            bgColor="var(--color-surface-sand-alt)"
           />
         </div>
       )}
@@ -465,21 +340,21 @@ export function AccountsPage() {
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
             <table className="w-full min-w-[780px] text-sm">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-card-border/60 bg-content-bg">
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                <tr className="table-head bg-content-bg">
+                  <th className="px-6 py-3.5">
                     {t('account.column.user')}
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                  <th className="px-5 py-3.5">
                     {t('account.column.organization')}
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                  <th className="px-5 py-3.5">
                     {t('account.role')}
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
+                  <th className="px-5 py-3.5">
                     {t('account.status')}
                   </th>
-                  <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-[1px] text-text-muted">
-                    {t('account.actions')}
+                  <th className="px-6 py-3.5 text-right">
+                    {t('common.col.actions')}
                   </th>
                 </tr>
               </thead>
@@ -505,7 +380,7 @@ export function AccountsPage() {
                       key={account.id}
                       account={account}
                       onEdit={openEdit}
-                      onDelete={handleDelete}
+                      onDelete={setDeleteTarget}
                     />
                   ))
                 )}
@@ -514,47 +389,47 @@ export function AccountsPage() {
           </div>
 
           {/* ── Footer: tóm tắt + phân trang ─────────── */}
-          {filtered.length > 0 && (
-            <div className="flex shrink-0 flex-col items-center justify-between gap-4 border-t border-card-border/60 px-6 py-3.5 sm:flex-row">
-              <p className="text-xs text-text-muted">
-                {t('account.pagination.showing')}{' '}
-                <strong className="font-semibold text-text-secondary">
-                  {formatCount(pageStart + 1)} – {formatCount(pageStart + pageItems.length)}
-                </strong>{' '}
-                {t('account.pagination.of')}{' '}
-                <strong className="font-semibold text-text-secondary">{formatCount(filtered.length)}</strong>{' '}
-                {t('account.pagination.members')}
-              </p>
-              <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
-            </div>
-          )}
+          <PaginationBar
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            unit={t('account.pagination.members')}
+            variant="inline"
+            onChange={setPage}
+          />
         </div>
       )}
 
       {/* ── Create Modal ───────────────────────────── */}
       {formMode === 'create' && (
-        <Modal
-          title={t('account.modal.createTitle')}
-          description={t('account.modal.createDescription')}
-          onClose={closeForm}
-        >
+        <Modal title={t('account.modal.createTitle')} onClose={closeForm} maxWidth="max-w-3xl">
           <CreateAccountForm onSubmit={handleCreate} onCancel={closeForm} />
         </Modal>
       )}
 
       {/* ── Edit Modal ─────────────────────────────── */}
       {formMode === 'edit' && selectedAccount && (
-        <Modal
-          title={t('account.modal.editTitle')}
-          description={t('account.modal.editDescription')}
-          onClose={closeForm}
-        >
+        <Modal title={t('account.modal.editTitle')} onClose={closeForm} maxWidth="max-w-3xl">
           <UpdateAccountForm
             account={selectedAccount}
             onSubmit={handleUpdate}
             onCancel={closeForm}
           />
         </Modal>
+      )}
+
+      <Toast toast={toast} className="z-[80]" />
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('account.delete')}
+          message={t('account.deleteConfirm')}
+          confirmLabel={t('account.delete')}
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

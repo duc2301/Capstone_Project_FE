@@ -3,6 +3,7 @@ import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { useEffect, useState } from 'react';
 
 interface AssignPartnerFormProps {
@@ -26,7 +27,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
       try {
         const { data } = await organizationApi.getAll();
         if (!cancelled) {
-          setOrganizations(data.result ?? []);
+          setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
         }
       } catch (err) {
         if (!cancelled) {
@@ -75,11 +76,11 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
       {/* ── Nhóm ────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-text">Nhóm</label>
+        <label className="field-label">{t('projectDetail.partners.group')}</label>
         {loadingGroups ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : groups.length === 0 ? (
-          <p className="text-sm text-text-muted">Chưa có nhóm nào trong dự án.</p>
+          <p className="text-sm text-text-muted">{t('projectDetail.partners.noGroups')}</p>
         ) : (
           <div className="flex flex-wrap gap-3">
             {groups.map((group) => {
@@ -112,11 +113,11 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
       {/* ── Chọn tổ chức (đối tác) ──────────────────────── */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-text">Chọn tổ chức (đối tác)</label>
+        <label className="field-label">{t('projectDetail.partners.selectOrg')}</label>
         {loadingOrgs ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : organizations.length === 0 ? (
-          <p className="text-sm text-text-muted">Không có tổ chức nào.</p>
+          <p className="text-sm text-text-muted">{t('projectDetail.partners.noOrgs')}</p>
         ) : (
           <div className="flex flex-col gap-3 max-h-60 overflow-y-auto admin-scrollbar pr-2">
             {organizations.map((org) => {
@@ -155,7 +156,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
           type="button"
           disabled={!isFormValid || submitting}
           onClick={handleSubmit}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
+          className="btn-modal-primary"
         >
           {submitting ? t('common.loading') : 'Gán đối tác cho nhóm'}
         </button>

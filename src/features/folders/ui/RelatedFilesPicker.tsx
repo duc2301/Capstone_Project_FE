@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import type { LinkableFile } from '@/entities/file-item';
+import { FileTypeIcon } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { formatSize } from '../model/fileFormat';
@@ -12,17 +13,6 @@ interface RelatedFilesPickerProps {
   selectedIds: string[];
   onConfirm: (ids: string[]) => void;
   onClose: () => void;
-}
-
-function FileGlyph() {
-  return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
-    </span>
-  );
 }
 
 export function RelatedFilesPicker({
@@ -68,12 +58,9 @@ export function RelatedFilesPicker({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
-        <div className="flex items-start justify-between border-b border-card-border px-6 py-4">
-          <div>
-            <h2 className="font-display text-lg font-semibold text-primary">{t('relatedFiles.picker.title')}</h2>
-            <p className="mt-0.5 text-xs text-text-muted">{t('relatedFiles.picker.scopeHint')}</p>
-          </div>
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+        <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
+          <h2 className="heading-entity">{t('relatedFiles.picker.title')}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -89,7 +76,7 @@ export function RelatedFilesPicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('relatedFiles.picker.search')}
-            className="w-full rounded-xl border border-card-border bg-input-bg/50 px-3.5 py-2 text-sm text-text outline-none transition-colors placeholder:text-text-placeholder focus:border-primary"
+            className="w-full rounded-[var(--radius-input)] border border-card-border bg-input-bg/50 px-3.5 py-2 text-sm text-text outline-none transition-colors placeholder:text-text-placeholder focus:border-primary"
           />
         </div>
 
@@ -125,9 +112,9 @@ export function RelatedFilesPicker({
                           checked={checked}
                           disabled={file.alreadyLinked}
                           onChange={() => toggle(file)}
-                          className="h-4 w-4 shrink-0 accent-[#406623]"
+                          className="h-4 w-4 shrink-0 accent-primary"
                         />
-                        <FileGlyph />
+                        <FileTypeIcon fileName={file.name} format={file.format} size="sm" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-text">{file.name}</p>
                           <p className="text-xs text-text-muted">
@@ -158,14 +145,14 @@ export function RelatedFilesPicker({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+              className="btn-modal-ghost"
             >
               {t('relatedFiles.picker.cancel')}
             </button>
             <button
               type="button"
               onClick={() => onConfirm(picked)}
-              className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
               {t('relatedFiles.picker.confirm')}
             </button>

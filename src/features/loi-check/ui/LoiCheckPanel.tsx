@@ -87,9 +87,9 @@ function formatDateTime(iso: string | null): string {
 
 function Stat({ label, value, tone = 'text-text' }: { label: string; value: number; tone?: string }) {
   return (
-    <div className="rounded-2xl border border-card-border bg-white/60 px-3 py-3 text-center">
+    <div className="rounded-[var(--radius-card)] border border-card-border bg-white/60 px-3 py-3 text-center">
       <p className={`font-display text-xl font-bold ${tone}`}>{value}</p>
-      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">{label}</p>
+      <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</p>
     </div>
   );
 }
@@ -105,7 +105,7 @@ interface CheckControlsProps {
 function CheckControls({ stage, onStageChange, onCheck, busy, label }: CheckControlsProps) {
   return (
     <div className="mt-5 space-y-2 text-left">
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted" htmlFor="loi-stage">
+      <label className="block text-xs font-bold uppercase tracking-wider text-text-muted" htmlFor="loi-stage">
         {t('loi.stage.label')}
       </label>
       <select
@@ -113,7 +113,7 @@ function CheckControls({ stage, onStageChange, onCheck, busy, label }: CheckCont
         value={stage}
         onChange={(e) => onStageChange(Number(e.target.value) as LoiStage)}
         disabled={busy}
-        className="w-full rounded-xl border border-card-border bg-white/60 px-3 py-2.5 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[var(--radius-input)] border border-card-border bg-white/60 px-3 py-2.5 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
       >
         {LOI_STAGE_OPTIONS.map((option) => (
           <option key={option} value={option}>{stageLabel(option)}</option>
@@ -124,7 +124,7 @@ function CheckControls({ stage, onStageChange, onCheck, busy, label }: CheckCont
         type="button"
         onClick={onCheck}
         disabled={busy}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-card-border px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-card-border px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-60"
       >
         {busy ? t('loi.rechecking') : label}
       </button>
@@ -148,7 +148,7 @@ function SectionSummary({ sections, reportHref }: { sections: LoiSection[]; repo
           <div key={section.section} className="flex items-center gap-2">
             <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
             <span className="min-w-0 flex-1 truncate text-sm text-text">{sectionLabel(section.section)}</span>
-            <span className={`shrink-0 text-[11px] font-bold uppercase tracking-wide ${tone.text}`}>
+            <span className={`shrink-0 text-xs font-bold uppercase tracking-wide ${tone.text}`}>
               {severityLabel(section.severity)}
             </span>
           </div>
@@ -158,7 +158,7 @@ function SectionSummary({ sections, reportHref }: { sections: LoiSection[]; repo
       {reportHref && (
         <Link
           to={reportHref}
-          className="mt-2 flex items-center justify-center rounded-xl border border-card-border px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-content-bg"
+          className="mt-2 flex items-center justify-center rounded-[var(--radius-button)] border border-card-border px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-content-bg"
         >
           {t('loi.report.open')}
         </Link>
@@ -171,17 +171,17 @@ function NotCoveredSection({ items }: { items: LoiUncoveredComponent[] }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-2xl border border-card-border/70 bg-content-bg/60 p-4">
-      <h3 className="text-sm font-bold text-text">{t('loi.notCovered.title')}</h3>
+    <div className="mt-4 rounded-[var(--radius-card)] border border-card-border/70 bg-content-bg/60 p-4">
+      <h3 className="heading-label">{t('loi.notCovered.title')}</h3>
       <p className="mt-1 text-xs leading-relaxed text-text-muted">{t('loi.notCovered.desc')}</p>
       <ul className="mt-2.5 space-y-1.5">
         {items.map((item) => (
           <li key={item.componentCode} className="flex items-center justify-between gap-3">
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium text-text">{item.componentName}</span>
-              <span className="block font-mono text-[11px] text-text-muted">{item.componentCode}</span>
+              <span className="block font-mono text-xs text-text-muted">{item.componentCode}</span>
             </span>
-            <span className="shrink-0 text-[11px] font-semibold text-text-muted">
+            <span className="shrink-0 text-xs font-semibold text-text-muted">
               {item.elementCount} {t('loi.notCovered.elementsSuffix')}
             </span>
           </li>
@@ -203,7 +203,7 @@ function MappingSection({ items, onConfirm, busyParam, error }: MappingSectionPr
 
   return (
     <div className="mt-6 border-t border-card-border/70 pt-5">
-      <h3 className="text-sm font-bold text-text">{t('loi.mapping.title')}</h3>
+      <h3 className="heading-label">{t('loi.mapping.title')}</h3>
       <p className="mt-1 text-xs leading-relaxed text-text-muted">{t('loi.mapping.desc')}</p>
       {error && <p className="mt-2 text-xs font-medium text-danger">{error}</p>}
 
@@ -221,7 +221,7 @@ function MappingSection({ items, onConfirm, busyParam, error }: MappingSectionPr
                 <span className="min-w-0 flex-1 truncate font-semibold text-primary">{item.suggestedParamName}</span>
               </div>
               <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="text-[11px] text-text-muted">
+                <span className="text-xs text-text-muted">
                   {item.elementCount} {t('loi.mapping.elementsSuffix')} · {t('loi.mapping.confidence')}{' '}
                   {Math.round(item.confidence * 100)}%
                 </span>
@@ -265,12 +265,12 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-heading text-lg font-bold text-text">{t('loi.title')}</h2>
+        <h2 className="heading-entity">{t('loi.title')}</h2>
         <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>
       </div>
       <p className="mt-1 text-sm text-text-muted">{t('loi.subtitle')}</p>
 
-      <div className="mt-5 rounded-2xl border border-card-border bg-white/60 p-4">
+      <div className="mt-5 rounded-[var(--radius-card)] border border-card-border bg-white/60 p-4">
         <div className="flex items-end justify-between">
           <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">{t('loi.coverage')}</span>
           <span className={`font-display text-2xl font-bold ${notEvaluated ? 'text-text-muted' : 'text-primary'}`}>
@@ -302,7 +302,7 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
       <NotCoveredSection items={result.notCovered} />
 
       <div className="mt-6 border-t border-card-border/70 pt-5">
-        <h3 className="text-sm font-bold text-text">{t('loi.missing.title')}</h3>
+        <h3 className="heading-label">{t('loi.missing.title')}</h3>
         {grouped.length === 0 ? (
           <p className={`mt-3 text-sm ${notEvaluated ? 'text-text-muted' : 'text-success'}`}>
             {notEvaluated ? t('loi.missing.notEvaluated') : t('loi.missing.none')}
@@ -311,7 +311,7 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
           <div className="mt-3 space-y-4">
             {grouped.map(([group, items]) => (
               <div key={group}>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">{groupLabel(group)}</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{groupLabel(group)}</p>
                 <ul className="mt-1.5 space-y-1.5">
                   {items.map((m) => (
                     <li
@@ -321,10 +321,10 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium text-text">{m.fieldName}</span>
                         {m.variant && (
-                          <span className="block truncate text-[11px] text-text-muted">{m.variant}</span>
+                          <span className="block truncate text-xs text-text-muted">{m.variant}</span>
                         )}
                       </span>
-                      <span className="shrink-0 rounded-full bg-danger-light px-2 py-0.5 text-[11px] font-bold text-danger">
+                      <span className="shrink-0 rounded-full bg-danger-light px-2 py-0.5 text-xs font-bold text-danger">
                         {m.missingCount} {t('loi.missing.elementsSuffix')}
                       </span>
                     </li>
@@ -396,7 +396,7 @@ export function LoiCheckPanel({ fileItemId, projectId }: { fileItemId: string; p
   if (!hasResult) {
     return (
       <div className="py-10 text-center">
-        <h3 className="font-display text-base font-semibold text-text">{t('loi.empty.title')}</h3>
+        <h3 className="heading-card text-text">{t('loi.empty.title')}</h3>
         <p className="mt-1 text-sm text-text-muted">{t('loi.empty.desc2')}</p>
         {controls}
       </div>
@@ -407,7 +407,7 @@ export function LoiCheckPanel({ fileItemId, projectId }: { fileItemId: string; p
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         <Spinner />
-        <h3 className="font-display text-base font-semibold text-text">{t('loi.running.title')}</h3>
+        <h3 className="heading-card text-text">{t('loi.running.title')}</h3>
         <p className="max-w-xs text-sm text-text-muted">{t('loi.running.desc')}</p>
       </div>
     );
@@ -416,7 +416,7 @@ export function LoiCheckPanel({ fileItemId, projectId }: { fileItemId: string; p
   if (result.status === LoiCheckStatus.Failed) {
     return (
       <div className="py-8 text-center">
-        <h3 className="font-display text-base font-semibold text-danger">{t('loi.failed.title')}</h3>
+        <h3 className="heading-card text-danger">{t('loi.failed.title')}</h3>
         {result.error && <p className="mt-2 break-words text-xs text-text-muted">{result.error}</p>}
         {controls}
       </div>

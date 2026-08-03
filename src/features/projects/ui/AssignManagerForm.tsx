@@ -82,7 +82,7 @@ export function AssignManagerForm({ accounts, currentManagerId, onSubmit }: Prop
                   <span className="flex items-center gap-2">
                     <span className="truncate text-sm font-medium text-text">{a.userName}</span>
                     {isCurrent && (
-                      <span className="shrink-0 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                      <span className="shrink-0 rounded-full bg-primary-light px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-primary">
                         {t('projects.assignManager.current')}
                       </span>
                     )}

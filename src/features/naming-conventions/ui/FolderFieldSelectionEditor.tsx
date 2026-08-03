@@ -134,7 +134,7 @@ export function FolderFieldSelectionEditor({ folderId, canManage, onSaved, foote
           type="button"
           onClick={() => void handleSave()}
           disabled={busy || loading || !canManage || !selection?.hasNamingConvention}
-          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? t('common.loading') : t('naming.customize.save')}
         </button>

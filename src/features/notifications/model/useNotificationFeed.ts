@@ -5,7 +5,8 @@ import type { NotificationItem } from '@/entities/notification';
 export type NotificationFilter = 'all' | 'unread' | 'important';
 export type NotificationDateRange = 'all' | 'today' | 'week' | 'month';
 
-const PAGE_SIZE = 8;
+export const NOTIFICATION_PAGE_SIZE = 8;
+const PAGE_SIZE = NOTIFICATION_PAGE_SIZE;
 
 const DATE_RANGE_DAYS: Record<Exclude<NotificationDateRange, 'all' | 'today'>, number> = {
   week: 7,

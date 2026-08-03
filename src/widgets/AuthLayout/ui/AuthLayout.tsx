@@ -6,13 +6,13 @@ import { t } from '@/shared/lib/i18n';
 function AuthTopBar() {
   return (
     <header className="absolute top-6 left-1/2 z-20 w-[min(1230px,calc(100%-32px))] -translate-x-1/2">
-      <div className="flex h-[61px] items-center justify-between rounded-full border border-white/20 bg-[#FBF9F1]/80 px-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
-        <span className="font-display text-2xl font-bold text-[#406623]">
+      <div className="flex h-[61px] items-center justify-between rounded-full border border-white/20 bg-page-cream/80 px-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
+        <span className="font-display text-2xl font-bold text-primary">
           {t('auth.brand')}
         </span>
         <Link
           to="/"
-          className="flex h-9 items-center gap-2 rounded-full bg-[#406623] px-6 font-jakarta text-sm font-semibold text-white transition-colors hover:bg-[#34521c]"
+          className="flex h-9 items-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 11.5 12 4l9 7.5" />
@@ -31,7 +31,7 @@ interface Props {
 
 export function AuthLayout({ children }: Props) {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#FBF9F1]">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-page-cream">
       <AuthTopBar />
       <main className="flex flex-1 flex-col">{children}</main>
     </div>

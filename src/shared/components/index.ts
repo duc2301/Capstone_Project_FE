@@ -1,6 +1,8 @@
 export { UserAvatar } from './avatar';
 export type { UserAvatarSize } from './avatar';
 export { ConfirmDialog } from './confirm';
+export { extensionOf, fileKindColor, fileKindLabel, fileKindOf, FileTypeIcon, FolderGlyph } from './file-icon';
+export type { FileIconSize, FileKind, FileTypeIconProps, FolderGlyphProps } from './file-icon';
 export { MarkupNoteFilter } from './markup';
 export type { MarkupAuthorOption, MarkupStatusFilter } from './markup';
 export { Modal } from './modal';

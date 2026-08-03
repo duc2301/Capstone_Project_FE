@@ -103,7 +103,7 @@ function MessageBubble({ message, mine }: { message: DiscussionMessage; mine: bo
         <span className="text-xs text-text-muted">{formatIssueDateTime(message.createdAt)}</span>
       </div>
       <div
-        className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${mine
+        className={`max-w-[85%] whitespace-pre-wrap break-words rounded-[var(--radius-card)] px-3.5 py-2.5 text-sm ${mine
             ? 'rounded-br-md bg-primary text-white'
             : 'rounded-bl-md border border-card-border bg-content-bg/60 text-text'
           }`}

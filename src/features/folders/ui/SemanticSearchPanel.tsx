@@ -89,7 +89,7 @@ export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
           type="button"
           onClick={() => void runSearch()}
           disabled={loading || query.trim().length === 0}
-          className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? t('docSearch.searching') : t('docSearch.submit')}
         </button>

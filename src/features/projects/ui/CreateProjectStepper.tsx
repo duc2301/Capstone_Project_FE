@@ -759,7 +759,7 @@ function Step1ProjectInfo({
 
       <div className="flex flex-col">
         <SectionLabel>{t('projects.stepper.s1.image')}</SectionLabel>
-        <div className="group relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-card-border bg-content-bg/60">
+        <div className="group relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-[var(--radius-card)] border-2 border-dashed border-card-border bg-content-bg/60">
             {projectImagePreview ? (
               <>
                 <img src={projectImagePreview} alt={t('projects.stepper.s1.image')} className="h-full w-full object-cover" />
@@ -939,7 +939,7 @@ function Step3PackageInfo({
             setEditingPackageId(null);
             setIsFormOpen(true);
           }}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 py-4 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/10"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border-2 border-dashed border-primary/30 bg-primary/5 py-4 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/10"
         >
           + {t('projects.stepper.s3.add')}
         </button>
@@ -1024,7 +1024,7 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
+        <div className="rounded-[var(--radius-button)] border border-dashed border-card-border bg-content-bg p-6 text-center">
           <p className="text-sm text-text-muted">{t('projects.stepper.s4.empty')}</p>
         </div>
       ) : (

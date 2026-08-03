@@ -451,7 +451,7 @@ function SmartCaSuccessView({
       <h3 className="heading-tab mt-8">{t('smartca.success.title')}</h3>
       <p className="mt-2 max-w-md text-base text-text-secondary">{t('smartca.success.desc')}</p>
 
-      <div className="mt-8 w-full rounded-2xl border border-card-border bg-page-cream-alt p-5 text-left">
+      <div className="mt-8 w-full rounded-[var(--radius-card)] border border-card-border bg-page-cream-alt p-5 text-left">
         <InfoRow label={t('smartca.success.fileName')} value={approval.fileName} />
         {signedFile && (
           <>

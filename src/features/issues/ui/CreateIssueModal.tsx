@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import type { IssueItem, IssuePriority, IssueType } from '@/entities/issue';
-import { issueApi, issueErrorMessage } from '@/entities/issue';
+import { ISSUE_DESCRIPTION_MIN, ISSUE_TITLE_MIN, issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
 import { useAssignableMembers } from '../model/useAssignableMembers';
+import { useAssignableOrganizations } from '../model/useAssignableOrganizations';
 
 interface CreateIssueModalProps {
   projectId: string;
@@ -20,16 +21,24 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
   const [type, setType] = useState<IssueType>('Issue');
   const [priority, setPriority] = useState<IssuePriority>('Medium');
   const [assigneeId, setAssigneeId] = useState('');
+  const [assigneeOrgId, setAssigneeOrgId] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(fileItemId);
+  const { organizations: assignableOrganizations } = useAssignableOrganizations(fileItemId);
 
   useEffect(() => {
     if (membersError) onToast(membersError, 'error');
   }, [membersError]);
 
-  const canSubmit = title.trim().length > 0 && !busy;
+  const titleTooShort = title.trim().length > 0 && title.trim().length < ISSUE_TITLE_MIN;
+  const descriptionTooShort = description.trim().length > 0 && description.trim().length < ISSUE_DESCRIPTION_MIN;
+  const canSubmit =
+    title.trim().length >= ISSUE_TITLE_MIN
+    && description.trim().length >= ISSUE_DESCRIPTION_MIN
+    && !busy;
 
   const handleSubmit = async () => {
     setBusy(true);
@@ -39,11 +48,12 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
         projectId,
         linkedFileItemId: fileItemId,
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         type,
-        status: 'Open',
         priority,
+        dueDate: dueDate || undefined,
         assignedToAccountId: assigneeId || undefined,
+        assignedToOrganizationId: assigneeId ? undefined : assigneeOrgId || undefined,
       });
 
       onToast(t('issues.toast.created'));
@@ -79,6 +89,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               placeholder={t('issues.create.titlePlaceholder')}
               className="field-input"
             />
+            {titleTooShort && <span className="field-hint text-danger">{t('issues.create.titleTooShort')}</span>}
           </label>
 
           <div className="grid grid-cols-2 gap-3">
@@ -112,6 +123,18 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
           </div>
 
           <label className="flex flex-col gap-1.5">
+            <span className="field-label">{t('issues.create.dueDateLabel')}</span>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              disabled={busy}
+              className="field-input"
+            />
+            <span className="field-hint">{t('issues.create.dueDateHint')}</span>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
             <span className="field-label">{t('issues.create.assigneeLabel')}</span>
             <select
               value={assigneeId}
@@ -127,6 +150,28 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
           </label>
 
           <label className="flex flex-col gap-1.5">
+            <span className="field-label">{t('issues.create.assigneeOrgLabel')}</span>
+            <select
+              value={assigneeOrgId}
+              onChange={(e) => setAssigneeOrgId(e.target.value)}
+              disabled={busy || !!assigneeId}
+              className="field-input"
+            >
+              <option value="">{t('issues.create.assigneeOrgPlaceholder')}</option>
+              {assignableOrganizations.map((o) => (
+                <option key={o.organizationId} value={o.organizationId}>
+                  {o.groupNames.length > 0
+                    ? `${o.organizationName} — ${o.groupNames.join(', ')}`
+                    : o.organizationName}
+                </option>
+              ))}
+            </select>
+            <span className="field-hint">
+              {assigneeId ? t('issues.create.assigneeOrgDisabled') : t('issues.create.assigneeOrgHint')}
+            </span>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
             <span className="field-label">{t('issues.create.descriptionLabel')}</span>
             <textarea
               rows={4}
@@ -136,6 +181,9 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               placeholder={t('issues.create.descriptionPlaceholder')}
               className="field-input resize-none"
             />
+            {descriptionTooShort
+              ? <span className="field-hint text-danger">{t('issues.create.descriptionTooShort')}</span>
+              : <span className="field-hint">{t('issues.create.descriptionRequired')}</span>}
           </label>
 
           {error && (

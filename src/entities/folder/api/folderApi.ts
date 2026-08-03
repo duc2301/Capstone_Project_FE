@@ -2,6 +2,7 @@ import type { ApiResponse } from "@/shared/api";
 import { axiosInstance, getApiErrorMessage } from "@/shared/api";
 import type {
   CdeArea,
+  CurrentUserFolderPermissionDto,
   CreateSubFolderPayload,
   Folder,
   FolderContentsDto,
@@ -36,6 +37,11 @@ export const folderApi = {
 
   remove: (id: string) =>
     axiosInstance.delete<ApiResponse<null>>(`/folders/${id}`),
+
+  getMyPermission: (folderId: string) =>
+    axiosInstance.get<ApiResponse<CurrentUserFolderPermissionDto>>(
+      `/permission-checking/me/folders/${folderId}`,
+    ),
 
   /** Dữ liệu màn hình phân quyền thư mục: nhóm khả dụng + nhóm đã gán quyền. */
   getGroupUi: (folderId: string) =>

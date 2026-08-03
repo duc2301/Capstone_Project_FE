@@ -10,13 +10,13 @@ const HEADER_OFFSET = 'h-[92px] shrink-0';
 function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex w-full max-w-xl flex-col items-center gap-5 rounded-3xl border border-danger-container bg-white px-8 py-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-danger-container">
+      <span className="flex h-14 w-14 items-center justify-center rounded-[var(--radius-card)] bg-danger-container">
         <svg
           width="26"
           height="26"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#BA1A1A"
+          stroke="var(--color-danger-strong)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"

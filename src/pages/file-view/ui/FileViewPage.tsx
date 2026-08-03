@@ -11,7 +11,7 @@ import { formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal } fro
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
-import { Toast, useToast } from '@/shared/components';
+import { FileTypeIcon, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -56,19 +56,6 @@ function Spinner() {
       <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z" />
     </svg>
-  );
-}
-
-function FileIcon({ danger = false, size = 'md' }: { danger?: boolean; size?: 'md' | 'sm' }) {
-  const boxClass = size === 'sm' ? 'h-9 w-9 rounded-xl' : 'h-12 w-12 rounded-2xl';
-  const iconSize = size === 'sm' ? 18 : 24;
-  return (
-    <span className={`flex ${boxClass} shrink-0 items-center justify-center ${danger ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
-      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
-    </span>
   );
 }
 
@@ -455,7 +442,7 @@ export function FileViewPage() {
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
           <header className="flex shrink-0 flex-col gap-3 rounded-[var(--radius-card)] border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <FileIcon danger={format === 'PDF'} size="sm" />
+              <FileTypeIcon fileName={fileTitle} format={format} size="sm" />
               <div className="min-w-0">
                 <h1 className="heading-panel break-words">{fileTitle}</h1>
                 <p className="mt-0.5 text-xs text-text-muted">
@@ -521,6 +508,8 @@ export function FileViewPage() {
               <div className="absolute inset-0 flex items-center justify-center px-6">
                 <EmptyViewerState
                   danger
+                  fileName={fileTitle}
+                  format={format}
                   title={t('fileView.model.failed.title')}
                   desc={t('fileView.model.failed.desc')}
                   primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
@@ -532,13 +521,15 @@ export function FileViewPage() {
               </div>
             ) : info && info.kind === 'inline' && info.url ? (
               <div className="absolute inset-0 p-5">
-                <div className="h-full overflow-hidden rounded-2xl bg-white shadow-sm">
+                <div className="h-full overflow-hidden rounded-[var(--radius-card)] bg-white shadow-sm">
                   <InlineContent info={info} />
                 </div>
               </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center px-6">
                 <EmptyViewerState
+                  fileName={fileTitle}
+                  format={format}
                   title={t('fileView.download.title')}
                   desc={t('fileView.download.desc')}
                   primaryLabel={t('fileView.download.button')}
@@ -986,7 +977,7 @@ function SignatureApprovalTimelineItem({ approval }: { approval: ApprovalListIte
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </span>
-      <div className="flex-1 rounded-2xl border border-card-border bg-white/80 p-4 shadow-sm">
+      <div className="flex-1 rounded-[var(--radius-card)] border border-card-border bg-white/80 p-4 shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <h3 className="heading-label">{title}</h3>
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-bold uppercase tracking-wide ${toneClass}`}>
@@ -1194,7 +1185,7 @@ function SignaturePlacementOverlay({
               className="absolute inset-0 h-full w-full border-0 bg-white"
             />
           ) : (
-            <div className="absolute inset-10 flex items-center justify-center rounded-2xl border border-card-border bg-page-cream-alt text-sm font-semibold text-text-muted">
+            <div className="absolute inset-10 flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-page-cream-alt text-sm font-semibold text-text-muted">
               {t('smartca.placement.noPreview')}
             </div>
           )}
@@ -1220,7 +1211,7 @@ function SignaturePlacementOverlay({
         </div>
       </div>
 
-      <div className="absolute bottom-6 right-6 z-30 w-[220px] rounded-2xl border border-white bg-white/75 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
+      <div className="absolute bottom-6 right-6 z-30 w-[220px] rounded-[var(--radius-card)] border border-white bg-white/75 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur">
         <h3 className="heading-label">{t('smartca.placement.confirmTitle')}</h3>
         <p className="mt-1.5 text-xs font-medium leading-4 tracking-wide text-text-secondary">{t('smartca.placement.confirmDesc')}</p>
         <div className="mt-3 space-y-2">
@@ -1228,7 +1219,7 @@ function SignaturePlacementOverlay({
             type="button"
             onClick={() => onConfirm(value)}
             disabled={busy}
-            className="w-full rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-[var(--radius-button)] bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : confirmed ? t('smartca.placement.confirmed') : t('smartca.placement.confirmPosition')}
           </button>
@@ -1266,7 +1257,7 @@ function SignatureTimelineItem({ title, body, muted = false }: { title: string; 
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </span>
-      <div className="flex-1 rounded-2xl border border-card-border bg-white/80 p-4 shadow-sm">
+      <div className="flex-1 rounded-[var(--radius-card)] border border-card-border bg-white/80 p-4 shadow-sm">
         <h3 className="heading-label">{title}</h3>
         <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
       </div>
@@ -1283,6 +1274,8 @@ interface EmptyViewerStateProps {
   onSecondary?: () => void;
   danger?: boolean;
   disabled?: boolean;
+  fileName: string;
+  format?: string | null;
 }
 
 function EmptyViewerState({
@@ -1294,10 +1287,21 @@ function EmptyViewerState({
   onSecondary,
   danger = false,
   disabled = false,
+  fileName,
+  format,
 }: EmptyViewerStateProps) {
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[var(--radius-card)] bg-card/90 p-8 text-center shadow-card">
-      <FileIcon danger={danger} />
+      {danger ? (
+        <span className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-card)] bg-danger-light text-danger">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </span>
+      ) : (
+        <FileTypeIcon fileName={fileName} format={format} size="lg" />
+      )}
       <h3 className="heading-card text-text">{title}</h3>
       <p className="text-sm text-text-muted">{desc}</p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-3">

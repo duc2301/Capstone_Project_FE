@@ -68,7 +68,7 @@ function HeroSection() {
           <div className="flex flex-wrap items-center gap-4 pt-4">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-primary-hover"
+              className="inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-8 py-4 text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-primary-hover"
             >
               {t('home.hero.ctaPrimary')}
               <ArrowRightIcon />
@@ -103,7 +103,7 @@ const WITH_CDE_ITEMS: TranslationKey[] = [
 
 function WarningIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#93000A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-deep)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
       <path d="M12 9v4M12 17h.01" />
     </svg>
@@ -112,7 +112,7 @@ function WarningIcon() {
 
 function CheckShieldIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-card)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
       <path d="m9 12 2 2 4-4" />
     </svg>
@@ -121,7 +121,7 @@ function CheckShieldIcon() {
 
 function CrossMarkIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BA1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
       <path d="M18 6 6 18M6 6l12 12" />
     </svg>
   );
@@ -129,7 +129,7 @@ function CrossMarkIcon() {
 
 function CheckMarkIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );
@@ -209,7 +209,7 @@ const TEAM_MEMBERS: TeamMember[] = [
 function MemberAvatar() {
   return (
     <span className="flex h-24 w-24 items-center justify-center rounded-full bg-surface-sand">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
       </svg>

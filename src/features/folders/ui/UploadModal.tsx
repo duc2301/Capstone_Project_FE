@@ -4,6 +4,7 @@ import type { FolderTreeNode } from '@/entities/folder';
 import type { FolderNamingConvention, NamingSelection, UploadNamingField } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
+import { FileTypeIcon } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { formatSize } from '../model/fileFormat';
@@ -194,7 +195,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
           {/* Thư mục đích */}
           <div>
             <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-text-muted">{t('documents.uploadModal.target')}</p>
-            <div className="flex items-center gap-2 rounded-xl border border-card-border bg-input-bg/50 px-3.5 py-2.5">
+            <div className="flex items-center gap-2 rounded-[var(--radius-button)] border border-card-border bg-input-bg/50 px-3.5 py-2.5">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
               </svg>
@@ -208,7 +209,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               {t('naming.upload.loading')}
             </p>
           ) : hasConvention ? (
-            <div className="space-y-3 rounded-2xl border border-primary/25 bg-primary-ghost/60 p-4">
+            <div className="space-y-3 rounded-[var(--radius-card)] border border-primary/25 bg-primary-ghost/60 p-4">
               <div className="flex items-start gap-2.5">
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -315,7 +316,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
-            className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors ${dragOver ? 'border-primary bg-primary-ghost' : 'border-card-border bg-input-bg/30'}`}
+            className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed px-6 py-10 text-center transition-colors ${dragOver ? 'border-primary bg-primary-ghost' : 'border-card-border bg-input-bg/30'}`}
           >
             <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -341,16 +342,14 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               {t('documents.uploadModal.list')} ({items.length})
             </p>
             {items.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-card-border bg-input-bg/30 p-4 text-center text-sm text-text-muted">
+              <p className="rounded-[var(--radius-input)] border border-dashed border-card-border bg-input-bg/30 p-4 text-center text-sm text-text-muted">
                 {t('documents.uploadModal.empty')}
               </p>
             ) : (
               <ul className="space-y-2">
                 {items.map((it) => (
                   <li key={it.id} className="flex items-center gap-3 rounded-xl border border-card-border px-3.5 py-2.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                    </span>
+                    <FileTypeIcon fileName={it.file.name} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-text">{it.file.name}</p>
                       <p className="text-xs text-text-muted">{formatSize(it.file.size)}</p>

@@ -254,7 +254,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
                       key={it.projectParticipantId}
                       type="button"
                       onClick={() => setAvailableChecked((prev) => toggleInSet(prev, it.projectParticipantId))}
-                      className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left shadow-card transition-colors ${
+                      className={`flex w-full items-center gap-3 rounded-[var(--radius-button)] border px-3.5 py-2.5 text-left shadow-card transition-colors ${
                         checked ? 'border-primary bg-primary-light' : 'border-card-border bg-card hover:bg-content-bg'
                       }`}
                     >

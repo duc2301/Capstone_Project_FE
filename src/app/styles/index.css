@@ -74,6 +74,28 @@
   --color-sage-tint-alt: #D7DBCA;
   --color-footer-dark: #30312C;
 
+  /* ── Sắc thái phụ (icon minh hoạ, markup) ──────────── */
+  --color-danger-strong: #BA1A1A;
+  --color-danger-deep: #93000A;
+  --color-success-bright: #16A34A;
+  --color-accent-amber-tint: #FDF0DC;
+  --color-surface-sand-alt: #EAE8E0;
+  --color-primary-wash: #F9FFEC;
+  --color-markup-blue: #2563EB;
+
+  /* ── Màu icon theo loại tệp ────────────────────────── */
+  --color-file-pdf: #C0392B;
+  --color-file-ifc: #8A5100;
+  --color-file-rvt: #1F6FB2;
+  --color-file-dwg: #0E7C7B;
+  --color-file-model: #5B6E8C;
+  --color-file-doc: #2B5797;
+  --color-file-sheet: #1D6F42;
+  --color-file-slide: #C43E1C;
+  --color-file-image: #A6558E;
+  --color-file-archive: #8C6B20;
+  --color-file-other: #73796B;
+
   /* ── Inputs ────────────────────────────────────────── */
   --color-input-bg: #F8F7F2;
   --color-input-border: #D4D0C5;
@@ -136,13 +158,7 @@
   .table-head     { @apply border-b border-card-border text-left text-xs font-bold uppercase tracking-wider text-text-muted; }
 }
 
-/* ── Thang chữ trong thẻ/popup & form ─────────────
-   Khai 1 nơi để mọi popup dùng cùng font/cỡ/màu.
-   label : nhãn của một trường nhập
-   hint  : chú thích phụ dưới trường nhập
-   text  : chữ thân bài trong popup (mô tả, câu xác nhận)
-   input : ô nhập / vùng nhập / danh sách chọn
-   btn   : nút ở chân popup (chính / phụ / nguy hiểm) */
+/* ── Thang chữ trong thẻ/popup & form ───────────────── */
 @layer components {
   .field-label { @apply block font-sans text-sm font-medium text-text-secondary; }
   .field-hint  { @apply font-sans text-xs text-text-muted; }

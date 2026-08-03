@@ -56,7 +56,7 @@ export function DashboardPage() {
         </div>
 
         {/* Card 2: Pending Approvals */}
-        <div className="flex flex-col rounded-2xl border border-warning/20 bg-warning-light/30 p-5 shadow-sm">
+        <div className="flex flex-col rounded-[var(--radius-card)] border border-warning/20 bg-warning-light/30 p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-light text-warning">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +73,7 @@ export function DashboardPage() {
         </div>
 
         {/* Card 3: Notifications */}
-        <div className="flex flex-col rounded-2xl border border-danger/10 bg-danger-light/30 p-5 shadow-sm">
+        <div className="flex flex-col rounded-[var(--radius-card)] border border-danger/10 bg-danger-light/30 p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-danger-light text-danger">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -87,7 +87,7 @@ export function DashboardPage() {
         </div>
 
         {/* Card 4: Completed Tasks */}
-        <div className="flex flex-col rounded-2xl border border-success/20 bg-success-light/30 p-5 shadow-sm">
+        <div className="flex flex-col rounded-[var(--radius-card)] border border-success/20 bg-success-light/30 p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-light text-success">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

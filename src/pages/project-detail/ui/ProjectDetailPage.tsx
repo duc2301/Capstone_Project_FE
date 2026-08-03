@@ -313,7 +313,7 @@ function GroupCard({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[rgba(88,127,57,0.1)] py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
+        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[rgba(88,127,57,0.1)] py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
       >
         {open ? t('projectDetail.teams.hideDetail') : t('projectDetail.teams.viewDetail')}
         <svg
@@ -372,7 +372,7 @@ function GroupCard({
               <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
                 <button
                   onClick={() => setEditingOrgId(null)}
-                  className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${!editingOrgId ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
+                  className={`flex items-center gap-3 rounded-[var(--radius-button)] border p-3 text-left transition-colors ${!editingOrgId ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
                     }`}
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-content-bg text-text-muted">
@@ -397,7 +397,7 @@ function GroupCard({
                           setEditingOrgId(org.id);
                         }
                       }}
-                      className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
+                      className={`flex items-center gap-3 rounded-[var(--radius-button)] border p-3 text-left transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
                         }`}
                     >
                       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${isSelected ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
@@ -739,7 +739,7 @@ export function ProjectDetailPage() {
       {tab === 'info' && (
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_384px]">
           <div className="space-y-10">
-            <section className="relative overflow-hidden rounded-2xl border border-card-border/60">
+            <section className="relative overflow-hidden rounded-[var(--radius-card)] border border-card-border/60">
               {project.projectImageUrl?.trim() ? (
                 <img
                   src={project.projectImageUrl}
@@ -920,7 +920,7 @@ export function ProjectDetailPage() {
                   onClick={() => {
                     setManageOpen(true);
                   }}
-                  className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+                  className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -932,7 +932,7 @@ export function ProjectDetailPage() {
                   <button
                     type="button"
                     onClick={() => setAddGroupOpen(true)}
-                    className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                    className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                       <line x1="12" y1="5" x2="12" y2="19" />
@@ -978,6 +978,7 @@ export function ProjectDetailPage() {
       {tab === 'documents' && (
         <DocumentsTab
           projectId={project.id}
+          isProjectManager={!!currentUser?.accountId && project.managerAccountId === currentUser.accountId}
           signerGroups={groups}
           signerGroupsLoading={groupsLoading}
           renderNamingModal={({ folder, canManage, close, notify }) => (
@@ -1006,7 +1007,11 @@ export function ProjectDetailPage() {
           Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
           BE tự lọc chỉ còn log của thư mục họ có quyền xem + nhóm họ tham gia. */}
       {tab === 'audit' && (
-        <AuditLogPanel mode={canViewAllTabs ? 'project' : 'my'} projectId={project.id} />
+        <AuditLogPanel
+          mode={canViewAllTabs ? 'project' : 'my'}
+          projectId={project.id}
+          heading={<h2 className="heading-tab shrink-0">{t('projectDetail.tab.audit')}</h2>}
+        />
       )}
 
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
@@ -1024,7 +1029,7 @@ export function ProjectDetailPage() {
                 setEditingPackage(null);
                 setCreatePackageOpen(true);
               }}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover shadow-button"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover shadow-button"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="5" x2="12" y2="19" />

@@ -14,7 +14,7 @@ function UploadIcon() {
       height="40"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#406623"
+      stroke="var(--color-primary)"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -52,7 +52,7 @@ export function ModelDropzone({ onFile }: Props) {
           : 'border-border-sage bg-white/60'
       }`}
     >
-      <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
+      <span className="flex h-20 w-20 items-center justify-center rounded-[var(--radius-card)] bg-primary/10">
         <UploadIcon />
       </span>
 
@@ -68,7 +68,7 @@ export function ModelDropzone({ onFile }: Props) {
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-primary-hover"
+        className="rounded-[var(--radius-button)] bg-primary px-8 py-3 text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-primary-hover"
       >
         {t('viewer.dropzone.button')}
       </button>

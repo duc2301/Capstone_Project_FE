@@ -239,29 +239,29 @@ export function AccountsPage() {
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
             value={stats.total}
             label={t('account.stats.total')}
-            color="#406623"
-            bgColor="#F0F5EB"
+            color="var(--color-primary)"
+            bgColor="var(--color-primary-ghost)"
           />
           <StatCard
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
             value={stats.active}
             label={t('account.stats.active')}
-            color="#4E623E"
-            bgColor="#D3EABC"
+            color="var(--color-primary-deep)"
+            bgColor="var(--color-primary-tint)"
           />
           <StatCard
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 1 4 1 4-1 4-1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>}
             value={stats.pending}
             label={t('account.stats.pending')}
-            color="#8A5100"
-            bgColor="#FDF0DC"
+            color="var(--color-accent-amber)"
+            bgColor="var(--color-accent-amber-tint)"
           />
           <StatCard
             icon={<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>}
             value={stats.admin}
             label={t('account.stats.admin')}
-            color="#43493C"
-            bgColor="#EAE8E0"
+            color="var(--color-text-secondary)"
+            bgColor="var(--color-surface-sand-alt)"
           />
         </div>
       )}

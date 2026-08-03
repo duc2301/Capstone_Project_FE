@@ -4,6 +4,7 @@ export { useFolderTree } from './model/useFolderTree';
 export { CdeArea } from './model/folder.types';
 export type {
   CreateSubFolderPayload,
+  CurrentUserFolderPermissionDto,
   EffectivePermission,
   Folder,
   FolderContentsDto,

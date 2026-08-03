@@ -155,7 +155,7 @@ export function EditProjectForm({ project, organizations, onSaved, onCancel }: P
 
         <div className="flex flex-col">
           <span className={labelCls}>{t('projects.stepper.s1.image')}</span>
-          <div className="group relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-card-border bg-content-bg/60">
+          <div className="group relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-[var(--radius-card)] border-2 border-dashed border-card-border bg-content-bg/60">
             {preview ? (
               <>
                 <img src={preview} alt={projectName} className="h-full w-full object-cover" />

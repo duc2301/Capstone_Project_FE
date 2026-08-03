@@ -13,7 +13,7 @@ const BRAND_FEATURES: { titleKey: TranslationKey; descKey: TranslationKey }[] = 
 
 function FeatureIcon() {
   return (
-    <svg width="16" height="20" viewBox="0 0 24 24" fill="none" stroke="#FDA133" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-amber-bright)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
       <path d="m9 12 2 2 4-4" />
     </svg>

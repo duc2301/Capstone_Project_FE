@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { ApprovalDetail } from '@/entities/approval';
 import { approvalApi, approvalErrorMessage } from '@/entities/approval';
 import type { Group } from '@/entities/group';
+import { FileTypeIcon } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner } from '../model/approvalFormat';
@@ -17,17 +18,6 @@ interface ApprovalDetailModalProps {
   /* Chỉ đúng người/nhóm được chỉ định ký (asign) mới thấy/dùng được nút "Ký số". */
   currentAccountId?: string;
   projectGroups?: Group[];
-}
-
-function FileIcon() {
-  return (
-    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-danger/10 text-danger">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
-    </span>
-  );
 }
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -136,7 +126,7 @@ function ApprovalDetailContent({
       <main className="min-h-[620px] space-y-6 p-6 lg:p-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <FileIcon />
+            <FileTypeIcon fileName={detail.fileName} size="md" />
             <div className="min-w-0">
               <h2 className="heading-entity break-words">{detail.fileName}</h2>
             </div>
@@ -148,7 +138,7 @@ function ApprovalDetailContent({
         <section className="overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
           <div className="flex min-h-[470px] items-center justify-center bg-viewer-canvas p-6">
             <div className="flex w-full max-w-xl flex-col items-center rounded-3xl bg-white p-8 text-center shadow-sm">
-              <FileIcon />
+              <FileTypeIcon fileName={detail.fileName} size="lg" />
               <h3 className="heading-entity mt-4 max-w-full break-words">{detail.fileName}</h3>
               <p className="mt-2 max-w-md text-xs text-text-muted">{t('approvals.detail.previewHint')}</p>
 
@@ -256,7 +246,7 @@ function ApprovalDetailContent({
 
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-card-border bg-page-cream p-4 text-left">
+    <div className="rounded-[var(--radius-card)] border border-card-border bg-page-cream p-4 text-left">
       <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold text-text">{value}</p>
     </div>
@@ -288,7 +278,7 @@ function TimelineItem({ title, badge, body, time, active = false, tone = 'succes
         </svg>
       </span>
 
-      <div className={`min-w-0 flex-1 rounded-2xl border p-3.5 shadow-sm ${active ? 'border-card-border bg-white' : 'border-card-border/70 bg-white/60 opacity-80'}`}>
+      <div className={`min-w-0 flex-1 rounded-[var(--radius-card)] border p-3.5 shadow-sm ${active ? 'border-card-border bg-white' : 'border-card-border/70 bg-white/60 opacity-80'}`}>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h5 className="min-w-0 break-words text-xs font-bold text-text">{title}</h5>
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-bold uppercase tracking-wider ${toneClass}`}>{badge}</span>

@@ -87,7 +87,7 @@ function formatDateTime(iso: string | null): string {
 
 function Stat({ label, value, tone = 'text-text' }: { label: string; value: number; tone?: string }) {
   return (
-    <div className="rounded-2xl border border-card-border bg-white/60 px-3 py-3 text-center">
+    <div className="rounded-[var(--radius-card)] border border-card-border bg-white/60 px-3 py-3 text-center">
       <p className={`font-display text-xl font-bold ${tone}`}>{value}</p>
       <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</p>
     </div>
@@ -113,7 +113,7 @@ function CheckControls({ stage, onStageChange, onCheck, busy, label }: CheckCont
         value={stage}
         onChange={(e) => onStageChange(Number(e.target.value) as LoiStage)}
         disabled={busy}
-        className="w-full rounded-xl border border-card-border bg-white/60 px-3 py-2.5 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[var(--radius-input)] border border-card-border bg-white/60 px-3 py-2.5 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
       >
         {LOI_STAGE_OPTIONS.map((option) => (
           <option key={option} value={option}>{stageLabel(option)}</option>
@@ -158,7 +158,7 @@ function SectionSummary({ sections, reportHref }: { sections: LoiSection[]; repo
       {reportHref && (
         <Link
           to={reportHref}
-          className="mt-2 flex items-center justify-center rounded-xl border border-card-border px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-content-bg"
+          className="mt-2 flex items-center justify-center rounded-[var(--radius-button)] border border-card-border px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-content-bg"
         >
           {t('loi.report.open')}
         </Link>
@@ -171,7 +171,7 @@ function NotCoveredSection({ items }: { items: LoiUncoveredComponent[] }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-2xl border border-card-border/70 bg-content-bg/60 p-4">
+    <div className="mt-4 rounded-[var(--radius-card)] border border-card-border/70 bg-content-bg/60 p-4">
       <h3 className="heading-label">{t('loi.notCovered.title')}</h3>
       <p className="mt-1 text-xs leading-relaxed text-text-muted">{t('loi.notCovered.desc')}</p>
       <ul className="mt-2.5 space-y-1.5">
@@ -270,7 +270,7 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
       </div>
       <p className="mt-1 text-sm text-text-muted">{t('loi.subtitle')}</p>
 
-      <div className="mt-5 rounded-2xl border border-card-border bg-white/60 p-4">
+      <div className="mt-5 rounded-[var(--radius-card)] border border-card-border bg-white/60 p-4">
         <div className="flex items-end justify-between">
           <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">{t('loi.coverage')}</span>
           <span className={`font-display text-2xl font-bold ${notEvaluated ? 'text-text-muted' : 'text-primary'}`}>

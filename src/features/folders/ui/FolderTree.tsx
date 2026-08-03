@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
+import { FolderGlyph } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 interface FolderTreeProps {
@@ -8,15 +9,6 @@ interface FolderTreeProps {
   selectedId: string | null;
   onSelect: (node: FolderTreeNode) => void;
   onContextMenu?: (e: React.MouseEvent, node: FolderTreeNode) => void;
-}
-
-/* Icon: folder */
-function FolderIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${className}`}>
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  );
 }
 
 /* Icon: chevron (xoay khi mở) */
@@ -81,7 +73,7 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
           onClick={() => onSelect(node)}
           className="flex items-center gap-1.5 py-1.5 text-left"
         >
-          <FolderIcon className={isSelected ? 'text-primary' : isRoot ? 'text-primary/80' : 'text-text-muted'} />
+          <FolderGlyph open={open} size={16} className="text-primary" />
           <span className="whitespace-nowrap">{label}</span>
           {node.hasWarning && (
             <span title={t('fileWarn.folderTooltip')} className="ml-auto shrink-0 text-danger">

@@ -167,7 +167,7 @@ export function SubmitApprovalModal({
           </div>
 
           {canRequireSignature && (
-            <label className="flex items-center gap-2.5 rounded-xl border border-card-border px-3.5 py-3">
+            <label className="flex items-center gap-2.5 rounded-[var(--radius-input)] border border-card-border px-3.5 py-3">
               <input
                 type="checkbox"
                 checked={effectiveRequiresSignature}

@@ -91,7 +91,7 @@ export function VerifyOtpForm() {
     return (
       <div className="flex w-full max-w-[480px] flex-col items-center gap-4 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <path d="M12 8v4M12 16h.01" />
           </svg>
@@ -117,7 +117,7 @@ export function VerifyOtpForm() {
       <header className="flex flex-col items-center gap-2 text-center">
         {/* Email icon */}
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect width="20" height="16" x="2" y="4" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
@@ -142,7 +142,7 @@ export function VerifyOtpForm() {
             role="alert"
             className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4M12 16h.01" />
             </svg>
@@ -156,7 +156,7 @@ export function VerifyOtpForm() {
             role="status"
             className="flex items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-4 py-3"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success-bright)" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
@@ -181,7 +181,7 @@ export function VerifyOtpForm() {
                 onChange={(e) => handleChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 autoFocus={idx === 0}
-                className="h-14 w-12 rounded-xl border border-border-sage bg-input-bg text-center font-display text-2xl font-semibold text-text-strong transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-14 w-12 rounded-[var(--radius-input)] border border-border-sage bg-input-bg text-center font-display text-2xl font-semibold text-text-strong transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                 aria-label={`OTP digit ${idx + 1}`}
               />
             ))}

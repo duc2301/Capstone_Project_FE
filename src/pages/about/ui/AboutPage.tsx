@@ -6,7 +6,7 @@ import { Footer } from '@/widgets/Footer';
 import { Header } from '@/widgets/Header';
 
 const PAGE_BACKGROUND =
-  'radial-gradient(113.14% 141.42% at 80% 0%, rgba(168, 204, 117, 0.15) 0%, rgba(168, 204, 117, 0) 50%), radial-gradient(141.42% 70.71% at 0% 50%, rgba(168, 204, 117, 0.1) 0%, rgba(168, 204, 117, 0) 50%), #FBF9F1';
+  'radial-gradient(113.14% 141.42% at 80% 0%, rgba(168, 204, 117, 0.15) 0%, rgba(168, 204, 117, 0) 50%), radial-gradient(141.42% 70.71% at 0% 50%, rgba(168, 204, 117, 0.1) 0%, rgba(168, 204, 117, 0) 50%), var(--color-page-cream)';
 
 const CLOUD_IMAGE =
   'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1280&q=80';
@@ -33,7 +33,7 @@ interface CloudCard {
 
 function ShieldIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
       <path d="m9 12 2 2 4-4" />
     </svg>
@@ -42,7 +42,7 @@ function ShieldIcon() {
 
 function GaugeIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 14 9 11" />
       <path d="M3.34 19a10 10 0 1 1 17.32 0" />
       <circle cx="12" cy="14" r="1.5" />
@@ -52,7 +52,7 @@ function GaugeIcon() {
 
 function BackupIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12a9 9 0 1 1-2.64-6.36" />
       <path d="M21 3v4h-4" />
     </svg>
@@ -67,7 +67,7 @@ const CLOUD_CARDS: CloudCard[] = [
 
 function SectionIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-bright">
+    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary-bright">
       {children}
     </span>
   );
@@ -78,7 +78,7 @@ function CloudSection() {
     <section className="flex flex-col gap-12">
       <div className="flex items-center gap-4">
         <SectionIcon>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F9FFEC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-wash)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.8A3.5 3.5 0 0 0 6.5 19z" />
           </svg>
         </SectionIcon>
@@ -140,7 +140,7 @@ const DATA_ZONES: DataZone[] = [
     iconBg: 'rgba(253, 161, 51, 0.2)',
     cornerBg: 'rgba(253, 161, 51, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A5100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-amber)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 20h9" />
         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
       </svg>
@@ -153,7 +153,7 @@ const DATA_ZONES: DataZone[] = [
     iconBg: 'rgba(88, 127, 57, 0.2)',
     cornerBg: 'rgba(88, 127, 57, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="18" cy="5" r="3" />
         <circle cx="6" cy="12" r="3" />
         <circle cx="18" cy="19" r="3" />
@@ -168,7 +168,7 @@ const DATA_ZONES: DataZone[] = [
     iconBg: 'rgba(102, 123, 85, 0.2)',
     cornerBg: 'rgba(102, 123, 85, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4E623E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-deep)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z" />
       </svg>
@@ -178,10 +178,10 @@ const DATA_ZONES: DataZone[] = [
     accessKey: 'about.zones.published.access',
   },
   {
-    iconBg: '#E4E3DB',
+    iconBg: 'var(--color-surface-sand)',
     cornerBg: 'rgba(228, 227, 219, 0.3)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43493C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="4" rx="1" />
         <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" />
       </svg>
@@ -242,10 +242,10 @@ function ZonesSection() {
 type ZoneId = 'wip' | 'shared' | 'published' | 'archived';
 
 const ZONE_TAG: Record<ZoneId, { labelKey: TranslationKey; bg: string; color: string }> = {
-  wip: { labelKey: 'about.roles.zone.wip', bg: 'rgba(253, 161, 51, 0.2)', color: '#8A5100' },
-  shared: { labelKey: 'about.roles.zone.shared', bg: 'rgba(88, 127, 57, 0.2)', color: '#406623' },
-  published: { labelKey: 'about.roles.zone.published', bg: 'rgba(102, 123, 85, 0.2)', color: '#4E623E' },
-  archived: { labelKey: 'about.roles.zone.archived', bg: '#E4E3DB', color: '#43493C' },
+  wip: { labelKey: 'about.roles.zone.wip', bg: 'rgba(253, 161, 51, 0.2)', color: 'var(--color-accent-amber)' },
+  shared: { labelKey: 'about.roles.zone.shared', bg: 'rgba(88, 127, 57, 0.2)', color: 'var(--color-primary)' },
+  published: { labelKey: 'about.roles.zone.published', bg: 'rgba(102, 123, 85, 0.2)', color: 'var(--color-primary-deep)' },
+  archived: { labelKey: 'about.roles.zone.archived', bg: 'var(--color-surface-sand)', color: 'var(--color-text-secondary)' },
 };
 
 interface RoleRow {
@@ -262,7 +262,7 @@ const ROLE_ROWS: RoleRow[] = [
   {
     iconBg: 'rgba(64, 102, 35, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
         <path d="M9 9v.01M9 12v.01M9 15v.01" />
       </svg>
@@ -276,7 +276,7 @@ const ROLE_ROWS: RoleRow[] = [
   {
     iconBg: 'rgba(138, 81, 0, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A5100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-amber)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="m12 19 7-7 3 3-7 7-3-3z" />
         <path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18z" />
         <path d="m2 2 7.586 7.586" />
@@ -292,7 +292,7 @@ const ROLE_ROWS: RoleRow[] = [
   {
     iconBg: 'rgba(78, 98, 62, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4E623E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-deep)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="6" y1="3" x2="6" y2="15" />
         <circle cx="18" cy="6" r="3" />
         <circle cx="6" cy="18" r="3" />
@@ -308,7 +308,7 @@ const ROLE_ROWS: RoleRow[] = [
   {
     iconBg: 'rgba(115, 121, 107, 0.1)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#73796B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 18a10 10 0 0 1 20 0" />
         <path d="M12 2a6 6 0 0 0-6 6v4h12V8a6 6 0 0 0-6-6z" />
         <path d="M2 18h20v2H2z" />
@@ -391,8 +391,8 @@ function RolesSection() {
                 className="w-fit rounded-full px-3 py-1 text-xs font-medium tracking-[0.6px]"
                 style={
                   role.permissionStrong
-                    ? { backgroundColor: '#406623', color: '#FFFFFF' }
-                    : { backgroundColor: '#E4E3DB', color: '#43493C' }
+                    ? { backgroundColor: 'var(--color-primary)', color: 'var(--color-card)' }
+                    : { backgroundColor: 'var(--color-surface-sand)', color: 'var(--color-text-secondary)' }
                 }
               >
                 {t(role.permissionKey)}

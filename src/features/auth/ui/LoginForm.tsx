@@ -78,7 +78,7 @@ export function LoginForm() {
               role="alert"
               className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
@@ -184,7 +184,7 @@ export function LoginForm() {
               role="alert"
               className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>

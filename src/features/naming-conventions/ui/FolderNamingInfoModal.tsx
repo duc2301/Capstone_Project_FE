@@ -134,7 +134,7 @@ export function FolderNamingInfoModal({ folder, canManage, onClose, onInherited,
       ) : (
         <div className="space-y-5">
           {/* Thư mục đang xem */}
-          <div className="space-y-2 rounded-2xl border border-card-border bg-input-bg/30 p-4">
+          <div className="space-y-2 rounded-[var(--radius-card)] border border-card-border bg-input-bg/30 p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
               {t('naming.folder.current')} · <span className="normal-case">{folder.name}</span>
             </p>
@@ -143,7 +143,7 @@ export function FolderNamingInfoModal({ folder, canManage, onClose, onInherited,
 
           {/* Thư mục cha (nếu có) */}
           {folder.parentFolderId && (
-            <div className="space-y-2 rounded-2xl border border-card-border bg-input-bg/30 p-4">
+            <div className="space-y-2 rounded-[var(--radius-card)] border border-card-border bg-input-bg/30 p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('naming.folder.parent')}</p>
               <ConventionSummary info={parent} />
               {sameAsParent && <p className="text-xs font-medium text-success">{t('naming.folder.sameAsParent')}</p>}
@@ -168,7 +168,7 @@ export function FolderNamingInfoModal({ folder, canManage, onClose, onInherited,
               type="button"
               onClick={() => setView('customize')}
               disabled={busy || !canManage || !current?.hasNamingConvention}
-              className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
               {t('naming.folder.customize')}
@@ -177,7 +177,7 @@ export function FolderNamingInfoModal({ folder, canManage, onClose, onInherited,
               type="button"
               onClick={() => void handleInherit()}
               disabled={busy || !canInherit || !canManage}
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 11 21 7 17 3" /><path d="M21 7H9a4 4 0 0 0-4 4v10" /></svg>
               {busy ? t('common.loading') : t('naming.folder.inherit')}

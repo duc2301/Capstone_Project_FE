@@ -11,11 +11,12 @@ interface Props {
   mode: AuditLogMode;
   /* Bắt buộc khi mode là 'project' | 'my' */
   projectId?: string;
+  heading?: React.ReactNode;
 }
 
 /* Panel nhật ký dùng chung cho cả 3 view (Admin / PM / thành viên).
  * Tiêu đề do trang/tab cha lo — panel chỉ gồm bộ lọc, bảng và phân trang. */
-export function AuditLogPanel({ mode, projectId }: Props) {
+export function AuditLogPanel({ mode, projectId, heading }: Props) {
   const { items, total, page, totalPages, pageSize, loading, error, filters, applyFilters, setPage } =
     useAuditLogs(mode, projectId);
 
@@ -29,33 +30,35 @@ export function AuditLogPanel({ mode, projectId }: Props) {
   }, [items, nameQuery]);
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-5">
+      {heading}
+
       <AuditLogFilters
         value={filters}
         nameValue={nameQuery}
-        onApply={(next, name) => {
-          applyFilters(next);
-          setNameQuery(name);
-        }}
+        onQueryChange={applyFilters}
+        onNameChange={setNameQuery}
       />
 
-      {error && (
-        <div className="rounded-xl border border-danger/30 bg-danger-light px-4 py-3 text-sm font-medium text-danger">
-          {error}
+      {error ? (
+        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
+          <p className="text-sm font-medium text-danger">{error}</p>
         </div>
-      )}
-
-      <AuditLogTable items={shown} loading={loading} />
-
-      {!loading && (
-        <PaginationBar
-          page={page}
-          pageCount={totalPages}
-          pageSize={pageSize}
-          total={total}
-          unit={t('audit.totalSuffix')}
-          onChange={setPage}
-        />
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
+          <AuditLogTable items={shown} loading={loading} />
+          {!loading && (
+            <PaginationBar
+              page={page}
+              pageCount={totalPages}
+              pageSize={pageSize}
+              total={total}
+              unit={t('audit.totalSuffix')}
+              variant="inline"
+              onChange={setPage}
+            />
+          )}
+        </div>
       )}
     </div>
   );

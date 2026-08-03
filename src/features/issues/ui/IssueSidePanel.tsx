@@ -76,6 +76,12 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
   const handleResolve = () =>
     runIssueAction(() => issueApi.resolve(issueId).then(() => undefined), 'issues.error.resolve', t('issues.toast.resolved'));
 
+  const handleStart = () =>
+    runIssueAction(() => issueApi.start(issueId).then(() => undefined), 'issues.error.start', t('issues.toast.started'));
+
+  const handleAnswer = () =>
+    runIssueAction(() => issueApi.answer(issueId).then(() => undefined), 'issues.error.answer', t('issues.toast.answered'));
+
   const handleAddParticipant = (accountId: string) => {
     setShowParticipantPicker(false);
     setParticipantQuery('');
@@ -113,6 +119,16 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
       || issue.participants.some((p) => p.accountId === currentUser.accountId)),
   );
   const isCreator = Boolean(issue && currentUser && issue.raisedByAccountId === currentUser.accountId);
+  const isHandler = Boolean(
+    issue
+    && currentUser
+    && (issue.assignedToAccountId
+      ? issue.assignedToAccountId === currentUser.accountId
+      : issue.participants.some((p) => p.accountId === currentUser.accountId)
+        || issue.raisedByAccountId === currentUser.accountId),
+  );
+  const canStart = !isResolved && isHandler && (issue?.status === 'Open' || issue?.status === 'Answered');
+  const canAnswer = !isResolved && isHandler && (issue?.status === 'Open' || issue?.status === 'InProgress');
 
   const participantCandidates = useMemo(() => {
     const existingIds = new Set((issue?.participants ?? []).map((p) => p.accountId));
@@ -176,6 +192,31 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
           )}
         </section>
 
+        {(canStart || canAnswer) && (
+          <section className="flex flex-wrap gap-2">
+            {canStart && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={handleStart}
+                className="rounded-[var(--radius-button)] border border-primary px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('issues.action.start')}
+              </button>
+            )}
+            {canAnswer && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={handleAnswer}
+                className="rounded-[var(--radius-button)] border border-primary px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('issues.action.answer')}
+              </button>
+            )}
+          </section>
+        )}
+
         {!isResolved && isCreator && (
           <section className="flex flex-wrap gap-2">
             <button
@@ -197,7 +238,7 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
           </section>
         )}
         {!isResolved && !isCreator && (
-          <p className="rounded-xl border border-card-border bg-content-bg/40 px-3 py-2 text-xs text-text-muted">
+          <p className="rounded-[var(--radius-button)] border border-card-border bg-content-bg/40 px-3 py-2 text-xs text-text-muted">
             {t('issues.detail.onlyCreatorCanResolve')}
           </p>
         )}

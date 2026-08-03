@@ -171,7 +171,7 @@ export function ApplyConventionModal({ convention, projectId, onClose, onApplied
             type="button"
             onClick={() => void handleApply()}
             disabled={busy || checked.size === 0}
-            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? t('common.loading') : t('naming.apply.submit')}
           </button>

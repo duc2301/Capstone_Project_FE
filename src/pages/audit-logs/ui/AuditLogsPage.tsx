@@ -5,10 +5,9 @@ import { t } from '@/shared/lib/i18n';
  * Thấy log của mọi dự án; lọc theo phạm vi/hành động/khoảng ngày ở panel. */
 export function AuditLogsPage() {
   return (
-    <div className="space-y-6 pb-8">
-      <h1 className="heading-page">{t('audit.page.title')}</h1>
-
-      <AuditLogPanel mode="system" />
-    </div>
+    <AuditLogPanel
+      mode="system"
+      heading={<h1 className="heading-page shrink-0">{t('audit.page.title')}</h1>}
+    />
   );
 }

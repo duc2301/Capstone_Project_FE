@@ -35,11 +35,6 @@ export function actionBadge(action: number) {
     : { label: String(action), className: 'bg-content-bg text-text-muted' };
 }
 
-/* Mức chú ý của một dòng nhật ký — dùng để tô màu cột "Chi tiết".
- * Bám đúng nhóm màu của ACTION_META ở trên, KHÔNG tô theo vị trí dòng:
- *  danger  = mất dữ liệu / chặn (Xoá, Từ chối duyệt, Từ chối lời mời)
- *  warning = đổi quyền truy cập — thứ kiểm toán viên soi đầu tiên
- *  normal  = thao tác nghiệp vụ thường ngày */
 export function detailTone(action: number): 'danger' | 'warning' | 'normal' {
   if (
     action === AuditAction.Delete

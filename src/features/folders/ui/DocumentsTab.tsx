@@ -17,6 +17,7 @@ import { fileItemApi, FileItemStatus, FileReturnRequestStatus, is3DFile } from '
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 
 import { useFolderActions } from '../model/useFolderActions';
+import { useFolderPermission } from '../model/useFolderPermission';
 import { useFolderFiles } from '../model/useFolderFiles';
 import { useFolderTree } from '@/entities/folder';
 import { zoneNameFromArea } from '../model/zoneTransferFormat';
@@ -37,6 +38,7 @@ import { UploadModal } from './UploadModal';
 
 interface DocumentsTabProps {
   projectId: string;
+  isProjectManager: boolean;
   /* Nhóm của dự án — trang cha đã tải sẵn, truyền xuống để khỏi gọi API lần hai. */
   signerGroups: Group[];
   signerGroupsLoading: boolean;
@@ -53,9 +55,6 @@ interface DocumentsTabProps {
 const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[] = [
   { key: 'canView', label: () => t('documents.perm.view') },
   { key: 'canEdit', label: () => t('documents.perm.edit') },
-  { key: 'canUpdate', label: () => t('documents.perm.update') },
-  { key: 'canDownload', label: () => t('documents.perm.download') },
-  { key: 'canVerify', label: () => t('documents.perm.verify') },
   { key: 'canApprove', label: () => t('documents.perm.approve') },
 ];
 
@@ -97,6 +96,7 @@ function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
 
 export function DocumentsTab({
   projectId,
+  isProjectManager,
   signerGroups,
   signerGroupsLoading,
   renderNamingModal,
@@ -107,6 +107,7 @@ export function DocumentsTab({
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
   const { currentUser } = useSession();
+  const hasFullFolderAccess = isAccountAdmin(currentUser?.role) || isProjectManager;
 
   // Gate thô cho nút gán/kế thừa/tùy chỉnh naming: Admin hoặc Leader active của 1 group
   // trong project. BE check chính xác theo group phụ trách từng folder (403 nếu lách).
@@ -144,6 +145,10 @@ export function DocumentsTab({
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
 
   const selected = findNode(tree, selectedId);
+  const { permission: selectedPermissionRaw } = useFolderPermission(selectedId, hasFullFolderAccess);
+  const { permission: menuPermissionRaw } = useFolderPermission(menu?.node.id ?? null, hasFullFolderAccess);
+  const selectedPermission = selectedPermissionRaw ?? { folderId: '', canView: false, canEdit: false, canApprove: false };
+  const menuPermission = menuPermissionRaw ?? { folderId: '', canView: false, canEdit: false, canApprove: false };
   const selectedTargetZone = selected ? nextApprovalTargetZone(selected.area) : null;
 
   const { toast, showToast } = useToast();
@@ -161,7 +166,7 @@ export function DocumentsTab({
   };
 
   const handleNewFolderClick = () => {
-    if (selected && selected.permission.canEdit) {
+    if (selected && selectedPermission.canEdit) {
       setModal({ action: 'create', node: selected });
     } else {
       showToast(t('documents.selectFolderToCreate'), 'error');
@@ -170,9 +175,9 @@ export function DocumentsTab({
 
   // Mở modal upload cho 1 folder (chỉ ô con WIP/Shared có quyền ghi).
   // Chặn sớm cho khớp BE: chỉ WIP mới nhận file, trừ 2 thư mục hồ sơ hệ thống ở Published.
-  const canUploadTo = (node: FolderTreeNode) => {
+  const canUploadTo = (node: FolderTreeNode, canEdit: boolean) => {
     if (node.parentFolderId === null) return false;
-    if (!node.permission.canEdit && !node.permission.canUpdate) return false;
+    if (!canEdit) return false;
     if (node.area === CdeArea.Wip) return true;
     if (node.area !== CdeArea.Published) return false;
     if (node.name === LEGAL_FOLDER_NAME) return true;
@@ -180,7 +185,7 @@ export function DocumentsTab({
   };
 
   const openUpload = (node: FolderTreeNode) => {
-    if (canUploadTo(node)) setUploadFolder(node);
+    if (canUploadTo(node, node.id === selectedId ? selectedPermission.canEdit : menuPermission.canEdit)) setUploadFolder(node);
     else showToast(t('documents.uploadWipOnly'), 'error');
   };
 
@@ -282,7 +287,7 @@ export function DocumentsTab({
   // BE chỉ chuyển vùng thật sự khi Leader approve request đó.
   const canTransferZone = (file: FileListItem) =>
     !!selected
-    && selected.permission.canApprove
+    && selectedPermission.canApprove
     && canStartApprovalFromArea(selected.area)
     && file.status === FileItemStatus.Approved
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
@@ -307,19 +312,21 @@ export function DocumentsTab({
     }
   };
 
-  const selectedCanManage = !!selected && selected.permission.canEdit && selected.parentFolderId !== null;
+  const selectedCanManage = !!selected && selectedPermission.canEdit && selected.parentFolderId !== null;
 
   return (
     // Header cố định, lưới 2 ô chiếm phần chiều cao còn lại
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <Toast toast={toast} className="z-[60]" />
 
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <h2 className="heading-tab shrink-0">{t('projectDetail.tab.documents')}</h2>
+
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => setPendingApprovalsOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -329,7 +336,7 @@ export function DocumentsTab({
           <button
             type="button"
             onClick={() => setApprovalHistoryOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
@@ -339,7 +346,7 @@ export function DocumentsTab({
           <button
             type="button"
             onClick={() => { if (selected) openUpload(selected); else showToast(t('documents.selectFolderToCreate'), 'error'); }}
-            className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
@@ -381,14 +388,14 @@ export function DocumentsTab({
           />
 
           {/* Panel nội dung thư mục đang chọn */}
-          <div className="admin-scrollbar flex min-h-0 min-w-0 flex-col overflow-y-auto rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 shadow-card">
+          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 shadow-card">
             {!selected ? (
               <div className="flex h-full min-h-70 items-center justify-center">
                 <p className="text-sm text-text-muted">{t('documents.selectFolder')}</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3 border-b border-card-border pb-3">
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-card-border pb-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -399,7 +406,7 @@ export function DocumentsTab({
                   </div>
 
                   {/* Nút thao tác nhanh trên thư mục đang chọn */}
-                  {selected.permission.canEdit && (
+                  {selectedPermission.canEdit && (
                     <div className="flex shrink-0 items-center gap-1.5">
                       <button
                         type="button"
@@ -445,12 +452,12 @@ export function DocumentsTab({
                 </div>
 
                 {/* Quyền của bạn trên thư mục này */}
-                <div className="space-y-2">
+                <div className="shrink-0 space-y-2">
                   <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
                     {t('documents.yourPermission')}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {PERMISSION_FLAGS.filter((f) => selected.permission[f.key]).map((f) => (
+                    {PERMISSION_FLAGS.filter((f) => selectedPermission[f.key]).map((f) => (
                       <span
                         key={f.key}
                         className="rounded-full bg-success-light px-3 py-1 text-xs font-semibold text-success"
@@ -463,7 +470,9 @@ export function DocumentsTab({
 
                 {/* Tra cứu tài liệu theo ngữ nghĩa (RAG) — chỉ ở Published/Archived */}
                 {showSemanticSearch && projectId && (
-                  <SemanticSearchPanel projectId={projectId} onOpenFile={handleOpenSearchResult} />
+                  <div className="shrink-0">
+                    <SemanticSearchPanel projectId={projectId} onOpenFile={handleOpenSearchResult} />
+                  </div>
                 )}
 
                 {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
@@ -542,7 +551,6 @@ export function DocumentsTab({
           onDownload={() => handleDownload(fileMenu.file)}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onPermission={() => setFilePermissionFor(fileMenu.file)}
-          onSoon={() => showToast(t('documents.fileMenu.soon'))}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
           onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
           canTransferZone={canTransferZone(fileMenu.file)}

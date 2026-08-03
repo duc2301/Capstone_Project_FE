@@ -8,10 +8,12 @@ import {
   useOrganizationTypes,
 } from '@/features/organizations';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, RowActions, Toast, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
+
+const PAGE_SIZE = 20;
 
 /* ── Stat card ─────────────────────────────────────── */
 interface StatCardProps {
@@ -47,6 +49,12 @@ export function OrganizationsPage() {
   const [formMode, setFormMode] = useState<FormMode>('idle');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+
+  const changeSearch = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
 
   /* ── Handlers ────────────────────────────────────── */
   const handleCreate = async (payload: Parameters<typeof createOrganization>[0]) => {
@@ -117,10 +125,14 @@ export function OrganizationsPage() {
     return { total, active: total, uniqueTypes, recent };
   }, [organizations, now]);
 
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
-    <div className="space-y-6 pb-8">
+    <div className="flex h-full min-h-0 flex-col gap-5">
       {/* ── Page Header ────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="heading-page">
           {t('org.title')}
         </h1>
@@ -135,7 +147,7 @@ export function OrganizationsPage() {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            Thêm liên danh
+            {t('org.createJv')}
           </button>
           <button
             onClick={() => setFormMode('create')}
@@ -152,56 +164,63 @@ export function OrganizationsPage() {
 
       {/* ── Statistics Cards ───────────────────────── */}
       {!loading && !error && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>}
             value={stats.total}
             label={t('org.stats.total')}
-            color="#406623"
-            bgColor="#E8F0E0"
+            color="var(--color-primary)"
+            bgColor="var(--color-primary-light)"
           />
           <StatCard
             icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
             value={stats.active}
             label={t('org.stats.active')}
-            color="#2E7D32"
-            bgColor="#E6F4EA"
+            color="var(--color-success)"
+            bgColor="var(--color-success-light)"
           />
           <StatCard
             icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>}
             value={stats.uniqueTypes}
             label={t('org.stats.byType')}
-            color="#1976D2"
-            bgColor="#E3F2FD"
+            color="var(--color-info)"
+            bgColor="var(--color-info-light)"
           />
 
           <StatCard
             icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
             value={stats.recent}
             label={t('org.stats.recent')}
-            color="#F59E0B"
-            bgColor="#FEF3C7"
+            color="var(--color-warning)"
+            bgColor="var(--color-warning-light)"
           />
         </div>
       )}
 
-      {/* ── Search Bar ─────────────────────────────── */}
+      {/* ── Toolbar ────────────────────────────────── */}
       {!loading && !error && (
-        <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-4 shadow-card">
-          <div className="flex items-center gap-3 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-2.5">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
+        <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative w-full lg:max-w-[420px]">
+            <svg
+              width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="m21 21-4.3-4.3" />
             </svg>
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => changeSearch(e.target.value)}
               placeholder={t('org.search')}
-              className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
+              className="w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             {searchQuery && (
-              <button type="button" onClick={() => setSearchQuery('')} className="shrink-0 text-text-muted hover:text-text">
+              <button
+                type="button"
+                onClick={() => changeSearch('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text"
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -234,33 +253,33 @@ export function OrganizationsPage() {
 
       {/* ── Data Table ─────────────────────────────── */}
       {!loading && !error && (
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="table-head bg-input-bg">
-                  <th className="px-6 py-4">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
+          <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
+            <table className="w-full min-w-[780px] text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="table-head bg-content-bg">
+                  <th className="px-6 py-3.5">
                     {t('org.col.taxCode')}
                   </th>
-                  <th className="px-6 py-4">
+                  <th className="px-5 py-3.5">
                     {t('org.col.name')}
                   </th>
-                  <th className="px-6 py-4">
+                  <th className="px-5 py-3.5">
                     {t('org.type')}
                   </th>
-                  <th className="px-6 py-4">
+                  <th className="px-5 py-3.5">
                     {t('org.col.contact')}
                   </th>
-                  <th className="px-6 py-4">
+                  <th className="px-5 py-3.5">
                     {t('org.col.createdAt')}
                   </th>
-                  <th className="px-6 py-4 text-right">
+                  <th className="px-5 py-3.5 text-right">
                     {t('common.col.actions')}
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-card-border">
-                {filtered.length === 0 ? (
+                {paged.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center gap-2">
@@ -274,13 +293,13 @@ export function OrganizationsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((org) => (
-                    <tr key={org.id} className="transition-colors duration-150 hover:bg-primary-ghost">
+                  paged.map((org) => (
+                    <tr key={org.id} className="transition-colors duration-150 hover:bg-content-bg">
                       <td className="px-6 py-4">
                         {org.isJointVenture ? (
                           <span className="inline-flex items-center gap-1.5 rounded-lg bg-info/10 px-2.5 py-1 text-xs font-bold text-info">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            Liên danh
+                            {t('org.jointVenture')}
                           </span>
                         ) : (
                           <span className="inline-block rounded-lg bg-input-bg px-2.5 py-1 font-mono text-xs font-medium text-text-secondary">
@@ -342,6 +361,16 @@ export function OrganizationsPage() {
               </tbody>
             </table>
           </div>
+
+          <PaginationBar
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            unit={t('org.paginationUnit')}
+            variant="inline"
+            onChange={setPage}
+          />
         </div>
       )}
 

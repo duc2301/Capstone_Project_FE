@@ -35,12 +35,12 @@ export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, on
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          className="w-full rounded-[var(--radius-button)] bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         >
           {t('issues.panel.createButton')}
         </button>
       ) : (
-        <p className="rounded-xl border border-card-border bg-content-bg/40 px-3 py-2.5 text-xs text-text-muted">
+        <p className="rounded-[var(--radius-button)] border border-card-border bg-content-bg/40 px-3 py-2.5 text-xs text-text-muted">
           {t('issues.panel.wipHint')}
         </p>
       )}

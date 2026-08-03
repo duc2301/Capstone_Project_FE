@@ -45,7 +45,7 @@ export function FolderContextMenu({
   const canUpload =
     !isRoot &&
     (node.area === CdeArea.Wip || node.area === CdeArea.Shared) &&
-    (node.permission.canEdit || node.permission.canUpdate);
+    node.permission.canEdit;
 
   const items: Item[] = [];
 

@@ -107,7 +107,7 @@ export default function PackageDetailPage() {
         <p className="text-lg text-text-muted">{t('packageDetail.notFound')}</p>
         <button
           onClick={() => navigate(-1)}
-          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
+          className="rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
         >
           {t('packageDetail.back')}
         </button>
@@ -178,7 +178,7 @@ export default function PackageDetailPage() {
           </button>
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -255,7 +255,7 @@ export default function PackageDetailPage() {
 
         {/* ── Top Right: Giá trị hợp đồng ── */}
         <div className="lg:col-span-1">
-          <div className="h-full rounded-2xl border border-card-border bg-primary p-6 shadow-card text-white">
+          <div className="h-full rounded-[var(--radius-card)] border border-card-border bg-primary p-6 shadow-card text-white">
             <div className="flex items-center gap-3 mb-6">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="2" y="6" width="20" height="12" rx="2" />
@@ -455,7 +455,7 @@ export default function PackageDetailPage() {
                 </svg>
                 <h3 className="heading-entity">{t('packageDetail.notes')}</h3>
               </div>
-              <div className="flex-1 rounded-2xl border border-dashed border-card-border bg-content-bg p-5">
+              <div className="flex-1 rounded-[var(--radius-card)] border border-dashed border-card-border bg-content-bg p-5">
                 <p className="text-sm text-text leading-relaxed whitespace-pre-wrap break-words">
                   {pkg.notes}
                 </p>
@@ -464,7 +464,7 @@ export default function PackageDetailPage() {
           )}
 
           {/* CDE Attachment */}
-          <div className={`rounded-2xl border border-card-border bg-card p-6 shadow-card ${!pkg.notes ? 'md:col-span-2' : ''}`}>
+          <div className={`rounded-[var(--radius-card)] border border-card-border bg-card p-6 shadow-card ${!pkg.notes ? 'md:col-span-2' : ''}`}>
             <div className="flex items-center gap-2 mb-4">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
@@ -475,7 +475,7 @@ export default function PackageDetailPage() {
             {docFiles && docFiles.length > 0 ? (
               <div className="space-y-3">
                 {docFiles.map((file, idx) => (
-                  <div key={idx} className="rounded-2xl border border-card-border bg-content-bg p-5 flex items-center justify-between">
+                  <div key={idx} className="rounded-[var(--radius-card)] border border-card-border bg-content-bg p-5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -549,7 +549,7 @@ export default function PackageDetailPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-card-border bg-content-bg p-5 flex flex-col items-center justify-center text-center">
+              <div className="rounded-[var(--radius-card)] border border-dashed border-card-border bg-content-bg p-5 flex flex-col items-center justify-center text-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-placeholder mb-2">
                   <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
                 </svg>

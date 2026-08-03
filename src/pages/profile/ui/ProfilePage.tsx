@@ -84,8 +84,8 @@ export function ProfilePage() {
     { key: 'activity' as const, label: t('profile.tabs.activity') },
   ];
 
-  const inputClass = 'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
-  const inputReadOnly = 'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none';
+  const inputClass = 'field-input';
+  const inputReadOnly = 'field-input-readonly';
 
   if (profileLoading) {
     return (
@@ -182,7 +182,7 @@ export function ProfilePage() {
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* Full name */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.fullName')}
                   </label>
                   {editMode ? (
@@ -194,7 +194,7 @@ export function ProfilePage() {
 
                 {/* Position */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.position')}
                   </label>
                   <input type="text" value={role} readOnly className={inputReadOnly} />
@@ -202,7 +202,7 @@ export function ProfilePage() {
 
                 {/* Email */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.email')}
                   </label>
                   {editMode ? (
@@ -214,7 +214,7 @@ export function ProfilePage() {
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.phone')}
                   </label>
                   <input type="tel" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
@@ -222,7 +222,7 @@ export function ProfilePage() {
 
                 {/* Company */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.company')}
                   </label>
                   <input type="text" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
@@ -230,7 +230,7 @@ export function ProfilePage() {
 
                 {/* Department */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.department')}
                   </label>
                   <input type="text" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
@@ -289,7 +289,7 @@ export function ProfilePage() {
 
               <form onSubmit={handleChangePassword} className="max-w-md space-y-5">
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.security.currentPassword')}
                   </label>
                   <input
@@ -303,7 +303,7 @@ export function ProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.security.newPassword')}
                   </label>
                   <input
@@ -318,7 +318,7 @@ export function ProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.security.confirmPassword')}
                   </label>
                   <input

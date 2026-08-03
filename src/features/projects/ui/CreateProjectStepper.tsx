@@ -948,14 +948,14 @@ function Step3PackageInfo({
       {/* Package Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[var(--radius-card)] bg-card shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-card-border bg-card/80 px-6 py-4 backdrop-blur-xl">
-              <h3 className="heading-section text-text">{editingPackageId ? t('projects.stepper.s3.modalEdit') : t('projects.stepper.s3.modalAdd')}</h3>
+          <div className="flex max-h-[90vh] w-full max-w-4xl animate-scale-in flex-col overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-card-border px-7 py-5">
+              <h3 className="heading-entity">{editingPackageId ? t('projects.stepper.s3.modalEdit') : t('projects.stepper.s3.modalAdd')}</h3>
               <button onClick={() => setIsFormOpen(false)} className="rounded-full p-2 text-text-muted transition-colors hover:bg-content-bg hover:text-text">
                 &times;
               </button>
             </div>
-            <div className="p-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
               {renderPackageForm({
                 accounts,
                 initialData: editingPackageId

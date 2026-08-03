@@ -125,7 +125,7 @@ export function FolderNamingInfoModal({ folder, canManage, onClose, onInherited,
             <button
               type="button"
               onClick={() => setView('info')}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+              className="btn-modal-ghost"
             >
               ← {t('naming.customize.back')}
             </button>

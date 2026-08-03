@@ -10,8 +10,7 @@ interface Props {
   onCancel: () => void;
 }
 
-const inputClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+const inputClass = 'field-input';
 
 const DEFAULT_GROUP_KEYS: TranslationKey[] = [
   'projects.defaultGroup.design',
@@ -75,7 +74,7 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* ── Thông tin dự án ─────────────────────────── */}
       <div className="space-y-1.5">
-        <label htmlFor="project-name" className="block text-sm font-medium text-text-secondary">
+        <label htmlFor="project-name" className="field-label">
           {t('projects.form.name')}
         </label>
         <input
@@ -89,7 +88,7 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="project-desc" className="block text-sm font-medium text-text-secondary">
+        <label htmlFor="project-desc" className="field-label">
           {t('projects.form.description')}
         </label>
         <textarea
@@ -186,14 +185,14 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-[var(--radius-button)] border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg"
+          className="btn-modal-ghost"
         >
           {t('account.cancel')}
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+          className="btn-modal-primary"
         >
           {submitting ? t('common.loading') : t('projects.create.submit')}
         </button>

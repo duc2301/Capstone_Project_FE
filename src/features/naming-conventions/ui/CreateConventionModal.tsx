@@ -14,9 +14,8 @@ interface CreateConventionModalProps {
   onCreated: (convention: NamingConvention) => void;
 }
 
-const inputClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus';
-const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted';
+const inputClass = 'field-input';
+const labelClass = 'field-label mb-1.5';
 
 /* Modal tạo bộ quy tắc 2 bước:
  * B1 — tên + delimiter + (tùy chọn) import file xlsx theo template → preview.
@@ -197,7 +196,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
               type="button"
               onClick={() => { setStep(1); setError(null); }}
               disabled={busy}
-              className="mr-auto rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+              className="btn-modal-ghost mr-auto"
             >
               ← {t('naming.createModal.backStep')}
             </button>
@@ -206,7 +205,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+            className="btn-modal-ghost"
           >
             {t('naming.cancel')}
           </button>
@@ -215,7 +214,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
               type="button"
               onClick={handleNext}
               disabled={busy}
-              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-modal-primary flex items-center gap-2"
             >
               {t('naming.createModal.next')} →
             </button>

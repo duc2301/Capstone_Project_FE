@@ -96,14 +96,14 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
 
           {(action === 'create' || action === 'rename') && (
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('documents.action.nameLabel')}</span>
+              <span className="field-label">{t('documents.action.nameLabel')}</span>
               <input
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit(); }}
                 placeholder={t('documents.action.namePlaceholder')}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+                className="field-input"
               />
             </label>
           )}
@@ -115,11 +115,11 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
               </p>
             ) : (
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('documents.action.moveLabel')}</span>
+                <span className="field-label">{t('documents.action.moveLabel')}</span>
                 <select
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+                  className="field-input"
                 >
                   <option value="">—</option>
                   {moveTargets.map(({ node: n, depth }) => (
@@ -141,14 +141,14 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
+          <button type="button" onClick={onClose} className="btn-modal-ghost">
             {t('documents.action.cancel')}
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleSubmit}
-            className={`rounded-[var(--radius-button)] px-5 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${action === 'delete' ? 'bg-danger hover:bg-danger/90' : 'bg-primary hover:bg-primary-hover'}`}
+            className={action === 'delete' ? 'btn-modal-danger' : 'btn-modal-primary'}
           >
             {submitLabel}
           </button>

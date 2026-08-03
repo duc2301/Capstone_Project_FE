@@ -139,29 +139,29 @@ export function SubmitApprovalModal({
 
         <div className="space-y-4 overflow-y-auto px-6 py-5">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('approvals.submitModal.fileName')}</span>
+            <span className="field-label">{t('approvals.submitModal.fileName')}</span>
             <input
               readOnly
               value={fileName}
-              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+              className="field-input-readonly"
             />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('approvals.submit.currentZone')}</span>
+              <span className="field-label">{t('approvals.submit.currentZone')}</span>
               <input
                 readOnly
                 value={currentZone}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+                className="field-input-readonly"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('approvals.submit.targetZone')}</span>
+              <span className="field-label">{t('approvals.submit.targetZone')}</span>
               <input
                 readOnly
                 value={targetZone ?? ''}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+                className="field-input-readonly"
               />
             </label>
           </div>
@@ -263,14 +263,14 @@ export function SubmitApprovalModal({
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('approvals.submitModal.cancel')}
           </button>
           <button
             type="button"
             disabled={busy}
             onClick={handleSubmit}
-            className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-modal-primary"
           >
             {busy ? t('common.loading') : t('approvals.submitModal.submit')}
           </button>

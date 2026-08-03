@@ -581,9 +581,9 @@ export default function PackageDetailPage() {
       {/* View File Modal */}
       {viewFileUrl && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-content-bg w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-card-border bg-white">
-              <h3 className="heading-entity truncate pr-4">{viewFileUrl.name}</h3>
+          <div className="flex h-[90vh] w-full max-w-5xl animate-scale-in flex-col overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+            <div className="flex items-center justify-between gap-4 border-b border-card-border px-6 py-4">
+              <h3 className="heading-entity truncate">{viewFileUrl.name}</h3>
               <button
                 onClick={() => {
                   window.URL.revokeObjectURL(viewFileUrl.url);
@@ -595,7 +595,7 @@ export default function PackageDetailPage() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
-            <div className="flex-1 bg-gray-100 relative flex items-center justify-center p-4">
+            <div className="relative flex flex-1 items-center justify-center bg-content-bg p-4">
               {viewFileUrl.type.startsWith('image/') ? (
                 <img src={viewFileUrl.url} alt={viewFileUrl.name} className="max-w-full max-h-full object-contain shadow-sm" />
               ) : (
@@ -607,7 +607,7 @@ export default function PackageDetailPage() {
                 >
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
                     <p className="text-text-muted">{t('packageDetail.previewUnsupported')}</p>
-                    <a href={viewFileUrl.url} download={viewFileUrl.name} className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
+                    <a href={viewFileUrl.url} download={viewFileUrl.name} className="btn-modal-primary">
                       Tải xuống
                     </a>
                   </div>

@@ -69,11 +69,8 @@ export function RelatedFilesPicker({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
-        <div className="flex items-start justify-between border-b border-card-border px-6 py-4">
-          <div>
-            <h2 className="heading-entity text-primary">{t('relatedFiles.picker.title')}</h2>
-            <p className="mt-0.5 text-xs text-text-muted">{t('relatedFiles.picker.scopeHint')}</p>
-          </div>
+        <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
+          <h2 className="heading-entity">{t('relatedFiles.picker.title')}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -158,7 +155,7 @@ export function RelatedFilesPicker({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+              className="btn-modal-ghost"
             >
               {t('relatedFiles.picker.cancel')}
             </button>

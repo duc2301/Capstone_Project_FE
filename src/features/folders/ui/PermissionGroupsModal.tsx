@@ -365,7 +365,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
         <button
           type="button"
           onClick={onClose}
-          className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+          className="btn-modal-ghost"
         >
           {t('documents.action.cancel')}
         </button>
@@ -373,7 +373,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
           type="button"
           disabled={saving}
           onClick={handleSave}
-          className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-modal-primary"
         >
           {saving ? t('folderPermission.saving') : t('folderPermission.update')}
         </button>
@@ -396,7 +396,7 @@ export function PermissionGroupsModal({
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">
             <h2 className="heading-entity">{title}</h2>
-            <p className="truncate text-xs text-text-muted">{resourceName}</p>
+            <p className="field-hint truncate">{resourceName}</p>
           </div>
           <button type="button" onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -415,7 +415,7 @@ export function PermissionGroupsModal({
               )}
             </div>
             <div className="flex justify-end border-t border-card-border px-6 py-4">
-              <button type="button" onClick={onClose} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
+              <button type="button" onClick={onClose} className="btn-modal-ghost">
                 {t('documents.action.cancel')}
               </button>
             </div>

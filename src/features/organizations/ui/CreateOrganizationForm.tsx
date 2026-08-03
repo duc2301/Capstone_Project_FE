@@ -117,7 +117,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     }
   };
 
-  const inputClass = 'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+  const inputClass = 'field-input';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -125,7 +125,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
         {/* Tax Code - Hidden for Joint Ventures */}
         {!isJv && (
           <div className="space-y-1.5">
-            <label htmlFor="create-taxCode" className="block text-sm font-medium text-text-secondary">
+            <label htmlFor="create-taxCode" className="field-label">
               {t('org.taxCode')} <span className="text-danger">*</span>
             </label>
             <div className="flex gap-2">
@@ -158,7 +158,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
         {/* Legal Name */}
         <div className="space-y-1.5">
-          <label htmlFor="create-legalName" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="create-legalName" className="field-label">
             {isJv ? 'Tên liên danh' : t('org.legalName')} <span className="text-danger">*</span>
           </label>
           <input
@@ -175,7 +175,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
         {/* Display Name */}
         <div className="space-y-1.5">
-          <label htmlFor="create-displayName" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="create-displayName" className="field-label">
             {t('org.displayName')}
           </label>
           <input
@@ -191,7 +191,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
         {/* Organization Type — dropdown hoặc input tại chỗ */}
         <div className={`space-y-1.5 ${isJv ? 'sm:col-span-2' : ''}`}>
-          <label htmlFor="create-orgType" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="create-orgType" className="field-label">
             {t('org.type')} <span className="text-danger">*</span>
           </label>
           {!isOtherType ? (
@@ -243,7 +243,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
             <h3 className="heading-label text-primary">{t('org.form.jvStructure')}</h3>
             <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-text-secondary">
+                <label className="field-label">
                   Thành viên liên danh <span className="text-danger">*</span>
                 </label>
                 <div className="space-y-3 relative">
@@ -303,7 +303,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-text-secondary">
+                <label className="field-label">
                   Đơn vị đứng đầu (Đại diện) liên danh <span className="text-danger">*</span>
                 </label>
                 <select
@@ -329,7 +329,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
         {/* Address */}
         <div className="space-y-1.5 sm:col-span-2">
-          <label htmlFor="create-address" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="create-address" className="field-label">
             {t('org.address')}
           </label>
           <input
@@ -345,7 +345,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
         {/* Phone */}
         <div className="space-y-1.5">
-          <label htmlFor="create-phone" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="create-phone" className="field-label">
             {t('org.phone')}
           </label>
           <input
@@ -364,7 +364,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label htmlFor="create-email" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="create-email" className="field-label">
             {t('org.email')}
           </label>
           <input
@@ -384,14 +384,14 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-[var(--radius-button)] border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg hover:border-text-muted"
+          className="btn-modal-ghost"
         >
           {t('account.cancel')}
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-modal-primary"
         >
           {submitting ? (
             <span className="flex items-center gap-2">

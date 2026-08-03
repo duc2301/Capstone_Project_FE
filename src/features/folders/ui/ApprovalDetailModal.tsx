@@ -138,8 +138,7 @@ function ApprovalDetailContent({
           <div className="flex min-w-0 items-start gap-3">
             <FileIcon />
             <div className="min-w-0">
-              <h2 className="heading-section break-words text-text">{detail.fileName}</h2>
-              <p className="mt-1 text-xs text-text-muted">{t('approvals.detail.subtitle')}</p>
+              <h2 className="heading-entity break-words">{detail.fileName}</h2>
             </div>
           </div>
 

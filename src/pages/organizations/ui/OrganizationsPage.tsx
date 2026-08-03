@@ -8,7 +8,7 @@ import {
   useOrganizationTypes,
 } from '@/features/organizations';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, RowActions, Toast, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
@@ -34,37 +34,6 @@ function StatCard({ icon, value, label, color, bgColor }: StatCardProps) {
       <div>
         <p className="text-2xl font-bold text-text" style={{ color }}>{value}</p>
         <p className="text-xs font-medium text-text-muted">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Modal wrapper ─────────────────────────────────── */
-interface ModalProps {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
-function Modal({ title, onClose, children }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl max-h-[90vh] animate-scale-in overflow-y-auto rounded-[var(--radius-card-lg)] bg-card shadow-modal">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-card-border bg-card px-7 py-5">
-          <h2 className="heading-entity">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="px-7 py-6">{children}</div>
       </div>
     </div>
   );

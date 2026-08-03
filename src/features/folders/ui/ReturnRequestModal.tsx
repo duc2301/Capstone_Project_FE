@@ -24,7 +24,7 @@ export function ReturnRequestModal({ fileName, currentZone, busy, onClose, onSub
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">
             <h2 className="heading-entity">{t('returnRequests.modal.title')}</h2>
-            <p className="truncate text-xs text-text-muted">{fileName}</p>
+            <p className="field-hint truncate">{fileName}</p>
           </div>
           <button type="button" onClick={onClose} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -35,16 +35,16 @@ export function ReturnRequestModal({ fileName, currentZone, busy, onClose, onSub
 
         <div className="space-y-4 px-6 py-5">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('returnRequests.modal.currentZone')}</span>
+            <span className="field-label">{t('returnRequests.modal.currentZone')}</span>
             <input
               readOnly
               value={zoneLabel(currentZone)}
-              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-3.5 py-2.5 text-sm text-text-secondary outline-none"
+              className="field-input-readonly"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('returnRequests.modal.reasonLabel')}</span>
+            <span className="field-label">{t('returnRequests.modal.reasonLabel')}</span>
             <textarea
               autoFocus
               rows={4}
@@ -52,20 +52,20 @@ export function ReturnRequestModal({ fileName, currentZone, busy, onClose, onSub
               onChange={(e) => setReason(e.target.value)}
               disabled={busy}
               placeholder={t('returnRequests.modal.reasonPlaceholder')}
-              className="resize-none rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="field-input resize-none"
             />
           </label>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('returnRequests.modal.cancel')}
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={() => onSubmit(reason.trim())}
-            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-modal-primary"
           >
             {busy ? t('common.loading') : t('returnRequests.modal.submit')}
           </button>

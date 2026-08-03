@@ -76,7 +76,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
       {/* ── Nhóm ────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-text">{t('projectDetail.partners.group')}</label>
+        <label className="field-label">{t('projectDetail.partners.group')}</label>
         {loadingGroups ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : groups.length === 0 ? (
@@ -113,7 +113,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
       {/* ── Chọn tổ chức (đối tác) ──────────────────────── */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-text">{t('projectDetail.partners.selectOrg')}</label>
+        <label className="field-label">{t('projectDetail.partners.selectOrg')}</label>
         {loadingOrgs ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : organizations.length === 0 ? (
@@ -156,7 +156,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
           type="button"
           disabled={!isFormValid || submitting}
           onClick={handleSubmit}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
+          className="btn-modal-primary"
         >
           {submitting ? t('common.loading') : 'Gán đối tác cho nhóm'}
         </button>

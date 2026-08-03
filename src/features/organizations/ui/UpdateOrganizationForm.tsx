@@ -116,7 +116,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
     }
   };
 
-  const inputClass = 'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+  const inputClass = 'field-input';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -124,7 +124,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
         {/* Tax Code - Hidden for Joint Ventures */}
         {!organization.isJointVenture && (
           <div className="space-y-1.5">
-            <label htmlFor="edit-taxCode" className="block text-sm font-medium text-text-secondary">
+            <label htmlFor="edit-taxCode" className="field-label">
               {t('org.taxCode')}
             </label>
             <div className="flex gap-2">
@@ -153,7 +153,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
         {/* Legal Name */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-legalName" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="edit-legalName" className="field-label">
             {organization.isJointVenture ? 'Tên liên danh' : t('org.legalName')}
           </label>
           <input
@@ -169,7 +169,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
         {/* Display Name */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-displayName" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="edit-displayName" className="field-label">
             {t('org.displayName')}
           </label>
           <input
@@ -185,7 +185,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
         {/* Organization Type — dropdown hoặc input tại chỗ */}
         <div className={`space-y-1.5 ${organization.isJointVenture ? 'sm:col-span-2' : ''}`}>
-          <label htmlFor="edit-orgType" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="edit-orgType" className="field-label">
             {t('org.type')}
           </label>
           {!isOtherType ? (
@@ -236,7 +236,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
             <h3 className="heading-label text-primary">{t('org.form.jvStructure')}</h3>
             <div className="flex flex-col gap-6 mt-3 pt-4 border-t border-primary/20">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-text-secondary">
+                <label className="field-label">
                   Thành viên liên danh <span className="text-danger">*</span>
                 </label>
                 <div className="space-y-3 relative">
@@ -296,7 +296,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-text-secondary">
+                <label className="field-label">
                   Đơn vị đứng đầu (Đại diện) liên danh <span className="text-danger">*</span>
                 </label>
                 <select
@@ -322,7 +322,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
         {/* Address */}
         <div className="space-y-1.5 sm:col-span-2">
-          <label htmlFor="edit-address" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="edit-address" className="field-label">
             {t('org.address')}
           </label>
           <input
@@ -338,7 +338,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
         {/* Phone */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-phone" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="edit-phone" className="field-label">
             {t('org.phone')}
           </label>
           <input
@@ -357,7 +357,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-email" className="block text-sm font-medium text-text-secondary">
+          <label htmlFor="edit-email" className="field-label">
             {t('org.email')}
           </label>
           <input
@@ -377,14 +377,14 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-[var(--radius-button)] border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg hover:border-text-muted"
+          className="btn-modal-ghost"
         >
           {t('account.cancel')}
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-modal-primary"
         >
           {submitting ? (
             <span className="flex items-center gap-2">

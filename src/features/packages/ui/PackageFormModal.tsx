@@ -41,7 +41,7 @@ export function PackageFormModal({
 
   return (
     <Modal
-      title={initialData ? "Chỉnh sửa gói thầu" : "Thêm gói thầu mới"}
+      title={initialData ? t('packages.modal.editTitle') : t('packages.modal.createTitle')}
       onClose={onClose}
       maxWidth="max-w-4xl"
     >
@@ -81,7 +81,7 @@ export function PackageFormModal({
               await Promise.all(uploadPromises);
             }
 
-            onSuccess(initialData ? 'Cập nhật gói thầu thành công' : 'Tạo gói thầu thành công', currentPackageId);
+            onSuccess(initialData ? t('packages.success.update') : t('packages.success.create'), currentPackageId);
           } catch (e) {
             console.error('Package submit error:', e);
             onError(getApiErrorMessage(e, initialData ? t('packages.error.update') : t('packages.error.create')));

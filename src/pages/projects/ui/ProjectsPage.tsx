@@ -15,39 +15,10 @@ import {
   ProjectCard,
   useProjects,
 } from '@/features/projects';
-import { PaginationBar, Toast, useToast } from '@/shared/components';
+import { Modal, PaginationBar, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 const PAGE_SIZE = 6;
-
-interface ModalProps {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-function Modal({ title, onClose, children }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-5xl animate-scale-in flex-col rounded-[var(--radius-card)] bg-card shadow-modal">
-        <div className="flex shrink-0 items-center justify-between px-8 pt-7 pb-1">
-          <h2 className="heading-tab">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
-      </div>
-    </div>
-  );
-}
 
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
@@ -238,7 +209,7 @@ export function ProjectsPage() {
 
       {/* Create modal */}
       {creating && (
-        <Modal title={t('projects.modal.createTitle')} onClose={closeCreate}>
+        <Modal title={t('projects.modal.createTitle')} onClose={closeCreate} maxWidth="max-w-5xl" flush>
           <CreateProjectStepper
             key={bepData ? 'bep' : 'blank'}
             initialData={bepData}

@@ -12,7 +12,7 @@ import {
   useAccounts,
 } from '@/features/accounts';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, PaginationBar, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, PaginationBar, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'edit';
@@ -43,48 +43,6 @@ function StatCard({ icon, value, label, color, bgColor }: StatCardProps) {
       <div className="min-w-0 space-y-0.5">
         <p className="text-xs font-bold uppercase tracking-[0.6px] text-text-muted">{label}</p>
         <p className="font-display text-xl font-semibold text-text">{formatCount(value)}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Modal wrapper ─────────────────────────────────── */
-interface ModalProps {
-  title: string;
-  description?: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
-function Modal({ title, description, onClose, children }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-      />
-      {/* Dialog — cao tối đa 88vh, nội dung cuộn bên trong chứ không đẩy dài trang */}
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl animate-scale-in flex-col rounded-[var(--radius-card)] bg-card shadow-modal">
-        {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-6 border-b border-card-border px-8 py-6">
-          <div className="min-w-0 space-y-1">
-            <h2 className="heading-page">{title}</h2>
-            {description && <p className="text-sm text-text-secondary">{description}</p>}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        {/* Body */}
-        <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto px-8 py-6">{children}</div>
       </div>
     </div>
   );
@@ -445,22 +403,14 @@ export function AccountsPage() {
 
       {/* ── Create Modal ───────────────────────────── */}
       {formMode === 'create' && (
-        <Modal
-          title={t('account.modal.createTitle')}
-          description={t('account.modal.createDescription')}
-          onClose={closeForm}
-        >
+        <Modal title={t('account.modal.createTitle')} onClose={closeForm} maxWidth="max-w-3xl">
           <CreateAccountForm onSubmit={handleCreate} onCancel={closeForm} />
         </Modal>
       )}
 
       {/* ── Edit Modal ─────────────────────────────── */}
       {formMode === 'edit' && selectedAccount && (
-        <Modal
-          title={t('account.modal.editTitle')}
-          description={t('account.modal.editDescription')}
-          onClose={closeForm}
-        >
+        <Modal title={t('account.modal.editTitle')} onClose={closeForm} maxWidth="max-w-3xl">
           <UpdateAccountForm
             account={selectedAccount}
             onSubmit={handleUpdate}

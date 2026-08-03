@@ -136,6 +136,44 @@
   .table-head     { @apply border-b border-card-border text-left text-xs font-bold uppercase tracking-wider text-text-muted; }
 }
 
+/* ── Thang chữ trong thẻ/popup & form ─────────────
+   Khai 1 nơi để mọi popup dùng cùng font/cỡ/màu.
+   label : nhãn của một trường nhập
+   hint  : chú thích phụ dưới trường nhập
+   text  : chữ thân bài trong popup (mô tả, câu xác nhận)
+   input : ô nhập / vùng nhập / danh sách chọn
+   btn   : nút ở chân popup (chính / phụ / nguy hiểm) */
+@layer components {
+  .field-label { @apply block font-sans text-sm font-medium text-text-secondary; }
+  .field-hint  { @apply font-sans text-xs text-text-muted; }
+  .modal-text  { @apply font-sans text-sm text-text-secondary; }
+
+  .field-input {
+    @apply w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-2.5
+           font-sans text-sm text-text outline-none transition-colors
+           placeholder:text-text-placeholder
+           focus:border-primary focus:ring-2 focus:ring-primary/20
+           disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .field-input-readonly {
+    @apply w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg/60 px-4 py-2.5
+           font-sans text-sm text-text-secondary outline-none;
+  }
+
+  .btn-modal-primary {
+    @apply rounded-[var(--radius-button)] bg-primary px-5 py-2.5 font-sans text-sm font-semibold text-white
+           transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-modal-ghost {
+    @apply rounded-[var(--radius-button)] border border-card-border bg-card px-5 py-2.5 font-sans text-sm font-semibold text-text-secondary
+           transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-modal-danger {
+    @apply rounded-[var(--radius-button)] bg-danger px-5 py-2.5 font-sans text-sm font-semibold text-white
+           transition-colors hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
 /* ── Base ──────────────────────────────────────────── */
 html {
   font-size: 93.75%; /* 15px thay vì 16px — chữ toàn hệ thống nhỏ lại chút */

@@ -5,19 +5,20 @@ export interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   maxWidth?: string;
+  flush?: boolean;
 }
 
-export function Modal({ title, onClose, children, maxWidth = 'max-w-2xl' }: ModalProps) {
+export function Modal({ title, onClose, children, maxWidth = 'max-w-2xl', flush = false }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative z-10 w-full ${maxWidth} animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal`}>
-        <div className="flex items-center justify-between border-b border-card-border px-7 py-5">
-          <h2 className="heading-entity">{title}</h2>
+      <div className={`relative z-10 flex max-h-[88vh] w-full ${maxWidth} animate-scale-in flex-col rounded-[var(--radius-card-lg)] bg-card shadow-modal`}>
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-card-border px-7 py-5">
+          <h2 className="heading-entity truncate">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -25,7 +26,15 @@ export function Modal({ title, onClose, children, maxWidth = 'max-w-2xl' }: Moda
             </svg>
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-7 py-6">{children}</div>
+        <div
+          className={
+            flush
+              ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+              : 'min-h-0 flex-1 overflow-y-auto px-7 py-6'
+          }
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

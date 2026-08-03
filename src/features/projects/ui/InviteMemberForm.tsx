@@ -14,7 +14,7 @@ interface Props {
 }
 
 const fieldClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+  'field-input';
 
 const NO_ORGANIZATION = '__none__';
 
@@ -111,7 +111,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
 
       {/* ── Chọn nhóm (pills) ───────────────────────── */}
       <div className="space-y-2">
-        <span className="block text-sm font-medium text-text-secondary">{t('projects.invite.group')}</span>
+        <span className="field-label">{t('projects.invite.group')}</span>
         {loadingGroups ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : groups.length === 0 ? (
@@ -268,7 +268,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
           )}
 
           <div className="space-y-1.5">
-            <label htmlFor="invite-note" className="block text-sm font-medium text-text-secondary">
+            <label htmlFor="invite-note" className="field-label">
               {t('projects.invite.note')}
             </label>
             <input
@@ -284,7 +284,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
             <button
               type="submit"
               disabled={submitting || !canSubmit}
-              className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+              className="btn-modal-primary"
             >
               {submitting ? t('common.loading') : t('projects.invite.submit')}
             </button>

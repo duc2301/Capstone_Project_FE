@@ -15,13 +15,13 @@ export function ConfirmModal({ title, message, confirmLabel, busy = false, onCon
   return (
     <Modal title={title} onClose={busy ? () => undefined : onClose} maxWidth="max-w-md">
       <div className="space-y-6">
-        <p className="text-sm text-danger">{message}</p>
+        <p className="modal-text text-danger">{message}</p>
         <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+            className="btn-modal-ghost"
           >
             {t('naming.cancel')}
           </button>
@@ -29,7 +29,7 @@ export function ConfirmModal({ title, message, confirmLabel, busy = false, onCon
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className="rounded-[var(--radius-button)] bg-danger px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
+            className="btn-modal-danger"
           >
             {busy ? t('common.loading') : confirmLabel}
           </button>

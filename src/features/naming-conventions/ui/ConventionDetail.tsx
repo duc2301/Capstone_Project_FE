@@ -24,9 +24,8 @@ interface ConventionDetailProps {
   showToast: (msg: string, type?: 'success' | 'error') => void;
 }
 
-const inputClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus';
-const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted';
+const inputClass = 'field-input';
+const labelClass = 'field-label mb-1.5';
 const cardClass = 'rounded-[24px] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
 
 /* ── Modal sửa tên/delimiter ───────────────────────────── */
@@ -67,7 +66,7 @@ function EditConventionModal({
           </div>
         </div>
         <div className="flex justify-end gap-3 border-t border-card-border pt-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('naming.cancel')}
           </button>
           <button
@@ -220,10 +219,10 @@ function FieldFormModal({
         {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 border-t border-card-border pt-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('naming.cancel')}
           </button>
-          <button type="button" onClick={submit} disabled={busy} className="rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={submit} disabled={busy} className="btn-modal-primary">
             {busy ? t('common.loading') : t('common.saveChanges')}
           </button>
         </div>
@@ -736,7 +735,7 @@ export function ConventionDetail({
               <button
                 type="button"
                 onClick={() => setCustomizeFolder(null)}
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+                className="btn-modal-ghost"
               >
                 {t('naming.cancel')}
               </button>

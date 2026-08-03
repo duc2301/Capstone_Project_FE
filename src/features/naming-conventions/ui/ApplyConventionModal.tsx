@@ -163,7 +163,7 @@ export function ApplyConventionModal({ convention, projectId, onClose, onApplied
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+            className="btn-modal-ghost"
           >
             {t('naming.cancel')}
           </button>

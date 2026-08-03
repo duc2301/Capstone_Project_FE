@@ -70,25 +70,25 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.create.titleLabel')}</span>
+            <span className="field-label">{t('issues.create.titleLabel')}</span>
             <input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={busy}
               placeholder={t('issues.create.titlePlaceholder')}
-              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="field-input"
             />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.create.typeLabel')}</span>
+              <span className="field-label">{t('issues.create.typeLabel')}</span>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as IssueType)}
                 disabled={busy}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
+                className="field-input"
               >
                 <option value="Issue">{t('issues.type.issue')}</option>
                 <option value="Rfi">{t('issues.type.rfi')}</option>
@@ -96,12 +96,12 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.create.priorityLabel')}</span>
+              <span className="field-label">{t('issues.create.priorityLabel')}</span>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as IssuePriority)}
                 disabled={busy}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
+                className="field-input"
               >
                 <option value="Low">{t('issues.priority.low')}</option>
                 <option value="Medium">{t('issues.priority.medium')}</option>
@@ -112,12 +112,12 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
           </div>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.create.assigneeLabel')}</span>
+            <span className="field-label">{t('issues.create.assigneeLabel')}</span>
             <select
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               disabled={busy || membersLoading}
-              className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm font-semibold text-text outline-none focus:border-input-focus"
+              className="field-input"
             >
               <option value="">{t('issues.create.assigneePlaceholder')}</option>
               {assignableMembers.map((m) => (
@@ -127,14 +127,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.create.descriptionLabel')}</span>
+            <span className="field-label">{t('issues.create.descriptionLabel')}</span>
             <textarea
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={busy}
               placeholder={t('issues.create.descriptionPlaceholder')}
-              className="resize-none rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+              className="field-input resize-none"
             />
           </label>
 
@@ -146,14 +146,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} disabled={busy} className="rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-modal-ghost">
             {t('issues.create.cancel')}
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleSubmit}
-            className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-modal-primary"
           >
             {busy ? t('common.loading') : t('issues.create.submit')}
           </button>

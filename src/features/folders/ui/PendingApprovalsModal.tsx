@@ -6,7 +6,7 @@ import { approvalApi, approvalErrorMessage } from '@/entities/approval';
 import type { Group } from '@/entities/group';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
-import { ActionPillButton, RowActions, Toast, useToast } from '@/shared/components';
+import { ActionPillButton, ConfirmDialog, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner, recipientNames } from '../model/approvalFormat';
@@ -283,30 +283,15 @@ export function PendingApprovalsModal({
       )}
 
       {confirmApprove && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
-          <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => (actionBusyId ? undefined : setConfirmApprove(null))} />
-          <div className="relative z-10 w-full max-w-sm animate-scale-in rounded-[var(--radius-card-lg)] bg-card p-6 shadow-modal">
-            <p className="text-sm font-medium text-text">{t('approvals.confirmApprove.title')}</p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={!!actionBusyId}
-                onClick={() => setConfirmApprove(null)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
-              >
-                {t('approvals.confirmApprove.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={!!actionBusyId}
-                onClick={handleApprove}
-                className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {actionBusyId ? t('common.loading') : t('approvals.confirmApprove.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={t('approvals.confirmApprove.title')}
+          confirmLabel={t('approvals.confirmApprove.confirm')}
+          cancelLabel={t('approvals.confirmApprove.cancel')}
+          tone="primary"
+          busy={!!actionBusyId}
+          onConfirm={handleApprove}
+          onCancel={() => setConfirmApprove(null)}
+        />
       )}
 
       {rejectFor && (
@@ -319,30 +304,15 @@ export function PendingApprovalsModal({
       )}
 
       {confirmReturnApprove && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
-          <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => (returnBusyId ? undefined : setConfirmReturnApprove(null))} />
-          <div className="relative z-10 w-full max-w-sm animate-scale-in rounded-[var(--radius-card-lg)] bg-card p-6 shadow-modal">
-            <p className="text-sm font-medium text-text">{t('returnRequests.confirmApprove.title')}</p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={!!returnBusyId}
-                onClick={() => setConfirmReturnApprove(null)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
-              >
-                {t('returnRequests.confirmApprove.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={!!returnBusyId}
-                onClick={handleApproveReturn}
-                className="rounded-[var(--radius-button)] bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {returnBusyId ? t('common.loading') : t('returnRequests.confirmApprove.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={t('returnRequests.confirmApprove.title')}
+          confirmLabel={t('returnRequests.confirmApprove.confirm')}
+          cancelLabel={t('returnRequests.confirmApprove.cancel')}
+          tone="primary"
+          busy={!!returnBusyId}
+          onConfirm={handleApproveReturn}
+          onCancel={() => setConfirmReturnApprove(null)}
+        />
       )}
 
       {rejectReturnFor && (

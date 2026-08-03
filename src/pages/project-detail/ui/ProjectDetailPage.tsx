@@ -350,25 +350,25 @@ function GroupCard({
         <Modal title={t('projectDetail.teams.editGroup.title')} onClose={() => setEditGroupModalOpen(false)}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.name')}</label>
+              <label className="field-label">{t('projectDetail.teams.editGroup.name')}</label>
               <input
                 type="text"
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
-                className="rounded-[var(--radius-input)] border border-card-border bg-content-bg p-3 text-sm text-text outline-none focus:border-primary"
+                className="field-input"
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.description')}</label>
+              <label className="field-label">{t('projectDetail.teams.editGroup.description')}</label>
               <input
                 type="text"
                 value={editingDesc}
                 onChange={(e) => setEditingDesc(e.target.value)}
-                className="rounded-[var(--radius-input)] border border-card-border bg-content-bg p-3 text-sm text-text outline-none focus:border-primary"
+                className="field-input"
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.partner')}</label>
+              <label className="field-label">{t('projectDetail.teams.editGroup.partner')}</label>
               <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
                 <button
                   onClick={() => setEditingOrgId(null)}
@@ -421,7 +421,7 @@ function GroupCard({
                 type="button"
                 disabled={updatingGroup}
                 onClick={() => setEditGroupModalOpen(false)}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-text-secondary hover:bg-content-bg"
+                className="btn-modal-ghost"
               >
                 {t('projectDetail.teams.editGroup.cancel')}
               </button>
@@ -470,7 +470,7 @@ function GroupCard({
                 type="button"
                 disabled={removingGroup}
                 onClick={() => setRemoveConfirmOpen(false)}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-text-secondary hover:bg-content-bg"
+                className="btn-modal-ghost"
               >
                 {t('projectDetail.teams.removeGroup.cancel')}
               </button>
@@ -486,7 +486,7 @@ function GroupCard({
                     setRemovingGroup(false);
                   }
                 }}
-                className="rounded-xl bg-danger px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
+                className="btn-modal-danger"
               >
                 {removingGroup ? t('common.loading') : t('projectDetail.teams.removeGroup.submit')}
               </button>

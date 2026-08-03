@@ -278,7 +278,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
       <div className="relative z-10 flex max-h-[90vh] w-full max-w-[600px] animate-scale-in flex-col overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="border-b border-card-border/70 px-6 py-5">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="heading-tab text-text">{t('smartca.signModal.title')}</h2>
+            <h2 className="heading-entity">{t('smartca.signModal.title')}</h2>
             <button type="button" onClick={onClose} disabled={creatingRequest} className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text disabled:opacity-40">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -315,7 +315,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
 
               <section className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <label className="flex flex-col gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.userId')}</span>
+                  <span className="field-label">{t('smartca.signModal.userId')}</span>
                   <input
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
@@ -335,7 +335,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
 
               <section className="space-y-4">
                 <label className="flex flex-col gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('smartca.signModal.certificate')}</span>
+                  <span className="field-label">{t('smartca.signModal.certificate')}</span>
                   <select
                     value={certificateSerial}
                     onChange={(e) => setCertificateSerial(e.target.value)}
@@ -570,7 +570,7 @@ function SignatureInfoPanel({ signatureInfo }: { signatureInfo: SignatureInfo | 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 md:grid-cols-[160px_1fr]">
-      <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</span>
+      <span className="field-label">{label}</span>
       <span className="break-all text-text-secondary">{value}</span>
     </div>
   );

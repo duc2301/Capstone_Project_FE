@@ -1,8 +1,10 @@
 export { folderApi, folderErrorMessage } from './api/folderApi';
 export { toFolderTreeNode } from './model/folder.mappers';
+export { useFolderTree } from './model/useFolderTree';
 export { CdeArea } from './model/folder.types';
 export type {
   CreateSubFolderPayload,
+  CurrentUserFolderPermissionDto,
   EffectivePermission,
   Folder,
   FolderContentsDto,

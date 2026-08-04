@@ -1,9 +1,6 @@
 export const ProjectStatus = {
-  Planning: 0,
-  Active: 1,
-  OnHold: 2,
-  Completed: 3,
-  Closed: 4,
+  Active: 0,
+  Completed: 1,
 } as const;
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
@@ -36,7 +33,6 @@ export interface Project {
 export interface CreateProjectPayload {
   projectName: string;
   projectCode?: string;
-  projectImageUrl?: string;
   projectDescription?: string;
   ownerOrganizationId?: string;
   contactAddress?: string;
@@ -50,7 +46,6 @@ export interface CreateProjectPayload {
 export interface UpdateProjectPayload {
   projectName?: string;
   projectCode?: string;
-  projectImageUrl?: string;
   projectDescription?: string;
   managerAccountId?: string;
   status?: ProjectStatus;

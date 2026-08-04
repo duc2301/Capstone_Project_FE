@@ -39,7 +39,7 @@ function HeroVisual() {
 
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-[#FBF9F1]">
+    <section className="relative overflow-hidden bg-page-cream">
       <div
         className="absolute -right-72 -top-48 h-[800px] w-[800px] rounded-full blur-[50px]"
         style={{ backgroundColor: 'rgba(194, 240, 156, 0.2)' }}
@@ -51,31 +51,31 @@ function HeroSection() {
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-24 pt-44 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#C3C9B9]/30 bg-[#EAE8E0] px-4 py-2 font-jakarta text-xs font-medium uppercase tracking-[1.2px] text-[#43493C]">
-            <span className="text-[#406623]">✦</span>
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border-sage/30 bg-card-border px-4 py-2 text-xs font-medium uppercase tracking-[1.2px] text-text-secondary">
+            <span className="text-primary">✦</span>
             {t('home.hero.badge')}
           </span>
 
-          <h1 className="max-w-[660px] font-display text-[40px] font-bold leading-[1.14] tracking-[-1.12px] text-[#1B1C17] md:text-[56px] md:leading-[64px]">
+          <h1 className="heading-hero max-w-[660px]">
             {t('home.hero.titleLead')}{' '}
-            <span className="italic text-[#406623]">{t('home.hero.titleAccent')}</span>
+            <span className="italic text-primary">{t('home.hero.titleAccent')}</span>
           </h1>
 
-          <p className="max-w-xl font-jakarta text-lg leading-7 text-[#43493C]">
+          <p className="max-w-xl text-lg leading-7 text-text-secondary">
             {t('home.hero.subtitle')}
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-4">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#406623] px-8 py-4 font-jakarta text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-[#34521c]"
+              className="inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-8 py-4 text-sm font-semibold tracking-[0.14px] text-white transition-colors hover:bg-primary-hover"
             >
               {t('home.hero.ctaPrimary')}
               <ArrowRightIcon />
             </Link>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#406623] px-8 py-4 font-jakarta text-sm font-semibold tracking-[0.14px] text-[#406623] transition-colors hover:bg-[#406623]/5"
+              className="inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-8 py-4 text-sm font-semibold tracking-[0.14px] text-primary transition-colors hover:bg-primary/5"
             >
               <PlayIcon />
               {t('home.hero.ctaSecondary')}
@@ -103,7 +103,7 @@ const WITH_CDE_ITEMS: TranslationKey[] = [
 
 function WarningIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#93000A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-deep)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
       <path d="M12 9v4M12 17h.01" />
     </svg>
@@ -112,7 +112,7 @@ function WarningIcon() {
 
 function CheckShieldIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-card)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
       <path d="m9 12 2 2 4-4" />
     </svg>
@@ -121,7 +121,7 @@ function CheckShieldIcon() {
 
 function CrossMarkIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BA1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
       <path d="M18 6 6 18M6 6l12 12" />
     </svg>
   );
@@ -129,7 +129,7 @@ function CrossMarkIcon() {
 
 function CheckMarkIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );
@@ -137,28 +137,28 @@ function CheckMarkIcon() {
 
 function WhyCdeSection() {
   return (
-    <section className="bg-[#F6F4EC] py-24">
+    <section className="bg-page-cream-alt py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto mb-16 max-w-3xl text-center">
-          <h2 className="mb-4 font-display text-[32px] font-semibold text-[#1B1C17]">
+          <h2 className="heading-page mb-4">
             {t('home.why.title')}
           </h2>
-          <p className="font-jakarta text-base text-[#43493C]">{t('home.why.subtitle')}</p>
+          <p className="text-base text-text-secondary">{t('home.why.subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <article className="relative overflow-hidden rounded-3xl border border-[#FFDAD6] bg-[#FBF9F1] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-            <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-[#FFDAD6]/20" />
+          <article className="relative overflow-hidden rounded-3xl border border-danger-container bg-page-cream p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-danger-container/20" />
             <div className="relative flex flex-col gap-6">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FFDAD6]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-danger-container">
                 <WarningIcon />
               </span>
-              <h3 className="font-display text-2xl font-semibold text-[#1B1C17]">
+              <h3 className="heading-tab">
                 {t('home.why.without.title')}
               </h3>
               <ul className="flex flex-col gap-4">
                 {WITHOUT_CDE_ITEMS.map((key) => (
-                  <li key={key} className="flex items-start gap-3 font-jakarta text-base leading-6 text-[#43493C]">
+                  <li key={key} className="flex items-start gap-3 text-base leading-6 text-text-secondary">
                     <CrossMarkIcon />
                     <span>{t(key)}</span>
                   </li>
@@ -167,18 +167,18 @@ function WhyCdeSection() {
             </div>
           </article>
 
-          <article className="relative overflow-hidden rounded-3xl border border-[#406623]/20 bg-[#406623]/[0.05] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-            <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-[#406623]/10" />
+          <article className="relative overflow-hidden rounded-3xl border border-primary/20 bg-primary/[0.05] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-primary/10" />
             <div className="relative flex flex-col gap-6">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#406623]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
                 <CheckShieldIcon />
               </span>
-              <h3 className="font-display text-2xl font-semibold text-[#1B1C17]">
+              <h3 className="heading-tab">
                 {t('home.why.with.title')}
               </h3>
               <ul className="flex flex-col gap-4">
                 {WITH_CDE_ITEMS.map((key) => (
-                  <li key={key} className="flex items-start gap-3 font-jakarta text-base leading-6 text-[#43493C]">
+                  <li key={key} className="flex items-start gap-3 text-base leading-6 text-text-secondary">
                     <CheckMarkIcon />
                     <span>{t(key)}</span>
                   </li>
@@ -208,8 +208,8 @@ const TEAM_MEMBERS: TeamMember[] = [
 
 function MemberAvatar() {
   return (
-    <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#E4E3DB]">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <span className="flex h-24 w-24 items-center justify-center rounded-full bg-surface-sand">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
       </svg>
@@ -219,13 +219,13 @@ function MemberAvatar() {
 
 function TeamSection() {
   return (
-    <section className="bg-[#FBF9F1] pb-24 pt-8">
+    <section className="bg-page-cream pb-24 pt-8">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto mb-10 max-w-2xl text-center">
-          <h2 className="mb-4 font-display text-[32px] font-semibold text-[#1B1C17]">
+          <h2 className="heading-page mb-4">
             {t('home.team.title')}
           </h2>
-          <p className="font-jakarta text-lg leading-7 text-[#43493C]">
+          <p className="text-lg leading-7 text-text-secondary">
             {t('home.team.subtitle')}
           </p>
         </div>
@@ -234,20 +234,20 @@ function TeamSection() {
           {TEAM_MEMBERS.map((member) => (
             <article
               key={member.nameKey}
-              className="flex w-full flex-col items-center gap-3 rounded-3xl border border-[#E8E6E0] bg-white px-6 pb-10 pt-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05)] sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]"
+              className="flex w-full flex-col items-center gap-3 rounded-3xl border border-card-border bg-white px-6 pb-10 pt-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05)] sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]"
             >
               <MemberAvatar />
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <h3 className="font-display text-xl font-semibold text-[#1B1C17]">
+                <h3 className="heading-tab">
                   {t(member.nameKey)}
                 </h3>
                 {member.isLeader && (
-                  <span className="rounded-full bg-[#406623]/10 px-2 py-0.5 font-jakarta text-[11px] font-semibold uppercase tracking-[0.6px] text-[#406623]">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.6px] text-primary">
                     {t('home.team.leaderBadge')}
                   </span>
                 )}
               </div>
-              <p className="font-jakarta text-sm leading-5 text-[#43493C]">
+              <p className="text-sm leading-5 text-text-secondary">
                 {t(member.rolesKey)}
               </p>
             </article>
@@ -260,7 +260,7 @@ function TeamSection() {
 
 export function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#FBF9F1]">
+    <div className="flex min-h-screen flex-col bg-page-cream">
       <Header />
       <main className="flex-1">
         <HeroSection />

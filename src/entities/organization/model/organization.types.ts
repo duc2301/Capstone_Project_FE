@@ -4,6 +4,7 @@ export interface Organization {
   taxCode: string;
   legalName: string;
   displayName: string | null;
+  internationalName: string | null;
   organizationTypeId: string;
   address: string | null;
   phone: string | null;
@@ -13,12 +14,14 @@ export interface Organization {
   isJointVenture?: boolean;
   jointVentureMemberIds?: string[];
   representativeOrganizationId?: string | null;
+  participatingProjectsCount?: number;
 }
 
 export interface CreateOrganizationPayload {
-  taxCode: string;
+  taxCode?: string;
   legalName: string;
   displayName?: string;
+  internationalName?: string;
   organizationTypeId: string;
   address?: string;
   phone?: string;
@@ -32,6 +35,7 @@ export interface UpdateOrganizationPayload {
   taxCode?: string;
   legalName?: string;
   displayName?: string;
+  internationalName?: string;
   organizationTypeId?: string;
   address?: string;
   phone?: string;
@@ -39,4 +43,12 @@ export interface UpdateOrganizationPayload {
   isJointVenture?: boolean;
   jointVentureMemberIds?: string[];
   representativeOrganizationId?: string | null;
+}
+
+export interface TaxCodeLookupResult {
+  taxCode: string;
+  legalName: string;
+  internationalName: string;
+  shortName: string;
+  address: string;
 }

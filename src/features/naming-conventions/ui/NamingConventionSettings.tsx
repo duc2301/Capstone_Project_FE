@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { namingConventionApi } from '@/entities/naming-convention';
+import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { useNamingConventions } from '../model/useNamingConventions';
@@ -21,12 +22,8 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
   const { conventions, loading, error, refetch, upsert } = useNamingConventions(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const selected = conventions.find((c) => c.id === selectedId) ?? null;
 
@@ -48,11 +45,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[60] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[60]" />
 
       {selected ? (
         <ConventionDetail
@@ -80,7 +73,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
                 <button
                   type="button"
                   onClick={() => void handleDownloadTemplate()}
-                  className="flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
+                  className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
@@ -90,7 +83,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
                 <button
                   type="button"
                   onClick={() => setCreateOpen(true)}
-                  className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                  className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -124,7 +117,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
                 <button
                   type="button"
                   onClick={() => setCreateOpen(true)}
-                  className="mx-auto mt-5 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                  className="mx-auto mt-5 flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -137,12 +130,12 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
             <div className={`${cardClass} overflow-x-auto`}>
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-card-border text-text-muted">
-                    <th className="pb-3 font-semibold">{t('naming.table.name')}</th>
-                    <th className="pb-3 text-center font-semibold">{t('naming.table.delimiter')}</th>
-                    <th className="pb-3 text-center font-semibold">{t('naming.table.fields')}</th>
-                    <th className="pb-3 font-semibold">{t('naming.table.folders')}</th>
-                    <th className="pb-3 text-center font-semibold">{t('naming.table.status')}</th>
+                  <tr className="table-head">
+                    <th className="pb-3">{t('naming.table.name')}</th>
+                    <th className="pb-3 text-center">{t('naming.table.delimiter')}</th>
+                    <th className="pb-3 text-center">{t('naming.table.fields')}</th>
+                    <th className="pb-3">{t('naming.table.folders')}</th>
+                    <th className="pb-3 text-center">{t('naming.table.status')}</th>
                     <th className="pb-3" />
                   </tr>
                 </thead>

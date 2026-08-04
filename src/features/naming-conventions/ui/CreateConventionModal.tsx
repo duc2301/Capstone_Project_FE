@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import type { ImportedNamingField, NamingConvention } from '@/entities/naming-convention';
 import { NAMING_DELIMITERS, namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
-import { Modal } from '@/shared/components/modal';
+import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { ImportPreviewEditor } from './ImportPreviewEditor';
@@ -14,9 +14,8 @@ interface CreateConventionModalProps {
   onCreated: (convention: NamingConvention) => void;
 }
 
-const inputClass =
-  'w-full rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus';
-const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted';
+const inputClass = 'field-input';
+const labelClass = 'field-label mb-1.5';
 
 /* Modal tạo bộ quy tắc 2 bước:
  * B1 — tên + delimiter + (tùy chọn) import file xlsx theo template → preview.
@@ -130,7 +129,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
                     key={d}
                     type="button"
                     onClick={() => setDelimiter(d)}
-                    className={`flex h-11 w-14 items-center justify-center rounded-xl border font-mono text-lg font-bold transition-colors ${
+                    className={`flex h-11 w-14 items-center justify-center rounded-[var(--radius-button)] border font-mono text-lg font-bold transition-colors ${
                       delimiter === d
                         ? 'border-primary bg-primary text-white'
                         : 'border-input-border bg-input-bg text-text-secondary hover:border-primary hover:text-primary'
@@ -145,7 +144,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
             {/* Import xlsx (tùy chọn) */}
             <div>
               <label className={labelClass}>{t('naming.createModal.import')}</label>
-              <div className="flex flex-col items-center gap-1.5 rounded-2xl border-2 border-dashed border-card-border bg-input-bg/30 px-6 py-8 text-center">
+              <div className="flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed border-card-border bg-input-bg/30 px-6 py-8 text-center">
                 <span className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
@@ -197,7 +196,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
               type="button"
               onClick={() => { setStep(1); setError(null); }}
               disabled={busy}
-              className="mr-auto rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+              className="btn-modal-ghost mr-auto"
             >
               ← {t('naming.createModal.backStep')}
             </button>
@@ -206,7 +205,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
+            className="btn-modal-ghost"
           >
             {t('naming.cancel')}
           </button>
@@ -215,7 +214,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
               type="button"
               onClick={handleNext}
               disabled={busy}
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-modal-primary flex items-center gap-2"
             >
               {t('naming.createModal.next')} →
             </button>
@@ -224,7 +223,7 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
               type="button"
               onClick={() => void handleSave()}
               disabled={busy}
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? t('common.loading') : t('naming.createModal.save')}
             </button>

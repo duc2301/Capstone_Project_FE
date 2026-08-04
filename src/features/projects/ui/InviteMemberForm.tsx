@@ -14,11 +14,14 @@ interface Props {
 }
 
 const fieldClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+  'field-input';
+
+const NO_ORGANIZATION = '__none__';
 
 export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, onSubmit }: Props) {
   const [groupId, setGroupId] = useState('');
   const [query, setQuery] = useState('');
+  const [organizationFilter, setOrganizationFilter] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [leaderId, setLeaderId] = useState('');
   const [note, setNote] = useState('');
@@ -40,19 +43,35 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
     [accounts, existingIds],
   );
 
+  const organizationOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    accounts.forEach((a) => {
+      if (a.organizationId && a.organizationName) byId.set(a.organizationId, a.organizationName);
+    });
+    return [...byId].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  }, [accounts]);
+
+  const hasUnassignedAccounts = useMemo(
+    () => accounts.some((a) => !a.organizationId),
+    [accounts],
+  );
+
   const filteredAccounts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return invitableAccounts;
-    return invitableAccounts.filter(
-      (a) => a.userName.toLowerCase().includes(q) || a.email.toLowerCase().includes(q),
-    );
-  }, [invitableAccounts, query]);
+    return invitableAccounts.filter((a) => {
+      if (organizationFilter === NO_ORGANIZATION && a.organizationId) return false;
+      if (organizationFilter && organizationFilter !== NO_ORGANIZATION && a.organizationId !== organizationFilter) return false;
+      if (!q) return true;
+      return a.userName.toLowerCase().includes(q) || a.email.toLowerCase().includes(q);
+    });
+  }, [invitableAccounts, query, organizationFilter]);
 
   const selectGroup = (id: string) => {
     setGroupId(id);
     setSelectedIds([]);
     setLeaderId('');
     setQuery('');
+    setOrganizationFilter('');
   };
 
   const toggleSelect = (id: string) => {
@@ -92,7 +111,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
 
       {/* ── Chọn nhóm (pills) ───────────────────────── */}
       <div className="space-y-2">
-        <span className="block text-sm font-medium text-text-secondary">{t('projects.invite.group')}</span>
+        <span className="field-label">{t('projects.invite.group')}</span>
         {loadingGroups ? (
           <p className="text-sm text-text-muted">{t('common.loading')}</p>
         ) : groups.length === 0 ? (
@@ -141,18 +160,40 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
             </span>
           </div>
 
-          <div className="flex items-center gap-2 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('projects.invite.searchUser')}
-              className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
-            />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-1 items-center gap-2 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('projects.invite.searchUser')}
+                className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
+              />
+            </div>
+
+            {/* Lọc theo doanh nghiệp: nhóm nào do công ty nào đảm nhiệm thì chọn công ty đó */}
+            {organizationOptions.length > 0 && (
+              <select
+                value={organizationFilter}
+                onChange={(e) => setOrganizationFilter(e.target.value)}
+                aria-label={t('projects.invite.filterOrganization')}
+                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text outline-none transition-colors focus:border-primary sm:max-w-56"
+              >
+                <option value="">{t('projects.invite.allOrganizations')}</option>
+                {organizationOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+                {hasUnassignedAccounts && (
+                  <option value={NO_ORGANIZATION}>{t('projects.invite.noOrganization')}</option>
+                )}
+              </select>
+            )}
           </div>
 
           <div className="max-h-72 space-y-1 overflow-y-auto rounded-[var(--radius-input)] border border-card-border p-1.5">
@@ -181,7 +222,9 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium text-text">{a.userName}</span>
-                        <span className="block truncate text-xs text-text-muted">{a.email}</span>
+                        <span className="block truncate text-xs text-text-muted">
+                          {a.organizationName ? `${a.email} · ${a.organizationName}` : a.email}
+                        </span>
                       </span>
                     </label>
 
@@ -225,7 +268,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
           )}
 
           <div className="space-y-1.5">
-            <label htmlFor="invite-note" className="block text-sm font-medium text-text-secondary">
+            <label htmlFor="invite-note" className="field-label">
               {t('projects.invite.note')}
             </label>
             <input
@@ -241,7 +284,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
             <button
               type="submit"
               disabled={submitting || !canSubmit}
-              className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+              className="btn-modal-primary"
             >
               {submitting ? t('common.loading') : t('projects.invite.submit')}
             </button>

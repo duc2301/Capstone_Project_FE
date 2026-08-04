@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 interface UseZoneReturnRequestsReturn {
   items: ZoneReturnRequestItem[];
@@ -22,7 +23,7 @@ export function useZoneReturnRequests(): UseZoneReturnRequestsReturn {
 
     try {
       const data = await zoneTransferApi.getPendingReturnRequests();
-      if (!isCancelled()) setItems(data);
+      if (!isCancelled()) setItems(sortByNewest(data, (item) => item.createdAt));
     } catch (err) {
       if (!isCancelled()) setError(zoneTransferErrorMessage(err, t('returnRequests.error')));
     } finally {

@@ -91,20 +91,20 @@ export function VerifyOtpForm() {
     return (
       <div className="flex w-full max-w-[480px] flex-col items-center gap-4 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <path d="M12 8v4M12 16h.01" />
           </svg>
         </div>
-        <h1 className="font-display text-2xl font-semibold text-[#1B1C17]">
+        <h1 className="heading-page">
           {t('verifyOtp.missingEmail')}
         </h1>
-        <p className="font-jakarta text-base text-[#73796B]">
+        <p className="text-base text-text-muted">
           {t('verifyOtp.missingEmailDesc')}
         </p>
         <Link
           to="/register"
-          className="mt-2 rounded-full bg-[#406623] px-8 py-3 font-jakarta text-sm font-bold text-white transition-colors hover:bg-[#34521c]"
+          className="mt-2 rounded-full bg-primary px-8 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
         >
           {t('verifyOtp.goToRegister')}
         </Link>
@@ -116,25 +116,25 @@ export function VerifyOtpForm() {
     <div className="flex w-full max-w-[480px] flex-col gap-5">
       <header className="flex flex-col items-center gap-2 text-center">
         {/* Email icon */}
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#406623]/10">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect width="20" height="16" x="2" y="4" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
         </div>
-        <h1 className="font-display text-[28px] font-semibold leading-9 text-[#1B1C17]">
+        <h1 className="heading-page">
           {t('verifyOtp.title')}
         </h1>
-        <p className="max-w-[400px] font-jakarta text-base text-[#73796B]">
+        <p className="max-w-[400px] text-base text-text-muted">
           {t('verifyOtp.subtitle')}{' '}
-          <span className="font-semibold text-[#1B1C17]">{email}</span>
+          <span className="font-semibold text-text-strong">{email}</span>
         </p>
       </header>
 
       <form
         id="verify-otp-form"
         onSubmit={handleSubmit}
-        className="flex flex-col gap-5 rounded-3xl border border-[#C3C9B9] bg-white px-6 pb-6 pt-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-10"
+        className="flex flex-col gap-5 rounded-3xl border border-border-sage bg-white px-6 pb-6 pt-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] md:px-10"
       >
         {/* Error alert */}
         {error && (
@@ -142,11 +142,11 @@ export function VerifyOtpForm() {
             role="alert"
             className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4M12 16h.01" />
             </svg>
-            <span className="font-jakarta text-sm text-red-600">{error}</span>
+            <span className="text-sm text-red-600">{error}</span>
           </div>
         )}
 
@@ -156,17 +156,17 @@ export function VerifyOtpForm() {
             role="status"
             className="flex items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-4 py-3"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success-bright)" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
-            <span className="font-jakarta text-sm text-green-600">{success}</span>
+            <span className="text-sm text-green-600">{success}</span>
           </div>
         )}
 
         {/* OTP Input Grid */}
         <div className="flex flex-col items-center gap-3">
-          <p className="font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
+          <p className="text-sm font-semibold tracking-[0.14px] text-text-secondary">
             {t('verifyOtp.enterCode')}
           </p>
           <div className="flex gap-3" onPaste={handlePaste}>
@@ -181,7 +181,7 @@ export function VerifyOtpForm() {
                 onChange={(e) => handleChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 autoFocus={idx === 0}
-                className="h-14 w-12 rounded-xl border border-[#C3C9B9] bg-[#F8F8F5] text-center font-display text-2xl font-semibold text-[#1B1C17] transition-all focus:border-[#406623] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#406623]/30"
+                className="h-14 w-12 rounded-[var(--radius-input)] border border-border-sage bg-input-bg text-center font-display text-2xl font-semibold text-text-strong transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                 aria-label={`OTP digit ${idx + 1}`}
               />
             ))}
@@ -193,7 +193,7 @@ export function VerifyOtpForm() {
           id="verify-otp-submit-btn"
           type="submit"
           disabled={loading || digits.join('').length !== OTP_LENGTH}
-          className="flex w-full items-center justify-center rounded-full bg-[#406623] py-3 font-jakarta text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center rounded-[var(--radius-button)] bg-primary py-3 text-sm font-bold tracking-[0.14px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? (
             <span className="flex items-center gap-2">
@@ -209,14 +209,14 @@ export function VerifyOtpForm() {
         </button>
 
         {/* Resend & timer */}
-        <div className="flex flex-col items-center gap-2 border-t border-[#C3C9B9]/30 pt-4">
-          <p className="font-jakarta text-sm text-[#73796B]">
+        <div className="flex flex-col items-center gap-2 border-t border-border-sage/30 pt-4">
+          <p className="text-sm text-text-muted">
             {t('verifyOtp.noCode')}
           </p>
           {countdown > 0 ? (
-            <p className="font-jakarta text-sm text-[#73796B]">
+            <p className="text-sm text-text-muted">
               {t('verifyOtp.resendIn')}{' '}
-              <span className="font-semibold text-[#406623]">
+              <span className="font-semibold text-primary">
                 {formatCountdown(countdown)}
               </span>
             </p>
@@ -225,7 +225,7 @@ export function VerifyOtpForm() {
               type="button"
               onClick={handleResend}
               disabled={resending}
-              className="font-jakarta text-sm font-semibold text-[#406623] transition-colors hover:underline disabled:opacity-50"
+              className="text-sm font-semibold text-primary transition-colors hover:underline disabled:opacity-50"
             >
               {resending ? t('verifyOtp.resending') : t('verifyOtp.resendBtn')}
             </button>
@@ -236,7 +236,7 @@ export function VerifyOtpForm() {
         <div className="text-center">
           <Link
             to="/login"
-            className="font-jakarta text-sm text-[#73796B] transition-colors hover:text-[#43493C]"
+            className="text-sm text-text-muted transition-colors hover:text-text-secondary"
           >
             ← {t('verifyOtp.backToLogin')}
           </Link>

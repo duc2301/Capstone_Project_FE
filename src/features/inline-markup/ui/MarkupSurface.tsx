@@ -501,7 +501,7 @@ function SelectionOutline({ type, coord, size }: { type: MarkupType; coord: Coor
       width={b.w * size.w + pad * 2}
       height={b.h * size.h + pad * 2}
       fill="none"
-      stroke="#2563EB"
+      stroke="var(--color-markup-blue)"
       strokeWidth={1}
       strokeDasharray="4 3"
     />

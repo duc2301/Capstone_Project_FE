@@ -1,13 +1,14 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { t } from '@/shared/lib/i18n';
 
 import { useResetPassword } from '../model/useResetPassword';
 
 const INPUT_BASE =
-  'h-12 w-full rounded-xl border border-[#C3C9B9] bg-white font-jakarta text-base text-[#1B1C17] placeholder:text-[#6B7280] transition-colors focus:border-[#406623] focus:outline-none focus:ring-1 focus:ring-[#406623]';
+  'h-12 w-full rounded-xl border border-border-sage bg-white text-base text-text-strong placeholder:text-text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
 const LABEL_CLASS =
-  'font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]';
+  'text-sm font-semibold tracking-[0.14px] text-text-secondary';
 
 function LockIcon() {
   return (
@@ -83,16 +84,16 @@ export function ResetPasswordForm() {
           </svg>
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-[28px] font-semibold text-[#1B1C17]">
+          <h1 className="heading-page">
             Link không hợp lệ
           </h1>
-          <p className="font-jakarta text-base text-[#43493C]">
+          <p className="text-base text-text-secondary">
             Link đặt lại mật khẩu này không hợp lệ hoặc đã hết hạn.
           </p>
         </div>
         <Link
           to="/forgot-password"
-          className="flex h-12 items-center justify-center rounded-xl bg-[#406623] px-6 font-jakarta text-sm font-semibold text-white hover:bg-[#34521c] transition-colors"
+          className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-primary px-6 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
         >
           Yêu cầu link mới
         </Link>
@@ -103,20 +104,20 @@ export function ResetPasswordForm() {
   if (success) {
     return (
       <div className="flex w-full max-w-[448px] flex-col items-center gap-6 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#406623]/10 text-[#406623]">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
           <CheckCircleIcon />
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-[28px] font-semibold text-[#1B1C17]">
+          <h1 className="heading-page">
             Đặt lại mật khẩu thành công!
           </h1>
-          <p className="font-jakarta text-base text-[#43493C]">
+          <p className="text-base text-text-secondary">
             Mật khẩu của bạn đã được cập nhật. Đang chuyển hướng đến trang đăng nhập...
           </p>
         </div>
         <Link
           to="/login"
-          className="font-jakarta text-sm font-semibold text-[#406623] transition-colors hover:underline"
+          className="text-sm font-semibold text-primary transition-colors hover:underline"
         >
           Đăng nhập ngay
         </Link>
@@ -129,26 +130,26 @@ export function ResetPasswordForm() {
   return (
     <div className="flex w-full max-w-[448px] flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="font-display text-[32px] font-semibold leading-10 text-[#1B1C17]">
+        <h1 className="heading-page">
           Đặt lại mật khẩu
         </h1>
-        <p className="font-jakarta text-base text-[#43493C]">
+        <p className="text-base text-text-secondary">
           Nhập mật khẩu mới cho tài khoản <strong>{email}</strong>.
         </p>
       </header>
 
-      <div className="flex flex-col gap-4 rounded-3xl border border-[#C3C9B9]/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+      <div className="flex flex-col gap-4 rounded-3xl border border-border-sage/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
         <form id="reset-password-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           {displayError && (
             <div
               role="alert"
               className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
-              <span className="font-jakarta text-sm text-red-600">{displayError}</span>
+              <span className="text-sm text-red-600">{displayError}</span>
             </div>
           )}
 
@@ -157,7 +158,7 @@ export function ResetPasswordForm() {
               Mật khẩu mới
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#73796B]">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
                 <LockIcon />
               </span>
               <input
@@ -166,7 +167,7 @@ export function ResetPasswordForm() {
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Ít nhất 6 ký tự"
+                placeholder={t('auth.password.minHint')}
                 autoComplete="new-password"
                 className={`${INPUT_BASE} pl-12 pr-12`}
               />
@@ -175,7 +176,7 @@ export function ResetPasswordForm() {
                 onClick={() => setShowPassword((prev) => !prev)}
                 tabIndex={-1}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#73796B] transition-colors hover:text-[#43493C]"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
               >
                 <EyeIcon open={showPassword} />
               </button>
@@ -187,7 +188,7 @@ export function ResetPasswordForm() {
               Xác nhận mật khẩu mới
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#73796B]">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
                 <LockIcon />
               </span>
               <input
@@ -196,7 +197,7 @@ export function ResetPasswordForm() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới"
+                placeholder={t('auth.password.confirmHint')}
                 autoComplete="new-password"
                 className={`${INPUT_BASE} pl-12 pr-12`}
               />
@@ -205,7 +206,7 @@ export function ResetPasswordForm() {
                 onClick={() => setShowConfirm((prev) => !prev)}
                 tabIndex={-1}
                 aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#73796B] transition-colors hover:text-[#43493C]"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
               >
                 <EyeIcon open={showConfirm} />
               </button>
@@ -216,9 +217,9 @@ export function ResetPasswordForm() {
             id="reset-password-submit-btn"
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#406623] font-jakarta text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-[#34521c] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-primary text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span>{loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}</span>
+            <span>{loading ? t('common.processing') : t('auth.resetPassword.submit')}</span>
             {!loading && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 5l7 7-7 7" />
@@ -228,8 +229,8 @@ export function ResetPasswordForm() {
         </form>
       </div>
 
-      <p className="text-center font-jakarta text-sm font-semibold tracking-[0.14px] text-[#43493C]">
-        <Link to="/login" className="text-[#406623] transition-colors hover:underline">
+      <p className="text-center text-sm font-semibold tracking-[0.14px] text-text-secondary">
+        <Link to="/login" className="text-primary transition-colors hover:underline">
           ← Quay lại đăng nhập
         </Link>
       </p>

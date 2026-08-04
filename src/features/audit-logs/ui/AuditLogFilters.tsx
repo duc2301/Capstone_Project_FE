@@ -7,95 +7,134 @@ import { actionBadge, scopeBadge } from '../model/auditFormat';
 
 interface Props {
   value: AuditLogQuery;
-  onApply: (next: AuditLogQuery) => void;
-  /* View Admin có thêm ô lọc theo dự án; view trong dự án thì không cần */
-  showScopeFilter?: boolean;
+  /* Ô "Người dùng" lọc client-side theo tên (BE chưa có tìm theo tên/email). */
+  nameValue: string;
+  onQueryChange: (next: AuditLogQuery) => void;
+  onNameChange: (name: string) => void;
 }
 
 const SCOPES = [LogScope.System, LogScope.Project, LogScope.Group];
 const ACTIONS = Object.values(AuditAction);
 
-const inputClass =
-  'rounded-xl border border-card-border bg-card px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary';
+type Preset = 'all' | 'today' | '7d' | '30d' | '90d';
+const PRESETS: { id: Preset; key: 'audit.range.all' | 'audit.range.today' | 'audit.range.7d' | 'audit.range.30d' | 'audit.range.90d' }[] = [
+  { id: '7d', key: 'audit.range.7d' },
+  { id: '30d', key: 'audit.range.30d' },
+  { id: '90d', key: 'audit.range.90d' },
+  { id: 'today', key: 'audit.range.today' },
+  { id: 'all', key: 'audit.range.all' },
+];
 
-export function AuditLogFilters({ value, onApply, showScopeFilter = true }: Props) {
-  const [draft, setDraft] = useState<AuditLogQuery>(value);
+/* Preset -> khoảng [from, to] dạng yyyy-mm-dd cho query BE. */
+function presetToRange(preset: Preset): { from?: string; to?: string } {
+  if (preset === 'all') return { from: undefined, to: undefined };
+  const to = new Date();
+  const from = new Date();
+  if (preset === 'today') from.setHours(0, 0, 0, 0);
+  else if (preset === '7d') from.setDate(from.getDate() - 7);
+  else if (preset === '30d') from.setDate(from.getDate() - 30);
+  else if (preset === '90d') from.setDate(from.getDate() - 90);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  return { from: iso(from), to: iso(to) };
+}
 
-  const set = <K extends keyof AuditLogQuery>(key: K, v: AuditLogQuery[K]) =>
-    setDraft((d) => ({ ...d, [key]: v }));
+const SEARCH_CLASS =
+  'w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+const SELECT_CLASS =
+  'rounded-[var(--radius-input)] border border-card-border bg-card px-4 py-2.5 text-sm text-text shadow-card outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20';
 
-  const clear = () => {
-    const empty: AuditLogQuery = {};
-    setDraft(empty);
-    onApply(empty);
+export function AuditLogFilters({ value, nameValue, onQueryChange, onNameChange }: Props) {
+  const [preset, setPreset] = useState<Preset>('7d');
+  const [action, setAction] = useState<AuditAction | undefined>(value.action);
+  const [scope, setScope] = useState<LogScope | undefined>(value.scope);
+
+  const applyQuery = (next: { preset?: Preset; action?: AuditAction; scope?: LogScope }) => {
+    const usedPreset = next.preset ?? preset;
+    const usedAction = 'action' in next ? next.action : action;
+    const usedScope = 'scope' in next ? next.scope : scope;
+    const { from, to } = presetToRange(usedPreset);
+    onQueryChange({ ...value, action: usedAction, scope: usedScope, from, to });
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-card-border bg-card p-4">
-      {showScopeFilter && (
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-semibold text-text-muted">{t('audit.filter.scope')}</span>
-          <select
-            className={inputClass}
-            value={draft.scope ?? ''}
-            onChange={(e) => set('scope', e.target.value === '' ? undefined : (Number(e.target.value) as never))}
-          >
-            <option value="">{t('audit.filter.all')}</option>
-            {SCOPES.map((s) => (
-              <option key={s} value={s}>{scopeBadge(s).label}</option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-text-muted">{t('audit.filter.action')}</span>
-        <select
-          className={inputClass}
-          value={draft.action ?? ''}
-          onChange={(e) => set('action', e.target.value === '' ? undefined : (Number(e.target.value) as never))}
+    <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative w-full lg:max-w-[420px]">
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
         >
-          <option value="">{t('audit.filter.all')}</option>
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          value={nameValue}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder={t('audit.filter.userPlaceholder')}
+          className={SEARCH_CLASS}
+        />
+        {nameValue && (
+          <button
+            type="button"
+            onClick={() => onNameChange('')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
+        <select
+          className={SELECT_CLASS}
+          title={t('audit.filter.dateRange')}
+          value={preset}
+          onChange={(e) => {
+            const next = e.target.value as Preset;
+            setPreset(next);
+            applyQuery({ preset: next });
+          }}
+        >
+          {PRESETS.map((p) => (
+            <option key={p.id} value={p.id}>{t(p.key)}</option>
+          ))}
+        </select>
+
+        <select
+          className={SELECT_CLASS}
+          title={t('audit.filter.eventType')}
+          value={action ?? ''}
+          onChange={(e) => {
+            const next = e.target.value === '' ? undefined : (Number(e.target.value) as AuditAction);
+            setAction(next);
+            applyQuery({ action: next });
+          }}
+        >
+          <option value="">{t('audit.filter.allEvents')}</option>
           {ACTIONS.map((a) => (
             <option key={a} value={a}>{actionBadge(a).label}</option>
           ))}
         </select>
-      </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-text-muted">{t('audit.filter.from')}</span>
-        <input
-          type="date"
-          className={inputClass}
-          value={draft.from ?? ''}
-          onChange={(e) => set('from', e.target.value || undefined)}
-        />
-      </label>
-
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-text-muted">{t('audit.filter.to')}</span>
-        <input
-          type="date"
-          className={inputClass}
-          value={draft.to ?? ''}
-          onChange={(e) => set('to', e.target.value || undefined)}
-        />
-      </label>
-
-      <button
-        type="button"
-        onClick={() => onApply(draft)}
-        className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-      >
-        {t('audit.filter.apply')}
-      </button>
-      <button
-        type="button"
-        onClick={clear}
-        className="rounded-xl border border-card-border px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
-      >
-        {t('audit.filter.clear')}
-      </button>
+        <select
+          className={SELECT_CLASS}
+          title={t('audit.filter.userScope')}
+          value={scope ?? ''}
+          onChange={(e) => {
+            const next = e.target.value === '' ? undefined : (Number(e.target.value) as LogScope);
+            setScope(next);
+            applyQuery({ scope: next });
+          }}
+        >
+          <option value="">{t('audit.filter.all')}</option>
+          {SCOPES.map((s) => (
+            <option key={s} value={s}>{scopeBadge(s).label}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

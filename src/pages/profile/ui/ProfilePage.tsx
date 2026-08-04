@@ -2,27 +2,17 @@ import { useState } from 'react';
 
 import type { ChangePasswordPayload } from '@/entities/profile';
 import { useProfile } from '@/features/profile';
+import { Toast, UserAvatar, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 /* ── Tab config ────────────────────────────────────── */
 type ProfileTab = 'info' | 'security' | 'notifications' | 'signature' | 'activity';
 
-/* ── Helper: initials ──────────────────────────────── */
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
-
 /* ── Main page ─────────────────────────────────────── */
 export function ProfilePage() {
   const { profile, loading: profileLoading, updateProfile, changePassword } = useProfile();
   const [activeTab, setActiveTab] = useState<ProfileTab>('info');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const { toast, showToast } = useToast();
 
   /* ── Editable fields ─────────────────────────────── */
   const [editMode, setEditMode] = useState(false);
@@ -41,13 +31,6 @@ export function ProfilePage() {
   const userName = profile?.userName ?? 'Người dùng';
   const email = profile?.email ?? '';
   const role = profile?.role ?? 'Member';
-  const initials = getInitials(userName);
-
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToastMessage(msg);
-    setToastType(type);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
 
   const startEdit = () => {
     setEditName(profile?.userName ?? '');
@@ -96,13 +79,13 @@ export function ProfilePage() {
   const tabs = [
     { key: 'info' as const, label: t('profile.tabs.info') },
     { key: 'security' as const, label: t('profile.tabs.security') },
-    { key: 'notifications' as const, label: 'Thông báo' },
-    { key: 'signature' as const, label: 'Chữ ký số' },
-    { key: 'activity' as const, label: 'Hoạt động' },
+    { key: 'notifications' as const, label: t('profile.tabs.notifications') },
+    { key: 'signature' as const, label: t('profile.tabs.signature') },
+    { key: 'activity' as const, label: t('profile.tabs.activity') },
   ];
 
-  const inputClass = 'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
-  const inputReadOnly = 'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none';
+  const inputClass = 'field-input';
+  const inputReadOnly = 'field-input-readonly';
 
   if (profileLoading) {
     return (
@@ -119,22 +102,22 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* ── Toast notification ─────────────────────── */}
-      {toastMessage && (
-        <div className={`fixed top-20 right-6 z-50 animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toastType === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toastType === 'success' ? 'text-success' : 'text-danger'}`}>{toastMessage}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-50" />
 
       {/* ── Profile Header Card ────────────────────── */}
       <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card lg:p-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-white shadow-sm">
-                {initials}
-              </div>
+              <UserAvatar
+                userName={userName}
+                avatarUrl={profile?.avatarUrl}
+                size="xl"
+                rounded="full"
+                className="shadow-sm"
+              />
               <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-warning text-white shadow-sm hover:bg-warning-hover">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -150,10 +133,10 @@ export function ProfilePage() {
                 <span className="inline-flex items-center rounded-full bg-content-bg px-3 py-1.5 text-xs font-medium text-text-secondary">
                   {t('brand.name')}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#C2E09B] px-3 py-1.5 text-xs font-medium text-primary">
+                <span className="inline-flex items-center rounded-full bg-primary-tint-strong px-3 py-1.5 text-xs font-medium text-primary">
                   {role}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#DFE5D4] px-3 py-1.5 text-xs font-medium text-primary">
+                <span className="inline-flex items-center rounded-full bg-sage-tint px-3 py-1.5 text-xs font-medium text-primary">
                   {profile?.status ?? t('profile.status.active')}
                 </span>
               </div>
@@ -192,14 +175,14 @@ export function ProfilePage() {
           {activeTab === 'info' && (
             <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card lg:p-8">
               <div className="mb-6">
-                <h2 className="font-heading text-lg font-bold text-text">{t('profile.personalInfo.title')}</h2>
+                <h2 className="heading-entity">{t('profile.personalInfo.title')}</h2>
                 <p className="mt-1 text-sm text-text-muted">{t('profile.personalInfo.desc')}</p>
               </div>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* Full name */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.fullName')}
                   </label>
                   {editMode ? (
@@ -211,7 +194,7 @@ export function ProfilePage() {
 
                 {/* Position */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.position')}
                   </label>
                   <input type="text" value={role} readOnly className={inputReadOnly} />
@@ -219,7 +202,7 @@ export function ProfilePage() {
 
                 {/* Email */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.email')}
                   </label>
                   {editMode ? (
@@ -231,7 +214,7 @@ export function ProfilePage() {
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.phone')}
                   </label>
                   <input type="tel" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
@@ -239,7 +222,7 @@ export function ProfilePage() {
 
                 {/* Company */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.company')}
                   </label>
                   <input type="text" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
@@ -247,7 +230,7 @@ export function ProfilePage() {
 
                 {/* Department */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.personalInfo.department')}
                   </label>
                   <input type="text" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
@@ -300,13 +283,13 @@ export function ProfilePage() {
           {activeTab === 'security' && (
             <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card lg:p-8">
               <div className="mb-6">
-                <h2 className="font-heading text-lg font-bold text-text">{t('profile.security.title')}</h2>
+                <h2 className="heading-entity">{t('profile.security.title')}</h2>
                 <p className="mt-1 text-sm text-text-muted">{t('profile.security.desc')}</p>
               </div>
 
               <form onSubmit={handleChangePassword} className="max-w-md space-y-5">
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.security.currentPassword')}
                   </label>
                   <input
@@ -320,7 +303,7 @@ export function ProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.security.newPassword')}
                   </label>
                   <input
@@ -335,7 +318,7 @@ export function ProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-text-secondary">
+                  <label className="field-label">
                     {t('profile.security.confirmPassword')}
                   </label>
                   <input
@@ -377,7 +360,7 @@ export function ProfilePage() {
           {/* Groups / Teams */}
           {profile && profile.groups.length > 0 && (
             <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
-              <h3 className="mb-4 font-heading text-base font-bold text-text">Nhóm tham gia</h3>
+              <h3 className="heading-card mb-4 text-text">{t('profile.groups')}</h3>
               <div className="space-y-3">
                 {profile.groups.map((g) => (
                   <div key={g.groupId} className="flex items-center justify-between rounded-xl border border-card-border p-3 transition-colors hover:bg-content-bg">
@@ -398,7 +381,7 @@ export function ProfilePage() {
 
           {/* Activity Stats */}
           <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
-            <h3 className="mb-4 font-heading text-base font-bold text-text">
+            <h3 className="heading-card mb-4 text-text">
               {t('profile.activity.title')}
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -429,7 +412,7 @@ export function ProfilePage() {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                <h3 className="font-heading text-sm font-bold text-success">
+                <h3 className="heading-label text-success">
                   {t('profile.status.verified')}
                 </h3>
               </div>

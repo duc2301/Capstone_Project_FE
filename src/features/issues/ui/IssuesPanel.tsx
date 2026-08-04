@@ -35,12 +35,12 @@ export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, on
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          className="w-full rounded-[var(--radius-button)] bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         >
           {t('issues.panel.createButton')}
         </button>
       ) : (
-        <p className="rounded-xl border border-card-border bg-content-bg/40 px-3 py-2.5 text-xs text-text-muted">
+        <p className="rounded-[var(--radius-button)] border border-card-border bg-content-bg/40 px-3 py-2.5 text-xs text-text-muted">
           {t('issues.panel.wipHint')}
         </p>
       )}
@@ -58,13 +58,13 @@ export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, on
               <button
                 type="button"
                 onClick={() => openIssue(issue.id)}
-                className="w-full rounded-xl border border-card-border bg-card p-3 text-left transition-colors hover:bg-content-bg"
+                className="w-full rounded-[var(--radius-card)] border border-card-border bg-card p-3 text-left transition-colors hover:bg-content-bg"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${issueStatusBadge(issue.status).className}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${issueStatusBadge(issue.status).className}`}>
                     {issueStatusBadge(issue.status).label}
                   </span>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${issuePriorityBadge(issue.priority).className}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${issuePriorityBadge(issue.priority).className}`}>
                     {issuePriorityBadge(issue.priority).label}
                   </span>
                 </div>

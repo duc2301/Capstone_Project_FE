@@ -1,6 +1,10 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { CreateOrganizationPayload, Organization, UpdateOrganizationPayload } from '../model/organization.types';
+import type {
+  CreateOrganizationPayload,
+  Organization,
+  UpdateOrganizationPayload,
+} from '../model/organization.types';
 
 export const organizationApi = {
   getAll: () =>

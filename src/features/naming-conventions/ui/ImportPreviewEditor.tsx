@@ -10,7 +10,7 @@ interface ImportPreviewEditorProps {
 }
 
 const inputClass =
-  'w-full rounded-(--radius-input) border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus';
+  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus';
 
 /* Editor thuần client-state cho bước preview trước khi lưu:
  * sửa/thêm/xóa field + value, đổi thứ tự bằng nút ↑↓. OrderIndex chốt theo vị trí mảng khi lưu. */
@@ -79,7 +79,7 @@ export function ImportPreviewEditor({ fields, delimiter, onChange }: ImportPrevi
           {fields.map((field, fi) => {
             const open = expanded === fi;
             return (
-              <li key={fi} className="rounded-2xl border border-card-border bg-card">
+              <li key={fi} className="rounded-[var(--radius-card)] border border-card-border bg-card">
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <button
                     type="button"
@@ -168,7 +168,7 @@ export function ImportPreviewEditor({ fields, delimiter, onChange }: ImportPrevi
       <button
         type="button"
         onClick={addField}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-card-border px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:border-primary hover:bg-primary-ghost hover:text-primary"
+        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border-2 border-dashed border-card-border px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:border-primary hover:bg-primary-ghost hover:text-primary"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
         {t('naming.editor.addField')}

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { accountApi } from '@/entities/account';
 import type { Organization } from '@/entities/organization';
 import {
   CreateOrganizationForm,
@@ -7,91 +9,85 @@ import {
   useOrganizations,
   useOrganizationTypes,
 } from '@/features/organizations';
+import { getApiErrorMessage } from '@/shared/api';
+import {
+  ActionIconButton,
+  ConfirmDialog,
+  DeleteIcon,
+  EditIcon,
+  Modal,
+  PaginationBar,
+  RowActions,
+  Toast,
+  useToast,
+} from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
 
-/* ── Stat card ─────────────────────────────────────── */
-interface StatCardProps {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-  color: string;
-  bgColor: string;
-}
-
-function StatCard({ icon, value, label, color, bgColor }: StatCardProps) {
-  return (
-    <div className="flex items-center gap-4 rounded-[var(--radius-card)] border border-card-border bg-card p-5 shadow-card transition-shadow duration-200 hover:shadow-card-hover">
-      <div
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-        style={{ backgroundColor: bgColor, color }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-text" style={{ color }}>{value}</p>
-        <p className="text-xs font-medium text-text-muted">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Modal wrapper ─────────────────────────────────── */
-interface ModalProps {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
-function Modal({ title, onClose, children }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl max-h-[90vh] animate-scale-in overflow-y-auto rounded-[var(--radius-card-lg)] bg-card shadow-modal">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-card-border bg-card px-7 py-5">
-          <h2 className="font-heading text-lg font-bold text-text">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="px-7 py-6">{children}</div>
-      </div>
-    </div>
-  );
-}
+const PAGE_SIZE = 10;
 
 /* ── Main page ─────────────────────────────────────── */
 export function OrganizationsPage() {
+  const navigate = useNavigate();
   const { organizations, loading, error, createOrganization, updateOrganization, deleteOrganization } = useOrganizations();
   const { orgTypes, createOrgType } = useOrganizationTypes();
 
   const [formMode, setFormMode] = useState<FormMode>('idle');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+
+  const { toast, showToast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const changeSearch = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
 
   /* ── Handlers ────────────────────────────────────── */
-  const handleCreate = async (payload: Parameters<typeof createOrganization>[0]) => {
-    await createOrganization(payload);
+  const handleCreate = async (payload: Parameters<typeof createOrganization>[0], selectedAccountIds?: string[]) => {
+    const newOrg = await createOrganization(payload);
+    if (newOrg && selectedAccountIds?.length) {
+      await Promise.all(selectedAccountIds.map((accountId) => accountApi.update(accountId, { organizationId: newOrg.id })));
+    }
     setFormMode('idle');
   };
 
-  const handleUpdate = async (id: string, payload: Parameters<typeof updateOrganization>[1]) => {
+  const handleUpdate = async (
+    id: string,
+    payload: Parameters<typeof updateOrganization>[1],
+    selectedAccountIds?: string[],
+    initialAccountIds?: string[],
+  ) => {
     await updateOrganization(id, payload);
+
+    if (selectedAccountIds && initialAccountIds) {
+      const added = selectedAccountIds.filter((accountId) => !initialAccountIds.includes(accountId));
+      const removed = initialAccountIds.filter((accountId) => !selectedAccountIds.includes(accountId));
+      await Promise.all([
+        ...added.map((accountId) => accountApi.update(accountId, { organizationId: id })),
+        ...removed.map((accountId) => accountApi.update(accountId, { clearOrganization: true })),
+      ]);
+    }
+
     setFormMode('idle');
     setSelectedOrg(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('org.deleteConfirm'))) return;
-    await deleteOrganization(id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteOrganization(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('org.deleteError')), 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openEdit = (org: Organization) => {
@@ -104,64 +100,54 @@ export function OrganizationsPage() {
     setSelectedOrg(null);
   };
 
-  /* ── Helpers ─────────────────────────────────────── */
-  const orgTypeMap = useMemo(() => {
-    const map = new Map<string, string>();
-    orgTypes.forEach((ot) => map.set(ot.id, ot.name));
-    return map;
-  }, [orgTypes]);
-
   /* ── Filtered organizations ──────────────────────── */
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return organizations;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return organizations;
     return organizations.filter(
       (o) =>
-        o.legalName.toLowerCase().includes(q) ||
-        (o.displayName ?? '').toLowerCase().includes(q) ||
-        o.taxCode.toLowerCase().includes(q) ||
-        (o.email ?? '').toLowerCase().includes(q),
+        o.legalName.toLowerCase().includes(q)
+        || (o.displayName ?? '').toLowerCase().includes(q)
+        || o.taxCode.toLowerCase().includes(q)
+        || (o.email ?? '').toLowerCase().includes(q),
     );
   }, [organizations, searchQuery]);
 
-  /* ── Stats ───────────────────────────────────────── */
-  const [now] = useState(() => Date.now());
-  const stats = useMemo(() => {
-    const total = organizations.length;
-    const uniqueTypes = new Set(organizations.map((o) => o.organizationTypeId)).size;
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    const recent = organizations.filter((o) => o.createdAt && now - new Date(o.createdAt).getTime() < thirtyDays).length;
-    return { total, active: total, uniqueTypes, recent };
-  }, [organizations, now]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const orgTypeName = (organizationTypeId: string) =>
+    orgTypes.find((ot) => ot.id === organizationTypeId)?.name ?? t('org.typeOther');
+
+  const initialsOf = (org: Organization) => {
+    const raw = (org.displayName || org.legalName || '').trim();
+    const words = raw.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    return (words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-5">
       {/* ── Page Header ────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="heading-page">
-            {t('org.title')}
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            {t('org.description')}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className="heading-page">{t('org.title')}</h1>
+        <div className="flex shrink-0 items-center gap-3">
           <button
+            type="button"
             onClick={() => setFormMode('create-jv')}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-info px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-info-hover hover:shadow-md"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Thêm liên danh
+            {t('org.createJv')}
           </button>
           <button
+            type="button"
             onClick={() => setFormMode('create')}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md"
+            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -172,58 +158,30 @@ export function OrganizationsPage() {
         </div>
       </div>
 
-      {/* ── Statistics Cards ───────────────────────── */}
+      {/* ── Toolbar ────────────────────────────────── */}
       {!loading && !error && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard
-            icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>}
-            value={stats.total}
-            label={t('org.stats.total')}
-            color="#406623"
-            bgColor="#E8F0E0"
-          />
-          <StatCard
-            icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
-            value={stats.active}
-            label={t('org.stats.active')}
-            color="#2E7D32"
-            bgColor="#E6F4EA"
-          />
-          <StatCard
-            icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>}
-            value={stats.uniqueTypes}
-            label={t('org.stats.byType')}
-            color="#1976D2"
-            bgColor="#E3F2FD"
-          />
-
-          <StatCard
-            icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-            value={stats.recent}
-            label={t('org.stats.recent')}
-            color="#F59E0B"
-            bgColor="#FEF3C7"
-          />
-        </div>
-      )}
-
-      {/* ── Search Bar ─────────────────────────────── */}
-      {!loading && !error && (
-        <div className="rounded-[var(--radius-card)] border border-card-border bg-card p-4 shadow-card">
-          <div className="flex items-center gap-3 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-2.5">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
+        <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative w-full lg:max-w-[420px]">
+            <svg
+              width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="m21 21-4.3-4.3" />
             </svg>
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => changeSearch(e.target.value)}
               placeholder={t('org.search')}
-              className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
+              className="w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             {searchQuery && (
-              <button type="button" onClick={() => setSearchQuery('')} className="shrink-0 text-text-muted hover:text-text">
+              <button
+                type="button"
+                onClick={() => changeSearch('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text"
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -256,117 +214,69 @@ export function OrganizationsPage() {
 
       {/* ── Data Table ─────────────────────────────── */}
       {!loading && !error && (
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-card-border bg-input-bg">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.taxCode')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.name')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.type')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.contact')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.createdAt')}
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('org.col.actions')}
-                  </th>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
+          <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
+            <table className="w-full min-w-[780px] text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="table-head bg-content-bg">
+                  <th className="px-6 py-3.5">{t('org.col.name')}</th>
+                  <th className="px-5 py-3.5">{t('org.col.taxCode')}</th>
+                  <th className="px-5 py-3.5">{t('org.type')}</th>
+                  <th className="px-5 py-3.5">{t('org.col.projects')}</th>
+                  <th className="px-5 py-3.5 text-right">{t('common.col.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-card-border">
-                {filtered.length === 0 ? (
+                {paged.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-text-placeholder">
-                          <path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/>
-                        </svg>
-                        <p className="text-sm text-text-muted">
-                          {searchQuery ? t('org.noResults') : t('common.noData')}
-                        </p>
-                      </div>
+                    <td colSpan={5} className="px-6 py-16 text-center text-sm text-text-muted">
+                      {searchQuery ? t('org.noResults') : t('common.noData')}
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((org) => (
-                    <tr key={org.id} className="transition-colors duration-150 hover:bg-primary-ghost">
-                      <td className="px-6 py-4">
-                        {org.isJointVenture ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-info/10 px-2.5 py-1 text-xs font-bold text-info">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            Liên danh
-                          </span>
-                        ) : (
-                          <span className="inline-block rounded-lg bg-input-bg px-2.5 py-1 font-mono text-xs font-medium text-text-secondary">
-                            {org.taxCode || '—'}
-                          </span>
-                        )}
-                      </td>
+                  paged.map((org) => (
+                    <tr
+                      key={org.id}
+                      onClick={() => navigate(`/organizations/${org.id}`)}
+                      className="cursor-pointer transition-colors duration-150 hover:bg-content-bg"
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm ${org.isJointVenture ? 'bg-info text-white' : 'bg-primary-light text-primary border border-primary/10'}`}>
-                            {org.isJointVenture ? (
-                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            ) : org.legalName.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-text">{org.displayName ?? org.legalName}</p>
-                            </div>
-                            {org.displayName && (
-                              <p className="text-xs text-text-muted">{org.legalName}</p>
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-card-border bg-input-bg text-xs font-bold text-primary">
+                            {initialsOf(org)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-text">{org.displayName || org.legalName}</p>
+                            {org.isJointVenture && (
+                              <span className="mt-0.5 inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-2xs font-bold text-info">
+                                {t('org.jointVenture')}
+                              </span>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center whitespace-nowrap gap-1.5 rounded-[var(--radius-badge)] bg-info-light px-2.5 py-1 text-xs font-semibold text-info">
-                          {orgTypeMap.get(org.organizationTypeId) ?? '—'}
+                      <td className="px-5 py-4">
+                        <span className="inline-block rounded-[var(--radius-button)] bg-input-bg px-2.5 py-1 font-mono text-xs font-medium text-text-secondary">
+                          {org.taxCode || '—'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-0.5">
-                          {org.email && <p className="text-xs text-text-muted">{org.email}</p>}
-                          {org.phone && <p className="text-xs text-text-muted">{org.phone}</p>}
-                          {!org.email && !org.phone && <span className="text-text-muted">—</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-text-muted">
-                        {org.createdAt ? new Date(org.createdAt).toLocaleDateString('vi-VN') : '—'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openEdit(org)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-all duration-150 hover:bg-primary-light hover:text-primary"
-                            title="Chỉnh sửa"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(org.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-all duration-150 hover:bg-danger-light hover:text-danger"
-                            title="Xóa"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              <line x1="10" y1="11" x2="10" y2="17" />
-                              <line x1="14" y1="11" x2="14" y2="17" />
-                            </svg>
-                          </button>
-                        </div>
+                      <td className="px-5 py-4 text-text-secondary">{orgTypeName(org.organizationTypeId)}</td>
+                      <td className="px-5 py-4 text-text-secondary">{org.participatingProjectsCount ?? 0}</td>
+                      <td className="px-5 py-4">
+                        <RowActions>
+                          <ActionIconButton
+                            tone="primary"
+                            label={t('org.edit')}
+                            icon={<EditIcon />}
+                            onClick={(e) => { e.stopPropagation(); openEdit(org); }}
+                          />
+                          <ActionIconButton
+                            tone="danger"
+                            label={t('org.delete')}
+                            icon={<DeleteIcon />}
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(org.id); }}
+                          />
+                        </RowActions>
                       </td>
                     </tr>
                   ))
@@ -374,19 +284,29 @@ export function OrganizationsPage() {
               </tbody>
             </table>
           </div>
+
+          <PaginationBar
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            unit={t('org.paginationUnit')}
+            variant="inline"
+            onChange={setPage}
+          />
         </div>
       )}
 
       {/* ── Create Modal ───────────────────────────── */}
       {formMode === 'create' && (
-        <Modal title={t('org.modal.createTitle')} onClose={closeForm}>
+        <Modal title={t('org.modal.createTitle')} onClose={closeForm} flush>
           <CreateOrganizationForm mode="organization" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}
-      
-      {/* ── Create Joint Venture Modal ───────────────────────────── */}
+
+      {/* ── Create Joint Venture Modal ─────────────── */}
       {formMode === 'create-jv' && (
-        <Modal title="Thêm liên danh mới" onClose={closeForm}>
+        <Modal title={t('org.modal.createJvTitle')} onClose={closeForm} flush>
           <CreateOrganizationForm mode="joint-venture" orgTypes={orgTypes} organizations={organizations} onSubmit={handleCreate} onCancel={closeForm} onCreateOrgType={createOrgType} />
         </Modal>
       )}
@@ -403,6 +323,19 @@ export function OrganizationsPage() {
             onCreateOrgType={createOrgType}
           />
         </Modal>
+      )}
+
+      <Toast toast={toast} className="z-[80]" />
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('org.delete')}
+          message={t('org.deleteConfirm')}
+          confirmLabel={t('org.delete')}
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

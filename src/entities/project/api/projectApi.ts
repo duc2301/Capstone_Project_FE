@@ -22,11 +22,23 @@ export const projectApi = {
   getById: (projectId: string) =>
     axiosInstance.get<ApiResponse<Project>>(`/projects/${projectId}`),
 
+  getByOrganization: (organizationId: string) =>
+    axiosInstance.get<ApiResponse<Project[]>>(`/organizations/${organizationId}/projects`),
+
   create: (payload: CreateProjectPayload) =>
     axiosInstance.post<ApiResponse<Project>>('/projects', payload),
 
   update: (projectId: string, payload: UpdateProjectPayload) =>
     axiosInstance.put<ApiResponse<Project>>(`/projects/${projectId}`, payload),
+
+  uploadImage: (projectId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axiosInstance.post<ApiResponse<Project>>(`/projects/${projectId}/image`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+    });
+  },
 
   assignManager: (projectId: string, payload: AssignManagerPayload) =>
     axiosInstance.post<ApiResponse<Project>>(`/projects/${projectId}/manager`, payload),

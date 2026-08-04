@@ -8,6 +8,7 @@ import type {
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export interface ProjectGroupDraft {
   name: string;
@@ -17,7 +18,7 @@ export interface ProjectGroupDraft {
 export interface CreateProjectWithGroupsInput {
   projectName: string;
   projectCode?: string;
-  projectImageUrl?: string;
+  projectImage?: File | null;
   projectDescription?: string;
   address?: string;
   latitude?: number;
@@ -47,7 +48,7 @@ export function useProjects(): UseProjectsReturn {
   // của đơn vị khác qua network, và tránh N+1 request getParticipants cho từng dự án).
   const loadProjects = useCallback(async (): Promise<Project[]> => {
     const { data } = isAdmin ? await projectApi.getAll() : await projectApi.getMine();
-    return data.result ?? [];
+    return sortByNewest(data.result ?? [], (p) => p.createdAt);
   }, [isAdmin]);
 
   const fetchProjects = useCallback(async () => {
@@ -66,7 +67,6 @@ export function useProjects(): UseProjectsReturn {
     const { data: projectRes } = await projectApi.create({
       projectName: input.projectName,
       projectCode: input.projectCode,
-      projectImageUrl: input.projectImageUrl,
       projectDescription: input.projectDescription,
       address: input.address,
       latitude: input.latitude,
@@ -74,6 +74,8 @@ export function useProjects(): UseProjectsReturn {
     });
     const project = projectRes.result;
     if (!project) throw new Error('Project creation failed');
+
+    if (input.projectImage) await projectApi.uploadImage(project.id, input.projectImage);
 
     const groups = input.groups.filter((g) => g.name.trim());
     if (groups.length > 0) {

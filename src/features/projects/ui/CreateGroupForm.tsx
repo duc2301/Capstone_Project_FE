@@ -8,8 +8,7 @@ interface Props {
   onCancel: () => void;
 }
 
-const inputClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+const inputClass = 'field-input';
 
 export function CreateGroupForm({ onSubmit, onCancel }: Props) {
   const [name, setName] = useState('');
@@ -30,7 +29,7 @@ export function CreateGroupForm({ onSubmit, onCancel }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-1.5">
-        <label htmlFor="group-name" className="block text-sm font-medium text-text-secondary">
+        <label htmlFor="group-name" className="field-label">
           {t('projects.groups.name')}
         </label>
         <input
@@ -44,7 +43,7 @@ export function CreateGroupForm({ onSubmit, onCancel }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="group-desc" className="block text-sm font-medium text-text-secondary">
+        <label htmlFor="group-desc" className="field-label">
           {t('projects.groups.description')}
         </label>
         <textarea
@@ -61,14 +60,14 @@ export function CreateGroupForm({ onSubmit, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-[var(--radius-button)] border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg"
+          className="btn-modal-ghost"
         >
           {t('account.cancel')}
         </button>
         <button
           type="submit"
           disabled={submitting || !name.trim()}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+          className="btn-modal-primary"
         >
           {submitting ? t('common.loading') : t('projectDetail.teams.groupForm.submit')}
         </button>

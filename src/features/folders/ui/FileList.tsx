@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { FileListItem } from '@/entities/file-item';
 import type { FolderTreeNode } from '@/entities/folder';
+import { FileTypeIcon, FolderGlyph } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { fileStatusBadge, fileTypeLabel, formatDate, formatSize } from '../model/fileFormat';
@@ -54,27 +55,6 @@ interface FileListProps {
   onFileOpen: (file: FileListItem) => void;
 }
 
-function FileIcon() {
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
-    </span>
-  );
-}
-
-function FolderRowIcon() {
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-      </svg>
-    </span>
-  );
-}
-
 function WarningIcon({ message }: { message?: string | null }) {
   return (
     <span
@@ -96,7 +76,7 @@ function DotsButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted opacity-0 transition-all hover:bg-content-bg hover:text-text focus-visible:opacity-100 group-hover:opacity-100"
+      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-button)] text-text-muted opacity-0 transition-all hover:bg-content-bg hover:text-text focus-visible:opacity-100 group-hover:opacity-100"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" />
@@ -114,17 +94,17 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
     return <p className="py-12 text-center text-sm text-text-muted">{t('documents.files.empty')}</p>;
 
   return (
-    <div className="overflow-x-auto">
+    <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-            <th className="py-2.5 pr-3 font-bold">{t('documents.files.colName')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colVersion')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colType')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colStatus')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colSize')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colModified')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('documents.files.colAuthor')}</th>
+        <thead className="sticky top-0 z-10 bg-card">
+          <tr className="table-head">
+            <th className="py-2.5 pr-3">{t('documents.files.colName')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colVersion')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colType')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colStatus')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colSize')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colModified')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colAuthor')}</th>
           </tr>
         </thead>
         <tbody>
@@ -139,7 +119,7 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
             >
               <td className="py-3 pr-3">
                 <div className="flex items-center gap-3">
-                  <FolderRowIcon />
+                  <FolderGlyph size={26} className="text-primary" />
                   <p className="truncate font-medium text-text">{folder.name}</p>
                 </div>
               </td>
@@ -170,7 +150,7 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   tên dài thì xuống dòng (break-words) thay vì cắt mất chữ */}
               <td className="w-full max-w-0 py-3 pr-3">
                 <div className="flex items-start gap-3">
-                  <FileIcon />
+                  <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
                       <span className="break-words">{f.name}</span>

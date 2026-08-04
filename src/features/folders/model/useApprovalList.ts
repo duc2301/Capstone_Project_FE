@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ApprovalListItem } from '@/entities/approval';
 import { approvalErrorMessage } from '@/entities/approval';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 import { useApprovalRealtime } from './useApprovalRealtime';
 
@@ -38,7 +39,7 @@ export function useApprovalList(
 
     try {
       const data = await loader();
-      if (!isCancelled()) setItems(data);
+      if (!isCancelled()) setItems(sortByNewest(data, (item) => item.createdAt));
     } catch (err) {
       if (!isCancelled()) setError(approvalErrorMessage(err, t('approvals.error')));
     } finally {

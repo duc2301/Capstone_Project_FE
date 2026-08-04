@@ -21,6 +21,7 @@ const VerifyOtpPage = lazy(() => import('@/pages/verify-otp').then((m) => ({ def
 const DashboardPage = lazy(() => import('@/pages/dashboard').then((m) => ({ default: m.DashboardPage })));
 const AccountsPage = lazy(() => import('@/pages/accounts').then((m) => ({ default: m.AccountsPage })));
 const OrganizationsPage = lazy(() => import('@/pages/organizations').then((m) => ({ default: m.OrganizationsPage })));
+const OrganizationDetailsPage = lazy(() => import('@/pages/organization-details').then((m) => ({ default: m.OrganizationDetailsPage })));
 const ProfilePage = lazy(() => import('@/pages/profile').then((m) => ({ default: m.ProfilePage })));
 const ProjectsPage = lazy(() => import('@/pages/projects').then((m) => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('@/pages/project-detail').then((m) => ({ default: m.ProjectDetailPage })));
@@ -29,6 +30,7 @@ const ReturnRequestManagementPage = lazy(() => import('@/pages/return-request-ma
 const NotificationsPage = lazy(() => import('@/pages/notifications').then((m) => ({ default: m.NotificationsPage })));
 const ViewerPage = lazy(() => import('@/pages/viewer').then((m) => ({ default: m.ViewerPage })));
 const FileViewPage = lazy(() => import('@/pages/file-view').then((m) => ({ default: m.FileViewPage })));
+const LoiReportPage = lazy(() => import('@/pages/loi-report').then((m) => ({ default: m.LoiReportPage })));
 const IssueDetailPage = lazy(() => import('@/pages/issue-detail').then((m) => ({ default: m.IssueDetailPage })));
 const ContractPackagesPage = lazy(() => import('@/pages/contract-packages').then((m) => ({ default: m.ContractPackagesPage })));
 const AuditLogsPage = lazy(() => import('@/pages/audit-logs').then((m) => ({ default: m.AuditLogsPage })));
@@ -86,6 +88,18 @@ export const AppRoutes = () => {
               <RequireAdmin>
                 <AdminLayout>
                   <OrganizationsPage />
+                </AdminLayout>
+              </RequireAdmin>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/organizations/:orgId"
+          element={
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminLayout>
+                  <OrganizationDetailsPage />
                 </AdminLayout>
               </RequireAdmin>
             </RequireAuth>
@@ -239,6 +253,16 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <FileViewPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:projectId/files/:fileId/loi-report"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <LoiReportPage />
               </AdminLayout>
             </RequireAuth>
           }

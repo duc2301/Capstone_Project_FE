@@ -72,7 +72,7 @@ export interface CreateContractPackagePayload {
   contractJobTitle?: string;
 }
 
-export interface UpdateContractPackagePayload extends Partial<CreateContractPackagePayload> {}
+export type UpdateContractPackagePayload = Partial<CreateContractPackagePayload>;
 
 export const contractPackageApi = {
   getAll: () =>
@@ -94,5 +94,5 @@ export const contractPackageApi = {
     axiosInstance.delete<ApiResponse<void>>(`/contract-packages/${id}`),
 
   createWipFolder: (projectId: string, contractorName: string) =>
-    axiosInstance.post<ApiResponse<any>>('/contract-packages/create-wip-folder', { projectId, contractorName }),
+    axiosInstance.post<ApiResponse<unknown>>('/contract-packages/create-wip-folder', { projectId, contractorName }),
 };

@@ -92,7 +92,4 @@ export const contractPackageApi = {
 
   delete: (id: string) =>
     axiosInstance.delete<ApiResponse<void>>(`/contract-packages/${id}`),
-
-  createWipFolder: (projectId: string, contractorName: string) =>
-    axiosInstance.post<ApiResponse<unknown>>('/contract-packages/create-wip-folder', { projectId, contractorName }),
 };

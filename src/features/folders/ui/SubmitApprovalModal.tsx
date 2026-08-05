@@ -73,16 +73,8 @@ export function SubmitApprovalModal({
   const [signerAccountIds, setSignerAccountIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (mustRequireSignature) setRequiresSignature(true);
-  }, [mustRequireSignature]);
-
   const effectiveRequiresSignature = mustRequireSignature || (canRequireSignature && requiresSignature);
   const mustAssignSigners = currentZone === 'Shared' && targetZone === 'Published';
-
-  useEffect(() => {
-    if (!mustAssignSigners) setSignerAccountIds([]);
-  }, [mustAssignSigners]);
 
   const toggleAccount = (accountId: string) => {
     setSignerAccountIds((current) =>

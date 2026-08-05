@@ -349,7 +349,7 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
   );
 }
 
-export function LoiCheckPanel({ fileItemId, projectId }: { fileItemId: string; projectId?: string }) {
+export function LoiCheckPanel({ fileItemId, projectId, readOnly = false }: { fileItemId: string; projectId?: string; readOnly?: boolean }) {
   const {
     result, stage, setStage, loading, error, recompute, recomputing, isRunning,
     canMap, confirmMapping, mappingParam, mappingError,
@@ -357,7 +357,7 @@ export function LoiCheckPanel({ fileItemId, projectId }: { fileItemId: string; p
 
   const hasResult = result !== null && result.status !== LoiCheckStatus.None;
   const reportHref = projectId ? `/projects/${projectId}/files/${fileItemId}/loi-report` : null;
-  const mapping = canMap && result ? (
+  const mapping = canMap && result && !readOnly ? (
     <MappingSection
       items={result.unmapped}
       onConfirm={confirmMapping}
@@ -365,7 +365,7 @@ export function LoiCheckPanel({ fileItemId, projectId }: { fileItemId: string; p
       error={mappingError}
     />
   ) : null;
-  const controls = (
+  const controls = readOnly ? null : (
     <CheckControls
       stage={stage}
       onStageChange={setStage}

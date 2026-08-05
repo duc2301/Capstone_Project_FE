@@ -55,7 +55,6 @@ interface DocumentsTabProps {
 const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[] = [
   { key: 'canView', label: () => t('documents.perm.view') },
   { key: 'canEdit', label: () => t('documents.perm.edit') },
-  { key: 'canApprove', label: () => t('documents.perm.approve') },
 ];
 
 /* Thư mục hệ thống ở Published được nhận file trực tiếp — khớp Domain/Common/CdeFolderNames.cs */
@@ -287,7 +286,7 @@ export function DocumentsTab({
   // BE chỉ chuyển vùng thật sự khi Leader approve request đó.
   const canTransferZone = (file: FileListItem) =>
     !!selected
-    && selectedPermission.canApprove
+    && selectedPermission.canEdit
     && canStartApprovalFromArea(selected.area)
     && file.status === FileItemStatus.Approved
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
@@ -549,6 +548,7 @@ export function DocumentsTab({
           onClose={() => setFileMenu(null)}
           onDetail={() => handleDetail(fileMenu.file)}
           onDownload={() => handleDownload(fileMenu.file)}
+          canManageVersions={selectedPermission.canEdit}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onPermission={() => setFilePermissionFor(fileMenu.file)}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
@@ -587,6 +587,11 @@ export function DocumentsTab({
           fileItemId={versionsFor.id}
           fileName={versionsFor.name}
           currentVersionId={versionsFor.currentVersionId}
+          canRestore={selectedPermission.canEdit}
+          onViewVersion={(versionStateId, isCurrent) => {
+            const versionQuery = isCurrent ? '' : `&version=${versionStateId}`;
+            navigate(`/projects/${projectId}/files/${versionsFor.id}/view?folder=${versionsFor.folderId}${versionQuery}`);
+          }}
           onClose={() => setVersionsFor(null)}
           onRestored={(displayVersion) => {
             void refetchFiles();

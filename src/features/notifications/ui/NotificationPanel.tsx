@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { NotificationItem } from '@/entities/notification';
 import { useNotifications } from '@/entities/notification';
@@ -12,9 +13,10 @@ interface Props {
 }
 
 const INVITATION_LINK_TYPE = 'ProjectInvitation';
+const DROPDOWN_PREVIEW_COUNT = 5;
 
 export function NotificationPanel({ variant = 'dropdown' }: Props) {
-  const { notifications, loading, markRead, refresh } = useNotifications();
+  const { notifications, unreadCount, loading, markRead, refresh } = useNotifications();
   const { pendingIds, refreshPending } = usePendingInvitations();
   const { processingId, processingAction, respond } = useInvitationActions(() => {
     void refresh();
@@ -31,21 +33,28 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
   };
 
   const listClass =
-    variant === 'dropdown' ? 'max-h-[60vh] overflow-y-auto' : 'overflow-y-auto';
+    variant === 'dropdown' ? 'max-h-[50vh] overflow-y-auto' : 'overflow-y-auto';
+  const all = notifications ?? [];
+  const shown = variant === 'dropdown' ? all.slice(0, DROPDOWN_PREVIEW_COUNT) : all;
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between border-b border-card-border px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-card-border px-4 py-3">
         <h2 className="heading-label">{t('notification.title')}</h2>
+        {unreadCount > 0 && (
+          <span className="rounded-[var(--radius-badge)] bg-primary/10 px-2 py-0.5 text-2xs font-bold text-primary">
+            {t('notification.unreadBadge').replace('{count}', String(unreadCount))}
+          </span>
+        )}
       </div>
 
-      {loading && notifications.length === 0 ? (
+      {loading && all.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-text-muted">{t('common.loading')}</div>
-      ) : notifications.length === 0 ? (
+      ) : all.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-text-muted">{t('notification.empty')}</div>
       ) : (
         <ul className={listClass}>
-          {notifications.map((n) => (
+          {shown.map((n) => (
             <NotificationRow
               key={n.id}
               notification={n}
@@ -58,6 +67,15 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
             />
           ))}
         </ul>
+      )}
+
+      {variant === 'dropdown' && (
+        <Link
+          to="/notifications"
+          className="border-t border-card-border px-4 py-3 text-center text-sm font-semibold text-primary transition-colors hover:bg-content-bg"
+        >
+          {t('notification.viewAll')}
+        </Link>
       )}
     </div>
   );

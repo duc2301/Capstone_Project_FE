@@ -217,6 +217,7 @@ export function ProjectsPage() {
             onCancel={closeCreate}
             renderPackageForm={(ctx) => (
               <CreatePackageForm
+                key={ctx.initialData?.id ?? 'new'}
                 accounts={ctx.accounts}
                 initialData={ctx.initialData}
                 onSubmit={ctx.onSubmit}

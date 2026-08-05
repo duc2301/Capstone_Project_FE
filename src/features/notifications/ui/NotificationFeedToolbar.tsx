@@ -4,7 +4,7 @@ import { t } from '@/shared/lib/i18n';
 import type {
   NotificationDateRange,
   NotificationFilter,
-} from '../model/useNotificationFeed';
+} from '../model/useNotificationList';
 
 interface Props {
   query: string;
@@ -72,11 +72,13 @@ export function NotificationFeedToolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-card-border px-6 py-4 lg:px-8">
-      {/* Trái: tìm kiếm + lọc nhanh */}
+    <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 rounded-[var(--radius-input)] bg-input-bg px-3.5 py-2.5">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
+        <div className="relative w-full sm:w-[320px]">
+          <svg
+            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+          >
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" />
           </svg>
@@ -85,8 +87,20 @@ export function NotificationFeedToolbar({
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder={t('notification.search.placeholder')}
-            className="w-44 bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder sm:w-56"
+            className="w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => onQueryChange('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -96,15 +110,14 @@ export function NotificationFeedToolbar({
             onClick={() => toggleFilter('unread')}
           />
           <FilterChip
-            active={filter === 'important'}
-            label={t('notification.filter.important')}
-            onClick={() => toggleFilter('important')}
+            active={filter === 'invitation'}
+            label={t('notification.filter.invitation')}
+            onClick={() => toggleFilter('invitation')}
           />
         </div>
       </div>
 
-      {/* Phải: lọc theo ngày + đánh dấu đã đọc + làm mới */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <div className="relative">
           <button
             type="button"

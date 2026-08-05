@@ -7,6 +7,7 @@ import { t } from '@/shared/lib/i18n';
 import type {
   DiscussionMention,
   DiscussionMessage,
+  DiscussionSummary,
   MessageAttachment,
   MessageAttachmentType,
   PostDiscussionMessagePayload,
@@ -85,6 +86,13 @@ export function normalizeDiscussionMessage(raw: RawDiscussionMessage): Discussio
 }
 
 export const discussionApi = {
+  getById: async (discussionId: string): Promise<DiscussionSummary | null> => {
+    const { data } = await axiosInstance.get<ApiResponse<DiscussionSummary>>(
+      `/discussions/${discussionId}`,
+    );
+    return data.isSuccess ? data.result : null;
+  },
+
   getMessages: async (discussionId: string): Promise<DiscussionMessage[]> => {
     const { data } = await axiosInstance.get<ApiResponse<RawDiscussionMessage[]>>(
       `/discussions/${discussionId}/messages`,

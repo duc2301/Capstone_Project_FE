@@ -27,6 +27,17 @@ export const fileItemApi = {
       `/file-versions/${fileItemId}/restore/${versionStateId}`,
     ),
 
+  getVersionView: (fileItemId: string, versionStateId: string) =>
+    axiosInstance.get<ApiResponse<FileViewInfo>>(
+      `/file-versions/${fileItemId}/${versionStateId}/view`,
+    ),
+
+  downloadVersion: (fileItemId: string, versionStateId: string) =>
+    axiosInstance.get(`/file-versions/${fileItemId}/${versionStateId}/download`, {
+      responseType: 'blob',
+      timeout: 60_000,
+    }),
+
   /** Tải nội dung file về (blob, qua server – có kèm token). */
   download: (fileItemId: string) =>
     axiosInstance.get(`/file-items/${fileItemId}/download`, { responseType: 'blob', timeout: 60_000 }),

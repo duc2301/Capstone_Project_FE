@@ -6,9 +6,6 @@ export const accountApi = {
   getAll: () =>
     axiosInstance.get<ApiResponse<Account[]>>('/accounts'),
 
-  getById: (id: string) =>
-    axiosInstance.get<ApiResponse<Account>>(`/accounts/${id}`),
-
   create: (payload: CreateAccountPayload) =>
     axiosInstance.post<ApiResponse<Account>>('/accounts', payload),
 

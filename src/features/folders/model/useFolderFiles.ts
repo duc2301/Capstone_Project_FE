@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 
 import type {
   FileListItem,
@@ -8,6 +8,7 @@ import type {
 import type { FolderContentsFileDto, FolderTreeNode } from "@/entities/folder";
 import { folderApi, toFolderTreeNode } from "@/entities/folder";
 import { issueApi } from "@/entities/issue";
+import { useAsyncData } from "@/shared/lib/async";
 import { t } from "@/shared/lib/i18n";
 import { sortByNewest } from "@/shared/lib/sort";
 
@@ -44,69 +45,57 @@ function toFileListItem(dto: FolderContentsFileDto): FileListItem {
   };
 }
 
+interface FolderContents {
+  subfolders: FolderTreeNode[];
+  files: FileListItem[];
+}
+
+const EMPTY_CONTENTS: FolderContents = { subfolders: [], files: [] };
+
 export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
-  const [subfolders, setSubfolders] = useState<FolderTreeNode[]>([]);
-  const [files, setFiles] = useState<FileListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetchContents = useCallback(async (): Promise<FolderContents> => {
+    const { data } = await folderApi.getContents(folderId!);
 
-  const loadFiles = useCallback(
-    async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
-      if (!folderId) return;
+    return {
+      subfolders: (data.result?.subfolders ?? []).map(toFolderTreeNode),
+      files: sortByNewest((data.result?.files ?? []).map(toFileListItem), (f) => f.createdAt),
+    };
+  }, [folderId]);
 
-      if (showLoading) setLoading(true);
-      setError(null);
+  const { data, loading, error, setData, reload } = useAsyncData(folderId ?? "", fetchContents, {
+    fallback: EMPTY_CONTENTS,
+    enabled: Boolean(folderId),
+    toErrorMessage: () => t("documents.error"),
+  });
 
-      try {
-        const { data } = await folderApi.getContents(folderId);
-        if (isCancelled()) return;
+  const { subfolders, files } = data;
+  const fileIdsKey = files.map((f) => f.id).join(",");
 
-        setSubfolders((data.result?.subfolders ?? []).map(toFolderTreeNode));
-        const items = sortByNewest((data.result?.files ?? []).map(toFileListItem), (f) => f.createdAt);
-        setFiles(items);
-
-        // Ghep co "Dang xu ly issue" bang 1 loi goi rieng (khong dong cham API cua FolderTreeService) —
-        // khong chan render danh sach file, cap nhat sau khi co ket qua.
-        if (items.length > 0) {
-          issueApi
-            .getOpenIssueFileIds(items.map((f) => f.id))
-            .then((openIds) => {
-              if (isCancelled() || openIds.length === 0) return;
-              const openSet = new Set(openIds);
-              setFiles((prev) =>
-                prev.map((f) =>
-                  openSet.has(f.id) ? { ...f, hasOpenIssue: true } : f,
-                ),
-              );
-            })
-            .catch(() => undefined);
-        }
-      } catch {
-        if (!isCancelled()) setError(t("documents.error"));
-      } finally {
-        if (!isCancelled()) setLoading(false);
-      }
-    },
-    [folderId],
-  );
-
-  const refetch = useCallback(() => loadFiles(false), [loadFiles]);
-
+  // Ghep co "Dang xu ly issue" bang 1 loi goi rieng (khong dong cham API cua FolderTreeService) —
+  // khong chan render danh sach file, cap nhat sau khi co ket qua.
   useEffect(() => {
-    if (!folderId) {
-      setSubfolders([]);
-      setFiles([]);
-      setLoading(false);
-      return;
-    }
+    if (!fileIdsKey) return;
 
     let cancelled = false;
-    void loadFiles(true, () => cancelled);
+
+    issueApi
+      .getOpenIssueFileIds(fileIdsKey.split(","))
+      .then((openIds) => {
+        if (cancelled || openIds.length === 0) return;
+        const openSet = new Set(openIds);
+        setData((prev) => ({
+          ...prev,
+          files: prev.files.map((f) => (openSet.has(f.id) ? { ...f, hasOpenIssue: true } : f)),
+        }));
+      })
+      .catch(() => undefined);
 
     return () => {
       cancelled = true;
     };
-  }, [folderId, loadFiles]);
+  }, [fileIdsKey, setData]);
+
+  const refetch = useCallback(async () => reload(), [reload]);
 
   return { subfolders, files, loading, error, refetch };
 }

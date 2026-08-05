@@ -54,7 +54,7 @@ export function AuditLogTable({ items, loading }: Props) {
             const initial = (log.actorName ?? '?').charAt(0).toUpperCase();
             return (
               <tr key={log.id} className="border-b border-card-border last:border-b-0 transition-colors hover:bg-content-bg">
-                {/* Thời gian: ngày trên, giờ UTC dưới */}
+                {/* Thời gian: ngày trên, giờ dưới */}
                 <td className="whitespace-nowrap px-6 py-4 align-top">
                   <p className="text-sm font-semibold text-text">{formatLogDate(log.createdAt)}</p>
                   <p className="mt-0.5 text-xs text-text-muted">{formatLogClock(log.createdAt)}</p>

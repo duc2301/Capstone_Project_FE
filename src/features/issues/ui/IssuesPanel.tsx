@@ -14,11 +14,12 @@ interface IssuesPanelProps {
   fileItemId: string;
   area?: RelatedFileArea;
   folderId?: string | null;
+  readOnly?: boolean;
   onToast: (message: string, type?: 'success' | 'error') => void;
   onIssuesChanged?: () => void;
 }
 
-export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, onIssuesChanged }: IssuesPanelProps) {
+export function IssuesPanel({ projectId, fileItemId, area, folderId, readOnly = false, onToast, onIssuesChanged }: IssuesPanelProps) {
   const { items, loading, error, refetch } = useIssues(fileItemId);
   const [showCreate, setShowCreate] = useState(false);
   const navigate = useNavigate();
@@ -27,11 +28,11 @@ export function IssuesPanel({ projectId, fileItemId, area, folderId, onToast, on
   const openIssue = (issueId: string) =>
     navigate(`/projects/${projectId}/files/${fileItemId}/issues/${issueId}${folderQuery}`);
 
-  const canCreateIssue = area !== RelatedFileArea.Wip;
+  const canCreateIssue = area !== RelatedFileArea.Wip && !readOnly;
 
   return (
     <div className="space-y-4">
-      {canCreateIssue ? (
+      {readOnly ? null : canCreateIssue ? (
         <button
           type="button"
           onClick={() => setShowCreate(true)}

@@ -13,11 +13,13 @@ interface RelatedFilesPanelProps {
   projectId: string;
   fileItemId: string;
   folderId: string | null;
+  readOnly?: boolean;
 }
 
-export function RelatedFilesPanel({ projectId, fileItemId, folderId }: RelatedFilesPanelProps) {
+export function RelatedFilesPanel({ projectId, fileItemId, folderId, readOnly = false }: RelatedFilesPanelProps) {
   const navigate = useNavigate();
-  const { relatedFiles, canLink, loading, saving, error, addLinks, removeLink } = useRelatedFiles(fileItemId);
+  const { relatedFiles, canLink: canLinkRaw, loading, saving, error, addLinks, removeLink } = useRelatedFiles(fileItemId);
+  const canLink = canLinkRaw && !readOnly;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 

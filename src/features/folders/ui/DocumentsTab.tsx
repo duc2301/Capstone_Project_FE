@@ -10,6 +10,7 @@ import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { FolderNamingInfoModal } from '@/features/naming-conventions';
 import { useProjectGroups } from '@/features/projects';
+import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -37,6 +38,8 @@ import { UploadModal } from './UploadModal';
 
 interface DocumentsTabProps {
   projectId: string;
+  /** Admin hệ thống hoặc PM của dự án — được phép "Niêm phong lưu trữ" ở Published. */
+  isProjectManager: boolean;
 }
 
 /* Các quyền (theo thứ tự hiển thị) → nhãn i18n */
@@ -75,17 +78,18 @@ interface ModalState {
 }
 
 function canStartApprovalFromArea(area: CdeArea) {
-  return area === CdeArea.Wip || area === CdeArea.Shared || area === CdeArea.Published;
+  // Published là bước cuối của luồng duyệt — không gửi duyệt / chuyển trạng thái ở đây nữa.
+  // Lưu trữ đi qua "Niêm phong lưu trữ" (PM/Admin), ngoài approval flow.
+  return area === CdeArea.Wip || area === CdeArea.Shared;
 }
 
 function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
   if (area === CdeArea.Wip) return 'Shared';
   if (area === CdeArea.Shared) return 'Published';
-  if (area === CdeArea.Published) return 'Archived';
   return null;
 }
 
-export function DocumentsTab({ projectId }: DocumentsTabProps) {
+export function DocumentsTab({ projectId, isProjectManager }: DocumentsTabProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -282,6 +286,13 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
     && file.status !== FileItemStatus.PendingApproval
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
 
+  // Niêm phong lưu trữ: chỉ Admin/PM, chỉ với file đã ở Published (đã duyệt).
+  const canArchive = (file: FileListItem) =>
+    !!selected
+    && selected.area === CdeArea.Published
+    && (isAccountAdmin(currentUser?.role) || isProjectManager)
+    && file.status === FileItemStatus.Approved;
+
   const handleReturnRequest = async (reason: string) => {
     if (!returnRequestFor) return;
     setReturnRequestBusy(true);
@@ -294,6 +305,18 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       showToast(zoneTransferErrorMessage(err, t('common.error')), 'error');
     } finally {
       setReturnRequestBusy(false);
+    }
+  };
+
+  // Niêm phong lưu trữ bản Published hiện hành -> tạo/cộng dồn bản lưu trong Archived.
+  const handleArchive = async (file: FileListItem) => {
+    try {
+      await fileItemApi.archive(file.id);
+      await refetch();        // cây cập nhật: bản lưu mới xuất hiện trong vùng Archived
+      await refetchFiles();
+      showToast(t('documents.toast.archived'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
   };
 
@@ -556,6 +579,8 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
           onTransferZone={() => openSubmitApproval(fileMenu.file)}
           canReturnToWip={canReturnToWip(fileMenu.file)}
           onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
+          canArchive={canArchive(fileMenu.file)}
+          onArchive={() => handleArchive(fileMenu.file)}
         />
       )}
 

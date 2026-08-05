@@ -922,6 +922,7 @@ export const translations = {
   'documents.toast.moved': 'Đã di chuyển thư mục',
   'documents.toast.deleted': 'Đã xóa thư mục',
   'documents.toast.uploaded': 'Đã tải tệp lên',
+  'documents.toast.archived': 'Đã niêm phong lưu trữ tài liệu',
 
 
   // Danh sách tệp trong folder
@@ -956,6 +957,7 @@ export const translations = {
   'documents.fileMenu.soon': 'Tính năng đang phát triển.',
   'documents.fileMenu.submitApproval': 'Gửi phê duyệt',
   'documents.fileMenu.returnToWip': 'Yêu cầu trả về WIP',
+  'documents.fileMenu.archive': 'Niêm phong lưu trữ',
   'documents.toast.downloading': 'Đang tải tệp về…',
 
   // Yêu cầu trả tài liệu về WIP
@@ -1322,6 +1324,7 @@ export const translations = {
   'audit.action.rejectInvite': 'Từ chối mời',
   'audit.action.assign': 'Chỉ định',
   'audit.action.statusChange': 'Đổi trạng thái',
+  'audit.action.archive': 'Niêm phong lưu trữ',
 
   // Bố cục nhật ký kiểu bảng kiểm toán (mockup)
   'audit.col.user': 'Người dùng',

@@ -927,7 +927,7 @@ export function ProjectDetailPage() {
       )}
 
       {/* ── Tab: Tài liệu (cây thư mục CDE) ───────────── */}
-      {tab === 'documents' && <DocumentsTab projectId={project.id} />}
+      {tab === 'documents' && <DocumentsTab projectId={project.id} isProjectManager={isAdmin || isManager} />}
 
       {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
 

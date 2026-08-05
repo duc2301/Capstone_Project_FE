@@ -1,6 +1,10 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { CreateOrganizationPayload, Organization, UpdateOrganizationPayload } from '../model/organization.types';
+import type {
+  CreateOrganizationPayload,
+  Organization,
+  UpdateOrganizationPayload,
+} from '../model/organization.types';
 
 export const organizationApi = {
   getAll: () =>
@@ -17,7 +21,4 @@ export const organizationApi = {
 
   remove: (id: string) =>
     axiosInstance.delete<ApiResponse<null>>(`/organizations/${id}`),
-
-  getProjects: (id: string) =>
-    axiosInstance.get<ApiResponse<any[]>>(`/organizations/${id}/projects`),
 };

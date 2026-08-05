@@ -1,12 +1,14 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import type { CreateContractPackagePayload, ContractPackage } from '@/entities/contractPackage';
-import { PackageStatus } from '@/entities/contractPackage';
+import { PackageStatus, parseWorkTypes, serializeWorkTypes, WORK_TYPE_CODES, workTypeLabel } from '@/entities/contractPackage';
 import type { Account } from '@/entities/account';
-import { useOrganizations } from '@/features/organizations';
+import { useOrganizationList } from '@/entities/organization';
 import { fileItemApi } from '@/entities/file-item';
+import type { FolderContentsFileDto } from '@/entities/folder';
 import type { TranslationKey } from '@/shared/lib/i18n';
+import { ConfirmDialog, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
-import { numberToWordsVN } from '@/shared/lib/format/numberToWords';
+import { numberToWordsVN } from '@/shared/lib/format';
 
 /* ── Trạng thái gói thầu (numeric union khớp BE) ── */
 const PACKAGE_STATUS_OPTIONS: { value: PackageStatus; labelKey: TranslationKey }[] = [
@@ -18,24 +20,13 @@ const PACKAGE_STATUS_OPTIONS: { value: PackageStatus; labelKey: TranslationKey }
   { value: PackageStatus.Reviewing, labelKey: 'packages.status.reviewing' },
 ];
 
-/* ── Work-type options for multi-select ── */
-const WORK_TYPES = [
-  'Xây dựng thô',
-  'Kết cấu',
-  'Kiến trúc',
-  'Cơ điện',
-  'Hoàn thiện',
-  'Bê tông cốt thép',
-  'Hạ tầng kỹ thuật',
-  'Phòng cháy chữa cháy',
-];
 
 /* ── Section heading component ── */
 function SectionHeading({ icon, number, title }: { icon?: string; number: number; title: string }) {
   return (
     <div className="flex items-center gap-2 border-b border-card-border pb-3 mb-5">
       {icon && <span className="text-xl">{icon}</span>}
-      <h3 className="text-base font-bold text-primary">
+      <h3 className="heading-card">
         {number}. {title}
       </h3>
     </div>
@@ -45,7 +36,7 @@ function SectionHeading({ icon, number, title }: { icon?: string; number: number
 /* ── Label helper ── */
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-sm font-medium text-text-secondary mb-1.5">
+    <label className="field-label mb-1.5">
       {children}
       {required && <span className="text-danger ml-1">*</span>}
     </label>
@@ -54,7 +45,7 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
 
 /* ── Input CSS class ── */
 const inputCls =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+  'field-input';
 const readOnlyCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-content-bg px-4 py-3 text-sm text-text-muted cursor-not-allowed';
 
@@ -74,7 +65,7 @@ export interface CreatePackageFormProps {
 }
 
 export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialData }: CreatePackageFormProps) {
-  const { organizations, loading: orgsLoading } = useOrganizations();
+  const { organizations, loading: orgsLoading } = useOrganizationList();
   const [loading, setLoading] = useState(false);
   const [viewFileUrl, setViewFileUrl] = useState<{ url: string; name: string; type: string } | null>(null);
 
@@ -82,7 +73,24 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
   const [name, setName] = useState(initialData?.name ?? '');
   const [description, setDescription] = useState(initialData?.description ?? '');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [existingFiles, setExistingFiles] = useState<any[]>([]);
+  const [existingFiles, setExistingFiles] = useState<FolderContentsFileDto[]>([]);
+  const [deleteFileTarget, setDeleteFileTarget] = useState<{ id: string } | null>(null);
+  const [deletingFile, setDeletingFile] = useState(false);
+  const { toast, showToast } = useToast();
+
+  const confirmDeleteFile = async () => {
+    if (!deleteFileTarget) return;
+    setDeletingFile(true);
+    try {
+      await fileItemApi.delete(deleteFileTarget.id);
+      setExistingFiles((prev) => prev.filter((f) => f.id !== deleteFileTarget.id));
+      setDeleteFileTarget(null);
+    } catch {
+      showToast(t('packages.file.deleteError'), 'error');
+    } finally {
+      setDeletingFile(false);
+    }
+  };
 
   // Section 2 – Time
   const [startDate, setStartDate] = useState(initialData?.startDate ? initialData.startDate.split('T')[0] : '');
@@ -99,7 +107,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
   // Section 3 – Scope
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>(
-    initialData?.workTypes ? initialData.workTypes.split(',').map(s => s.trim()) : []
+    parseWorkTypes(initialData?.workTypes)
   );
   const [scopeDescription, setScopeDescription] = useState(initialData?.scopeDescription ?? '');
 
@@ -109,7 +117,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
   const [currency, setCurrency] = useState(initialData?.currency ?? 'VND');
 
   // Section 5 – Contractor
-  const mainContractors = initialData?.assignments?.filter(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor') || [];
+  const mainContractors = initialData?.assignments?.filter(a => Number(a.role) === 0 || String(a.role) === 'MainContractor') || [];
   const [contractorOrgId, setContractorOrgId] = useState<string>(
     mainContractors[0]?.organizationId ?? ''
   );
@@ -134,13 +142,13 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
       setName(initialData.name ?? '');
       setDescription(initialData.description ?? '');
       setStartDate(initialData.startDate ? initialData.startDate.split('T')[0] : '');
-      setSelectedWorkTypes(initialData.workTypes ? initialData.workTypes.split(',').map(s => s.trim()) : []);
+      setSelectedWorkTypes(parseWorkTypes(initialData.workTypes));
       setScopeDescription(initialData.scopeDescription ?? '');
       setContractValue(initialData.contractValue ?? '');
       setTaxRate(initialData.taxRate ?? 10);
       setCurrency(initialData.currency ?? 'VND');
       
-      const mcs = initialData.assignments?.filter(a => Number(a.role) === 0 || (a.role as any) === 'MainContractor') || [];
+      const mcs = initialData.assignments?.filter(a => Number(a.role) === 0 || String(a.role) === 'MainContractor') || [];
       setContractorOrgId(mcs[0]?.organizationId ?? '');
       setRepresentativeId(mcs[0]?.representativeAccountId ?? '');
       setContractNumber(mcs[0]?.contractNumber ?? '');
@@ -218,7 +226,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
         endDate: endDate || undefined,
         status,
         isDefault: initialData?.isDefault ?? false,
-        workTypes: selectedWorkTypes.join(','),
+        workTypes: serializeWorkTypes(selectedWorkTypes),
         scopeDescription: scopeDescription,
         taxRate: taxRate,
         currency,
@@ -243,22 +251,22 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 1: Thông tin cơ bản ══════ */}
       <section>
-        <SectionHeading number={1} title="Thông tin cơ bản" />
+        <SectionHeading number={1} title={t('packages.section.basic')} />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <Label required>Tên gói thầu</Label>
+            <Label required>{t('packages.form.name')}</Label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              placeholder="Nhập tên gói thầu..."
+              placeholder={t('packages.form.namePlaceholder')}
               className={inputCls}
             />
           </div>
           <div>
-            <Label>Mã gói thầu <span className="text-text-muted font-normal">(Tự động tạo)</span></Label>
+            <Label>{t('packages.form.code')} <span className="text-text-muted font-normal">{t('packages.form.autoGenerated')}</span></Label>
             <input
-              value={initialData?.code ?? 'PKG-XXXX (Tự động)'}
+              value={initialData?.code ?? t('packages.form.codePlaceholder')}
               disabled
               className={readOnlyCls}
             />
@@ -276,12 +284,12 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             </select>
           </div>
           <div className="sm:col-span-2">
-            <Label>Mô tả gói thầu</Label>
+            <Label>{t('packages.form.description')}</Label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Tóm tắt nội dung gói thầu..."
+              placeholder={t('packages.form.descriptionPlaceholder')}
               className={inputCls}
             />
           </div>
@@ -290,10 +298,10 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 2: Thời gian thực hiện ══════ */}
       <section>
-        <SectionHeading number={2} title="Thời gian" />
+        <SectionHeading number={2} title={t('packages.section.time')} />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <Label required>Ngày khởi công</Label>
+            <Label required>{t('packages.form.startDate')}</Label>
             <input
               type="date"
               value={startDate}
@@ -303,7 +311,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             />
           </div>
           <div>
-            <Label required>Thời gian thực hiện</Label>
+            <Label required>{t('packages.form.duration')}</Label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -324,38 +332,38 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 3: Phạm vi công việc ══════ */}
       <section>
-        <SectionHeading number={3} title="Phạm vi công việc" />
+        <SectionHeading number={3} title={t('packages.section.scope')} />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <Label required>Loại công việc</Label>
+            <Label required>{t('packages.form.workTypes')}</Label>
             <div className="rounded-[var(--radius-input)] border border-input-border bg-input-bg p-2 max-h-36 overflow-y-auto">
-              {WORK_TYPES.map((wt) => (
+              {WORK_TYPE_CODES.map((code) => (
                 <label
-                  key={wt}
+                  key={code}
                   className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-primary/5 ${
-                    selectedWorkTypes.includes(wt) ? 'bg-primary/10 text-primary font-semibold' : 'text-text'
+                    selectedWorkTypes.includes(code) ? 'bg-primary/10 text-primary font-semibold' : 'text-text'
                   }`}
                 >
                   <input
                     type="checkbox"
-                    checked={selectedWorkTypes.includes(wt)}
-                    onChange={() => toggleWorkType(wt)}
+                    checked={selectedWorkTypes.includes(code)}
+                    onChange={() => toggleWorkType(code)}
                     className="accent-primary h-4 w-4"
                   />
-                  {wt}
+                  {workTypeLabel(code)}
                 </label>
               ))}
             </div>
-            <p className="mt-1 text-xs text-text-muted">Giữ Ctrl/Cmd để chọn nhiều loại</p>
+            <p className="mt-1 text-xs text-text-muted">{t('packages.form.workTypesHint')}</p>
           </div>
           <div>
-            <Label required>Phạm vi & khối lượng</Label>
+            <Label required>{t('packages.form.scope')}</Label>
             <textarea
               value={scopeDescription}
               onChange={(e) => setScopeDescription(e.target.value)}
               required
               rows={6}
-              placeholder="Liệt kê các hạng mục chính và khối lượng ước tính..."
+              placeholder={t('packages.form.scopePlaceholder')}
               className={inputCls}
             />
           </div>
@@ -364,10 +372,10 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 4: Thông tin tài chính ══════ */}
       <section>
-        <SectionHeading number={4} title="Giá trị & Tài chính" />
+        <SectionHeading number={4} title={t('packages.section.finance')} />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <Label required>Giá trị hợp đồng gốc</Label>
+            <Label required>{t('packages.form.contractValue')}</Label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -383,7 +391,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                 }}
                 required
                 className={inputCls}
-                placeholder="Ví dụ: 1000000000"
+                placeholder={t('packages.form.contractValuePlaceholder')}
               />
               <select
                 value={currency}
@@ -396,7 +404,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             </div>
           </div>
           <div>
-            <Label>Thuế VAT (%)</Label>
+            <Label>{t('packages.form.taxRate')}</Label>
             <input
               type="number"
               min={0}
@@ -407,7 +415,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             />
           </div>
           <div>
-            <Label>Giá trị VAT <span className="text-text-muted font-normal">(Tự động)</span></Label>
+            <Label>{t('packages.form.vatAmount')} <span className="text-text-muted font-normal">{t('packages.form.auto')}</span></Label>
             <input
               value={fmtCurrency(vatAmount, currency)}
               disabled
@@ -415,7 +423,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             />
           </div>
           <div>
-            <Label>Tổng giá trị (sau VAT) <span className="text-text-muted font-normal">(Tự động)</span></Label>
+            <Label>{t('packages.form.total')} <span className="text-text-muted font-normal">{t('packages.form.auto')}</span></Label>
             <input
               value={fmtCurrency((contractValue || 0) + vatAmount, currency)}
               disabled
@@ -434,10 +442,10 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 5: Đơn vị thầu ══════ */}
       <section className="space-y-4">
-        <SectionHeading number={5} title="Nhà thầu & Phân công" />
+        <SectionHeading number={5} title={t('packages.section.contractor')} />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <Label required>Đối tác / Liên doanh quản lý</Label>
+            <Label required>{t('packages.form.partner')}</Label>
             <select
               value={contractorOrgId}
               onChange={(e) => setContractorOrgId(e.target.value)}
@@ -445,7 +453,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               className={inputCls}
               disabled={orgsLoading}
             >
-              <option value="">{orgsLoading ? 'Đang tải danh sách...' : 'Chọn đối tác hoặc liên doanh...'}</option>
+              <option value="">{orgsLoading ? t('packages.form.partnerLoading') : t('packages.form.partnerPlaceholder')}</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.isJointVenture ? '⭐ [Liên doanh] ' : ''}
@@ -456,14 +464,14 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             </select>
           </div>
           <div>
-            <Label required>Người đại diện</Label>
+            <Label required>{t('packages.form.representative')}</Label>
             <select
               value={representativeId}
               onChange={(e) => setRepresentativeId(e.target.value)}
               required
               className={inputCls}
             >
-              <option value="">Chọn từ danh sách liên hệ...</option>
+              <option value="">{t('packages.form.representativePlaceholder')}</option>
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>
                   {acc.userName} ({acc.email})
@@ -476,19 +484,19 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 6: Thông tin hợp đồng ══════ */}
       <section>
-        <SectionHeading number={6} title="Thông tin hợp đồng" />
+        <SectionHeading number={6} title={t('packages.section.contract')} />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div>
-            <Label>Số hợp đồng</Label>
+            <Label>{t('packages.form.contractNumber')}</Label>
             <input
               value={contractNumber}
               onChange={(e) => setContractNumber(e.target.value)}
-              placeholder="Ví dụ: 01/2024/HĐKT"
+              placeholder={t('packages.form.contractNumberPlaceholder')}
               className={inputCls}
             />
           </div>
           <div>
-            <Label>Ngày ký hợp đồng</Label>
+            <Label>{t('packages.form.contractSignDate')}</Label>
             <input
               type="date"
               value={contractSignDate}
@@ -497,11 +505,11 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             />
           </div>
           <div>
-            <Label>Chức danh/Vị trí</Label>
+            <Label>{t('packages.form.jobTitle')}</Label>
             <input
               value={contractJobTitle}
               onChange={(e) => setContractJobTitle(e.target.value)}
-              placeholder="Giám đốc dự án"
+              placeholder={t('packages.form.jobTitlePlaceholder')}
               className={inputCls}
             />
           </div>
@@ -510,20 +518,20 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
       {/* ══════ Section 7: Tài liệu đính kèm ══════ */}
       <section>
-        <SectionHeading number={7} title="Tài liệu đính kèm" />
+        <SectionHeading number={7} title={t('packages.section.attachments')} />
         <div className="space-y-4">
           <div>
-            <Label>Ghi chú</Label>
+            <Label>{t('packages.form.notes')}</Label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Các lưu ý đặc biệt khác..."
+              placeholder={t('packages.form.notesPlaceholder')}
               className={inputCls}
             />
           </div>
           <div>
-            <Label>Tệp đính kèm (Hồ sơ dự thầu, Quyết định phê duyệt...)</Label>
+            <Label>{t('packages.form.attachments')}</Label>
             <div className="relative flex flex-col items-center justify-center rounded-[var(--radius-card)] border-2 border-dashed border-input-border bg-content-bg p-8 transition-colors hover:border-primary/40 cursor-pointer">
               <input 
                 type="file" 
@@ -550,8 +558,8 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              <p className="text-sm font-semibold text-text-muted">Kéo và thả tệp vào đây</p>
-              <p className="text-xs text-text-placeholder mt-1">Hoặc nhấp để duyệt file từ máy tính</p>
+              <p className="text-sm font-semibold text-text-muted">{t('packages.form.dropzone')}</p>
+              <p className="text-xs text-text-placeholder mt-1">{t('packages.form.dropzoneHint')}</p>
             </div>
             
             {/* List of Files */}
@@ -574,11 +582,11 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                             setViewFileUrl({ url: viewUrl, name: file.name || 'document', type: blobType });
                           } catch (err) {
                             console.error("Xem file thất bại", err);
-                            alert("Xem file thất bại");
+                            showToast(t('file.view.error'), 'error');
                           }
                         }}
                         className="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
-                        title="Xem trực tiếp"
+                        title={t('packages.form.viewFile')}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -601,11 +609,11 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                             window.URL.revokeObjectURL(downloadUrl);
                           } catch (err) {
                             console.error("Tải file thất bại", err);
-                            alert("Tải file thất bại");
+                            showToast(t('file.download.error'), 'error');
                           }
                         }}
                         className="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
-                        title="Tải xuống"
+                        title={t('packages.form.downloadFile')}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -615,19 +623,9 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                       </button>
                       <button 
                         type="button" 
-                        onClick={async () => {
-                          if (window.confirm(`Bạn có chắc chắn muốn xóa tệp "${file.name}" không? Thao tác này không thể hoàn tác.`)) {
-                            try {
-                              await fileItemApi.delete(file.id);
-                              setExistingFiles(prev => prev.filter(f => f.id !== file.id));
-                            } catch (err) {
-                              console.error("Xóa file thất bại", err);
-                              alert("Xóa file thất bại, vui lòng thử lại sau.");
-                            }
-                          }
-                        }}
+                        onClick={() => setDeleteFileTarget(file)}
                         className="p-1.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded transition-colors"
-                        title="Xóa file"
+                        title={t('packages.form.deleteFile')}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                       </button>
@@ -671,28 +669,28 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
             <polyline points="17 21 17 13 7 13 7 21" />
             <polyline points="7 3 7 8 15 8" />
           </svg>
-          {loading ? 'Đang tạo...' : 'Lưu gói thầu'}
+          {loading ? t('packages.form.submitting') : t('packages.form.submit')}
         </button>
       </div>
 
       {/* View File Modal */}
       {viewFileUrl && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-content-bg w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-card-border bg-white">
-              <h3 className="font-bold text-lg text-text truncate pr-4">{viewFileUrl.name}</h3>
+          <div className="flex h-[90vh] w-full max-w-5xl animate-scale-in flex-col overflow-hidden rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+            <div className="flex items-center justify-between gap-4 border-b border-card-border px-6 py-4">
+              <h3 className="heading-entity truncate">{viewFileUrl.name}</h3>
               <button 
                 onClick={() => {
                   window.URL.revokeObjectURL(viewFileUrl.url);
                   setViewFileUrl(null);
                 }}
                 className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-full transition-colors"
-                title="Đóng"
+                title={t('common.close')}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
-            <div className="flex-1 bg-gray-100 relative flex items-center justify-center p-4">
+            <div className="relative flex flex-1 items-center justify-center bg-content-bg p-4">
               {viewFileUrl.type.startsWith('image/') ? (
                 <img src={viewFileUrl.url} alt={viewFileUrl.name} className="max-w-full max-h-full object-contain shadow-sm" />
               ) : (
@@ -703,9 +701,9 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                   title={viewFileUrl.name}
                 >
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
-                    <p className="text-text-muted">Trình duyệt của bạn không hỗ trợ xem trực tiếp tệp này.</p>
-                    <a href={viewFileUrl.url} download={viewFileUrl.name} className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
-                      Tải xuống
+                    <p className="text-text-muted">{t('packages.form.previewUnsupported')}</p>
+                    <a href={viewFileUrl.url} download={viewFileUrl.name} className="rounded-[var(--radius-button)] bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-hover">
+                      {t('packages.form.downloadFile')}
                     </a>
                   </div>
                 </object>
@@ -714,6 +712,19 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
           </div>
         </div>
       )}
+
+      {deleteFileTarget && (
+        <ConfirmDialog
+          title={t('packages.form.deleteFile')}
+          message={t('packages.file.deleteConfirm')}
+          confirmLabel={t('common.action.delete')}
+          busy={deletingFile}
+          onConfirm={confirmDeleteFile}
+          onCancel={() => setDeleteFileTarget(null)}
+        />
+      )}
+
+      <Toast toast={toast} className="z-[80]" />
     </form>
   );
 }

@@ -12,10 +12,10 @@ function InstanceRow({ instance }: { instance: LoiInstance }) {
         {instance.name || t('loi.report.unnamed')}
       </span>
       {instance.entityType && (
-        <span className="font-mono text-[11px] uppercase text-text-muted">{instance.entityType}</span>
+        <span className="font-mono text-xs uppercase text-text-muted">{instance.entityType}</span>
       )}
       {instance.globalId && (
-        <span className="font-mono text-[11px] text-text-muted">{instance.globalId}</span>
+        <span className="font-mono text-xs text-text-muted">{instance.globalId}</span>
       )}
       {instance.details.length > 0 && (
         <span className="w-full text-xs leading-relaxed text-text-secondary">
@@ -45,14 +45,14 @@ export function LoiRuleBlock({ rule }: { rule: LoiRuleResult }) {
         )}
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold text-text">{ruleLabel(rule.code)}</span>
-          <span className="mt-0.5 block font-mono text-[11px] text-text-muted">
+          <span className="mt-0.5 block font-mono text-xs text-text-muted">
             {rule.code}
             {rule.occurrenceCount > 0 && (
               <> · {t('loi.report.occurred')} {rule.occurrenceCount} {t('loi.report.times')}</>
             )}
           </span>
         </span>
-        <span className={`shrink-0 text-[11px] font-bold uppercase tracking-wide ${tone.text}`}>
+        <span className={`shrink-0 text-xs font-bold uppercase tracking-wide ${tone.text}`}>
           {severityLabel(rule.severity)}
         </span>
       </button>
@@ -69,7 +69,7 @@ export function LoiRuleBlock({ rule }: { rule: LoiRuleResult }) {
             ))}
           </ul>
           {rule.truncated && (
-            <p className="pt-2 text-[11px] italic text-text-muted">
+            <p className="pt-2 text-xs italic text-text-muted">
               {t('loi.report.truncated')} {rule.occurrenceCount}.
             </p>
           )}

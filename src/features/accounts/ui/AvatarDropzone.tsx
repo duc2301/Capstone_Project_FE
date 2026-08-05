@@ -71,7 +71,7 @@ export function AvatarDropzone({ file, onChange, currentUrl }: Props) {
       >
         {shown ? (
           <div className="flex items-center gap-4">
-            <img src={shown} alt="" className="h-16 w-16 shrink-0 rounded-2xl object-cover" />
+            <img src={shown} alt="" className="h-16 w-16 shrink-0 rounded-[var(--radius-card)] object-cover" />
             <div className="min-w-0">
               <p className="truncate text-sm text-text">{file ? file.name : t('account.avatar.current')}</p>
               {/* Chỉ huỷ được ảnh vừa chọn — BE chưa có API xoá ảnh đã lưu. */}
@@ -97,7 +97,7 @@ export function AvatarDropzone({ file, onChange, currentUrl }: Props) {
         ) : (
           <>
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-card">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#406623" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 14.9A5 5 0 0 1 7 6a6 6 0 0 1 11.3 1.8A4 4 0 0 1 18 15.7" />
                 <polyline points="8 14 12 10 16 14" />
                 <line x1="12" y1="10" x2="12" y2="21" />

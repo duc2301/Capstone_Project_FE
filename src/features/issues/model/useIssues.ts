@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { IssueItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 import { useIssueRealtime } from './useIssueRealtime';
 
@@ -37,7 +38,7 @@ export function useIssues(fileItemId: string | undefined): UseIssuesReturn {
 
     try {
       const data = await issueApi.getByFileItem(fileItemId);
-      if (!isCancelled()) setItems(data);
+      if (!isCancelled()) setItems(sortByNewest(data, (item) => item.createdAt));
     } catch (err) {
       if (!isCancelled()) setError(issueErrorMessage(err, t('issues.error')));
     } finally {

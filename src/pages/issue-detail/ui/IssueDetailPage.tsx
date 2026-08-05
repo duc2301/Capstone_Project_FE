@@ -6,7 +6,9 @@ import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { IssueSidePanel } from '@/features/issues';
 import { ModelCommentsPanel } from '@/features/model-markup';
+import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
@@ -37,12 +39,8 @@ export function IssueDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const loading = Boolean(fileId) && loadedFileId !== fileId;
   const [viewer, setViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  }, []);
+  const { toast, showToast } = useToast();
 
   const handleViewerReady = useCallback((v: Autodesk.Viewing.GuiViewer3D | null) => setViewer(v), []);
 
@@ -60,7 +58,7 @@ export function IssueDetailPage() {
         const [viewResult, versionsResult] = await Promise.all([fetchView(), fileItemApi.getVersions(fileId)]);
         if (!cancelled) {
           setInfo(viewResult);
-          setVersions(versionsResult.data.result ?? []);
+          setVersions(sortByNewest(versionsResult.data.result ?? [], (v) => v.createdAt));
           setError(null);
         }
       } catch {
@@ -117,13 +115,13 @@ export function IssueDetailPage() {
     viewerContent = (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
         <Spinner />
-        <p className="font-jakarta text-sm text-text-muted">{t('common.loading')}</p>
+        <p className="text-sm text-text-muted">{t('common.loading')}</p>
       </div>
     );
   } else if (error) {
     viewerContent = (
       <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-        <p className="font-jakarta text-sm font-medium text-danger">{error}</p>
+        <p className="text-sm font-medium text-danger">{error}</p>
       </div>
     );
   } else if (isModelReady) {
@@ -132,21 +130,21 @@ export function IssueDetailPage() {
     viewerContent = (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
         <Spinner />
-        <h3 className="font-display text-lg font-semibold text-text">{t('fileView.model.processing.title')}</h3>
-        <p className="max-w-md font-jakarta text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
+        <h3 className="heading-entity">{t('fileView.model.processing.title')}</h3>
+        <p className="max-w-md text-sm text-text-muted">{t('fileView.model.processing.desc')}</p>
       </div>
     );
   } else if (isModelFailed) {
     viewerContent = (
       <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-        <p className="font-jakarta text-sm font-medium text-danger">{t('fileView.model.failed.desc')}</p>
+        <p className="text-sm font-medium text-danger">{t('fileView.model.failed.desc')}</p>
       </div>
     );
   } else if (canMarkupInline) {
     viewerContent = <InlineMarkupStage />;
   } else if (info?.kind === 'inline' && info.url) {
     viewerContent = info.contentType?.startsWith('image/') ? (
-      <div className="absolute inset-0 flex items-center justify-center overflow-auto bg-[#dcdad2] p-6">
+      <div className="absolute inset-0 flex items-center justify-center overflow-auto bg-viewer-canvas p-6">
         <img src={info.url} alt={fileName} className="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
       </div>
     ) : (
@@ -155,7 +153,7 @@ export function IssueDetailPage() {
   } else {
     viewerContent = (
       <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-        <p className="font-jakarta text-sm text-text-muted">{t('issues.page.previewUnsupported')}</p>
+        <p className="text-sm text-text-muted">{t('issues.page.previewUnsupported')}</p>
       </div>
     );
   }
@@ -177,7 +175,7 @@ export function IssueDetailPage() {
     <div className="flex min-h-0 flex-1 flex-col gap-4 xl:flex-row">
       {/* Cột trái: header + khung xem, giống trang chi tiết file */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-        <header className="flex shrink-0 flex-col gap-3 rounded-2xl border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <header className="flex shrink-0 flex-col gap-3 rounded-[var(--radius-card)] border border-card-border/70 bg-card/80 px-4 py-3 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -193,7 +191,7 @@ export function IssueDetailPage() {
           <button
             type="button"
             onClick={goBackToFile}
-            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
+            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m15 18-6-6 6-6" />
@@ -202,14 +200,14 @@ export function IssueDetailPage() {
           </button>
         </header>
 
-        <main className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-card-border bg-card shadow-card">
-          <div className="absolute inset-0 bg-[#dcdad2]" />
+        <main className="relative min-h-0 flex-1 overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
+          <div className="absolute inset-0 bg-viewer-canvas" />
           {viewerContent}
         </main>
       </div>
 
       {/* 400px: đồng nhất với panel trang chi tiết file */}
-      <aside className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-card-border bg-card shadow-card xl:w-[400px]">
+      <aside className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card xl:w-[400px]">
         {issueId && fileId ? (
           <IssueSidePanel issueId={issueId} fileItemId={fileId} onToast={showToast} markupSlot={markupSlot} />
         ) : null}
@@ -236,11 +234,7 @@ export function IssueDetailPage() {
         layout
       )}
 
-      {toast && (
-        <div className={`fixed right-6 top-20 z-[80] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[80]" />
     </div>
   );
 }

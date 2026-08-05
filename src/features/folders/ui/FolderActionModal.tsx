@@ -77,9 +77,9 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 w-full max-w-md animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <h2 className="font-heading text-lg font-bold text-text">{TITLE[action]()}</h2>
+          <h2 className="heading-entity">{TITLE[action]()}</h2>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -96,14 +96,14 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
 
           {(action === 'create' || action === 'rename') && (
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('documents.action.nameLabel')}</span>
+              <span className="field-label">{t('documents.action.nameLabel')}</span>
               <input
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit(); }}
                 placeholder={t('documents.action.namePlaceholder')}
-                className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+                className="field-input"
               />
             </label>
           )}
@@ -115,11 +115,11 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
               </p>
             ) : (
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('documents.action.moveLabel')}</span>
+                <span className="field-label">{t('documents.action.moveLabel')}</span>
                 <select
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  className="rounded-(--radius-input) border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-text outline-none focus:border-input-focus"
+                  className="field-input"
                 >
                   <option value="">—</option>
                   {moveTargets.map(({ node: n, depth }) => (
@@ -141,14 +141,14 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
         </div>
 
         <div className="flex justify-end gap-3 border-t border-card-border px-6 py-4">
-          <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg">
+          <button type="button" onClick={onClose} className="btn-modal-ghost">
             {t('documents.action.cancel')}
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleSubmit}
-            className={`rounded-xl px-5 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${action === 'delete' ? 'bg-danger hover:bg-danger/90' : 'bg-primary hover:bg-primary-hover'}`}
+            className={action === 'delete' ? 'btn-modal-danger' : 'btn-modal-primary'}
           >
             {submitLabel}
           </button>

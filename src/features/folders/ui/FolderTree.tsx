@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
+import { FolderGlyph } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 interface FolderTreeProps {
@@ -8,15 +9,6 @@ interface FolderTreeProps {
   selectedId: string | null;
   onSelect: (node: FolderTreeNode) => void;
   onContextMenu?: (e: React.MouseEvent, node: FolderTreeNode) => void;
-}
-
-/* Icon: folder */
-function FolderIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${className}`}>
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  );
 }
 
 /* Icon: chevron (xoay khi mở) */
@@ -55,7 +47,7 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
       <div
         onContextMenu={(e) => onContextMenu?.(e, node)}
         style={{ paddingLeft: 8 + depth * 12 }}
-        className={`flex min-w-full items-center gap-1.5 rounded-lg pr-2 text-[13px] transition-colors ${
+        className={`flex min-w-full items-center gap-1.5 rounded-lg pr-2 text-sm transition-colors ${
           isSelected
             ? 'bg-primary-light font-semibold text-primary'
             : isRoot
@@ -81,7 +73,7 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
           onClick={() => onSelect(node)}
           className="flex items-center gap-1.5 py-1.5 text-left"
         >
-          <FolderIcon className={isSelected ? 'text-primary' : isRoot ? 'text-primary/80' : 'text-text-muted'} />
+          <FolderGlyph open={open} size={16} className="text-primary" />
           <span className="whitespace-nowrap">{label}</span>
           {node.hasWarning && (
             <span title={t('fileWarn.folderTooltip')} className="ml-auto shrink-0 text-danger">
@@ -165,7 +157,7 @@ export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: Folder
 
   return (
     // Cây dài thì cuộn trong khung, không kéo dài cả trang
-    <div className="flex h-full min-h-0 flex-col rounded-(--radius-card) border border-card-border bg-card p-3.5 shadow-card">
+    <div className="flex h-full min-h-0 flex-col rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 shadow-card">
       {tree.length === 0 ? (
         <p className="px-2 py-6 text-center text-sm text-text-muted">{t('documents.empty')}</p>
       ) : (

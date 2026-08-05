@@ -11,10 +11,8 @@ interface Props {
   onCancel: () => void;
 }
 
-const fieldClass =
-  'w-full rounded-xl border border-card-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
-const iconFieldClass = `${fieldClass} pl-11`;
-const labelClass = 'block text-sm text-text-secondary';
+const iconFieldClass = 'field-input pl-11';
+const labelClass = 'field-label';
 const iconClass = 'pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted';
 
 export function CreateAccountForm({ onSubmit, onCancel }: Props) {
@@ -109,7 +107,7 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
               value={organizationId}
               onChange={(e) => setOrganizationId(e.target.value)}
               disabled={loadingOrganizations}
-              className={`${iconFieldClass} disabled:opacity-60`}
+              className={iconFieldClass}
             >
               <option value="">{t('account.organizationNone')}</option>
               {organizations.map((organization) => (
@@ -190,7 +188,7 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
       {/* Ảnh đại diện */}
       <AvatarDropzone file={avatar} onChange={setAvatar} />
 
-      <p className="text-xs text-text-muted">{t('account.organizationHint')}</p>
+      <p className="field-hint">{t('account.organizationHint')}</p>
 
       {error && (
         <p className="rounded-xl bg-danger-light px-4 py-2.5 text-sm font-medium text-danger">{error}</p>
@@ -198,18 +196,10 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 border-t border-card-border pt-5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-xl border border-card-border bg-card px-8 py-3 text-sm font-semibold text-text-secondary transition-all duration-200 hover:border-text-muted hover:bg-content-bg"
-        >
+        <button type="button" onClick={onCancel} className="btn-modal-ghost">
           {t('account.cancel')}
         </button>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting} className="btn-modal-primary">
           {submitting ? (
             <span className="flex items-center gap-2">
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

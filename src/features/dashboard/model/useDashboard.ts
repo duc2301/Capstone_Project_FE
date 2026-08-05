@@ -5,6 +5,7 @@ import { projectApi } from '@/entities/project';
 import type { Project } from '@/entities/project';
 import { useSession } from '@/entities/session';
 import type { TranslationKey } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 interface UrgentTask {
   id: string;
@@ -131,7 +132,7 @@ export function useDashboard() {
       try {
         const { data } = await projectApi.getAll();
         if (!cancelled) {
-          setProjects(data.result ?? []);
+          setProjects(sortByNewest(data.result ?? [], (p) => p.createdAt));
         }
       } catch {
         if (!cancelled) setProjects([]);

@@ -6,6 +6,7 @@ import { t } from '@/shared/lib/i18n';
 
 import type {
   AssignableMember,
+  AssignableOrganization,
   CreateIssuePayload,
   IssueAttachment,
   IssueItem,
@@ -15,6 +16,12 @@ import type {
   IssueType,
   ProjectIssueListItem,
 } from '../model/issue.types';
+
+interface RawAssignableOrganization {
+  organizationId: string;
+  organizationName?: string | null;
+  groupNames?: string[] | null;
+}
 
 interface RawIssueParticipant {
   accountId: string;
@@ -47,6 +54,8 @@ interface RawIssueItem {
   raisedByName?: string | null;
   assignedToAccountId?: string | null;
   assignedToName?: string | null;
+  assignedToOrganizationId?: string | null;
+  dueDate?: string | null;
   linkedFolderId?: string | null;
   linkedFileItemId?: string | null;
   createdAt?: string | null;
@@ -100,7 +109,6 @@ function mapAssignableMember(item: RawAssignableMember): AssignableMember {
 }
 
 const IssueTypeValue: Record<IssueType, number> = { Issue: 0, Rfi: 1 };
-const IssueStatusValue: Record<IssueStatus, number> = { Open: 0, InProgress: 1, Answered: 2, Closed: 3 };
 const IssuePriorityValue: Record<IssuePriority, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 };
 
 function mapIssueItem(item: RawIssueItem): IssueItem {
@@ -116,6 +124,8 @@ function mapIssueItem(item: RawIssueItem): IssueItem {
     raisedByName: item.raisedByName ?? null,
     assignedToAccountId: item.assignedToAccountId ?? null,
     assignedToName: item.assignedToName ?? null,
+    assignedToOrganizationId: item.assignedToOrganizationId ?? null,
+    dueDate: item.dueDate ?? null,
     linkedFolderId: item.linkedFolderId ?? null,
     linkedFileItemId: item.linkedFileItemId ?? null,
     createdAt: item.createdAt ?? null,
@@ -196,7 +206,6 @@ export const issueApi = {
     const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>('/issues', {
       ...payload,
       type: IssueTypeValue[payload.type],
-      status: IssueStatusValue[payload.status],
       priority: IssuePriorityValue[payload.priority],
     });
     return mapIssueItem(unwrap(data));
@@ -205,6 +214,27 @@ export const issueApi = {
   resolve: async (issueId: string): Promise<IssueItem> => {
     const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(`/issues/${issueId}/resolve`);
     return mapIssueItem(unwrap(data));
+  },
+
+  start: async (issueId: string): Promise<IssueItem> => {
+    const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(`/issues/${issueId}/start`);
+    return mapIssueItem(unwrap(data));
+  },
+
+  answer: async (issueId: string): Promise<IssueItem> => {
+    const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(`/issues/${issueId}/answer`);
+    return mapIssueItem(unwrap(data));
+  },
+
+  getAssignableOrganizations: async (fileItemId: string): Promise<AssignableOrganization[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawAssignableOrganization[]>>(
+      `/issues/assignable-organizations/${fileItemId}`,
+    );
+    return (unwrap(data) ?? []).map((o) => ({
+      organizationId: o.organizationId,
+      organizationName: o.organizationName ?? '',
+      groupNames: o.groupNames ?? [],
+    }));
   },
 
   addParticipant: async (issueId: string, accountId: string): Promise<void> => {

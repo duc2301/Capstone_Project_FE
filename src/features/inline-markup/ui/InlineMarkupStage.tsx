@@ -22,7 +22,7 @@ export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
   const { isFullscreen, toggle } = useFullscreen(rootRef);
 
   return (
-    <div ref={rootRef} className="absolute inset-0 flex flex-col bg-[#dcdad2]">
+    <div ref={rootRef} className="absolute inset-0 flex flex-col bg-viewer-canvas">
       <div className="z-20 flex flex-wrap items-center gap-2 border-b border-white/60 bg-card/85 px-3 py-2 shadow-sm backdrop-blur">
         <div className="flex items-center gap-1">
           {INLINE_TOOLS.map((td) => (
@@ -94,7 +94,7 @@ export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
               type="button"
               onClick={onExitMarkup}
               title={t('markup.inline.exit')}
-              className="flex h-7 items-center gap-1.5 rounded-full border border-card-border px-3 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+              className="flex h-7 items-center gap-1.5 rounded-[var(--radius-button)] border border-card-border px-3 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
@@ -107,7 +107,7 @@ export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
             onClick={toggle}
             title={isFullscreen ? t('markup.inline.exitFullscreen') : t('markup.inline.fullscreen')}
             aria-label={isFullscreen ? t('markup.inline.exitFullscreen') : t('markup.inline.fullscreen')}
-            className="flex h-7 items-center gap-1.5 rounded-full border border-card-border px-3 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+            className="flex h-7 items-center gap-1.5 rounded-[var(--radius-button)] border border-card-border px-3 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg"
           >
             <FullscreenGlyph exit={isFullscreen} />
             {isFullscreen ? t('markup.inline.exitFullscreen') : t('markup.inline.fullscreen')}
@@ -115,7 +115,7 @@ export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
         </div>
       </div>
 
-      <p className="bg-card/60 px-3 py-1 text-[11px] text-text-muted">
+      <p className="bg-card/60 px-3 py-1 text-xs text-text-muted">
         {c.tool === 'polyline' ? t('markup.inline.polylineHint') : t('markup.inline.hint')}
       </p>
 
@@ -150,7 +150,7 @@ function ToolButton({ active, label, onClick, children }: { active: boolean; lab
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${active ? 'bg-primary text-white' : 'text-text-secondary hover:bg-content-bg'}`}
+      className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-button)] transition-colors ${active ? 'bg-primary text-white' : 'text-text-secondary hover:bg-content-bg'}`}
     >
       {children}
     </button>
@@ -159,7 +159,7 @@ function ToolButton({ active, label, onClick, children }: { active: boolean; lab
 
 function IconBtn({ onClick, label, children }: { onClick: () => void; label: string; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} title={label} aria-label={label} className="flex h-6 w-6 items-center justify-center rounded-md text-sm font-bold text-text-secondary transition-colors hover:bg-content-bg">
+    <button type="button" onClick={onClick} title={label} aria-label={label} className="flex h-6 w-6 items-center justify-center rounded-[var(--radius-button)] text-sm font-bold text-text-secondary transition-colors hover:bg-content-bg">
       {children}
     </button>
   );
@@ -172,7 +172,7 @@ function PagerButton({ disabled, onClick, label, dir }: { disabled: boolean; onC
       disabled={disabled}
       onClick={onClick}
       aria-label={label}
-      className="flex h-6 w-6 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-40"
+      className="flex h-6 w-6 items-center justify-center rounded-[var(--radius-button)] text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-40"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
         <polyline points={dir === 'prev' ? '15 18 9 12 15 6' : '9 18 15 12 9 6'} />

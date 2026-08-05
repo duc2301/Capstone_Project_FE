@@ -4,6 +4,7 @@ import type { FileVersion } from '@/entities/file-item';
 import { fileItemApi } from '@/entities/file-item';
 import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 import { formatDate, formatSize } from '../model/fileFormat';
 
@@ -30,7 +31,7 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
     async (isCancelled: () => boolean = () => false) => {
       try {
         const { data } = await fileItemApi.getVersions(fileItemId);
-        if (!isCancelled()) setVersions(data.result ?? []);
+        if (!isCancelled()) setVersions(sortByNewest(data.result ?? [], (v) => v.createdAt));
       } catch {
         if (!isCancelled()) setError(t('common.error'));
       } finally {
@@ -70,11 +71,11 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 w-full max-w-lg animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <div className="min-w-0">
-            <h2 className="font-heading text-lg font-bold text-text">{t('documents.versions.title')}</h2>
-            <p className="truncate text-xs text-text-muted">{fileName}</p>
+            <h2 className="heading-entity">{t('documents.versions.title')}</h2>
+            <p className="field-hint truncate">{fileName}</p>
           </div>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
@@ -104,7 +105,7 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
                     <p className="text-sm font-medium text-text">
                       {formatSize(v.fileSizeBytes)} · {v.format.toUpperCase()}
                       {isCurrent(v) && (
-                        <span className="ml-2 rounded-full bg-success-light px-2 py-0.5 text-[10px] font-semibold text-success">
+                        <span className="ml-2 rounded-full bg-success-light px-2 py-0.5 text-2xs font-semibold text-success">
                           {t('documents.versions.current')}
                         </span>
                       )}
@@ -131,10 +132,10 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
 
         {/* Hộp xác nhận khôi phục phiên bản */}
         {confirmVersion && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-(--radius-card-lg) bg-black/30 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm animate-scale-in rounded-(--radius-card-lg) bg-card p-5 shadow-modal">
-              <h3 className="font-heading text-base font-bold text-text">{t('documents.versions.confirmTitle')}</h3>
-              <p className="mt-2 text-sm text-text-muted">
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[var(--radius-card-lg)] bg-black/30 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm animate-scale-in rounded-[var(--radius-card-lg)] bg-card p-5 shadow-modal">
+              <h3 className="heading-entity">{t('documents.versions.confirmTitle')}</h3>
+              <p className="modal-text mt-2">
                 {t('documents.versions.confirmDesc').replace('{version}', confirmVersion.displayVersion)}
               </p>
               <div className="mt-5 flex justify-end gap-2">
@@ -142,7 +143,7 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
                   type="button"
                   onClick={() => setConfirmVersion(null)}
                   disabled={restoringId !== null}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-50"
+                  className="btn-modal-ghost"
                 >
                   {t('documents.versions.cancel')}
                 </button>
@@ -150,7 +151,7 @@ export function FileVersionsModal({ fileItemId, fileName, currentVersionId, onCl
                   type="button"
                   onClick={() => void handleRestore(confirmVersion)}
                   disabled={restoringId !== null}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  className="btn-modal-primary"
                 >
                   {restoringId !== null ? t('documents.versions.restoring') : t('documents.versions.confirmYes')}
                 </button>

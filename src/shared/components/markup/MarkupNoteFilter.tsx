@@ -54,7 +54,7 @@ export function MarkupNoteFilter({
           <option value="resolved">{t('markup.status.resolved')}</option>
         </select>
       </div>
-      <p className="text-[11px] text-text-muted">
+      <p className="text-xs text-text-muted">
         {t('markup.filter.showing')}: {shown}/{total}
       </p>
     </div>

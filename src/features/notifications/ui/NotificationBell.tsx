@@ -12,7 +12,7 @@ const BUTTON_STYLES = {
   admin:
     'relative flex h-9 w-9 items-center justify-center rounded-full border border-card-border bg-card text-text-muted transition-colors hover:text-text',
   header:
-    'relative flex h-9 w-9 items-center justify-center rounded-full border border-[#C3C9B9]/40 bg-[#F0EEE6]/60 text-[#43493C] transition-colors hover:text-[#406623]',
+    'relative flex h-9 w-9 items-center justify-center rounded-full border border-border-sage/40 bg-surface-sand-light/60 text-text-secondary transition-colors hover:text-primary',
 } as const;
 
 export function NotificationBell({ variant = 'admin' }: Props) {
@@ -60,7 +60,7 @@ export function NotificationBell({ variant = 'admin' }: Props) {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-2xs font-bold text-white">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

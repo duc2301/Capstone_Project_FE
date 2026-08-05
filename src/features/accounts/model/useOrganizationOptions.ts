@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 export interface OrganizationOption {
   id: string;
@@ -36,7 +37,7 @@ export function useOrganizationOptions(): UseOrganizationOptionsReturn {
           setError(t('common.error'));
           return;
         }
-        setOptions((data.result ?? []).map(toOption));
+        setOptions(sortByNewest(data.result ?? [], (o) => o.createdAt).map(toOption));
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {

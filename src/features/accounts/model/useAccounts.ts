@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Account, CreateAccountPayload, UpdateAccountPayload } from '@/entities/account';
 import { accountApi } from '@/entities/account';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
 interface UseAccountsReturn {
   accounts: Account[];
@@ -24,7 +25,7 @@ export function useAccounts(): UseAccountsReturn {
     setError(null);
     try {
       const { data } = await accountApi.getAll();
-      setAccounts(data.result ?? []);
+      setAccounts(sortByNewest(data.result ?? [], (a) => a.createdAt));
     } catch {
       setError(t('common.error'));
     } finally {
@@ -65,7 +66,7 @@ export function useAccounts(): UseAccountsReturn {
     (async () => {
       try {
         const { data } = await accountApi.getAll();
-        if (!cancelled) setAccounts(data.result ?? []);
+        if (!cancelled) setAccounts(sortByNewest(data.result ?? [], (a) => a.createdAt));
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {

@@ -82,14 +82,14 @@ export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void runSearch(); }}
             placeholder={t('docSearch.placeholder')}
-            className="w-full rounded-xl border border-card-border bg-card py-2.5 pl-9 pr-3 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-primary"
+            className="w-full rounded-[var(--radius-card)] border border-card-border bg-card py-2.5 pl-9 pr-3 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-primary"
           />
         </div>
         <button
           type="button"
           onClick={() => void runSearch()}
           disabled={loading || query.trim().length === 0}
-          className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? t('docSearch.searching') : t('docSearch.submit')}
         </button>
@@ -97,7 +97,7 @@ export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
           <button
             type="button"
             onClick={clearSearch}
-            className="shrink-0 rounded-xl border border-card-border px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
+            className="shrink-0 rounded-[var(--radius-button)] border border-card-border px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg"
           >
             {t('docSearch.clear')}
           </button>
@@ -121,7 +121,7 @@ export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
                     type="button"
                     onClick={() => onOpenFile(r)}
                     title={t('docSearch.openHint')}
-                    className="w-full rounded-xl border border-card-border bg-card p-3.5 text-left transition-colors hover:border-primary/40 hover:bg-primary-ghost"
+                    className="w-full rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 text-left transition-colors hover:border-primary/40 hover:bg-primary-ghost"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{r.fileName}</p>

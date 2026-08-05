@@ -1,9 +1,10 @@
-import { Modal } from '@/shared/components/modal';
+import { getApiErrorMessage } from '@/shared/api';
+import { Modal } from '@/shared/components';
+import { t } from '@/shared/lib/i18n';
 import { CreatePackageForm } from './CreatePackageForm';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage, CreateContractPackagePayload, UpdateContractPackagePayload } from '@/entities/contractPackage';
-import { fileItemApi } from '@/entities/file-item';
-import { FileType } from '@/entities/file-item/model/fileItem.types';
+import { fileItemApi, FileType } from '@/entities/file-item';
 
 /** Detect BE FileType from file extension for proper view/download support */
 function detectFileType(fileName: string): number {
@@ -40,7 +41,7 @@ export function PackageFormModal({
 
   return (
     <Modal
-      title={initialData ? "Chỉnh sửa gói thầu" : "Thêm gói thầu mới"}
+      title={initialData ? t('packages.modal.editTitle') : t('packages.modal.createTitle')}
       onClose={onClose}
       maxWidth="max-w-4xl"
     >
@@ -50,7 +51,7 @@ export function PackageFormModal({
         onCancel={onClose}
         onSubmit={async (payload, files) => {
           try {
-            let documentFolderId = (initialData as any)?.documentFolderId;
+            let documentFolderId = initialData?.documentFolderId;
             let currentPackageId = initialData?.id;
 
             // Create or update the contract package first
@@ -80,10 +81,10 @@ export function PackageFormModal({
               await Promise.all(uploadPromises);
             }
 
-            onSuccess(initialData ? 'Cập nhật gói thầu thành công' : 'Tạo gói thầu thành công', currentPackageId);
-          } catch (e: any) {
+            onSuccess(initialData ? t('packages.success.update') : t('packages.success.create'), currentPackageId);
+          } catch (e) {
             console.error('Package submit error:', e);
-            onError(e.message || (initialData ? 'Lỗi khi cập nhật' : 'Lỗi khi tạo gói thầu'));
+            onError(getApiErrorMessage(e, initialData ? t('packages.error.update') : t('packages.error.create')));
           }
         }}
       />

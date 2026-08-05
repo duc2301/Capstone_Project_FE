@@ -38,7 +38,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-4 py-1.5 text-xs transition-colors ${
+      className={`rounded-[var(--radius-button)] border px-4 py-1.5 text-xs transition-colors ${
         active
           ? 'border-primary bg-primary-ghost font-bold text-primary'
           : 'border-card-border font-medium text-text-muted hover:text-text'

@@ -6,6 +6,7 @@ import { approvalApi, approvalErrorMessage } from '@/entities/approval';
 import type { Group } from '@/entities/group';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
+import { ActionPillButton, ConfirmDialog, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner, recipientNames } from '../model/approvalFormat';
@@ -73,7 +74,6 @@ export function PendingApprovalsModal({
   const myOwnItems = items.filter((it) => it.requestedByAccountId === currentAccountId);
 
   const returnRequests = allReturnRequests;
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<ApprovalListItem | null>(null);
   const [rejectFor, setRejectFor] = useState<ApprovalListItem | null>(null);
@@ -81,13 +81,10 @@ export function PendingApprovalsModal({
   const [confirmReturnApprove, setConfirmReturnApprove] = useState<ZoneReturnRequestItem | null>(null);
   const [rejectReturnFor, setRejectReturnFor] = useState<ZoneReturnRequestItem | null>(null);
   const [returnBusyId, setReturnBusyId] = useState<string | null>(null);
-  const approveReturnLabel = 'Duyệt về WIP';
-  const rejectReturnLabel = 'Từ chối về WIP';
+  const approveReturnLabel = t('approvals.returnToWip.approve');
+  const rejectReturnLabel = t('approvals.returnToWip.reject');
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   /* Bấm "Ký số" ngoài danh sách -> đóng modal, điều hướng thẳng vào file, mở sẵn tab "Lịch sử ký số". */
   const handleSignNow = (it: ApprovalListItem) => {
@@ -164,9 +161,9 @@ export function PendingApprovalsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-6xl flex-col animate-scale-in rounded-(--radius-card-lg) bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-6xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <h2 className="font-heading text-lg font-bold text-text">{t('approvals.pending.title')}</h2>
+          <h2 className="heading-entity">{t('approvals.pending.title')}</h2>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -216,17 +213,17 @@ export function PendingApprovalsModal({
 
               {returnRequests.length > 0 && (
                 <section className="space-y-3">
-                  <h3 className="text-sm font-bold text-text">{t('returnRequests.page.title')}</h3>
+                  <h3 className="heading-label">{t('returnRequests.page.title')}</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                          <th className="w-56 whitespace-nowrap py-2.5 pr-3 font-bold">{t('returnRequests.page.colFile')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('returnRequests.page.colZone')}</th>
-                          <th className="w-36 px-3 py-2.5 font-bold">{t('returnRequests.page.colRequestedBy')}</th>
-                          <th className="px-3 py-2.5 font-bold">{t('returnRequests.page.colReason')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('returnRequests.page.colDate')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5 text-right font-bold">{t('returnRequests.page.colActions')}</th>
+                        <tr className="table-head">
+                          <th className="w-56 whitespace-nowrap py-2.5 pr-3">{t('returnRequests.page.colFile')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5">{t('returnRequests.page.colZone')}</th>
+                          <th className="w-36 px-3 py-2.5">{t('returnRequests.page.colRequestedBy')}</th>
+                          <th className="px-3 py-2.5">{t('returnRequests.page.colReason')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5">{t('returnRequests.page.colDate')}</th>
+                          <th className="whitespace-nowrap px-3 py-2.5 text-right">{t('common.col.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -243,24 +240,22 @@ export function PendingApprovalsModal({
                                   phụ trách file này (403 nếu không phải leader ở đâu cả) — có mặt trong
                                   danh sách nghĩa là chắc chắn được thao tác, không cần kiểm tra thêm. */}
                               <td className="whitespace-nowrap px-3 py-3 text-right">
-                                <div className="grid grid-cols-[auto_auto] items-center justify-end gap-2">
-                                  <button
-                                    type="button"
+                                <RowActions columns={2}>
+                                  <ActionPillButton
+                                    tone="success"
                                     disabled={busy}
                                     onClick={() => setConfirmReturnApprove(request)}
-                                    className="whitespace-nowrap rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
                                   >
                                     {approveReturnLabel}
-                                  </button>
-                                  <button
-                                    type="button"
+                                  </ActionPillButton>
+                                  <ActionPillButton
+                                    tone="danger"
                                     disabled={busy}
                                     onClick={() => setRejectReturnFor(request)}
-                                    className="whitespace-nowrap rounded-lg bg-danger-light px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
                                   >
                                     {rejectReturnLabel}
-                                  </button>
-                                </div>
+                                  </ActionPillButton>
+                                </RowActions>
                               </td>
                             </tr>
                           );
@@ -275,11 +270,7 @@ export function PendingApprovalsModal({
         </div>
       </div>
 
-      {toast && (
-        <div className={`fixed top-20 right-6 z-[70] animate-slide-up rounded-xl border px-5 py-3 shadow-dropdown ${toast.type === 'success' ? 'border-success/30 bg-success-light' : 'border-danger/30 bg-danger-light'}`}>
-          <p className={`text-sm font-medium ${toast.type === 'success' ? 'text-success' : 'text-danger'}`}>{toast.msg}</p>
-        </div>
-      )}
+      <Toast toast={toast} className="z-[70]" />
 
       {detailId && (
         <ApprovalDetailModal
@@ -292,30 +283,15 @@ export function PendingApprovalsModal({
       )}
 
       {confirmApprove && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
-          <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => (actionBusyId ? undefined : setConfirmApprove(null))} />
-          <div className="relative z-10 w-full max-w-sm animate-scale-in rounded-(--radius-card-lg) bg-card p-6 shadow-modal">
-            <p className="text-sm font-medium text-text">{t('approvals.confirmApprove.title')}</p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={!!actionBusyId}
-                onClick={() => setConfirmApprove(null)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
-              >
-                {t('approvals.confirmApprove.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={!!actionBusyId}
-                onClick={handleApprove}
-                className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {actionBusyId ? t('common.loading') : t('approvals.confirmApprove.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={t('approvals.confirmApprove.title')}
+          confirmLabel={t('approvals.confirmApprove.confirm')}
+          cancelLabel={t('approvals.confirmApprove.cancel')}
+          tone="primary"
+          busy={!!actionBusyId}
+          onConfirm={handleApprove}
+          onCancel={() => setConfirmApprove(null)}
+        />
       )}
 
       {rejectFor && (
@@ -328,30 +304,15 @@ export function PendingApprovalsModal({
       )}
 
       {confirmReturnApprove && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
-          <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => (returnBusyId ? undefined : setConfirmReturnApprove(null))} />
-          <div className="relative z-10 w-full max-w-sm animate-scale-in rounded-(--radius-card-lg) bg-card p-6 shadow-modal">
-            <p className="text-sm font-medium text-text">{t('returnRequests.confirmApprove.title')}</p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={!!returnBusyId}
-                onClick={() => setConfirmReturnApprove(null)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:opacity-40"
-              >
-                {t('returnRequests.confirmApprove.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={!!returnBusyId}
-                onClick={handleApproveReturn}
-                className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {returnBusyId ? t('common.loading') : t('returnRequests.confirmApprove.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={t('returnRequests.confirmApprove.title')}
+          confirmLabel={t('returnRequests.confirmApprove.confirm')}
+          cancelLabel={t('returnRequests.confirmApprove.cancel')}
+          tone="primary"
+          busy={!!returnBusyId}
+          onConfirm={handleApproveReturn}
+          onCancel={() => setConfirmReturnApprove(null)}
+        />
       )}
 
       {rejectReturnFor && (
@@ -393,18 +354,18 @@ function ApprovalItemsTable({
 }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-bold text-text">{title}</h3>
+      <h3 className="heading-label">{title}</h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-card-border text-left text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              <th className="w-64 whitespace-nowrap py-2.5 pr-3 font-bold">{t('approvals.pending.colName')}</th>
-              <th className="w-36 px-3 py-2.5 font-bold">{t('approvals.pending.colSender')}</th>
-              <th className="w-36 px-3 py-2.5 font-bold">{t('approvals.pending.colRecipient')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.pending.colDate')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.pending.colStatus')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-bold">{t('approvals.pending.colSignature')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5 text-right font-bold">{t('approvals.pending.colActions')}</th>
+            <tr className="table-head">
+              <th className="w-64 whitespace-nowrap py-2.5 pr-3">{t('approvals.pending.colName')}</th>
+              <th className="w-36 px-3 py-2.5">{t('approvals.pending.colSender')}</th>
+              <th className="w-36 px-3 py-2.5">{t('approvals.pending.colRecipient')}</th>
+              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colDate')}</th>
+              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colStatus')}</th>
+              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colSignature')}</th>
+              <th className="whitespace-nowrap px-3 py-2.5 text-right">{t('common.col.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -438,45 +399,31 @@ function ApprovalItemsTable({
                       : t('approvals.detail.no')}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-right">
-                    <div className="grid grid-cols-[auto_auto_auto_auto] items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onDetail(it.id)}
-                        className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
-                      >
+                    <RowActions columns={4}>
+                      <ActionPillButton onClick={() => onDetail(it.id)}>
                         {t('approvals.action.detail')}
-                      </button>
+                      </ActionPillButton>
                       {canOpenSmartCa ? (
-                        <button
-                          type="button"
-                          onClick={() => onSignNow(it)}
-                          className="whitespace-nowrap rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
-                        >
+                        <ActionPillButton tone="primary" onClick={() => onSignNow(it)}>
                           {t('smartca.action.sign')}
-                        </button>
+                        </ActionPillButton>
                       ) : <span />}
                       {isTeamLeaderForItem ? (
-                        <button
-                          type="button"
+                        <ActionPillButton
+                          tone="success"
                           disabled={busy || approvalLockedBySignature}
                           title={approvalLockedBySignature ? t('smartca.error.signatureRequiredBeforeApprove') : undefined}
                           onClick={() => onApprove(it)}
-                          className="whitespace-nowrap rounded-lg bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
                         >
                           {approvalApproveLabel(it.targetZone)}
-                        </button>
+                        </ActionPillButton>
                       ) : <span />}
                       {canRejectItem ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => onReject(it)}
-                          className="whitespace-nowrap rounded-lg bg-danger-light px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
-                        >
+                        <ActionPillButton tone="danger" disabled={busy} onClick={() => onReject(it)}>
                           {t('approvals.action.reject')}
-                        </button>
+                        </ActionPillButton>
                       ) : <span />}
-                    </div>
+                    </RowActions>
                   </td>
                 </tr>
               );

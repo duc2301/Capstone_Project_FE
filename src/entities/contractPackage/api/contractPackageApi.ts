@@ -56,7 +56,6 @@ export interface CreateContractPackagePayload {
   contractValue?: number;
   startDate?: string;
   endDate?: string;
-  status: number;
   isDefault: boolean;
   workTypes?: string;
   scopeDescription?: string;

@@ -112,7 +112,6 @@ const buildInitialState = (bep?: BepParseResult): StepperState => {
             description: p.description ?? undefined,
             contractValue: p.contractValue ?? undefined,
             currency: p.currency ?? undefined,
-            status: 1,
             isDefault: true,
           },
           files: [],
@@ -476,7 +475,6 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
         for (const [index, pkgItem] of state.packages.entries()) {
           setSubmitProgress(t('projects.stepper.progress.creatingPackage') + ` ${pkgItem.payload.name}...`);
           const pkgPayload: CreateContractPackagePayload = {
-            // status do form gói thầu nhập — KHÔNG ghi đè.
             // isDefault: chỉ gói ĐẦU TIÊN là gói mặc định của dự án.
             ...pkgItem.payload,
             projectId: project.id,

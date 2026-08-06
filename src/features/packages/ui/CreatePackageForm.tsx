@@ -1,12 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { CreateContractPackagePayload, ContractPackage } from '@/entities/contractPackage';
-import { PackageStatus, parseWorkTypes, serializeWorkTypes, WORK_TYPE_CODES, workTypeLabel } from '@/entities/contractPackage';
+import { parseWorkTypes, serializeWorkTypes, WORK_TYPE_CODES, workTypeLabel } from '@/entities/contractPackage';
 import type { Account } from '@/entities/account';
 import { useOrganizationList } from '@/entities/organization';
 import { fileItemApi } from '@/entities/file-item';
 import type { FolderContentsFileDto } from '@/entities/folder';
 import { downloadBlob } from '@/shared/lib/download';
-import type { TranslationKey } from '@/shared/lib/i18n';
 import { ConfirmDialog, Toast, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
@@ -20,17 +19,6 @@ function initialDurationDays(pkg?: ContractPackage): number | '' {
   const end = new Date(pkg.endDate).getTime();
   return Math.round((end - start) / (1000 * 60 * 60 * 24));
 }
-
-/* ── Trạng thái gói thầu (numeric union khớp BE) ── */
-const PACKAGE_STATUS_OPTIONS: { value: PackageStatus; labelKey: TranslationKey }[] = [
-  { value: PackageStatus.Draft, labelKey: 'packages.status.draft' },
-  { value: PackageStatus.Pending, labelKey: 'packages.status.pending' },
-  { value: PackageStatus.Active, labelKey: 'packages.status.active' },
-  { value: PackageStatus.Completed, labelKey: 'packages.status.completed' },
-  { value: PackageStatus.Suspended, labelKey: 'packages.status.suspended' },
-  { value: PackageStatus.Reviewing, labelKey: 'packages.status.reviewing' },
-];
-
 
 /* ── Section heading component ── */
 function SectionHeading({ icon, number, title }: { icon?: string; number: number; title: string }) {
@@ -133,9 +121,6 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
   // Section 7 – Extra
   const [notes, setNotes] = useState(initialData?.notes ?? '');
-  const [status, setStatus] = useState<PackageStatus>(
-    (initialData?.status as PackageStatus) ?? PackageStatus.Pending,
-  );
 
   const documentFolderId = initialData?.documentFolderId ?? '';
 
@@ -187,7 +172,6 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
         contractValue: contractValue ? Number(contractValue) : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        status,
         isDefault: initialData?.isDefault ?? false,
         workTypes: serializeWorkTypes(selectedWorkTypes),
         scopeDescription: scopeDescription,
@@ -233,18 +217,6 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               disabled
               className={readOnlyCls}
             />
-          </div>
-          <div>
-            <Label>{t('packages.form.status')}</Label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(Number(e.target.value) as PackageStatus)}
-              className={inputCls}
-            >
-              {PACKAGE_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
-              ))}
-            </select>
           </div>
           <div className="sm:col-span-2">
             <Label>{t('packages.form.description')}</Label>

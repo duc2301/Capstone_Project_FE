@@ -597,7 +597,6 @@ export const translations = {
   'packages.status.completed': 'Hoàn thành',
   'packages.status.suspended': 'Tạm dừng',
   'packages.status.reviewing': 'Đang soát xét',
-  'packages.form.status': 'Trạng thái gói thầu',
   'packageDetail.notFound': 'Không tìm thấy gói thầu.',
   'packageDetail.back': 'Quay lại',
   'packageDetail.export': 'Xuất báo cáo',

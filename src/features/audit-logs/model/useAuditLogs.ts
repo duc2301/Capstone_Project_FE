@@ -4,6 +4,7 @@ import type { AuditLogItem, AuditLogQuery } from '@/entities/audit-log';
 import { auditLogApi } from '@/entities/audit-log';
 import { getApiErrorMessage } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
+import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 
 /* Nguồn dữ liệu:
@@ -74,14 +75,7 @@ export function useAuditLogs(mode: AuditLogMode, projectId?: string, fileItemId?
         ? await auditLogApi.exportSystem(filters)
         : await auditLogApi.exportByProject(projectId!, filters);
 
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileNameFromDisposition(res.headers['content-disposition']);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(blobUrl);
+      downloadBlob(res.data as Blob, fileNameFromDisposition(res.headers['content-disposition']));
     } catch (e) {
       setError(getApiErrorMessage(e, t('audit.exportError')));
     } finally {

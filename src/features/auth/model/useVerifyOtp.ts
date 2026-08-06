@@ -38,7 +38,7 @@ export function useVerifyOtp(): UseVerifyOtpReturn {
         }
 
         signIn(data.result);
-        navigate(getPostLoginPath(data.result.role), { replace: true });
+        navigate(getPostLoginPath(), { replace: true });
       } catch (err) {
         const axiosError = err as AxiosError<ApiResponse>;
         setError(

@@ -14,8 +14,10 @@ import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, ConfirmDialog, FileTypeIcon, Toast, useToast } from '@/shared/components';
+import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
+import { useUrlTab } from '@/shared/lib/url';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
@@ -130,7 +132,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'issues' | 'loi' | 'related' | 'history';
+const PANEL_TABS = ['properties', 'signatureHistory', 'issues', 'loi', 'related', 'history'] as const;
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -140,11 +142,6 @@ export function FileViewPage() {
   const viewingVersionId = searchParams.get('version');
   const { currentUser } = useSession();
   const { groups: projectGroups } = useProjectGroups(projectId);
-  const initialPanelTab = (
-    ['properties', 'signatureHistory', 'issues', 'loi', 'related', 'history'] as const
-  ).includes(searchParams.get('panel') as FilePanelTab)
-    ? (searchParams.get('panel') as FilePanelTab)
-    : 'properties';
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
   const [versions, setVersions] = useState<FileVersion[]>([]);
@@ -160,7 +157,7 @@ export function FileViewPage() {
   const [confirmSetCurrent, setConfirmSetCurrent] = useState(false);
   const [settingCurrent, setSettingCurrent] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>(initialPanelTab);
+  const [activePanelTab, setActivePanelTab] = useUrlTab(PANEL_TABS, 'properties', 'panel');
   const [signaturePlacementMode, setSignaturePlacementMode] = useState(false);
   const [signaturePlacementConfirmed, setSignaturePlacementConfirmed] = useState(false);
   const [savingSignaturePosition, setSavingSignaturePosition] = useState(false);
@@ -290,14 +287,7 @@ export function FileViewPage() {
       const res = isVersionView && viewingVersionId
         ? await fileItemApi.downloadVersion(fileId, viewingVersionId)
         : await fileItemApi.download(fileId);
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = info.fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
+      downloadBlob(res.data as Blob, info.fileName);
     } catch {
       setError(t('common.error'));
     }
@@ -391,7 +381,7 @@ export function FileViewPage() {
 
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
-  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast]);
+  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast, setActivePanelTab]);
 
   // Đổi trang thì nhớ check lại kích thước trang mới để không bị lọt chữ ký ra ngoài
   const handleSignaturePageChange = useCallback(async (nextPage: number) => {

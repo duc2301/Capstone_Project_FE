@@ -5,6 +5,7 @@ import { fileItemApi } from '@/entities/file-item';
 import { getApiErrorMessage } from '@/shared/api';
 import { ConfirmDialog, Modal } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
+import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
@@ -33,6 +34,7 @@ export function FileVersionsModal({
 }: FileVersionsModalProps) {
   const [confirmVersion, setConfirmVersion] = useState<FileVersion | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchVersions = useCallback(async () => {
@@ -51,6 +53,19 @@ export function FileVersionsModal({
 
   const hasServerCurrent = versions.some((v) => v.isCurrent);
   const isCurrent = (v: FileVersion) => (hasServerCurrent ? v.isCurrent : v.id === currentVersionId);
+
+  const handleDownload = async (v: FileVersion) => {
+    setActionError(null);
+    setDownloadingId(v.id);
+    try {
+      const res = await fileItemApi.downloadVersion(fileItemId, v.id);
+      downloadBlob(res.data as Blob, buildDownloadName(v.fileName || fileName, v.format));
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, t('common.error')));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handleRestore = async (v: FileVersion) => {
     setActionError(null);
@@ -112,6 +127,16 @@ export function FileVersionsModal({
                     {v.uploadedByName ? ` · ${v.uploadedByName}` : ''}
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); void handleDownload(v); }}
+                  disabled={downloadingId !== null}
+                  className="shrink-0 rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {downloadingId === v.id
+                    ? t('documents.versions.downloading')
+                    : t('documents.versions.download')}
+                </button>
                 {canRestore && !isCurrent(v) && (
                   <button
                     type="button"

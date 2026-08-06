@@ -5,6 +5,7 @@ import type { Account } from '@/entities/account';
 import { useOrganizationList } from '@/entities/organization';
 import { fileItemApi } from '@/entities/file-item';
 import type { FolderContentsFileDto } from '@/entities/folder';
+import { downloadBlob } from '@/shared/lib/download';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { ConfirmDialog, Toast, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
@@ -560,15 +561,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                         onClick={async () => {
                           try {
                             const res = await fileItemApi.download(file.id);
-                            const blob = res.data as Blob;
-                            const downloadUrl = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = downloadUrl;
-                            link.download = file.name || 'document';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(downloadUrl);
+                            downloadBlob(res.data as Blob, file.name || 'document');
                           } catch (err) {
                             console.error("Tải file thất bại", err);
                             showToast(t('file.download.error'), 'error');

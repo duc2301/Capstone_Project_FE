@@ -5,15 +5,17 @@ import { AuditLogPanel } from '@/features/audit-logs';
 import { useProfile } from '@/features/profile';
 import { Toast, UserAvatar, useToast } from '@/shared/components';
 import { formatDate } from '@/shared/lib/format';
+import { useUrlTab } from '@/shared/lib/url';
 import { t } from '@/shared/lib/i18n';
 
 type ProfileTab = 'info' | 'security' | 'activity';
+const PROFILE_TABS = ['info', 'security', 'activity'] as const;
 
 const MAX_AVATAR_BYTES = 6 * 1024 * 1024;
 
 export function ProfilePage() {
   const { profile, loading: profileLoading, updateProfile, changePassword, uploadAvatar } = useProfile();
-  const [activeTab, setActiveTab] = useState<ProfileTab>('info');
+  const [activeTab, setActiveTab] = useUrlTab(PROFILE_TABS, 'info');
   const { toast, showToast } = useToast();
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -331,7 +333,6 @@ export function ProfilePage() {
                 )}
               </div>
 
-              <EmailVerificationCard verified={profile?.isEmailVerified ?? false} />
             </div>
           </div>
         </div>
@@ -383,39 +384,3 @@ function GroupRow({ group }: { group: ProfileGroup }) {
   );
 }
 
-function EmailVerificationCard({ verified }: { verified: boolean }) {
-  return (
-    <div
-      className={`rounded-[var(--radius-card-lg)] border p-6 shadow-card ${
-        verified ? 'border-success/20 bg-success-light' : 'border-warning/20 bg-warning-light'
-      }`}
-    >
-      <div className="mb-3 flex items-center gap-2">
-        <svg
-          width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round"
-          className={verified ? 'text-success' : 'text-warning'}
-        >
-          {verified ? (
-            <>
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </>
-          ) : (
-            <>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </>
-          )}
-        </svg>
-        <h3 className={`heading-label ${verified ? 'text-success' : 'text-warning'}`}>
-          {verified ? t('profile.status.emailVerified') : t('profile.status.emailUnverified')}
-        </h3>
-      </div>
-      <p className="text-xs leading-relaxed text-text-muted">
-        {verified ? t('profile.status.emailVerifiedDesc') : t('profile.status.emailUnverifiedDesc')}
-      </p>
-    </div>
-  );
-}

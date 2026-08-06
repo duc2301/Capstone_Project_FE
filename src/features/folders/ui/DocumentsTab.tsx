@@ -9,6 +9,7 @@ import type { Group } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
+import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
 import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
@@ -217,14 +218,7 @@ export function DocumentsTab({
     try {
       showToast(t('documents.toast.downloading'));
       const res = await fileItemApi.download(file.id);
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = file.format ? `${file.name}.${file.format}` : file.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
+      downloadBlob(res.data as Blob, buildDownloadName(file.name, file.format));
     } catch {
       showToast(t('common.error'), 'error');
     }

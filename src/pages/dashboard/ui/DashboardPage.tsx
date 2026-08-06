@@ -1,318 +1,294 @@
+import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 
+import { formatLogTime, MyActivityFeed } from '@/features/audit-logs';
 import { useDashboard } from '@/features/dashboard';
-import type { TranslationKey } from '@/shared/lib/i18n';
+import type { MyProjectItem, RecentFileItem, WorkItem, WorkItemKind } from '@/features/dashboard';
 import { t } from '@/shared/lib/i18n';
+import type { TranslationKey } from '@/shared/lib/i18n';
+
+type Tone = 'warning' | 'danger' | 'primary' | 'info' | 'neutral';
+
+const TONE_SOFT: Record<Tone, string> = {
+  warning: 'bg-warning-light text-warning',
+  danger: 'bg-danger-light text-danger',
+  primary: 'bg-primary-ghost text-primary',
+  info: 'bg-info-light text-info',
+  neutral: 'bg-content-bg text-text-secondary',
+};
+
+const TONE_RAIL: Record<Tone, string> = {
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  primary: 'bg-primary',
+  info: 'bg-info',
+  neutral: 'bg-card-border',
+};
+
+const WORK_ITEM_META: Record<WorkItemKind, { labelKey: TranslationKey; tone: Tone }> = {
+  approval: { labelKey: 'dashboard.queue.kind.approval', tone: 'warning' },
+  signature: { labelKey: 'dashboard.queue.kind.signature', tone: 'danger' },
+  submitted: { labelKey: 'dashboard.queue.kind.submitted', tone: 'neutral' },
+  returnRequest: { labelKey: 'dashboard.queue.kind.returnRequest', tone: 'danger' },
+  invitation: { labelKey: 'dashboard.queue.kind.invitation', tone: 'primary' },
+  issue: { labelKey: 'dashboard.queue.kind.issue', tone: 'info' },
+};
+
+function waitingLabel(days: number): string {
+  if (days <= 0) return t('dashboard.queue.today');
+  return `${t('dashboard.queue.waitingPrefix')} ${days} ${t('dashboard.queue.daysSuffix')}`;
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+function SectionCard({
+  title,
+  action,
+  count,
+  badge,
+  children,
+  className = '',
+}: {
+  title: string;
+  action?: ReactNode;
+  count?: number;
+  badge?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card ${className}`}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-card-border px-5 py-3.5">
+        <div className="flex items-center gap-2">
+          <h2 className="heading-entity">{title}</h2>
+          {count !== undefined && count > 0 && (
+            <span className="rounded-[var(--radius-badge)] bg-content-bg px-2 py-0.5 text-xs font-bold text-text-secondary">
+              {count}
+            </span>
+          )}
+          {badge}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function EmptyState({ message, tone = 'muted' }: { message: string; tone?: 'muted' | 'danger' }) {
+  return (
+    <div className="flex flex-1 items-center justify-center px-5 py-8 text-center">
+      <p className={tone === 'danger' ? 'modal-text text-danger' : 'modal-text'}>{message}</p>
+    </div>
+  );
+}
+
+function WorkItemRow({ item }: { item: WorkItem }) {
+  const meta = WORK_ITEM_META[item.kind];
+  const content = (
+    <div className="flex items-stretch gap-3 px-5 py-3 transition-colors hover:bg-content-bg">
+      <span className={`w-1 shrink-0 rounded-full ${TONE_RAIL[meta.tone]}`} />
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <span className={`rounded-[var(--radius-badge)] px-2 py-0.5 text-xs font-semibold ${TONE_SOFT[meta.tone]}`}>
+            {t(meta.labelKey)}
+          </span>
+          {item.isOverdue && (
+            <span className="rounded-[var(--radius-badge)] bg-danger px-2 py-0.5 text-xs font-semibold text-white">
+              {t('dashboard.queue.overdue')}
+            </span>
+          )}
+          <span className="field-hint">{waitingLabel(item.waitingDays)}</span>
+        </div>
+        <p className="heading-label truncate">{item.title}</p>
+        {item.context && <p className="field-hint truncate">{item.context}</p>}
+      </div>
+      {item.link && (
+        <span className="flex shrink-0 items-center text-text-muted">
+          <ChevronIcon />
+        </span>
+      )}
+    </div>
+  );
+
+  if (!item.link) return content;
+  return (
+    <Link to={item.link} className="block">
+      {content}
+    </Link>
+  );
+}
+
+function RecentFileRow({ file }: { file: RecentFileItem }) {
+  return (
+    <Link
+      to={file.link}
+      className="flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-content-bg"
+    >
+      <span className="shrink-0 text-text-muted">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      </span>
+      <p className="min-w-0 flex-1 truncate text-sm text-text">{file.detail}</p>
+      <span className="field-hint shrink-0">{formatLogTime(file.createdAt)}</span>
+      <span className="shrink-0 text-text-muted">
+        <ChevronIcon />
+      </span>
+    </Link>
+  );
+}
+
+function ProjectRow({ project }: { project: MyProjectItem }) {
+  return (
+    <div className="flex items-center gap-2 px-5 py-2.5 transition-colors hover:bg-content-bg">
+      <Link to={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+        {project.code && (
+          <span className="shrink-0 rounded-[var(--radius-badge)] bg-content-bg px-2 py-0.5 text-xs font-bold tracking-[0.4px] text-text-secondary">
+            {project.code}
+          </span>
+        )}
+        <p className="heading-label min-w-0 flex-1 truncate">{project.name}</p>
+        {project.isManager && (
+          <span className="shrink-0 rounded-[var(--radius-badge)] bg-primary-ghost px-2 py-0.5 text-xs font-semibold text-primary">
+            {t('dashboard.projects.rolePm')}
+          </span>
+        )}
+      </Link>
+      <div className="flex shrink-0 items-center gap-1">
+        <Link
+          to={`/projects/${project.id}?tab=documents`}
+          className="rounded-[var(--radius-badge)] px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary-ghost"
+        >
+          {t('dashboard.projects.openDocuments')}
+        </Link>
+        <Link
+          to={`/projects/${project.id}?tab=issues`}
+          className="rounded-[var(--radius-badge)] px-2 py-0.5 text-xs font-semibold text-text-muted hover:bg-content-bg"
+        >
+          {t('dashboard.projects.openIssues')}
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export function DashboardPage() {
-  const { currentUser, unreadCount, loading, stats, greetingKey, todayStr } = useDashboard();
+  const {
+    currentUser,
+    greetingKey,
+    todayStr,
+    overdueIssues,
+    workItems,
+    workItemsLoading,
+    workItemsError,
+    recentFiles,
+    activityLogs,
+    activityLoading,
+    activityError,
+    myProjects,
+    projectsLoading,
+    projectsError,
+  } = useDashboard();
 
-  if (loading) {
-    return (
-      <div className="flex h-full min-h-[500px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  const firstName = currentUser?.userName?.split(' ').pop() || 'User';
+  const displayName = currentUser?.userName?.split(' ').pop() || t('dashboard.defaultName');
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* ── Greeting Banner ─────────────────────────── */}
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <h1 className="heading-page">
-            {t(greetingKey as TranslationKey)}, {firstName} <span role="img" aria-label="wave">👋</span>
-          </h1>
-          <p className="mt-2 text-text-muted">{todayStr}</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-full bg-warning-light px-4 py-2 text-sm font-medium text-warning">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          {todayStr.split(', ')[1]}
-        </div>
+    <div className="flex h-full min-h-0 flex-col gap-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="heading-page">{t('admin.nav.overview')}</h1>
+        <span className="text-sm text-text-muted">
+          {`${t(greetingKey)}, ${displayName} · ${todayStr}`}
+        </span>
       </div>
 
-      {/* ── Stats Cards ─────────────────────────────── */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Projects */}
-        <div className="flex flex-col rounded-[var(--radius-card)] border border-card-border bg-card p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-light text-primary">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
-            </div>
-            <span className="rounded-full bg-success-light px-2.5 py-0.5 text-xs font-bold text-success">
-              +2 {t('dashboard.stats.projectsNew')}
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-text">{stats.projects}</div>
-          <div className="mt-1 text-sm text-text-muted">{t('dashboard.stats.projects')}</div>
-        </div>
-
-        {/* Card 2: Pending Approvals */}
-        <div className="flex flex-col rounded-[var(--radius-card)] border border-warning/20 bg-warning-light/30 p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-light text-warning">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-            <span className="rounded-full bg-danger px-2.5 py-0.5 text-xs font-bold text-white">
-              {t('dashboard.stats.pendingUrgent')}
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-warning">{stats.pendingApprovals}</div>
-          <div className="mt-1 text-sm text-warning/80">{t('dashboard.stats.pending')}</div>
-        </div>
-
-        {/* Card 3: Notifications */}
-        <div className="flex flex-col rounded-[var(--radius-card)] border border-danger/10 bg-danger-light/30 p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-danger-light text-danger">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-danger">{unreadCount}</div>
-          <div className="mt-1 text-sm text-danger/80">{t('dashboard.stats.unread')}</div>
-        </div>
-
-        {/* Card 4: Completed Tasks */}
-        <div className="flex flex-col rounded-[var(--radius-card)] border border-success/20 bg-success-light/30 p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-light text-success">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-success">{stats.completedTasks}</div>
-          <div className="mt-1 text-sm text-success/80">{t('dashboard.stats.completed')}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* ── Left Column (Urgent Tasks & Projects) ── */}
-        <div className="flex flex-col gap-8 lg:col-span-2">
-          
-          {/* Urgent Tasks */}
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="heading-entity flex items-center gap-2">
-                <span className="text-xl">🔥</span> {t('dashboard.urgent.title')}
-              </h2>
-              <button className="text-sm font-medium text-text-muted hover:text-primary">
-                {t('dashboard.urgent.viewAll')} ({stats.urgentTasks.length})
-              </button>
-            </div>
-            <div className="flex flex-col gap-3">
-              {stats.urgentTasks.map((task) => (
-                <div key={task.id} className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-card-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-4 sm:items-center">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${task.isWarning ? 'bg-warning-light text-warning' : 'bg-danger-light text-danger'}`}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        {task.isWarning ? (
-                          <>
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
-                          </>
-                        ) : (
-                          <>
-                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                            <path d="M12 11v6" />
-                            <path d="M9 14l3 3 3-3" />
-                          </>
-                        )}
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="heading-label">{task.title}</h3>
-                      <div className="mt-1 flex items-center gap-3 text-xs font-medium text-text-muted">
-                        <span className="rounded bg-content-bg px-2 py-0.5 text-text-secondary">{task.projectCode}</span>
-                        <span className="flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
-                          {task.timeLeft}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <button className="flex items-center justify-center gap-1 rounded-[var(--radius-button)] border border-card-border px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-content-bg">
-                    Xử lý
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                      <polyline points="12 5 19 12 12 19" />
-                    </svg>
-                  </button>
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="flex min-h-0 flex-col gap-5 lg:col-span-2">
+          <SectionCard
+            title={t('dashboard.urgent.title')}
+            count={workItems.length}
+            badge={
+              overdueIssues > 0 ? (
+                <span className="rounded-[var(--radius-badge)] bg-danger px-2 py-0.5 text-xs font-semibold text-white">
+                  {`${overdueIssues} ${t('dashboard.stats.overdueSuffix')}`}
+                </span>
+              ) : undefined
+            }
+            className="min-h-[240px] flex-1"
+          >
+            <div className="min-h-0 flex-1 overflow-auto">
+              {workItemsLoading && <EmptyState message={t('common.loading')} />}
+              {!workItemsLoading && workItemsError && (
+                <EmptyState message={workItemsError} tone="danger" />
+              )}
+              {!workItemsLoading && !workItemsError && workItems.length === 0 && (
+                <EmptyState message={t('dashboard.urgent.empty')} />
+              )}
+              {workItems.length > 0 && (
+                <div className="divide-y divide-card-border">
+                  {workItems.map((item) => (
+                    <WorkItemRow key={item.id} item={item} />
+                  ))}
                 </div>
+              )}
+            </div>
+          </SectionCard>
+
+          <SectionCard title={t('dashboard.recentFiles.title')} className="max-h-[42%] shrink-0">
+            <div className="min-h-0 flex-1 overflow-auto py-1.5">
+              {activityLoading && <EmptyState message={t('common.loading')} />}
+              {!activityLoading && activityError && (
+                <EmptyState message={activityError} tone="danger" />
+              )}
+              {!activityLoading && !activityError && recentFiles.length === 0 && (
+                <EmptyState message={t('dashboard.recentFiles.empty')} />
+              )}
+              {recentFiles.map((file) => (
+                <RecentFileRow key={file.id} file={file} />
               ))}
             </div>
-          </section>
-
-          {/* Project Progress */}
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="heading-entity">{t('dashboard.progress.title')}</h2>
-              <button className="text-sm font-medium text-text-muted hover:text-primary">
-                Tất cả dự án
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {stats.projectProgress.map((project) => (
-                <div key={project.id} className="flex flex-col justify-between rounded-[var(--radius-card)] border border-card-border bg-card p-5">
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="rounded bg-content-bg px-2 py-1 text-xs font-bold text-text-muted">{project.code}</span>
-                      <button className="text-text-muted hover:text-text">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="1" />
-                          <circle cx="19" cy="12" r="1" />
-                          <circle cx="5" cy="12" r="1" />
-                        </svg>
-                      </button>
-                    </div>
-                    <h3 className="heading-label mb-4">{project.name}</h3>
-                    
-                    <div className="mb-1 flex items-center justify-between text-xs font-bold text-text">
-                      <span>{t('dashboard.progressTotal')}</span>
-                      <span className="text-primary">{project.progress}%</span>
-                    </div>
-                    <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-content-bg">
-                      <div className="h-full bg-primary" style={{ width: `${project.progress}%` }} />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-content-bg p-2 text-center">
-                        <span className="mb-1 text-2xs font-bold text-text-muted">WIP</span>
-                        <span className="font-bold text-text">{project.wip}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-content-bg p-2 text-center">
-                        <span className="mb-1 text-2xs font-bold text-text-muted">SHARED</span>
-                        <span className="font-bold text-text">{project.shared}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-warning-light p-2 text-center">
-                        <span className="mb-1 text-2xs font-bold text-warning">PUB</span>
-                        <span className="font-bold text-warning">{project.pub}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-5 flex items-center justify-between pt-4 border-t border-card-border">
-                    <div className="flex -space-x-2">
-                      {project.members.map((m: string, i: number) => (
-                        <div key={i} className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-card text-2xs font-bold ${i === 2 ? 'bg-primary-light text-primary' : 'bg-primary text-white'}`}>
-                          {m}
-                        </div>
-                      ))}
-                    </div>
-                    <a href={`/projects/${project.id}/documents`} className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-                      {t('dashboard.progress.openProject')}
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
+          </SectionCard>
         </div>
 
-        {/* ── Right Column (Activity & Calendar) ───── */}
-        <div className="flex flex-col gap-8">
-          
-          {/* Activity Feed */}
-          <section className="flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card">
-            <div className="border-b border-card-border p-4">
-              <div className="flex items-center gap-4">
-                <button className="border-b-2 border-primary pb-2 text-sm font-bold text-primary">
-                  {t('dashboard.activity.myTab')}
-                </button>
-                <button className="border-b-2 border-transparent pb-2 text-sm font-bold text-text-muted transition-colors hover:text-text">
-                  {t('dashboard.activity.projectTab')}
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="relative border-l border-card-border ml-3 space-y-6">
-                {stats.activities.map((act) => (
-                  <div key={act.id} className="relative pl-6">
-                    <div className="absolute -left-[17px] top-1 flex h-8 w-8 items-center justify-center rounded-full border border-card-border bg-content-bg text-text-muted">
-                      {act.type === 'approve' && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                      )}
-                      {act.type === 'upload' && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warning"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                      )}
-                      {act.type === 'comment' && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                      )}
-                      {act.type === 'sign' && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></svg>
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-text" dangerouslySetInnerHTML={{ __html: act.content.replace(/(MEP_[^\s]+|Hồ sơ thiết kế[\w\s]+|Issue #[0-9]+|Biên bản nghiệm thu)/, '<span class="font-bold text-primary">$&</span>') }} />
-                      <span className="mt-1 text-xs text-text-muted">{act.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Calendar placeholder to match mockup */}
-          <section className="rounded-[var(--radius-card)] border border-card-border bg-card p-5">
-            <h2 className="heading-entity mb-4">{t('dashboard.calendar.title')}</h2>
-            
-            {/* Week View Mock */}
-            <div className="mb-6 flex justify-between text-center">
-              {['S','M','T','W','T','F','S'].map((day, i) => (
-                <div key={i} className={`flex flex-col items-center gap-1 ${i === 5 ? 'text-primary' : 'text-text-muted'}`}>
-                  <span className="text-2xs font-bold">{day}</span>
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${i === 5 ? 'bg-primary text-white' : i === 3 ? 'text-text relative after:absolute after:bottom-1 after:h-1 after:w-1 after:rounded-full after:bg-danger' : 'text-text'}`}>
-                    {17 + i}
-                  </span>
-                </div>
+        <div className="flex min-h-0 flex-col gap-5">
+          <SectionCard
+            title={t('dashboard.projects.title')}
+            count={myProjects.length}
+            action={
+              <Link to="/projects" className="text-sm font-semibold text-primary hover:underline">
+                {t('dashboard.projects.viewAll')}
+              </Link>
+            }
+            className="max-h-[45%] shrink-0"
+          >
+            <div className="min-h-0 flex-1 overflow-auto py-1.5">
+              {projectsLoading && <EmptyState message={t('common.loading')} />}
+              {!projectsLoading && projectsError && (
+                <EmptyState message={projectsError} tone="danger" />
+              )}
+              {!projectsLoading && !projectsError && myProjects.length === 0 && (
+                <EmptyState message={t('dashboard.projects.empty')} />
+              )}
+              {myProjects.map((project) => (
+                <ProjectRow key={project.id} project={project} />
               ))}
             </div>
+          </SectionCard>
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-4 rounded-xl bg-content-bg p-3">
-                <div className="flex flex-col items-center justify-center rounded bg-white px-3 py-1 text-danger shadow-sm">
-                  <span className="text-sm font-bold">14:00</span>
-                  <span className="text-2xs font-bold">{t('dashboard.schedule.morning')}</span>
-                </div>
-                <div>
-                  <h4 className="heading-label">Họp review thiết kế</h4>
-                  <span className="text-xs text-text-muted">Phòng họp ảo BIM 01</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 rounded-xl bg-primary-light p-3">
-                <div className="flex flex-col items-center justify-center rounded bg-white px-3 py-1 text-primary shadow-sm">
-                  <span className="text-sm font-bold">16:30</span>
-                  <span className="text-2xs font-bold">{t('dashboard.schedule.afternoon')}</span>
-                </div>
-                <div>
-                  <h4 className="heading-label text-primary">Phê duyệt MEP Tầng 5</h4>
-                  <span className="text-xs text-primary/70">Hạn cuối nộp báo cáo</span>
-                </div>
-              </div>
+          <SectionCard title={t('dashboard.activity.myTab')} className="min-h-[200px] flex-1">
+            <div className="min-h-0 flex-1 overflow-auto px-5 py-4">
+              <MyActivityFeed logs={activityLogs} loading={activityLoading} error={activityError} />
             </div>
-          </section>
-
+          </SectionCard>
         </div>
       </div>
     </div>

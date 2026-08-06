@@ -13,13 +13,14 @@ import { ProjectCard } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
 import { ConfirmDialog, Modal, PaginationBar, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
+import { useUrlTab } from '@/shared/lib/url';
 
-type Tab = 'general' | 'members' | 'projects';
+const ORG_TABS = ['general', 'members', 'projects'] as const;
 
 export function OrganizationDetailsPage() {
   const { orgId: id } = useParams<{ orgId: string }>();
   const { orgTypes } = useOrganizationTypes();
-  const [activeTab, setActiveTab] = useState<Tab>('general');
+  const [activeTab, setActiveTab] = useUrlTab(ORG_TABS, 'general');
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [members, setMembers] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);

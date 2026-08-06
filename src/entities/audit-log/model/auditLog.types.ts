@@ -31,6 +31,7 @@ export const AuditAction = {
   RejectInvite: 17,
   Assign: 18,
   StatusChange: 19,
+  Archive: 20,
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 

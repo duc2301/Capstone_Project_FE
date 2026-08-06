@@ -16,6 +16,8 @@ interface FileContextMenuProps {
   onTransferZone: () => void;
   canReturnToWip: boolean;
   onReturnToWip: () => void;
+  canArchive: boolean;
+  onArchive: () => void;
 }
 
 interface Item {
@@ -39,6 +41,8 @@ export function FileContextMenu({
   onTransferZone,
   canReturnToWip,
   onReturnToWip,
+  canArchive,
+  onArchive,
 }: FileContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -73,6 +77,10 @@ export function FileContextMenu({
     ...(canReturnToWip ? [{
       key: 'returnToWip', label: t('documents.fileMenu.returnToWip'), onClick: onReturnToWip,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>,
+    }] : []),
+    ...(canArchive ? [{
+      key: 'archive', label: t('documents.fileMenu.archive'), onClick: onArchive,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>,
     }] : []),
     {
       key: 'permission', label: t('documents.fileMenu.permission'), onClick: onPermission,

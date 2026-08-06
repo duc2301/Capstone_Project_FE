@@ -26,6 +26,7 @@ const ACTION_META: Record<number, { key: TranslationKey; className: string }> = 
   [AuditAction.RejectInvite]: { key: 'audit.action.rejectInvite', className: 'bg-danger-light text-danger' },
   [AuditAction.Assign]: { key: 'audit.action.assign', className: 'bg-primary-ghost text-primary' },
   [AuditAction.StatusChange]: { key: 'audit.action.statusChange', className: 'bg-warning-light text-warning' },
+  [AuditAction.Archive]: { key: 'audit.action.archive', className: 'bg-content-bg text-text-secondary' },
 };
 
 export function actionBadge(action: number) {

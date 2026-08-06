@@ -38,6 +38,7 @@ import { UploadModal } from './UploadModal';
 
 interface DocumentsTabProps {
   projectId: string;
+  /** Admin hệ thống hoặc PM của dự án — được phép "Niêm phong lưu trữ" ở Published. */
   isProjectManager: boolean;
   /* Nhóm của dự án — trang cha đã tải sẵn, truyền xuống để khỏi gọi API lần hai. */
   signerGroups: Group[];
@@ -84,13 +85,14 @@ interface ModalState {
 }
 
 function canStartApprovalFromArea(area: CdeArea) {
-  return area === CdeArea.Wip || area === CdeArea.Shared || area === CdeArea.Published;
+  // Published là bước cuối của luồng duyệt — không gửi duyệt / chuyển trạng thái ở đây nữa.
+  // Lưu trữ đi qua "Niêm phong lưu trữ" (PM/Admin), ngoài approval flow.
+  return area === CdeArea.Wip || area === CdeArea.Shared;
 }
 
 function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
   if (area === CdeArea.Wip) return 'Shared';
   if (area === CdeArea.Shared) return 'Published';
-  if (area === CdeArea.Published) return 'Archived';
   return null;
 }
 
@@ -297,6 +299,13 @@ export function DocumentsTab({
     && file.status !== FileItemStatus.PendingApproval
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
 
+  // Niêm phong lưu trữ: chỉ Admin/PM, chỉ với file đã ở Published (đã duyệt).
+  const canArchive = (file: FileListItem) =>
+    !!selected
+    && selected.area === CdeArea.Published
+    && (isAccountAdmin(currentUser?.role) || isProjectManager)
+    && file.status === FileItemStatus.Approved;
+
   const handleReturnRequest = async (reason: string) => {
     if (!returnRequestFor) return;
     setReturnRequestBusy(true);
@@ -309,6 +318,18 @@ export function DocumentsTab({
       showToast(zoneTransferErrorMessage(err, t('common.error')), 'error');
     } finally {
       setReturnRequestBusy(false);
+    }
+  };
+
+  // Niêm phong lưu trữ bản Published hiện hành -> tạo/cộng dồn bản lưu trong Archived.
+  const handleArchive = async (file: FileListItem) => {
+    try {
+      await fileItemApi.archive(file.id);
+      await refetch();        // cây cập nhật: bản lưu mới xuất hiện trong vùng Archived
+      await refetchFiles();
+      showToast(t('documents.toast.archived'));
+    } catch (err) {
+      showToast(folderErrorMessage(err, t('common.error')), 'error');
     }
   };
 
@@ -557,6 +578,8 @@ export function DocumentsTab({
           onTransferZone={() => openSubmitApproval(fileMenu.file)}
           canReturnToWip={canReturnToWip(fileMenu.file)}
           onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
+          canArchive={canArchive(fileMenu.file)}
+          onArchive={() => handleArchive(fileMenu.file)}
         />
       )}
 

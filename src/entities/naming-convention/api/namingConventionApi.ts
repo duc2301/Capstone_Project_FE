@@ -108,6 +108,6 @@ export const namingConventionApi = {
   },
 
   /** Tải file template mẫu (blob). */
-  downloadTemplate: () =>
-    axiosInstance.get('/naming-conventions/import-template', { responseType: 'blob', timeout: 60_000 }),
+  downloadTemplate: (projectId: string) =>
+    axiosInstance.get(`/naming-conventions/import-template?projectId=${projectId}`, { responseType: 'blob', timeout: 60_000 }),
 };

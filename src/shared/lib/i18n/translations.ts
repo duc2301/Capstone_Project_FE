@@ -1600,10 +1600,10 @@ export const translations = {
   'audit.pagination.items': 'mục',
 
   // Cảnh báo AI check tên file vs nội dung (advisory)
-  'fileWarn.title': 'Cảnh báo: tên tệp có thể không khớp nội dung',
+  'fileWarn.title': 'Cảnh báo: nội dung có thể không liên quan',
   'fileWarn.sender': 'Người gửi: AI Checker',
-  'fileWarn.tooltip': 'AI cảnh báo: tên tệp có thể không khớp nội dung. Mở tệp để xem chi tiết ở tab Ghi chú.',
-  'fileWarn.folderTooltip': 'Thư mục này chứa tệp bị AI cảnh báo tên không khớp nội dung.',
+  'fileWarn.tooltip': 'Nội dung có thể không liên quan, cần người kiểm tra lại',
+  'fileWarn.folderTooltip': 'Thư mục này chứa tệp có nội dung có thể không liên quan, cần kiểm tra lại.',
 
   // Markup — dùng chung
   'markup.action.reopen': 'Mở lại',

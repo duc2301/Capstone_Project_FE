@@ -262,7 +262,7 @@ export function ConventionDetail({
   };
   const handleDownloadTemplate = async () => {
     try {
-      const res = await namingConventionApi.downloadTemplate();
+      const res = await namingConventionApi.downloadTemplate(projectId);
       const blobUrl = URL.createObjectURL(res.data as Blob);
       const a = document.createElement('a');
       a.href = blobUrl;

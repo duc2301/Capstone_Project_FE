@@ -49,20 +49,23 @@ export interface FileListItem {
   returnTargetZone?: string | null;
   currentVersionId: string | null;
   currentVersionNumber: number;
-  /* Nhãn phiên bản BE dựng sẵn (vd "P03.01") — null với endpoint cũ chưa trả */
   displayVersion?: string | null;
   sizeBytes: number;
-  format: string | null;
+  
+  // 🟢 THÊM 2 DÒNG NÀY ĐỂ FIX LỖI 1 VÀ LỖI 2
+  fileSizeBytes?: number; 
+  uploaderEmail?: string | null;
+
   createdByAccountId: string | null;
   authorName: string | null;
   requiresSignature?: boolean;
   isSigned?: boolean;
   signedVersionId?: string | null;
+  format: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   warnning?: boolean | null;
   warnningMessage?: string | null;
-  /** Tóm tắt nội dung do AI sinh sau khi upload (null = chưa tóm tắt / không trích được chữ). */
   description?: string | null;
   hasOpenIssue?: boolean;
 }

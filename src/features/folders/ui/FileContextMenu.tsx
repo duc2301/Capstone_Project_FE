@@ -8,6 +8,7 @@ interface FileContextMenuProps {
   onClose: () => void;
   onDetail: () => void;
   onDownload: () => void;
+  canManageVersions: boolean;
   onVersions: () => void;
   onPermission: () => void;
   canSubmitApproval: boolean;
@@ -33,6 +34,7 @@ export function FileContextMenu({
   onClose,
   onDetail,
   onDownload,
+  canManageVersions,
   onVersions,
   onPermission,
   canSubmitApproval,
@@ -62,10 +64,10 @@ export function FileContextMenu({
       key: 'download', label: t('documents.fileMenu.download'), onClick: onDownload,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
     },
-    {
+    ...(canManageVersions ? [{
       key: 'versions', label: t('documents.fileMenu.versions'), onClick: onVersions,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>,
-    },
+    }] : []),
     ...(canSubmitApproval ? [{
       key: 'submitApproval', label: t('documents.fileMenu.submitApproval'), onClick: onSubmitApproval,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>,

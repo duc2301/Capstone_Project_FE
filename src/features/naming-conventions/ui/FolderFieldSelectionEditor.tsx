@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { FolderFieldSelection } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
+
+interface FieldSelectionState {
+  selection: FolderFieldSelection | null;
+  enabledIds: Set<string>;
+}
+
+const EMPTY_STATE: FieldSelectionState = { selection: null, enabledIds: new Set() };
 
 interface FolderFieldSelectionEditorProps {
   folderId: string;
@@ -18,44 +26,34 @@ interface FolderFieldSelectionEditorProps {
  * Field bắt buộc/khóa = "Luôn áp dụng" (disabled). Tự fetch theo folderId, dùng chung ở
  * FolderNamingInfoModal (context menu thư mục) và tab Cài đặt (Leader). */
 export function FolderFieldSelectionEditor({ folderId, canManage, onSaved, footerLeft }: FolderFieldSelectionEditorProps) {
-  const [selection, setSelection] = useState<FolderFieldSelection | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [enabledIds, setEnabledIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    namingConventionApi
-      .getFolderFieldSelection(folderId)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setSelection(data.result);
-        setEnabledIds(new Set(
-          (data.result?.fields ?? [])
-            .filter((f) => !f.isRequired && !f.isLocked && f.enabled)
-            .map((f) => f.id),
-        ));
-      })
-      .catch((err) => {
-        if (!cancelled) setError(getApiErrorMessage(err, t('common.error')));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
+  const fetchSelection = useCallback(async (): Promise<FieldSelectionState> => {
+    const { data } = await namingConventionApi.getFolderFieldSelection(folderId);
+
+    return {
+      selection: data.result,
+      enabledIds: new Set(
+        (data.result?.fields ?? [])
+          .filter((f) => !f.isRequired && !f.isLocked && f.enabled)
+          .map((f) => f.id),
+      ),
     };
   }, [folderId]);
 
+  const { data, loading, error, setData, setError } = useAsyncData(folderId, fetchSelection, {
+    fallback: EMPTY_STATE,
+    toErrorMessage: (err) => getApiErrorMessage(err, t('common.error')),
+  });
+
+  const { selection, enabledIds } = data;
+
   const toggleField = (fieldId: string) =>
-    setEnabledIds((prev) => {
-      const next = new Set(prev);
+    setData((prev) => {
+      const next = new Set(prev.enabledIds);
       if (next.has(fieldId)) next.delete(fieldId);
       else next.add(fieldId);
-      return next;
+      return { ...prev, enabledIds: next };
     });
 
   const handleSave = async () => {

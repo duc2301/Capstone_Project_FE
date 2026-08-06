@@ -24,24 +24,25 @@ function stopConnectionQuietly(
   void startPromise.finally(() => connection.stop().catch(() => undefined));
 }
 
+const RECENT_PAGE_SIZE = 20;
+
 export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<RealtimeStatus>('idle');
 
   const connectionRef = useRef<HubConnection | null>(null);
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
-    [notifications],
-  );
-
   const refresh = useCallback(async () => {
     if (!accountId) return;
     setLoading(true);
     try {
-      const { data } = await notificationApi.getMine();
-      if (data.isSuccess && data.result) setNotifications(data.result);
+      const { data } = await notificationApi.getMine({ page: 1, pageSize: RECENT_PAGE_SIZE });
+      if (data.isSuccess && data.result) {
+        setNotifications(data.result.items ?? []);
+        setUnreadCount(data.result.unreadCount ?? 0);
+      }
     } catch {
       // Lỗi mạng khi tải lại — giữ nguyên danh sách hiện tại, người dùng có thể thử lại.
     } finally {
@@ -50,22 +51,25 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
   }, [accountId]);
 
   const markRead = useCallback(async (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
+    const wasUnread = notifications.some((n) => n.id === id && !n.isRead);
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
     try {
       await notificationApi.markRead(id);
     } catch {
       // Đã cập nhật lạc quan trên UI; bỏ qua lỗi gọi API nền.
     }
-  }, []);
+  }, [notifications]);
 
   const markAllRead = useCallback(async () => {
-    const unreadIds = notifications.filter((n) => !n.isRead).map((n) => n.id);
-    if (unreadIds.length === 0) return;
     setNotifications((prev) => prev.map((n) => (n.isRead ? n : { ...n, isRead: true })));
-    await Promise.allSettled(unreadIds.map((id) => notificationApi.markRead(id)));
-  }, [notifications]);
+    setUnreadCount(0);
+    try {
+      await notificationApi.markAllRead();
+    } catch {
+      void refresh();
+    }
+  }, [refresh]);
 
   useEffect(() => {
     if (!accountId) return;
@@ -75,9 +79,10 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
     const loadInitial = async () => {
       setLoading(true);
       try {
-        const { data } = await notificationApi.getMine();
+        const { data } = await notificationApi.getMine({ page: 1, pageSize: RECENT_PAGE_SIZE });
         if (!cancelled && data.isSuccess && data.result) {
-          setNotifications(data.result);
+          setNotifications(data.result.items);
+          setUnreadCount(data.result.unreadCount);
         }
       } catch {
         // Lỗi tải lần đầu — realtime/refresh sau đó sẽ bù lại dữ liệu.
@@ -92,8 +97,11 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
     connection.on(SIGNALR_EVENTS.receiveNotification, (payload: NotificationItem) => {
       if (cancelled) return;
       setNotifications((prev) =>
-        prev.some((n) => n.id === payload.id) ? prev : [payload, ...prev],
+        prev.some((n) => n.id === payload.id)
+          ? prev
+          : [payload, ...prev].slice(0, RECENT_PAGE_SIZE),
       );
+      if (!payload.isRead) setUnreadCount((c) => c + 1);
     });
 
     connection.onreconnecting(() => !cancelled && setStatus('connecting'));
@@ -112,6 +120,7 @@ export const NotificationProvider: FC<Props> = ({ accountId, children }) => {
       stopConnectionQuietly(connection, startPromise);
       connectionRef.current = null;
       setNotifications([]);
+      setUnreadCount(0);
       setStatus('idle');
     };
   }, [accountId]);

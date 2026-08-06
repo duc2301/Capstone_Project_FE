@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
 import { folderApi } from '../api/folderApi';
@@ -13,47 +14,21 @@ interface UseFolderTreeReturn {
   refetch: () => Promise<void>;
 }
 
+const EMPTY_TREE: FolderTreeNode[] = [];
+
 export function useFolderTree(projectId: string | undefined): UseFolderTreeReturn {
-  const [tree, setTree] = useState<FolderTreeNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadTree = useCallback(async (
-    showLoading: boolean,
-    isCancelled: () => boolean = () => false,
-  ) => {
-    if (!projectId) return;
-
-    if (showLoading) setLoading(true);
-    setError(null);
-
-    try {
-      const { data } = await folderApi.getTree(projectId);
-      if (!isCancelled()) setTree((data.result ?? []).map(toFolderTreeNode));
-    } catch {
-      if (!isCancelled()) setError(t('documents.error'));
-    } finally {
-      if (!isCancelled()) setLoading(false);
-    }
+  const fetchTree = useCallback(async () => {
+    const { data } = await folderApi.getTree(projectId!);
+    return (data.result ?? []).map(toFolderTreeNode);
   }, [projectId]);
 
-  // Manual refresh keeps the current tree visible to avoid flashing the whole Documents tab.
-  const refetch = useCallback(() => loadTree(false), [loadTree]);
+  const { data: tree, loading, error, reload } = useAsyncData(projectId ?? '', fetchTree, {
+    fallback: EMPTY_TREE,
+    enabled: Boolean(projectId),
+    toErrorMessage: () => t('documents.error'),
+  });
 
-  useEffect(() => {
-    if (!projectId) {
-      setTree([]);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    void loadTree(true, () => cancelled);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [projectId, loadTree]);
+  const refetch = useCallback(async () => reload(), [reload]);
 
   return { tree, loading, error, refetch };
 }

@@ -7,5 +7,5 @@ import { useApprovalList } from './useApprovalList';
 export function useApprovalHistory() {
   const loadApprovalHistory = useCallback(() => approvalApi.getApprovals(), []);
 
-  return useApprovalList(loadApprovalHistory);
+  return useApprovalList(loadApprovalHistory, undefined, 'approval-history');
 }

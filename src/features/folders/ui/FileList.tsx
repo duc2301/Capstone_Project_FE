@@ -176,11 +176,11 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   );
                 })()}
               </td>
-              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes ?? f.sizeBytes)}</td>
+              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
               <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
               <td className="px-3 py-3">
                 <div className="flex items-center justify-between gap-2 text-text-secondary">
-                  <span className="truncate">{f.uploaderEmail ?? f.authorName ?? '—'}</span>
+                  <span className="truncate">{f.authorName ?? '—'}</span>
                   <DotsButton onClick={(e) => { e.stopPropagation(); onFileMenu(e, f); }} />
                 </div>
               </td>

@@ -14,5 +14,5 @@ const mergePending: ApprovalMergeFn = (prev, incoming) =>
 export function usePendingApprovals() {
   const loadPendingApprovals = useCallback(() => approvalApi.getPendingApprovals(), []);
 
-  return useApprovalList(loadPendingApprovals, mergePending);
+  return useApprovalList(loadPendingApprovals, mergePending, 'pending-approvals');
 }

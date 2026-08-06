@@ -3,46 +3,53 @@ import { AuditAction, LogScope } from '@/entities/audit-log';
 import { t } from '@/shared/lib/i18n';
 import type { TranslationKey } from '@/shared/lib/i18n';
 
-/* Nhãn + màu badge cho từng hành động. Nhóm màu theo "tính chất" thao tác:
- *  xanh lá = tạo/chấp thuận, đỏ = xoá/từ chối, vàng = chuyển vùng/đổi quyền, xám = đọc. */
-const ACTION_META: Record<number, { key: TranslationKey; className: string }> = {
-  [AuditAction.Create]: { key: 'audit.action.create', className: 'bg-success-light text-success' },
-  [AuditAction.Update]: { key: 'audit.action.update', className: 'bg-primary-ghost text-primary' },
-  [AuditAction.Delete]: { key: 'audit.action.delete', className: 'bg-danger-light text-danger' },
-  [AuditAction.Move]: { key: 'audit.action.move', className: 'bg-warning-light text-warning' },
-  [AuditAction.Submit]: { key: 'audit.action.submit', className: 'bg-primary-ghost text-primary' },
-  [AuditAction.Verify]: { key: 'audit.action.verify', className: 'bg-primary-ghost text-primary' },
-  [AuditAction.Approve]: { key: 'audit.action.approve', className: 'bg-success-light text-success' },
-  [AuditAction.Reject]: { key: 'audit.action.reject', className: 'bg-danger-light text-danger' },
-  [AuditAction.Download]: { key: 'audit.action.download', className: 'bg-content-bg text-text-muted' },
-  [AuditAction.PermissionChange]: { key: 'audit.action.permissionChange', className: 'bg-warning-light text-warning' },
-  [AuditAction.Upload]: { key: 'audit.action.upload', className: 'bg-success-light text-success' },
-  [AuditAction.NewVersion]: { key: 'audit.action.newVersion', className: 'bg-primary-ghost text-primary' },
-  [AuditAction.Sign]: { key: 'audit.action.sign', className: 'bg-success-light text-success' },
-  [AuditAction.ZoneTransfer]: { key: 'audit.action.zoneTransfer', className: 'bg-warning-light text-warning' },
-  [AuditAction.ReturnRequest]: { key: 'audit.action.returnRequest', className: 'bg-warning-light text-warning' },
-  [AuditAction.Invite]: { key: 'audit.action.invite', className: 'bg-primary-ghost text-primary' },
-  [AuditAction.AcceptInvite]: { key: 'audit.action.acceptInvite', className: 'bg-success-light text-success' },
-  [AuditAction.RejectInvite]: { key: 'audit.action.rejectInvite', className: 'bg-danger-light text-danger' },
-  [AuditAction.Assign]: { key: 'audit.action.assign', className: 'bg-primary-ghost text-primary' },
-  [AuditAction.StatusChange]: { key: 'audit.action.statusChange', className: 'bg-warning-light text-warning' },
-  [AuditAction.Archive]: { key: 'audit.action.archive', className: 'bg-content-bg text-text-secondary' },
+const SEVERITY_CLASS = {
+  critical: 'bg-danger-light text-danger',
+  lifecycle: 'bg-warning-light text-warning',
+  routine: 'bg-info-light text-info',
+  readonly: 'bg-content-bg text-text-muted',
+} as const;
+
+type ActionSeverity = keyof typeof SEVERITY_CLASS;
+
+const ACTION_META: Record<number, { key: TranslationKey; severity: ActionSeverity }> = {
+  [AuditAction.Create]: { key: 'audit.action.create', severity: 'routine' },
+  [AuditAction.Update]: { key: 'audit.action.update', severity: 'routine' },
+  [AuditAction.Delete]: { key: 'audit.action.delete', severity: 'critical' },
+  [AuditAction.Move]: { key: 'audit.action.move', severity: 'lifecycle' },
+  [AuditAction.Submit]: { key: 'audit.action.submit', severity: 'lifecycle' },
+  [AuditAction.Verify]: { key: 'audit.action.verify', severity: 'lifecycle' },
+  [AuditAction.Approve]: { key: 'audit.action.approve', severity: 'lifecycle' },
+  [AuditAction.Reject]: { key: 'audit.action.reject', severity: 'critical' },
+  [AuditAction.Download]: { key: 'audit.action.download', severity: 'readonly' },
+  [AuditAction.PermissionChange]: { key: 'audit.action.permissionChange', severity: 'critical' },
+  [AuditAction.Upload]: { key: 'audit.action.upload', severity: 'routine' },
+  [AuditAction.NewVersion]: { key: 'audit.action.newVersion', severity: 'routine' },
+  [AuditAction.Sign]: { key: 'audit.action.sign', severity: 'critical' },
+  [AuditAction.ZoneTransfer]: { key: 'audit.action.zoneTransfer', severity: 'lifecycle' },
+  [AuditAction.ReturnRequest]: { key: 'audit.action.returnRequest', severity: 'lifecycle' },
+  [AuditAction.Invite]: { key: 'audit.action.invite', severity: 'routine' },
+  [AuditAction.AcceptInvite]: { key: 'audit.action.acceptInvite', severity: 'routine' },
+  [AuditAction.RejectInvite]: { key: 'audit.action.rejectInvite', severity: 'critical' },
+  [AuditAction.Assign]: { key: 'audit.action.assign', severity: 'routine' },
+  [AuditAction.StatusChange]: { key: 'audit.action.statusChange', severity: 'lifecycle' },
+  [AuditAction.Archive]: { key: 'audit.action.archive', severity: 'lifecycle' },
+  [AuditAction.Login]: { key: 'audit.action.login', severity: 'readonly' },
+  [AuditAction.Logout]: { key: 'audit.action.logout', severity: 'readonly' },
+  [AuditAction.LoginFailed]: { key: 'audit.action.loginFailed', severity: 'critical' },
 };
 
 export function actionBadge(action: number) {
   const meta = ACTION_META[action];
   return meta
-    ? { label: t(meta.key), className: meta.className }
-    : { label: String(action), className: 'bg-content-bg text-text-muted' };
+    ? { label: t(meta.key), className: SEVERITY_CLASS[meta.severity] }
+    : { label: String(action), className: SEVERITY_CLASS.readonly };
 }
 
 export function detailTone(action: number): 'danger' | 'warning' | 'normal' {
-  if (
-    action === AuditAction.Delete
-    || action === AuditAction.Reject
-    || action === AuditAction.RejectInvite
-  ) return 'danger';
-  if (action === AuditAction.PermissionChange) return 'warning';
+  const severity = ACTION_META[action]?.severity;
+  if (severity === 'critical') return 'danger';
+  if (severity === 'lifecycle') return 'warning';
   return 'normal';
 }
 
@@ -61,26 +68,32 @@ export function scopeBadge(scope: number) {
 
 /* "Phân hệ" (module) — mockup có cột này nhưng BE chưa lưu field module.
  * Suy ra từ hành động + loại đối tượng + phạm vi (ưu tiên cái rõ nghĩa nhất). */
+const MODULE_BY_ENTITY: Record<string, TranslationKey> = {
+  account: 'audit.module.auth',
+  fileitem: 'audit.module.document',
+  folder: 'audit.module.document',
+  approvalrequest: 'audit.module.document',
+  zonereturnrequest: 'audit.module.document',
+  markupset: 'audit.module.document',
+  namingconvention: 'audit.module.document',
+  issue: 'audit.module.document',
+  discussion: 'audit.module.document',
+  group: 'audit.module.group',
+  groupmember: 'audit.module.group',
+  projectinvitation: 'audit.module.group',
+  projectparticipant: 'audit.module.group',
+  project: 'audit.module.project',
+  contract: 'audit.module.project',
+  contractpackage: 'audit.module.project',
+  organization: 'audit.module.project',
+};
+
 function moduleKey(log: Pick<AuditLogItem, 'scope' | 'action' | 'entityType'>): TranslationKey {
-  const et = (log.entityType ?? '').toLowerCase();
-
-  // 1) Theo hành động rõ nghĩa
   if (log.action === AuditAction.PermissionChange) return 'audit.module.permission';
-  if (
-    log.action === AuditAction.Invite
-    || log.action === AuditAction.AcceptInvite
-    || log.action === AuditAction.RejectInvite
-    || log.action === AuditAction.Assign
-  ) return 'audit.module.group';
 
-  // 2) Theo loại đối tượng
-  if (/permission|role|grant/.test(et)) return 'audit.module.permission';
-  if (/account|auth|login|session|token|credential/.test(et)) return 'audit.module.auth';
-  if (/file|folder|document|version|markup|issue/.test(et)) return 'audit.module.document';
-  if (/group|team|member|invitation|invite/.test(et)) return 'audit.module.group';
-  if (/project|package|organization|contract/.test(et)) return 'audit.module.project';
+  const byEntity = MODULE_BY_ENTITY[(log.entityType ?? '').toLowerCase()];
+  if (byEntity) return byEntity;
 
-  // 3) Theo phạm vi log
   if (log.scope === LogScope.System) return 'audit.module.system';
   if (log.scope === LogScope.Group) return 'audit.module.group';
   if (log.scope === LogScope.Project) return 'audit.module.project';
@@ -106,14 +119,12 @@ export function formatLogDate(iso: string | null): string {
   return d.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/* Giờ theo UTC + hậu tố "UTC" — vd "14:32:05 UTC" (khớp mockup). */
 export function formatLogClock(iso: string | null): string {
   const d = parseUtc(iso);
   if (!d) return '—';
-  const clock = d.toLocaleTimeString('en-GB', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC',
+  return d.toLocaleTimeString('vi-VN', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
   });
-  return `${clock} UTC`;
 }
 
 /* Giữ lại cho nơi cần 1 dòng ngày+giờ gộp. */

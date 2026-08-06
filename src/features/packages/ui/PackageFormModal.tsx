@@ -46,6 +46,7 @@ export function PackageFormModal({
       maxWidth="max-w-4xl"
     >
       <CreatePackageForm
+        key={initialData?.id ?? 'new'}
         initialData={initialData}
         accounts={accounts}
         onCancel={onClose}

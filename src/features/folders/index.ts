@@ -1,8 +1,10 @@
 export { formatDateTime, isRequiredSigner } from './model/approvalFormat';
 export { formatSize } from './model/fileFormat';
+export { useFolderPermission } from './model/useFolderPermission';
 export { useZoneReturnRequests } from './model/useZoneReturnRequests';
 export { returnRequestStatusBadge, zoneLabel } from './model/zoneTransferFormat';
 export { DocumentsTab } from './ui/DocumentsTab';
+export { FileVersionsModal } from './ui/FileVersionsModal';
 export { FolderTree } from './ui/FolderTree';
 export { RejectReturnModal } from './ui/RejectReturnModal';
 export { RelatedFilesPanel } from './ui/RelatedFilesPanel';

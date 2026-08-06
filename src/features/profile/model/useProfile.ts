@@ -11,6 +11,7 @@ interface UseProfileReturn {
   fetchProfile: () => Promise<void>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
   changePassword: (payload: ChangePasswordPayload) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<void>;
 }
 
 export function useProfile(): UseProfileReturn {
@@ -40,6 +41,11 @@ export function useProfile(): UseProfileReturn {
     await profileApi.changePassword(payload);
   }, []);
 
+  const uploadAvatar = useCallback(async (file: File) => {
+    const { data } = await profileApi.uploadAvatar(file);
+    if (data.result) setProfile(data.result);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -59,5 +65,5 @@ export function useProfile(): UseProfileReturn {
     };
   }, []);
 
-  return { profile, loading, error, fetchProfile, updateProfile, changePassword };
+  return { profile, loading, error, fetchProfile, updateProfile, changePassword, uploadAvatar };
 }

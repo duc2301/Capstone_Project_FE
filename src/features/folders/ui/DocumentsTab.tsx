@@ -9,6 +9,7 @@ import type { Group } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
+import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
 import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
@@ -56,7 +57,6 @@ interface DocumentsTabProps {
 const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[] = [
   { key: 'canView', label: () => t('documents.perm.view') },
   { key: 'canEdit', label: () => t('documents.perm.edit') },
-  { key: 'canApprove', label: () => t('documents.perm.approve') },
 ];
 
 /* Thư mục hệ thống ở Published được nhận file trực tiếp — khớp Domain/Common/CdeFolderNames.cs */
@@ -220,14 +220,7 @@ export function DocumentsTab({
     try {
       showToast(t('documents.toast.downloading'));
       const res = await fileItemApi.download(file.id);
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = file.format ? `${file.name}.${file.format}` : file.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
+      downloadBlob(res.data as Blob, buildDownloadName(file.name, file.format));
     } catch {
       showToast(t('common.error'), 'error');
     }
@@ -289,7 +282,7 @@ export function DocumentsTab({
   // BE chỉ chuyển vùng thật sự khi Leader approve request đó.
   const canTransferZone = (file: FileListItem) =>
     !!selected
-    && selectedPermission.canApprove
+    && selectedPermission.canEdit
     && canStartApprovalFromArea(selected.area)
     && file.status === FileItemStatus.Approved
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
@@ -570,6 +563,7 @@ export function DocumentsTab({
           onClose={() => setFileMenu(null)}
           onDetail={() => handleDetail(fileMenu.file)}
           onDownload={() => handleDownload(fileMenu.file)}
+          canManageVersions={selectedPermission.canEdit}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onPermission={() => setFilePermissionFor(fileMenu.file)}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
@@ -610,6 +604,11 @@ export function DocumentsTab({
           fileItemId={versionsFor.id}
           fileName={versionsFor.name}
           currentVersionId={versionsFor.currentVersionId}
+          canRestore={selectedPermission.canEdit}
+          onViewVersion={(versionStateId, isCurrent) => {
+            const versionQuery = isCurrent ? '' : `&version=${versionStateId}`;
+            navigate(`/projects/${projectId}/files/${versionsFor.id}/view?folder=${versionsFor.folderId}${versionQuery}`);
+          }}
           onClose={() => setVersionsFor(null)}
           onRestored={(displayVersion) => {
             void refetchFiles();

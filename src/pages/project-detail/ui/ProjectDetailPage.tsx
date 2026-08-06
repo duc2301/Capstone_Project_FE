@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import type { ContractPackage } from '@/entities/contractPackage';
 import { contractPackageApi } from '@/entities/contractPackage';
@@ -28,10 +28,12 @@ import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, DeleteIcon, EditIcon, Modal, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
 import { formatDate, formatRelativeTime } from '@/shared/lib/format';
+import { useUrlTab } from '@/shared/lib/url';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
 type TabId = 'info' | 'partners' | 'packages' | 'teams' | 'documents' | 'issues' | 'audit' | 'settings';
+const TAB_IDS = ['info', 'partners', 'packages', 'teams', 'documents', 'issues', 'audit', 'settings'] as const;
 const TABS: { id: TabId; key: TranslationKey }[] = [
   { id: 'info', key: 'projectDetail.tab.info' },
   { id: 'partners', key: 'projectDetail.tab.partners' },
@@ -515,11 +517,8 @@ export function ProjectDetailPage() {
   }, [groups, organizations]);
 
   const { currentUser } = useSession();
-  const [searchParams] = useSearchParams();
 
-  // Tab khởi tạo theo ?tab= (để quay lại đúng tab Tài liệu từ trang xem chi tiết file).
-  const initialTab = (TABS.find((x) => x.id === searchParams.get('tab'))?.id ?? 'info') as TabId;
-  const [tab, setTab] = useState<TabId>(initialTab);
+  const [tab, selectTab] = useUrlTab(TAB_IDS, 'info');
   const [manageOpen, setManageOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
@@ -722,7 +721,7 @@ export function ProjectDetailPage() {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
+              onClick={() => selectTab(item.id)}
               className={`-mb-px shrink-0 border-b-2 py-3 text-sm font-semibold tracking-[0.01em] transition-colors ${tab === item.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-text-secondary/70 hover:text-primary'

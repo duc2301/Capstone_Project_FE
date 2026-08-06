@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import type { IssueItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { useSession } from '@/entities/session';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
 import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
@@ -21,9 +22,6 @@ interface IssueSidePanelProps {
 }
 
 export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, markupSlot }: IssueSidePanelProps) {
-  const [issue, setIssue] = useState<IssueItem | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<SideTab>('info');
 
@@ -32,28 +30,25 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnReason, setReturnReason] = useState('');
 
+  const fetchIssue = useCallback(() => issueApi.getById(issueId), [issueId]);
+
+  const { data: issue, loading, error, reload } = useAsyncData<IssueItem | null>(
+    issueId,
+    fetchIssue,
+    {
+      fallback: null,
+      toErrorMessage: (err) => issueErrorMessage(err, t('issues.error')),
+    },
+  );
+
+  const loadIssue = useCallback(async () => reload(), [reload]);
+
   const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(issue?.linkedFileItemId);
   const { currentUser } = useSession();
 
   useEffect(() => {
     if (membersError) onToast(membersError, 'error');
-  }, [membersError]);
-
-  const loadIssue = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setIssue(await issueApi.getById(issueId));
-    } catch (err) {
-      setError(issueErrorMessage(err, t('issues.error')));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadIssue();
-  }, [issueId]);
+  }, [membersError, onToast]);
 
   const runIssueAction = async (
     action: () => Promise<void>,

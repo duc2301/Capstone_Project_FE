@@ -1,26 +1,30 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { NotificationItem } from '@/entities/notification';
 import { useNotifications } from '@/entities/notification';
 import { PaginationBar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
+import { isNavigable, resolveNotificationTarget } from '../model/notificationTarget';
 import { useInvitationActions } from '../model/useInvitationActions';
-import { NOTIFICATION_PAGE_SIZE, useNotificationFeed } from '../model/useNotificationFeed';
+import { NOTIFICATION_PAGE_SIZE, useNotificationList } from '../model/useNotificationList';
 import { usePendingInvitations } from '../model/usePendingInvitations';
-import { NotificationFeedCard } from './NotificationFeedCard';
 import { NotificationFeedToolbar } from './NotificationFeedToolbar';
+import { NotificationRowItem } from './NotificationRowItem';
 
 const INVITATION_LINK_TYPE = 'ProjectInvitation';
 
 export function NotificationFeed() {
-  const { notifications, unreadCount, loading, markRead, markAllRead, refresh } =
-    useNotifications();
+  const navigate = useNavigate();
+  const { unreadCount, markRead, markAllRead, refresh: refreshBell } = useNotifications();
   const { pendingIds, refreshPending } = usePendingInvitations();
+  const list = useNotificationList();
 
   const handleResponded = useCallback(() => {
-    void refresh();
+    void list.reload();
+    void refreshBell();
     void refreshPending();
-  }, [refresh, refreshPending]);
+  }, [list, refreshBell, refreshPending]);
 
   const { processingId, processingAction, respond } = useInvitationActions(handleResponded);
 
@@ -30,62 +34,81 @@ export function NotificationFeed() {
     [pendingIds],
   );
 
-  const feed = useNotificationFeed({ notifications, isPendingInvite });
+  const handleOpen = useCallback(async (ids: string[], head: NotificationItem) => {
+    await Promise.all(ids.map((id) => markRead(id)));
+    void list.reload();
 
-  const handleOpen = (n: NotificationItem) => {
-    if (!n.isRead) void markRead(n.id);
-  };
+    const target = await resolveNotificationTarget(head);
+    if (target) navigate(target);
+  }, [markRead, list, navigate]);
 
-  const showEmpty = !loading && feed.totalFiltered === 0;
-  const hasAnyNotification = notifications.length > 0;
+  const handleMarkAllRead = useCallback(async () => {
+    await markAllRead();
+    void list.reload();
+  }, [markAllRead, list]);
+
+  const showEmpty = !list.loading && list.groups.length === 0;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col gap-5">
       <NotificationFeedToolbar
-        query={feed.query}
-        onQueryChange={feed.setQuery}
-        filter={feed.filter}
-        onFilterChange={feed.setFilter}
-        dateRange={feed.dateRange}
-        onDateRangeChange={feed.setDateRange}
+        query={list.query}
+        onQueryChange={list.setQuery}
+        filter={list.filter}
+        onFilterChange={list.setFilter}
+        dateRange={list.dateRange}
+        onDateRangeChange={list.setDateRange}
         hasUnread={unreadCount > 0}
-        onMarkAllRead={() => void markAllRead()}
-        onRefresh={() => void refresh()}
+        onMarkAllRead={() => void handleMarkAllRead()}
+        onRefresh={() => void list.reload()}
       />
 
-      <div className="flex flex-col gap-4 px-6 py-6 lg:px-8">
-        {loading && !hasAnyNotification ? (
-          <p className="py-16 text-center text-sm text-text-muted">{t('common.loading')}</p>
-        ) : showEmpty ? (
-          <p className="py-16 text-center text-sm text-text-muted">
-            {hasAnyNotification ? t('notification.noResults') : t('notification.empty')}
-          </p>
-        ) : (
-          <>
-            {feed.visible.map((n) => (
-              <NotificationFeedCard
-                key={n.id}
-                notification={n}
-                isPendingInvite={isPendingInvite(n)}
-                processingAction={processingId === n.linkId ? processingAction : null}
-                onOpen={() => handleOpen(n)}
-                onAccept={() => n.linkId && respond(n.linkId, 'accept')}
-                onReject={() => n.linkId && respond(n.linkId, 'reject')}
-              />
-            ))}
+      {list.error ? (
+        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
+          <p className="text-sm font-medium text-danger">{list.error}</p>
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
+          <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
+            {list.loading && list.groups.length === 0 ? (
+              <p className="py-20 text-center text-sm text-text-muted">{t('common.loading')}</p>
+            ) : showEmpty ? (
+              <p className="py-20 text-center text-sm text-text-muted">
+                {list.query || list.filter !== 'all' || list.dateRange !== 'all'
+                  ? t('notification.noResults')
+                  : t('notification.empty')}
+              </p>
+            ) : (
+              <div className="divide-y divide-card-border/60">
+                {list.groups.map((group) => (
+                  <NotificationRowItem
+                    key={group.key + group.head.id}
+                    notification={group.head}
+                    count={group.count}
+                    hasUnread={group.hasUnread}
+                    navigable={isNavigable(group.head)}
+                    isPendingInvite={isPendingInvite(group.head)}
+                    processingAction={processingId === group.head.linkId ? processingAction : null}
+                    onOpen={() => void handleOpen(group.ids, group.head)}
+                    onAccept={() => group.head.linkId && respond(group.head.linkId, 'accept')}
+                    onReject={() => group.head.linkId && respond(group.head.linkId, 'reject')}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
-            <PaginationBar
-              page={feed.page}
-              pageCount={feed.pageCount}
-              pageSize={NOTIFICATION_PAGE_SIZE}
-              total={feed.totalFiltered}
-              unit={t('notification.pagination.unit')}
-              variant="inline"
-              onChange={feed.setPage}
-            />
-          </>
-        )}
-      </div>
+          <PaginationBar
+            page={list.page}
+            pageCount={list.pageCount}
+            pageSize={NOTIFICATION_PAGE_SIZE}
+            total={list.total}
+            unit={t('notification.pagination.unit')}
+            variant="inline"
+            onChange={list.setPage}
+          />
+        </div>
+      )}
     </div>
   );
 }

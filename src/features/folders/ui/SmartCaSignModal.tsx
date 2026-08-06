@@ -60,10 +60,10 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
   const navigate = useNavigate();
   // Bản sao "sống" của approval — vá lại qua realtime (SignalR) khi người ký khác vừa ký xong,
   // để "Danh sách người ký" cập nhật ngay mà không cần đóng/mở lại modal.
-  const [approval, setApproval] = useState(initialApproval);
-  useEffect(() => setApproval(initialApproval), [initialApproval]);
+  const [approvalPatch, setApprovalPatch] = useState<ApprovalListItem | null>(null);
+  const approval = approvalPatch?.id === initialApproval.id ? approvalPatch : initialApproval;
   useApprovalRealtime((updated) => {
-    if (updated.id === initialApproval.id) setApproval(updated);
+    if (updated.id === initialApproval.id) setApprovalPatch(updated);
   });
 
   const [userId, setUserId] = useState('');
@@ -73,15 +73,22 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
   const [transactionStatus, setTransactionStatus] = useState<SignatureTransactionStatus | null>(null);
   const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
   const [signedFile, setSignedFile] = useState<SignedFileInfo | null>(null);
-  const [signedPdfReady, setSignedPdfReady] = useState(Boolean(approval.signedVersionId));
+  const [signedPdfGeneratedFor, setSignedPdfGeneratedFor] = useState<string | null>(null);
   const [loadingCertificates, setLoadingCertificates] = useState(false);
   const [creatingRequest, setCreatingRequest] = useState(false);
   const [generatingSignedPdf, setGeneratingSignedPdf] = useState(false);
-  const [polling, setPolling] = useState(false);
+  const [pollingHaltedFor, setPollingHaltedFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorIsPermissionIssue, setErrorIsPermissionIssue] = useState(false);
   const [waitingForOtherSigners, setWaitingForOtherSigners] = useState(false);
   const generatingSignedPdfRef = useRef(false);
+
+  const signedPdfReady = Boolean(approval.signedVersionId) || signedPdfGeneratedFor === approval.id;
+  const polling = Boolean(transactionId)
+    && pollingHaltedFor !== transactionId
+    && transactionStatus !== 'Signed'
+    && transactionStatus !== 'Failed'
+    && transactionStatus !== 'Expired';
 
   const selectedCertificate = useMemo(
     () => certificates.find((item) => item.serialNumber === certificateSerial) ?? null,
@@ -116,7 +123,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
       }
 
       setSignedFile(file);
-      setSignedPdfReady(true);
+      setSignedPdfGeneratedFor(approval.id);
       setTransactionStatus('Signed');
       onToast(t('smartca.toast.signed'));
       await fetchSignatureInfo(false);
@@ -146,7 +153,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
       if (info.status === 'Signed') {
         if (approval.signedVersionId) {
           setSignedFile(await smartcaApi.getSignedFile(approval.fileItemId).catch(() => null));
-          setSignedPdfReady(true);
+          setSignedPdfGeneratedFor(approval.id);
           onSigned();
         } else if (autoGenerateSignedPdf) {
           await finalizeSignedTransaction({
@@ -163,18 +170,13 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
   };
 
   useEffect(() => {
-    setSignedPdfReady(Boolean(approval.signedVersionId));
     void fetchSignatureInfo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approval.id]);
 
   useEffect(() => {
-    if (!transactionId || transactionStatus === 'Signed' || transactionStatus === 'Failed' || transactionStatus === 'Expired') {
-      setPolling(false);
-      return;
-    }
+    if (!polling || !transactionId) return;
 
-    setPolling(true);
     const timer = window.setInterval(async () => {
       try {
         const data = await smartcaApi.getTransactionStatus(approval.id, transactionId);
@@ -182,7 +184,6 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
 
         if (completed) {
           window.clearInterval(timer);
-          setPolling(false);
           await finalizeSignedTransaction(data);
         } else {
           setTransactionStatus(data.status);
@@ -190,12 +191,11 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
 
         if (data.status === 'Failed' || data.status === 'Expired') {
           window.clearInterval(timer);
-          setPolling(false);
           onToast(t('smartca.toast.signFailed'), 'error');
         }
       } catch (err) {
         window.clearInterval(timer);
-        setPolling(false);
+        setPollingHaltedFor(transactionId);
         setError(smartcaErrorMessage(err, t('smartca.error.status')));
       }
     }, 5000);

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
 import type { FolderNamingConvention, NamingSelection, UploadNamingField } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
 import { FileTypeIcon } from '@/shared/components';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
 import { formatSize } from '../model/fileFormat';
@@ -37,33 +38,23 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Quy tắc đặt tên của folder đích (nếu có): render dropdown thay vì đặt tên tự do.
-  const [naming, setNaming] = useState<FolderNamingConvention | null>(null);
-  const [namingLoading, setNamingLoading] = useState(true);
   const [selections, setSelections] = useState<Record<string, string>>({});
   // Field bắt buộc mà autofill từ tên gốc KHÔNG khớp được — viền đỏ bắt chọn tay.
   const [mismatchIds, setMismatchIds] = useState<Set<string>>(new Set());
   // Tệp ngoại lệ (văn bản hành chính: thông tư, nghị định...) — bỏ qua quy tắc, giữ tên gốc.
   const [bypass, setBypass] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setNamingLoading(true);
-    namingConventionApi
-      .getByFolder(targetFolder.id)
-      .then(({ data }) => {
-        if (!cancelled) setNaming(data.result);
-      })
-      .catch(() => {
-        // Không đọc được quy tắc -> vẫn cho upload, BE là chốt chặn cuối.
-        if (!cancelled) setNaming(null);
-      })
-      .finally(() => {
-        if (!cancelled) setNamingLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const fetchNaming = useCallback(async () => {
+    const { data } = await namingConventionApi.getByFolder(targetFolder.id);
+    return data.result;
   }, [targetFolder.id]);
+
+  // Không đọc được quy tắc -> vẫn cho upload, BE là chốt chặn cuối.
+  const { data: naming, loading: namingLoading } = useAsyncData<FolderNamingConvention | null>(
+    targetFolder.id,
+    fetchNaming,
+    { fallback: null },
+  );
 
   const hasConvention = !!naming?.hasNamingConvention && !!naming.fields;
   // Quy tắc thực sự áp cho lượt upload này (bật "tệp ngoại lệ" là thoát chế độ quy tắc).
@@ -334,7 +325,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               </>
               )}
             </div>
-          ) : null}          
+          ) : null}
 
           {/* Danh sách tệp */}
           <div>

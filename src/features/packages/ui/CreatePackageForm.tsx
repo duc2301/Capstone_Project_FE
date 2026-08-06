@@ -1,14 +1,25 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { CreateContractPackagePayload, ContractPackage } from '@/entities/contractPackage';
 import { PackageStatus, parseWorkTypes, serializeWorkTypes, WORK_TYPE_CODES, workTypeLabel } from '@/entities/contractPackage';
 import type { Account } from '@/entities/account';
 import { useOrganizationList } from '@/entities/organization';
 import { fileItemApi } from '@/entities/file-item';
 import type { FolderContentsFileDto } from '@/entities/folder';
+import { downloadBlob } from '@/shared/lib/download';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { ConfirmDialog, Toast, useToast } from '@/shared/components';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { numberToWordsVN } from '@/shared/lib/format';
+
+const EMPTY_EXISTING_FILES: FolderContentsFileDto[] = [];
+
+function initialDurationDays(pkg?: ContractPackage): number | '' {
+  if (!pkg?.startDate || !pkg?.endDate) return '';
+  const start = new Date(pkg.startDate).getTime();
+  const end = new Date(pkg.endDate).getTime();
+  return Math.round((end - start) / (1000 * 60 * 60 * 24));
+}
 
 /* ── Trạng thái gói thầu (numeric union khớp BE) ── */
 const PACKAGE_STATUS_OPTIONS: { value: PackageStatus; labelKey: TranslationKey }[] = [
@@ -73,7 +84,6 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
   const [name, setName] = useState(initialData?.name ?? '');
   const [description, setDescription] = useState(initialData?.description ?? '');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [existingFiles, setExistingFiles] = useState<FolderContentsFileDto[]>([]);
   const [deleteFileTarget, setDeleteFileTarget] = useState<{ id: string } | null>(null);
   const [deletingFile, setDeletingFile] = useState(false);
   const { toast, showToast } = useToast();
@@ -94,16 +104,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
   // Section 2 – Time
   const [startDate, setStartDate] = useState(initialData?.startDate ? initialData.startDate.split('T')[0] : '');
-  const [durationDays, setDurationDays] = useState<number | ''>('');
-  
-  // Try to calculate initial duration
-  useEffect(() => {
-    if (initialData?.startDate && initialData?.endDate) {
-      const s = new Date(initialData.startDate).getTime();
-      const e = new Date(initialData.endDate).getTime();
-      setDurationDays(Math.round((e - s) / (1000 * 60 * 60 * 24)));
-    }
-  }, [initialData]);
+  const [durationDays, setDurationDays] = useState<number | ''>(() => initialDurationDays(initialData));
 
   // Section 3 – Scope
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>(
@@ -136,60 +137,22 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
     (initialData?.status as PackageStatus) ?? PackageStatus.Pending,
   );
 
-  // ── Sync with initialData & fetch existing document ──
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name ?? '');
-      setDescription(initialData.description ?? '');
-      setStartDate(initialData.startDate ? initialData.startDate.split('T')[0] : '');
-      setSelectedWorkTypes(parseWorkTypes(initialData.workTypes));
-      setScopeDescription(initialData.scopeDescription ?? '');
-      setContractValue(initialData.contractValue ?? '');
-      setTaxRate(initialData.taxRate ?? 10);
-      setCurrency(initialData.currency ?? 'VND');
-      
-      const mcs = initialData.assignments?.filter(a => Number(a.role) === 0 || String(a.role) === 'MainContractor') || [];
-      setContractorOrgId(mcs[0]?.organizationId ?? '');
-      setRepresentativeId(mcs[0]?.representativeAccountId ?? '');
-      setContractNumber(mcs[0]?.contractNumber ?? '');
-      setContractSignDate(mcs[0]?.contractSignDate ? mcs[0].contractSignDate.split('T')[0] : '');
-      setContractJobTitle(mcs[0]?.position ?? '');
-      setNotes(initialData.notes ?? '');
-      setSelectedFiles([]);
-      
-      if (initialData.documentFolderId) {
-        import('@/entities/folder').then(({ folderApi }) => {
-          folderApi.getContents(initialData.documentFolderId!)
-            .then(res => {
-              if (res.data?.result?.files) {
-                setExistingFiles(res.data.result.files);
-              }
-            })
-            .catch(() => setExistingFiles([]));
-        });
-      } else {
-        setExistingFiles([]);
-      }
-    } else {
-      setName('');
-      setDescription('');
-      setStartDate('');
-      setDurationDays('');
-      setSelectedWorkTypes([]);
-      setScopeDescription('');
-      setContractValue('');
-      setTaxRate(10);
-      setCurrency('VND');
-      setContractorOrgId('');
-      setRepresentativeId('');
-      setContractNumber('');
-      setContractSignDate('');
-      setContractJobTitle('');
-      setNotes('');
-      setSelectedFiles([]);
-      setExistingFiles([]);
-    }
-  }, [initialData]);
+  const documentFolderId = initialData?.documentFolderId ?? '';
+
+  const fetchExistingFiles = useCallback(async (): Promise<FolderContentsFileDto[]> => {
+    const { folderApi } = await import('@/entities/folder');
+    const res = await folderApi.getContents(documentFolderId);
+    return res.data?.result?.files ?? [];
+  }, [documentFolderId]);
+
+  const { data: existingFiles, setData: setExistingFiles } = useAsyncData(
+    documentFolderId,
+    fetchExistingFiles,
+    {
+      fallback: EMPTY_EXISTING_FILES,
+      enabled: Boolean(documentFolderId),
+    },
+  );
 
   // ── Computed values ──
   const endDate = useMemo(() => {
@@ -598,15 +561,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                         onClick={async () => {
                           try {
                             const res = await fileItemApi.download(file.id);
-                            const blob = res.data as Blob;
-                            const downloadUrl = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = downloadUrl;
-                            link.download = file.name || 'document';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(downloadUrl);
+                            downloadBlob(res.data as Blob, file.name || 'document');
                           } catch (err) {
                             console.error("Tải file thất bại", err);
                             showToast(t('file.download.error'), 'error');

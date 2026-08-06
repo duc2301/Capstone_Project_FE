@@ -60,6 +60,10 @@ export const fileItemApi = {
   /** Xóa file */
   delete: (fileItemId: string) => axiosInstance.delete<ApiResponse<unknown>>(`/file-items/${fileItemId}`),
 
+  /** Niêm phong lưu trữ: PM/Admin chốt bản Published chính thức của file vào vùng Archived. */
+  archive: (fileItemId: string) =>
+    axiosInstance.post<ApiResponse<{ archivedFileItemId: string }>>(`/file-items/${fileItemId}/archive`),
+
   getRelatedFiles: (fileItemId: string) =>
     axiosInstance.get<ApiResponse<RelatedFilesResult>>(`/file-items/${fileItemId}/related-files`),
 

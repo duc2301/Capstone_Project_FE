@@ -31,9 +31,10 @@ export const AuditAction = {
   RejectInvite: 17,
   Assign: 18,
   StatusChange: 19,
-  Login: 20,
-  Logout: 21,
-  LoginFailed: 22,
+  Archive: 20,
+  Login: 21,
+  Logout: 22,
+  LoginFailed: 23,
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 

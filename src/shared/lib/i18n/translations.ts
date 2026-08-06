@@ -1162,6 +1162,7 @@ export const translations = {
   'documents.toast.moved': 'Đã di chuyển thư mục',
   'documents.toast.deleted': 'Đã xóa thư mục',
   'documents.toast.uploaded': 'Đã tải tệp lên',
+  'documents.toast.archived': 'Đã niêm phong lưu trữ tài liệu',
 
 
   // Danh sách tệp trong folder
@@ -1193,6 +1194,7 @@ export const translations = {
   'documents.fileMenu.transition': 'Chuyển trạng thái',
   'documents.fileMenu.submitApproval': 'Gửi phê duyệt',
   'documents.fileMenu.returnToWip': 'Yêu cầu trả về WIP',
+  'documents.fileMenu.archive': 'Niêm phong lưu trữ',
   'documents.toast.downloading': 'Đang tải tệp về…',
 
   // Yêu cầu trả tài liệu về WIP
@@ -1558,6 +1560,7 @@ export const translations = {
   'audit.action.rejectInvite': 'Từ chối mời',
   'audit.action.assign': 'Chỉ định',
   'audit.action.statusChange': 'Đổi trạng thái',
+  'audit.action.archive': 'Niêm phong lưu trữ',
   'audit.action.login': 'Đăng nhập',
   'audit.action.logout': 'Đăng xuất',
   'audit.action.loginFailed': 'Đăng nhập thất bại',
@@ -1601,10 +1604,10 @@ export const translations = {
   'audit.pagination.items': 'mục',
 
   // Cảnh báo AI check tên file vs nội dung (advisory)
-  'fileWarn.title': 'Cảnh báo: tên tệp có thể không khớp nội dung',
+  'fileWarn.title': 'Cảnh báo: nội dung có thể không liên quan',
   'fileWarn.sender': 'Người gửi: AI Checker',
-  'fileWarn.tooltip': 'AI cảnh báo: tên tệp có thể không khớp nội dung. Mở tệp để xem chi tiết ở tab Ghi chú.',
-  'fileWarn.folderTooltip': 'Thư mục này chứa tệp bị AI cảnh báo tên không khớp nội dung.',
+  'fileWarn.tooltip': 'Nội dung có thể không liên quan, cần người kiểm tra lại',
+  'fileWarn.folderTooltip': 'Thư mục này chứa tệp có nội dung có thể không liên quan, cần kiểm tra lại.',
 
   // Markup — dùng chung
   'markup.action.reopen': 'Mở lại',

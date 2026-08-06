@@ -30,7 +30,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
 
   const handleDownloadTemplate = async () => {
     try {
-      const res = await namingConventionApi.downloadTemplate();
+      const res = await namingConventionApi.downloadTemplate(projectId);
       downloadBlob(res.data as Blob, 'naming-convention-template_ISO-19650.xlsx');
     } catch {
       showToast(t('common.error'), 'error');

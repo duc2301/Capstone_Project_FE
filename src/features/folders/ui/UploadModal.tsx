@@ -194,6 +194,31 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
             </div>
           </div>
 
+          {/* Dropzone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
+            className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed px-6 py-10 text-center transition-colors ${dragOver ? 'border-primary bg-primary-ghost' : 'border-card-border bg-input-bg/30'}`}
+          >
+            <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </span>
+            <p className="font-semibold text-text">{t('documents.uploadModal.dropHere')}</p>
+            <p className="text-sm text-text-muted">
+              {t('documents.uploadModal.chooseLead')}
+              <button type="button" onClick={() => inputRef.current?.click()} className="font-semibold text-primary hover:underline">
+                {t('documents.uploadModal.choose')}
+              </button>
+            </p>
+            <p className="mt-1 text-xs text-text-placeholder">
+              {namingEnforced ? t('naming.upload.singleFile') : t('documents.uploadModal.hint')}
+            </p>
+            <input ref={inputRef} type="file" multiple={!namingEnforced} className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+          </div>
+
           {/* Quy tắc đặt tên (nếu folder có) */}
           {namingLoading ? (
             <p className="rounded-xl border border-card-border bg-input-bg/30 px-3.5 py-2.5 text-xs text-text-muted">
@@ -301,31 +326,6 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               )}
             </div>
           ) : null}
-
-          {/* Dropzone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
-            className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed px-6 py-10 text-center transition-colors ${dragOver ? 'border-primary bg-primary-ghost' : 'border-card-border bg-input-bg/30'}`}
-          >
-            <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-            </span>
-            <p className="font-semibold text-text">{t('documents.uploadModal.dropHere')}</p>
-            <p className="text-sm text-text-muted">
-              {t('documents.uploadModal.chooseLead')}
-              <button type="button" onClick={() => inputRef.current?.click()} className="font-semibold text-primary hover:underline">
-                {t('documents.uploadModal.choose')}
-              </button>
-            </p>
-            <p className="mt-1 text-xs text-text-placeholder">
-              {namingEnforced ? t('naming.upload.singleFile') : t('documents.uploadModal.hint')}
-            </p>
-            <input ref={inputRef} type="file" multiple={!namingEnforced} className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
-          </div>
 
           {/* Danh sách tệp */}
           <div>

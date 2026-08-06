@@ -33,6 +33,7 @@ const ACTION_META: Record<number, { key: TranslationKey; severity: ActionSeverit
   [AuditAction.RejectInvite]: { key: 'audit.action.rejectInvite', severity: 'critical' },
   [AuditAction.Assign]: { key: 'audit.action.assign', severity: 'routine' },
   [AuditAction.StatusChange]: { key: 'audit.action.statusChange', severity: 'lifecycle' },
+  [AuditAction.Archive]: { key: 'audit.action.archive', severity: 'lifecycle' },
   [AuditAction.Login]: { key: 'audit.action.login', severity: 'readonly' },
   [AuditAction.Logout]: { key: 'audit.action.logout', severity: 'readonly' },
   [AuditAction.LoginFailed]: { key: 'audit.action.loginFailed', severity: 'critical' },

@@ -1110,7 +1110,9 @@ export const translations = {
   // Cây thư mục
   'documents.tree.expand': 'Mở rộng',
   'documents.tree.collapse': 'Thu gọn',
-
+  'documents.tree.workingZone': 'Vùng làm việc',
+  'documents.tree.archiveZone': 'Vùng lưu trữ',
+  
   // Thao tác thư mục (context menu + modal)
   'documents.menu.createSub': 'Tạo thư mục con',
   'documents.menu.rename': 'Đổi tên',

@@ -662,11 +662,13 @@ export function FileViewPage() {
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
             {activePanelTab === 'properties' ? (
               <>
-                {fileListItem?.warnning && fileListItem.warnningMessage && (
-                  <AiCheckerWarningCard message={fileListItem.warnningMessage} />
+                {/* Tóm tắt + cảnh báo AI theo ĐÚNG phiên bản đang xem: lấy từ `info` (version-aware)
+                    thay vì `fileListItem` (luôn là bản hiện hành) -> xem bản cũ hiện đúng của bản cũ. */}
+                {info?.warnning && info.warnningMessage && (
+                  <AiCheckerWarningCard message={info.warnningMessage} />
                 )}
-                {fileListItem?.description && (
-                  <AiSummaryCard summary={fileListItem.description} />
+                {info?.description && (
+                  <AiSummaryCard summary={info.description} />
                 )}
                 <FilePropertiesPanel
                   info={info}

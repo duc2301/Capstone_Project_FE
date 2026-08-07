@@ -106,6 +106,10 @@ export interface FileViewInfo {
   requiresSignature?: boolean;
   isSigned?: boolean;
   signedVersionId?: string | null;
+  /* AI phân tích của ĐÚNG phiên bản đang xem (per-version) — theo bản hiện hành hoặc bản cũ đang mở. */
+  warnning?: boolean | null;
+  warnningMessage?: string | null;
+  description?: string | null;
 }
 
 /* ── Tệp liên quan (file links) ────────────────────────────

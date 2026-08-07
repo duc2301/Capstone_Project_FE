@@ -10,6 +10,7 @@ interface Props {
   accounts: Account[];
   groups: Group[];
   loadingGroups: boolean;
+  lockedGroupId?: string;
   onSubmit: (input: InviteManyInput) => Promise<InviteManyResult>;
 }
 
@@ -18,8 +19,9 @@ const fieldClass =
 
 const NO_ORGANIZATION = '__none__';
 
-export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, onSubmit }: Props) {
-  const [groupId, setGroupId] = useState('');
+export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, lockedGroupId, onSubmit }: Props) {
+  const [pickedGroupId, setGroupId] = useState('');
+  const groupId = lockedGroupId ?? pickedGroupId;
   const [query, setQuery] = useState('');
   const [organizationFilter, setOrganizationFilter] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -110,6 +112,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
       <p className="text-sm text-text-muted">{t('projects.manage.invite.desc')}</p>
 
       {/* ── Chọn nhóm (pills) ───────────────────────── */}
+      {!lockedGroupId && (
       <div className="space-y-2">
         <span className="field-label">{t('projects.invite.group')}</span>
         {loadingGroups ? (
@@ -139,6 +142,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, o
           </div>
         )}
       </div>
+      )}
 
       {/* ── Chưa chọn nhóm ──────────────────────────── */}
       {!groupId && !loadingGroups && groups.length > 0 && (

@@ -7,6 +7,6 @@ export function isAccountAdmin(role: CurrentUser['role'] | undefined | null): bo
   return normalized === AccountRole.Admin || normalized.toLowerCase() === 'admin';
 }
 
-export function getPostLoginPath(role: CurrentUser['role'] | undefined | null): string {
-  return isAccountAdmin(role) ? '/accounts' : '/dashboard';
+export function getPostLoginPath(): string {
+  return '/dashboard';
 }

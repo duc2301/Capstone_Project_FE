@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { ApprovalListItem } from '@/entities/approval';
 import { approvalErrorMessage } from '@/entities/approval';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
@@ -23,40 +24,26 @@ export const upsertApproval: ApprovalMergeFn = (prev, incoming) =>
     ? prev.map((item) => (item.id === incoming.id ? incoming : item))
     : [incoming, ...prev];
 
+const EMPTY_ITEMS: ApprovalListItem[] = [];
+
 export function useApprovalList(
   loader: () => Promise<ApprovalListItem[]>,
   mergeIncoming: ApprovalMergeFn = upsertApproval,
+  cacheKey = 'approvals',
 ): UseApprovalListReturn {
-  const [items, setItems] = useState<ApprovalListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useApprovalRealtime((incoming) => setItems((prev) => mergeIncoming(prev, incoming)));
-
-  const loadItems = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
-    if (showLoading) setLoading(true);
-    setError(null);
-
-    try {
-      const data = await loader();
-      if (!isCancelled()) setItems(sortByNewest(data, (item) => item.createdAt));
-    } catch (err) {
-      if (!isCancelled()) setError(approvalErrorMessage(err, t('approvals.error')));
-    } finally {
-      if (!isCancelled()) setLoading(false);
-    }
+  const fetchItems = useCallback(async () => {
+    const data = await loader();
+    return sortByNewest(data, (item) => item.createdAt);
   }, [loader]);
 
-  const refetch = useCallback(() => loadItems(false), [loadItems]);
+  const { data: items, loading, error, setData, reload } = useAsyncData(cacheKey, fetchItems, {
+    fallback: EMPTY_ITEMS,
+    toErrorMessage: (err) => approvalErrorMessage(err, t('approvals.error')),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    void loadItems(true, () => cancelled);
+  useApprovalRealtime((incoming) => setData((prev) => mergeIncoming(prev, incoming)));
 
-    return () => {
-      cancelled = true;
-    };
-  }, [loadItems]);
+  const refetch = useCallback(async () => reload(), [reload]);
 
   return { items, loading, error, refetch };
 }

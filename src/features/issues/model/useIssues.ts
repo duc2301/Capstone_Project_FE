@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { IssueItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
@@ -20,48 +21,26 @@ function upsertIssue(prev: IssueItem[], incoming: IssueItem): IssueItem[] {
     : [incoming, ...prev];
 }
 
+const EMPTY_ISSUES: IssueItem[] = [];
+
 export function useIssues(fileItemId: string | undefined): UseIssuesReturn {
-  const [items, setItems] = useState<IssueItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useIssueRealtime(fileItemId, {
-    onIssueCreated: (issue) => setItems((prev) => upsertIssue(prev, issue)),
-    onIssueUpdated: (issue) => setItems((prev) => upsertIssue(prev, issue)),
-  });
-
-  const loadItems = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
-    if (!fileItemId) return;
-
-    if (showLoading) setLoading(true);
-    setError(null);
-
-    try {
-      const data = await issueApi.getByFileItem(fileItemId);
-      if (!isCancelled()) setItems(sortByNewest(data, (item) => item.createdAt));
-    } catch (err) {
-      if (!isCancelled()) setError(issueErrorMessage(err, t('issues.error')));
-    } finally {
-      if (!isCancelled()) setLoading(false);
-    }
+  const fetchIssues = useCallback(async () => {
+    const data = await issueApi.getByFileItem(fileItemId!);
+    return sortByNewest(data, (item) => item.createdAt);
   }, [fileItemId]);
 
-  const refetch = useCallback(() => loadItems(false), [loadItems]);
+  const { data: items, loading, error, setData, reload } = useAsyncData(fileItemId ?? '', fetchIssues, {
+    fallback: EMPTY_ISSUES,
+    enabled: Boolean(fileItemId),
+    toErrorMessage: (err) => issueErrorMessage(err, t('issues.error')),
+  });
 
-  useEffect(() => {
-    if (!fileItemId) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
+  useIssueRealtime(fileItemId, {
+    onIssueCreated: (issue) => setData((prev) => upsertIssue(prev, issue)),
+    onIssueUpdated: (issue) => setData((prev) => upsertIssue(prev, issue)),
+  });
 
-    let cancelled = false;
-    void loadItems(true, () => cancelled);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fileItemId, loadItems]);
+  const refetch = useCallback(async () => reload(), [reload]);
 
   return { items, loading, error, refetch };
 }

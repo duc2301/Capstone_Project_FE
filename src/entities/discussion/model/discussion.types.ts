@@ -8,6 +8,23 @@ export const MessageAttachmentTypeValue: Record<MessageAttachmentType, number> =
   CitedFolder: 3,
 };
 
+export const DiscussionScopeType = {
+  Standalone: 0,
+  File: 1,
+  Note: 2,
+  Submittal: 3,
+  Issue: 4,
+} as const;
+export type DiscussionScopeType = (typeof DiscussionScopeType)[keyof typeof DiscussionScopeType];
+
+export interface DiscussionSummary {
+  id: string;
+  projectId: string;
+  title: string;
+  scopeType: DiscussionScopeType;
+  scopeId: string | null;
+}
+
 export interface DiscussionMention {
   accountId: string;
   name: string | null;

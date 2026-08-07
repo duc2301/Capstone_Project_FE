@@ -31,7 +31,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
 
   useEffect(() => {
     if (membersError) onToast(membersError, 'error');
-  }, [membersError]);
+  }, [membersError, onToast]);
 
   const titleTooShort = title.trim().length > 0 && title.trim().length < ISSUE_TITLE_MIN;
   const descriptionTooShort = description.trim().length > 0 && description.trim().length < ISSUE_DESCRIPTION_MIN;

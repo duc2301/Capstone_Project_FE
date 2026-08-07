@@ -1,45 +1,104 @@
-import { useEffect, useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
+import { useMemo } from 'react';
 
-import { useNotifications } from '@/entities/notification';
+import { approvalApi } from '@/entities/approval';
+import type { ApprovalListItem } from '@/entities/approval';
+import { auditLogApi } from '@/entities/audit-log';
+import type { AuditLogItem } from '@/entities/audit-log';
+import { AuditAction } from '@/entities/audit-log';
+import { invitationApi } from '@/entities/invitation';
+import type { MyInvitation } from '@/entities/invitation';
+import { issueApi } from '@/entities/issue';
+import type { ProjectIssueListItem } from '@/entities/issue';
 import { projectApi } from '@/entities/project';
 import type { Project } from '@/entities/project';
 import { useSession } from '@/entities/session';
+import { zoneTransferApi } from '@/entities/zone-transfer';
+import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
+import type { ApiResponse } from '@/shared/api';
+import { useAsyncData } from '@/shared/lib/async';
+import { t } from '@/shared/lib/i18n';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
-interface UrgentTask {
+export type WorkItemKind = 'approval' | 'signature' | 'submitted' | 'returnRequest' | 'invitation' | 'issue';
+
+export interface WorkItem {
   id: string;
+  kind: WorkItemKind;
   title: string;
-  projectCode: string;
-  timeLeft: string;
-  isWarning: boolean;
+  context: string;
+  createdAt: string;
+  waitingDays: number;
+  isOverdue: boolean;
+  link: string | null;
 }
 
-interface ProjectProgress {
+export interface RecentFileItem {
   id: string;
-  code: string;
+  detail: string;
+  createdAt: string | null;
+  link: string;
+}
+
+export interface MyProjectItem {
+  id: string;
   name: string;
-  progress: number;
-  wip: number;
-  shared: number;
-  pub: number;
-  members: string[];
+  code: string | null;
+  isManager: boolean;
 }
 
-interface Activity {
-  id: string;
-  type: 'approve' | 'upload' | 'comment' | 'sign';
-  content: string;
-  time: string;
+const EMPTY_APPROVALS: ApprovalListItem[] = [];
+const EMPTY_RETURN_REQUESTS: ZoneReturnRequestItem[] = [];
+const EMPTY_INVITATIONS: MyInvitation[] = [];
+const EMPTY_ISSUES: ProjectIssueListItem[] = [];
+const EMPTY_PROJECTS: Project[] = [];
+const EMPTY_LOGS: AuditLogItem[] = [];
+
+const ZONE_SHORT_KEY: Record<string, TranslationKey> = {
+  wip: 'documents.zone.wipShort',
+  shared: 'documents.zone.sharedShort',
+  published: 'documents.zone.publishedShort',
+  archived: 'documents.zone.archivedShort',
+};
+
+function zoneShortLabel(zone: string | null | undefined): string {
+  if (!zone) return '';
+  const key = ZONE_SHORT_KEY[zone.toLowerCase()];
+  return key ? t(key) : zone;
 }
 
-interface DashboardStats {
-  projects: number;
-  pendingApprovals: number;
-  completedTasks: number;
-  urgentTasks: UrgentTask[];
-  projectProgress: ProjectProgress[];
-  activities: Activity[];
+function joinContext(parts: (string | null | undefined)[]): string {
+  return parts.filter((part) => Boolean(part)).join(' · ');
+}
+
+function listOf<T>(response: { data: ApiResponse<T[]> }): T[] {
+  if (!response.data.isSuccess) throw new Error(response.data.message || t('common.error'));
+  return response.data.result ?? [];
+}
+
+function loadErrorMessage(): string {
+  return t('dashboard.error.load');
+}
+
+const MS_PER_DAY = 86_400_000;
+const RECENT_FILE_LIMIT = 5;
+const ACTIVITY_LIMIT = 8;
+
+const FILE_ACTIONS = new Set<number>([
+  AuditAction.Upload,
+  AuditAction.NewVersion,
+  AuditAction.Download,
+  AuditAction.Sign,
+  AuditAction.ZoneTransfer,
+]);
+
+function waitingDaysSince(iso: string | null | undefined): number {
+  if (!iso) return 0;
+  const normalized = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : `${iso}Z`;
+  const created = new Date(normalized).getTime();
+  if (Number.isNaN(created)) return 0;
+  return Math.max(0, Math.floor((Date.now() - created) / MS_PER_DAY));
 }
 
 function getGreetingKey(): TranslationKey {
@@ -58,112 +117,198 @@ function formatTodayVi(): string {
   });
 }
 
-function projectCode(name: string, index: number): string {
-  const slug = name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 4);
-  return slug || `PRJ-${index + 1}`;
+function approvalKind(item: ApprovalListItem, accountId: string | undefined): WorkItemKind {
+  if (!accountId) return 'approval';
+
+  const waitsForMySignature =
+    item.requiresSignature &&
+    item.signers.some((signer) => signer.signerAccountId === accountId && signer.status === 'Pending');
+  if (waitsForMySignature) return 'signature';
+
+  if ((item.pendingApproverAccountIds ?? []).includes(accountId)) return 'approval';
+  if (item.requestedByAccountId === accountId) return 'submitted';
+  return 'approval';
 }
 
-function mapProjectsToProgress(projects: Project[]): ProjectProgress[] {
-  return projects.slice(0, 3).map((p, i) => ({
-    id: p.id,
-    code: projectCode(p.projectName, i),
-    name: p.projectName,
-    progress: [45, 72, 28][i % 3],
-    wip: [12, 8, 5][i % 3],
-    shared: [6, 4, 3][i % 3],
-    pub: [2, 1, 1][i % 3],
-    members: ['A', 'B', '+'],
-  }));
+function approvalWorkItem(item: ApprovalListItem, accountId: string | undefined): WorkItem {
+  const zoneFlow = [zoneShortLabel(item.currentZone), zoneShortLabel(item.targetZone)]
+    .filter(Boolean)
+    .join(' → ');
+  return {
+    id: `approval-${item.id}`,
+    kind: approvalKind(item, accountId),
+    title: item.fileName,
+    context: joinContext([item.projectName, zoneFlow, item.requestedByName]),
+    createdAt: item.createdAt,
+    waitingDays: waitingDaysSince(item.createdAt),
+    isOverdue: false,
+    link: item.projectId ? `/projects/${item.projectId}/files/${item.fileItemId}/view` : null,
+  };
 }
 
-const MOCK_URGENT_TASKS: UrgentTask[] = [
-  {
-    id: '1',
-    title: 'Phê duyệt bản vẽ MEP Tầng 5',
-    projectCode: 'MEP-05',
-    timeLeft: 'Còn 2 giờ',
-    isWarning: false,
-  },
-  {
-    id: '2',
-    title: 'Cập nhật hồ sơ thiết kế kiến trúc',
-    projectCode: 'ARC-02',
-    timeLeft: 'Còn 1 ngày',
-    isWarning: true,
-  },
-];
+function returnRequestWorkItem(item: ZoneReturnRequestItem): WorkItem {
+  return {
+    id: `return-${item.id}`,
+    kind: 'returnRequest',
+    title: item.fileName,
+    context: joinContext([zoneShortLabel(item.currentZone), item.requestedByName]),
+    createdAt: item.createdAt,
+    waitingDays: waitingDaysSince(item.createdAt),
+    isOverdue: false,
+    link: '/zone-return-requests',
+  };
+}
 
-const MOCK_ACTIVITIES: Activity[] = [
-  {
-    id: '1',
-    type: 'approve',
-    content: 'Bạn đã phê duyệt Hồ sơ thiết kế MEP Tầng 3',
-    time: '10 phút trước',
-  },
-  {
-    id: '2',
-    type: 'upload',
-    content: 'Nguyễn Văn A đã tải lên MEP_Level5.rvt',
-    time: '1 giờ trước',
-  },
-  {
-    id: '3',
-    type: 'comment',
-    content: 'Bình luận mới trên Issue #42',
-    time: '3 giờ trước',
-  },
-];
+async function fetchPendingReturnRequests(): Promise<ZoneReturnRequestItem[]> {
+  try {
+    return await zoneTransferApi.getPendingReturnRequests();
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 403) return EMPTY_RETURN_REQUESTS;
+    throw error;
+  }
+}
+
+function invitationWorkItem(item: MyInvitation): WorkItem {
+  return {
+    id: `invitation-${item.id}`,
+    kind: 'invitation',
+    title: item.projectName,
+    context: joinContext([item.groupName, item.invitedByName]),
+    createdAt: item.createdAt,
+    waitingDays: waitingDaysSince(item.createdAt),
+    isOverdue: false,
+    link: '/notifications',
+  };
+}
+
+function isPastDue(dueDate: string | null): boolean {
+  if (!dueDate) return false;
+  const due = new Date(dueDate).getTime();
+  return !Number.isNaN(due) && due < Date.now();
+}
+
+function issueWorkItem(item: ProjectIssueListItem): WorkItem {
+  const createdAt = item.createdAt ?? '';
+  return {
+    id: `issue-${item.id}`,
+    kind: 'issue',
+    title: item.title,
+    context: joinContext([item.linkedFileName, item.linkedFolderName, item.raisedByName]),
+    createdAt,
+    waitingDays: waitingDaysSince(createdAt),
+    isOverdue: isPastDue(item.dueDate),
+    link: item.linkedFileItemId
+      ? `/projects/${item.projectId}/files/${item.linkedFileItemId}/issues/${item.id}`
+      : `/projects/${item.projectId}?tab=issues`,
+  };
+}
 
 export function useDashboard() {
   const { currentUser } = useSession();
-  const { unreadCount } = useNotifications();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const approvals = useAsyncData(
+    'dashboard-approvals',
+    () => approvalApi.getPendingApprovals(),
+    { fallback: EMPTY_APPROVALS, toErrorMessage: loadErrorMessage },
+  );
 
-    (async () => {
-      try {
-        const { data } = await projectApi.getAll();
-        if (!cancelled) {
-          setProjects(sortByNewest(data.result ?? [], (p) => p.createdAt));
-        }
-      } catch {
-        if (!cancelled) setProjects([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+  const returnRequests = useAsyncData(
+    'dashboard-return-requests',
+    () => fetchPendingReturnRequests(),
+    { fallback: EMPTY_RETURN_REQUESTS, toErrorMessage: loadErrorMessage },
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const invitations = useAsyncData(
+    'dashboard-invitations',
+    async () => listOf(await invitationApi.getMyPending()),
+    { fallback: EMPTY_INVITATIONS, toErrorMessage: loadErrorMessage },
+  );
 
-  const stats: DashboardStats = useMemo(
-    () => ({
-      projects: projects.length,
-      pendingApprovals: MOCK_URGENT_TASKS.length,
-      completedTasks: 12,
-      urgentTasks: MOCK_URGENT_TASKS,
-      projectProgress: mapProjectsToProgress(projects),
-      activities: MOCK_ACTIVITIES,
-    }),
-    [projects],
+  const assignedIssues = useAsyncData(
+    'dashboard-assigned-issues',
+    () => issueApi.getAssignedToMe(),
+    { fallback: EMPTY_ISSUES, toErrorMessage: loadErrorMessage },
+  );
+
+  const activity = useAsyncData(
+    'dashboard-activity',
+    async () => {
+      const { data } = await auditLogApi.getMyActivity({ page: 1, pageSize: 30 });
+      if (!data.isSuccess) throw new Error(data.message || t('common.error'));
+      return data.result?.items ?? EMPTY_LOGS;
+    },
+    { fallback: EMPTY_LOGS, toErrorMessage: loadErrorMessage },
+  );
+
+  const projects = useAsyncData(
+    'dashboard-projects',
+    async () => listOf(await projectApi.getMine()),
+    { fallback: EMPTY_PROJECTS, toErrorMessage: loadErrorMessage },
+  );
+
+  const workItems = useMemo(
+    () =>
+      sortByNewest(
+        [
+          ...approvals.data.map((item) => approvalWorkItem(item, currentUser?.accountId)),
+          ...returnRequests.data.map(returnRequestWorkItem),
+          ...invitations.data.map(invitationWorkItem),
+          ...assignedIssues.data.map(issueWorkItem),
+        ],
+        (item) => item.createdAt,
+      ),
+    [approvals.data, returnRequests.data, invitations.data, assignedIssues.data, currentUser],
+  );
+
+  const recentFiles = useMemo<RecentFileItem[]>(() => {
+    const seen = new Set<string>();
+    const rows: RecentFileItem[] = [];
+
+    for (const log of activity.data) {
+      if (log.entityType !== 'FileItem' || !log.projectId || !log.detail) continue;
+      if (!FILE_ACTIONS.has(log.action)) continue;
+      if (seen.has(log.entityId)) continue;
+
+      seen.add(log.entityId);
+      rows.push({
+        id: log.id,
+        detail: log.detail,
+        createdAt: log.createdAt,
+        link: `/projects/${log.projectId}/files/${log.entityId}/view`,
+      });
+      if (rows.length === RECENT_FILE_LIMIT) break;
+    }
+
+    return rows;
+  }, [activity.data]);
+
+  const myProjects = useMemo<MyProjectItem[]>(
+    () =>
+      sortByNewest(projects.data, (project) => project.createdAt).map((project) => ({
+        id: project.id,
+        name: project.projectName,
+        code: project.projectCode ?? null,
+        isManager: Boolean(currentUser) && project.managerAccountId === currentUser?.accountId,
+      })),
+    [projects.data, currentUser],
   );
 
   return {
     currentUser,
-    unreadCount,
-    loading,
-    stats,
     greetingKey: getGreetingKey(),
     todayStr: formatTodayVi(),
+    overdueIssues: assignedIssues.data.filter((issue) => isPastDue(issue.dueDate)).length,
+    recentFiles,
+    activityLogs: activity.data.slice(0, ACTIVITY_LIMIT),
+    activityLoading: activity.loading,
+    activityError: activity.error,
+    workItems,
+    workItemsLoading:
+      approvals.loading || returnRequests.loading || invitations.loading || assignedIssues.loading,
+    workItemsError:
+      approvals.error ?? returnRequests.error ?? invitations.error ?? assignedIssues.error,
+    myProjects,
+    projectsLoading: projects.loading,
+    projectsError: projects.error,
   };
 }

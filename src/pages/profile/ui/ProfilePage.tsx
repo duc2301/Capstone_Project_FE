@@ -1,26 +1,31 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
-import type { ChangePasswordPayload } from '@/entities/profile';
+import type { ChangePasswordPayload, ProfileGroup } from '@/entities/profile';
+import { AuditLogPanel } from '@/features/audit-logs';
 import { useProfile } from '@/features/profile';
 import { Toast, UserAvatar, useToast } from '@/shared/components';
+import { formatDate } from '@/shared/lib/format';
+import { useUrlTab } from '@/shared/lib/url';
 import { t } from '@/shared/lib/i18n';
 
-/* ── Tab config ────────────────────────────────────── */
-type ProfileTab = 'info' | 'security' | 'notifications' | 'signature' | 'activity';
+type ProfileTab = 'info' | 'security' | 'activity';
+const PROFILE_TABS = ['info', 'security', 'activity'] as const;
 
-/* ── Main page ─────────────────────────────────────── */
+const MAX_AVATAR_BYTES = 6 * 1024 * 1024;
+
 export function ProfilePage() {
-  const { profile, loading: profileLoading, updateProfile, changePassword } = useProfile();
-  const [activeTab, setActiveTab] = useState<ProfileTab>('info');
+  const { profile, loading: profileLoading, updateProfile, changePassword, uploadAvatar } = useProfile();
+  const [activeTab, setActiveTab] = useUrlTab(PROFILE_TABS, 'info');
   const { toast, showToast } = useToast();
 
-  /* ── Editable fields ─────────────────────────────── */
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [saving, setSaving] = useState(false);
 
-  /* ── Password fields ─────────────────────────────── */
   const [pwForm, setPwForm] = useState<ChangePasswordPayload>({
     currentPassword: '',
     newPassword: '',
@@ -28,18 +33,19 @@ export function ProfilePage() {
   });
   const [changingPw, setChangingPw] = useState(false);
 
-  const userName = profile?.userName ?? 'Người dùng';
+  const userName = profile?.userName ?? '';
   const email = profile?.email ?? '';
-  const role = profile?.role ?? 'Member';
+
+  const tabs: { key: ProfileTab; label: string }[] = [
+    { key: 'info', label: t('profile.tabs.info') },
+    { key: 'security', label: t('profile.tabs.security') },
+    { key: 'activity', label: t('profile.tabs.activity') },
+  ];
 
   const startEdit = () => {
     setEditName(profile?.userName ?? '');
     setEditEmail(profile?.email ?? '');
     setEditMode(true);
-  };
-
-  const cancelEdit = () => {
-    setEditMode(false);
   };
 
   const handleSaveProfile = async () => {
@@ -76,356 +82,305 @@ export function ProfilePage() {
     }
   };
 
-  const tabs = [
-    { key: 'info' as const, label: t('profile.tabs.info') },
-    { key: 'security' as const, label: t('profile.tabs.security') },
-    { key: 'notifications' as const, label: t('profile.tabs.notifications') },
-    { key: 'signature' as const, label: t('profile.tabs.signature') },
-    { key: 'activity' as const, label: t('profile.tabs.activity') },
-  ];
+  const handleAvatarPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
 
-  const inputClass = 'field-input';
-  const inputReadOnly = 'field-input-readonly';
+    if (file.size > MAX_AVATAR_BYTES) {
+      showToast(t('profile.avatar.tooLarge'), 'error');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatar(file);
+      showToast(t('profile.avatar.success'), 'success');
+    } catch {
+      showToast(t('profile.avatar.error'), 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   if (profileLoading) {
     return (
-      <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
-        <div className="flex flex-col items-center gap-3">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-text-muted">{t('common.loading')}</p>
-        </div>
+      <div className="flex h-full items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
+        <p className="text-sm text-text-muted">{t('common.loading')}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* ── Toast notification ─────────────────────── */}
+    <div className="flex h-full min-h-0 flex-col gap-5">
       <Toast toast={toast} className="z-50" />
 
-      {/* ── Profile Header Card ────────────────────── */}
-      <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card lg:p-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <UserAvatar
-                userName={userName}
-                avatarUrl={profile?.avatarUrl}
-                size="xl"
-                rounded="full"
-                className="shadow-sm"
-              />
-              <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-warning text-white shadow-sm hover:bg-warning-hover">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </button>
-            </div>
-            <div>
-              <h1 className="heading-page">
-                {userName}
-              </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-content-bg px-3 py-1.5 text-xs font-medium text-text-secondary">
-                  {t('brand.name')}
-                </span>
+      <div className="shrink-0 rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
+        <div className="flex items-center gap-5">
+          <div className="relative">
+            <UserAvatar
+              userName={userName}
+              avatarUrl={profile?.avatarUrl}
+              size="xl"
+              rounded="full"
+              className="shadow-sm"
+            />
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarPicked}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              title={t('profile.avatar.change')}
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-primary text-white shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="min-w-0">
+            <h1 className="heading-page truncate">{userName}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-content-bg px-3 py-1.5 text-xs font-medium text-text-secondary">
+                {profile?.organizationName ?? t('profile.personalInfo.noCompany')}
+              </span>
+              {profile?.role && (
                 <span className="inline-flex items-center rounded-full bg-primary-tint-strong px-3 py-1.5 text-xs font-medium text-primary">
-                  {role}
+                  {profile.role}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-sage-tint px-3 py-1.5 text-xs font-medium text-primary">
-                  {profile?.status ?? t('profile.status.active')}
-                </span>
-              </div>
+              )}
+              <span className="inline-flex items-center rounded-full bg-sage-tint px-3 py-1.5 text-xs font-medium text-primary">
+                {profile?.status ?? t('profile.status.active')}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Tabs ───────────────────────────────────── */}
-      <div className="flex overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card">
+      <div className="flex shrink-0 items-center gap-8 border-b border-card-border">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`
-              relative flex-1 py-4 text-center text-sm font-semibold transition-all duration-200
-              ${activeTab === tab.key
-                ? 'bg-content-bg text-primary'
-                : 'text-text-muted hover:bg-content-bg/50 hover:text-text'
-              }
-            `}
+            className={`relative pb-3 text-sm font-semibold transition-colors ${
+              activeTab === tab.key ? 'text-primary' : 'text-text-muted hover:text-text'
+            }`}
           >
             {tab.label}
             {activeTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              <span className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-t-full bg-primary" />
             )}
           </button>
         ))}
       </div>
 
-      {/* ── Tab Content ────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* ── Left column (2/3) ────────────────────── */}
-        <div className="space-y-6 lg:col-span-2">
-          {activeTab === 'info' && (
-            <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card lg:p-8">
-              <div className="mb-6">
-                <h2 className="heading-entity">{t('profile.personalInfo.title')}</h2>
-                <p className="mt-1 text-sm text-text-muted">{t('profile.personalInfo.desc')}</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {/* Full name */}
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.personalInfo.fullName')}
-                  </label>
-                  {editMode ? (
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClass} />
-                  ) : (
-                    <input type="text" value={userName} readOnly className={inputReadOnly} />
-                  )}
-                </div>
-
-                {/* Position */}
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.personalInfo.position')}
-                  </label>
-                  <input type="text" value={role} readOnly className={inputReadOnly} />
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.personalInfo.email')}
-                  </label>
-                  {editMode ? (
-                    <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className={inputClass} />
-                  ) : (
-                    <input type="email" value={email} readOnly className={inputReadOnly} />
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.personalInfo.phone')}
-                  </label>
-                  <input type="tel" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
-                </div>
-
-                {/* Company */}
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.personalInfo.company')}
-                  </label>
-                  <input type="text" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
-                </div>
-
-                {/* Department */}
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.personalInfo.department')}
-                  </label>
-                  <input type="text" value="" readOnly placeholder="—" className={inputReadOnly + ' placeholder:text-text-placeholder'} />
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-card-border pt-5">
-                {editMode ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={cancelEdit}
-                      className="rounded-[var(--radius-button)] border border-card-border bg-card px-6 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200 hover:bg-content-bg"
-                    >
-                      {t('account.cancel')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveProfile}
-                      disabled={saving}
-                      className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <span className="flex items-center gap-2">
-                          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                          {t('common.saveChanges')}
-                        </span>
-                      ) : (
-                        t('common.saveChanges')
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={startEdit}
-                    className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover"
-                  >
-                    {t('profile.editButton')}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'security' && (
-            <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card lg:p-8">
-              <div className="mb-6">
-                <h2 className="heading-entity">{t('profile.security.title')}</h2>
-                <p className="mt-1 text-sm text-text-muted">{t('profile.security.desc')}</p>
-              </div>
-
-              <form onSubmit={handleChangePassword} className="max-w-md space-y-5">
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.security.currentPassword')}
-                  </label>
-                  <input
-                    type="password"
-                    value={pwForm.currentPassword}
-                    onChange={(e) => setPwForm((p) => ({ ...p, currentPassword: e.target.value }))}
-                    placeholder="••••••••"
-                    required
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.security.newPassword')}
-                  </label>
-                  <input
-                    type="password"
-                    value={pwForm.newPassword}
-                    onChange={(e) => setPwForm((p) => ({ ...p, newPassword: e.target.value }))}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="field-label">
-                    {t('profile.security.confirmPassword')}
-                  </label>
-                  <input
-                    type="password"
-                    value={pwForm.confirmNewPassword}
-                    onChange={(e) => setPwForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
-                    placeholder="••••••••"
-                    required
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="border-t border-card-border pt-5">
-                  <button
-                    type="submit"
-                    disabled={changingPw}
-                    className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
-                  >
-                    {changingPw ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        {t('profile.security.changePassword')}
-                      </span>
-                    ) : (
-                      t('profile.security.changePassword')
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+      {activeTab === 'activity' ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <AuditLogPanel mode="me" />
         </div>
+      ) : (
+        <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto pb-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              {activeTab === 'info' ? (
+                <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
+                  <h2 className="heading-entity mb-6">{t('profile.personalInfo.title')}</h2>
 
-        {/* ── Right column (1/3) ───────────────────── */}
-        <div className="space-y-6">
-          {/* Groups / Teams */}
-          {profile && profile.groups.length > 0 && (
-            <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
-              <h3 className="heading-card mb-4 text-text">{t('profile.groups')}</h3>
-              <div className="space-y-3">
-                {profile.groups.map((g) => (
-                  <div key={g.groupId} className="flex items-center justify-between rounded-xl border border-card-border p-3 transition-colors hover:bg-content-bg">
-                    <div>
-                      <p className="text-sm font-semibold text-text">{g.groupName}</p>
-                      {g.joinedAt && (
-                        <p className="text-xs text-text-muted">Tham gia: {new Date(g.joinedAt).toLocaleDateString('vi-VN')}</p>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.personalInfo.fullName')}</label>
+                      {editMode ? (
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="field-input"
+                        />
+                      ) : (
+                        <input type="text" value={userName} readOnly className="field-input-readonly" />
                       )}
                     </div>
-                    <span className={`inline-flex items-center rounded-[var(--radius-badge)] px-2.5 py-1 text-xs font-semibold ${g.role === 'Leader' ? 'bg-warning-light text-warning' : 'bg-primary-light text-primary'}`}>
-                      {g.role}
-                    </span>
+
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.personalInfo.email')}</label>
+                      {editMode ? (
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          className="field-input"
+                        />
+                      ) : (
+                        <input type="email" value={email} readOnly className="field-input-readonly" />
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.personalInfo.company')}</label>
+                      <input
+                        type="text"
+                        value={profile?.organizationName ?? ''}
+                        readOnly
+                        placeholder={t('profile.personalInfo.noCompany')}
+                        className="field-input-readonly placeholder:text-text-placeholder"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.createdAt')}</label>
+                      <input
+                        type="text"
+                        value={profile?.createdAt ? formatDate(profile.createdAt) : ''}
+                        readOnly
+                        placeholder="—"
+                        className="field-input-readonly placeholder:text-text-placeholder"
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Activity Stats */}
-          <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
-            <h3 className="heading-card mb-4 text-text">
-              {t('profile.activity.title')}
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-card-border p-4 text-center transition-colors hover:bg-content-bg">
-                <p className="text-2xl font-bold text-primary">{profile?.groups.length ?? 0}</p>
-                <p className="mt-1 text-xs text-text-muted">{t('profile.activity.projects')}</p>
-              </div>
-              <div className="rounded-xl border border-card-border p-4 text-center transition-colors hover:bg-content-bg">
-                <p className="text-2xl font-bold text-warning">—</p>
-                <p className="mt-1 text-xs text-text-muted">{t('profile.activity.uploads')}</p>
-              </div>
-              <div className="rounded-xl border border-card-border p-4 text-center transition-colors hover:bg-content-bg">
-                <p className="text-2xl font-bold text-info">—</p>
-                <p className="mt-1 text-xs text-text-muted">{t('profile.activity.issues')}</p>
-              </div>
-              <div className="rounded-xl border border-card-border p-4 text-center transition-colors hover:bg-content-bg">
-                <p className="text-2xl font-bold text-success">—</p>
-                <p className="mt-1 text-xs text-text-muted">{t('profile.activity.progress')}</p>
-              </div>
-            </div>
-          </div>
+                  <div className="mt-6 flex items-center justify-end gap-3 border-t border-card-border pt-5">
+                    {editMode ? (
+                      <>
+                        <button type="button" onClick={() => setEditMode(false)} className="btn-modal-ghost">
+                          {t('account.cancel')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveProfile}
+                          disabled={saving}
+                          className="btn-modal-primary disabled:opacity-50"
+                        >
+                          {t('common.saveChanges')}
+                        </button>
+                      </>
+                    ) : (
+                      <button type="button" onClick={startEdit} className="btn-modal-primary">
+                        {t('profile.editButton')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
+                  <h2 className="heading-entity mb-6">{t('profile.security.title')}</h2>
 
-          {/* Verification card */}
-          <div className="overflow-hidden rounded-[var(--radius-card-lg)] border border-success/20 bg-success-light shadow-card">
-            <div className="p-6">
-              <div className="mb-3 flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-success" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-                <h3 className="heading-label text-success">
-                  {t('profile.status.verified')}
-                </h3>
+                  <form onSubmit={handleChangePassword} className="max-w-md space-y-5">
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.security.currentPassword')}</label>
+                      <input
+                        type="password"
+                        value={pwForm.currentPassword}
+                        onChange={(e) => setPwForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                        required
+                        className="field-input"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.security.newPassword')}</label>
+                      <input
+                        type="password"
+                        value={pwForm.newPassword}
+                        onChange={(e) => setPwForm((p) => ({ ...p, newPassword: e.target.value }))}
+                        required
+                        minLength={6}
+                        className="field-input"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="field-label">{t('profile.security.confirmPassword')}</label>
+                      <input
+                        type="password"
+                        value={pwForm.confirmNewPassword}
+                        onChange={(e) => setPwForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
+                        required
+                        className="field-input"
+                      />
+                    </div>
+
+                    <div className="border-t border-card-border pt-5">
+                      <button type="submit" disabled={changingPw} className="btn-modal-primary disabled:opacity-50">
+                        {t('profile.security.changePassword')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div className="rounded-[var(--radius-card-lg)] border border-card-border bg-card p-6 shadow-card">
+                <h3 className="heading-card mb-4">{t('profile.groups')}</h3>
+
+                {profile && profile.groups.length > 0 ? (
+                  <div className="space-y-3">
+                    {profile.groups.map((group) => (
+                      <GroupRow key={group.groupId} group={group} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-text-muted">{t('profile.groups.empty')}</p>
+                )}
               </div>
-              <p className="text-xs leading-relaxed text-text-muted">
-                {t('profile.status.verifiedDesc')}
-              </p>
-              <p className="mt-2 text-xs text-text-muted">
-                Tạo ngày: {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('vi-VN') : '—'}
-              </p>
+
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
+
+function GroupRow({ group }: { group: ProfileGroup }) {
+  const isLeader = group.role === 'Leader';
+
+  return (
+    <div className="rounded-[var(--radius-card)] border border-card-border p-3 transition-colors hover:bg-content-bg">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="heading-label truncate">{group.groupName}</p>
+          {group.organizationName && <p className="field-hint truncate">{group.organizationName}</p>}
+        </div>
+        <span
+          className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+            isLeader ? 'bg-warning-light text-warning' : 'bg-primary-light text-primary'
+          }`}
+        >
+          {group.role}
+        </span>
+      </div>
+
+      {group.joinedAt && (
+        <p className="field-hint mt-2">
+          {t('profile.groups.joinedAt')}: {formatDate(group.joinedAt)}
+        </p>
+      )}
+
+      {group.projects.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {group.projects.map((project) => (
+            <span
+              key={project.projectId}
+              className="inline-flex max-w-full items-center truncate rounded-full bg-primary-ghost px-2.5 py-1 text-2xs font-medium text-primary"
+            >
+              {project.projectName}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="field-hint mt-2">{t('profile.groups.noProject')}</p>
+      )}
+    </div>
+  );
+}
+

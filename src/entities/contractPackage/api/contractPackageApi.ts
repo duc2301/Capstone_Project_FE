@@ -56,7 +56,6 @@ export interface CreateContractPackagePayload {
   contractValue?: number;
   startDate?: string;
   endDate?: string;
-  status: number;
   isDefault: boolean;
   workTypes?: string;
   scopeDescription?: string;
@@ -92,7 +91,4 @@ export const contractPackageApi = {
 
   delete: (id: string) =>
     axiosInstance.delete<ApiResponse<void>>(`/contract-packages/${id}`),
-
-  createWipFolder: (projectId: string, contractorName: string) =>
-    axiosInstance.post<ApiResponse<unknown>>('/contract-packages/create-wip-folder', { projectId, contractorName }),
 };

@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import { NotFoundPage } from '@/pages/not-found';
-import { PlaceholderPage } from '@/pages/placeholder';
 import { AdminLayout } from '@/widgets/AdminLayout';
 import { RequireAdmin } from './RequireAdmin';
 import { RequireAuth } from './RequireAuth';
@@ -183,58 +182,6 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <NotificationsPage />
-              </AdminLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/teams"
-          element={
-            <RequireAuth>
-              <AdminLayout>
-                <PlaceholderPage
-                  titleKey="placeholder.teams.title"
-                  descKey="placeholder.teams.desc"
-                />
-              </AdminLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/documents"
-          element={
-            <RequireAuth>
-              <AdminLayout>
-                <PlaceholderPage
-                  titleKey="placeholder.documents.title"
-                  descKey="placeholder.documents.desc"
-                />
-              </AdminLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/discussions"
-          element={
-            <RequireAuth>
-              <AdminLayout>
-                <PlaceholderPage
-                  titleKey="placeholder.discussions.title"
-                  descKey="placeholder.discussions.desc"
-                />
-              </AdminLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <RequireAuth>
-              <AdminLayout>
-                <PlaceholderPage
-                  titleKey="placeholder.settings.title"
-                  descKey="placeholder.settings.desc"
-                />
               </AdminLayout>
             </RequireAuth>
           }

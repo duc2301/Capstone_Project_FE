@@ -89,6 +89,11 @@ export type ModelViewerStatus = (typeof ModelViewerStatus)[keyof typeof ModelVie
 export interface FileViewInfo {
   kind: FileViewKind;
   area?: RelatedFileArea;
+  folderId?: string;
+  projectId?: string;
+  versionStateId?: string;
+  displayVersion?: string | null;
+  isCurrentVersion?: boolean;
   urn: string | null;
   /* Chỉ có khi kind = 'model'. null cho file không phải model. */
   viewerStatus: ModelViewerStatus | null;
@@ -101,6 +106,10 @@ export interface FileViewInfo {
   requiresSignature?: boolean;
   isSigned?: boolean;
   signedVersionId?: string | null;
+  /* AI phân tích của ĐÚNG phiên bản đang xem (per-version) — theo bản hiện hành hoặc bản cũ đang mở. */
+  warnning?: boolean | null;
+  warnningMessage?: string | null;
+  description?: string | null;
 }
 
 /* ── Tệp liên quan (file links) ────────────────────────────
@@ -181,6 +190,9 @@ export interface FileVersion {
   fileSizeBytes: number;
   format: string;
   checksum: string | null;
+  uploadedByAccountId: string | null;
+  uploadedByName: string | null;
+  uploadedAt: string | null;
   createdAt: string | null;
 }
 

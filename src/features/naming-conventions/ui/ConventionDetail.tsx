@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { AssignedFolder, NamingConvention, NamingField } from '@/entities/naming-convention';
 import { NAMING_DELIMITERS, namingConventionApi } from '@/entities/naming-convention';
+import { downloadBlob } from '@/shared/lib/download';
 import { getApiErrorMessage } from '@/shared/api';
 import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
@@ -262,15 +263,8 @@ export function ConventionDetail({
   };
   const handleDownloadTemplate = async () => {
     try {
-      const res = await namingConventionApi.downloadTemplate();
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = 'naming-convention-template_ISO-19650.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
+      const res = await namingConventionApi.downloadTemplate(projectId);
+      downloadBlob(res.data as Blob, 'naming-convention-template_ISO-19650.xlsx');
     } catch {
       showToast(t('common.error'), 'error');
     }

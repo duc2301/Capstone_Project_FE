@@ -5,18 +5,23 @@ import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
-import { useSession } from '@/entities/session';
+import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
-import { formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal } from '@/features/folders';
+import { AuditLogPanel } from '@/features/audit-logs';
+import { FileVersionsModal, formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal, useFolderPermission } from '@/features/folders';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
-import { FileTypeIcon, Toast, useToast } from '@/shared/components';
+import { getApiErrorMessage } from '@/shared/api';
+import { ActionIconButton, ConfirmDialog, FileTypeIcon, Toast, useToast } from '@/shared/components';
+import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
+import { useUrlTab } from '@/shared/lib/url';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
 const POLL_INTERVAL_MS = 3000;
+const VERSION_PREVIEW_COUNT = 5;
 // Chữa cháy: lỡ không lấy được kích thước thật thì dùng tạm A4
 const FALLBACK_PDF_PAGE_SIZE: PdfPageSize = {
   width: 595,
@@ -127,20 +132,16 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-type FilePanelTab = 'properties' | 'signatureHistory' | 'issues' | 'loi' | 'related';
+const PANEL_TABS = ['properties', 'signatureHistory', 'issues', 'loi', 'related', 'history'] as const;
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const folderId = searchParams.get('folder');
+  const viewingVersionId = searchParams.get('version');
   const { currentUser } = useSession();
   const { groups: projectGroups } = useProjectGroups(projectId);
-  const initialPanelTab = (
-    ['properties', 'signatureHistory', 'issues', 'loi', 'related'] as const
-  ).includes(searchParams.get('panel') as FilePanelTab)
-    ? (searchParams.get('panel') as FilePanelTab)
-    : 'properties';
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
   const [versions, setVersions] = useState<FileVersion[]>([]);
@@ -150,10 +151,13 @@ export function FileViewPage() {
   // liên quan) là id lệch ngay -> loading bật tức thì, không cần setState trong effect.
   // Trước đây cờ loading chỉ được bật lúc khởi tạo rồi tắt vĩnh viễn -> chuyển file KHÔNG hiện
   // loading và trang vẫn bày dữ liệu của file CŨ như thể đã tải xong.
-  const [loadedFileId, setLoadedFileId] = useState<string | null>(null);
+  const [loadedViewKey, setLoadedViewKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [confirmSetCurrent, setConfirmSetCurrent] = useState(false);
+  const [settingCurrent, setSettingCurrent] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const [activePanelTab, setActivePanelTab] = useState<FilePanelTab>(initialPanelTab);
+  const [activePanelTab, setActivePanelTab] = useUrlTab(PANEL_TABS, 'properties', 'panel');
   const [signaturePlacementMode, setSignaturePlacementMode] = useState(false);
   const [signaturePlacementConfirmed, setSignaturePlacementConfirmed] = useState(false);
   const [savingSignaturePosition, setSavingSignaturePosition] = useState(false);
@@ -166,18 +170,37 @@ export function FileViewPage() {
   // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
 
-  const latestVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
+  const currentVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
+  const viewedVersion = viewingVersionId
+    ? versions.find((v) => v.id === viewingVersionId) ?? null
+    : null;
+  const latestVersion = viewedVersion ?? currentVersion;
+  const isVersionView = Boolean(viewingVersionId) && info?.isCurrentVersion === false;
 
-  const loading = Boolean(fileId) && loadedFileId !== fileId;
+  const viewKey = `${fileId ?? ''}::${viewingVersionId ?? 'current'}`;
+  const loading = Boolean(fileId) && loadedViewKey !== viewKey;
   // Đang ĐỔI sang file khác (đã có nội dung file cũ trên màn) — khác với lần tải đầu (màn còn trống).
   // Lúc này màn vẫn bày dữ liệu file cũ nên phải chặn thao tác, tránh bấm nhầm ghi chú/ký số của file cũ.
   const switchingFile = loading && info !== null;
 
+  const permissionFolderId = info?.folderId ?? fileListItem?.folderId ?? folderId ?? null;
+  const { permission } = useFolderPermission(permissionFolderId, isAccountAdmin(currentUser?.role));
+  const canManageVersions = Boolean(permission?.canEdit);
+
+  const openVersion = useCallback((versionId: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (versionId) next.set('version', versionId);
+    else next.delete('version');
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
   const fetchView = useCallback(async (): Promise<FileViewInfo> => {
-    const { data } = await fileItemApi.getView(fileId!);
+    const { data } = viewingVersionId
+      ? await fileItemApi.getVersionView(fileId!, viewingVersionId)
+      : await fileItemApi.getView(fileId!);
     if (data.isSuccess && data.result) return data.result;
     throw new Error(data.message || t('fileView.error'));
-  }, [fileId]);
+  }, [fileId, viewingVersionId]);
 
   useEffect(() => {
     if (!fileId) return;
@@ -213,14 +236,14 @@ export function FileViewPage() {
       } catch {
         if (!cancelled) setError(t('fileView.error'));
       } finally {
-        if (!cancelled) setLoadedFileId(fileId);
+        if (!cancelled) setLoadedViewKey(viewKey);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [fileId, folderId, fetchView]);
+  }, [fileId, folderId, viewKey, fetchView]);
 
   const status = info?.kind === 'model' ? info.viewerStatus : null;
   const isModelProcessing =
@@ -261,19 +284,14 @@ export function FileViewPage() {
     if (!fileId || !info) return;
 
     try {
-      const res = await fileItemApi.download(fileId);
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = info.fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
+      const res = isVersionView && viewingVersionId
+        ? await fileItemApi.downloadVersion(fileId, viewingVersionId)
+        : await fileItemApi.download(fileId);
+      downloadBlob(res.data as Blob, info.fileName);
     } catch {
       setError(t('common.error'));
     }
-  }, [fileId, info]);
+  }, [fileId, info, isVersionView, viewingVersionId]);
 
   const handleRetranslate = useCallback(async () => {
     if (!fileId) return;
@@ -363,7 +381,7 @@ export function FileViewPage() {
 
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
-  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast]);
+  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast, setActivePanelTab]);
 
   // Đổi trang thì nhớ check lại kích thước trang mới để không bị lọt chữ ký ra ngoài
   const handleSignaturePageChange = useCallback(async (nextPage: number) => {
@@ -386,6 +404,24 @@ export function FileViewPage() {
       setSignaturePosition((prev) => ({ ...prev, pageNumber: clamped }));
     }
   }, [signableApproval, pdfPageCount, signaturePosition.pageNumber]);
+
+  const handleSetCurrentVersion = useCallback(async () => {
+    if (!fileId || !viewingVersionId) return;
+
+    setSettingCurrent(true);
+    try {
+      const { data } = await fileItemApi.restoreVersion(fileId, viewingVersionId);
+      setConfirmSetCurrent(false);
+      openVersion(null);
+      showToast(
+        t('documents.versions.restoreSuccess').replace('{version}', data.result?.displayVersion ?? ''),
+      );
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
+    } finally {
+      setSettingCurrent(false);
+    }
+  }, [fileId, viewingVersionId, openVersion, showToast]);
 
   const refreshFileApprovals = useCallback(async () => {
     if (!fileId) return;
@@ -414,10 +450,7 @@ export function FileViewPage() {
     }
   }, [showToast, signableApproval]);
 
-  useEffect(() => {
-    if (requiresSignature) return;
-    setSignaturePlacementMode(false);
-  }, [requiresSignature]);
+  const placementActive = requiresSignature && signaturePlacementMode;
 
   return (
     // Nền + padding + max-width do AdminLayout lo; h-full để không cuộn trang
@@ -473,6 +506,32 @@ export function FileViewPage() {
             </div>
           </header>
 
+          {isVersionView && (
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-accent-amber/30 bg-accent-amber-tint px-4 py-2.5">
+              <p className="text-xs font-semibold text-accent-amber-strong">
+                {t('fileView.versionView.banner').replace('{version}', latestVersion?.displayVersion ?? '')}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openVersion(null)}
+                  className="whitespace-nowrap rounded-[var(--radius-button)] border border-accent-amber-strong px-3 py-1.5 text-xs font-semibold text-accent-amber-strong transition-colors hover:bg-accent-amber-soft"
+                >
+                  {t('fileView.versionView.backToCurrent')}
+                </button>
+                {canManageVersions && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmSetCurrent(true)}
+                    className="whitespace-nowrap rounded-[var(--radius-button)] bg-accent-amber-strong px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                  >
+                    {t('fileView.versionView.setCurrent')}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <section className="relative min-h-[420px] flex-1 overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card xl:min-h-0">
             <div className="absolute inset-0 bg-viewer-canvas" />
 
@@ -512,10 +571,14 @@ export function FileViewPage() {
                   format={format}
                   title={t('fileView.model.failed.title')}
                   desc={t('fileView.model.failed.desc')}
-                  primaryLabel={retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')}
-                  onPrimary={handleRetranslate}
-                  secondaryLabel={t('fileView.download.button')}
-                  onSecondary={handleDownload}
+                  primaryLabel={
+                    isVersionView
+                      ? t('fileView.download.button')
+                      : retrying ? t('fileView.model.retrying') : t('fileView.model.failed.retry')
+                  }
+                  onPrimary={isVersionView ? handleDownload : handleRetranslate}
+                  secondaryLabel={isVersionView ? undefined : t('fileView.download.button')}
+                  onSecondary={isVersionView ? undefined : handleDownload}
                   disabled={retrying}
                 />
               </div>
@@ -538,7 +601,7 @@ export function FileViewPage() {
               </div>
             )}
 
-            {requiresSignature && signaturePlacementMode && (
+            {placementActive && (
               <SignaturePlacementOverlay
                 fileName={fileTitle}
                 pdfUrl={signaturePreviewUrl ?? info?.url ?? null}
@@ -589,27 +652,38 @@ export function FileViewPage() {
                 onClick={() => setActivePanelTab('loi')}
               />
             )}
+            <PanelTabButton
+              active={activePanelTab === 'history'}
+              label={t('audit.file.tab')}
+              onClick={() => setActivePanelTab('history')}
+            />
           </div>
 
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
             {activePanelTab === 'properties' ? (
               <>
-                {fileListItem?.warnning && fileListItem.warnningMessage && (
-                  <AiCheckerWarningCard message={fileListItem.warnningMessage} />
+                {/* Tóm tắt + cảnh báo AI theo ĐÚNG phiên bản đang xem: lấy từ `info` (version-aware)
+                    thay vì `fileListItem` (luôn là bản hiện hành) -> xem bản cũ hiện đúng của bản cũ. */}
+                {info?.warnning && info.warnningMessage && (
+                  <AiCheckerWarningCard message={info.warnningMessage} />
                 )}
-                {fileListItem?.description && (
-                  <AiSummaryCard summary={fileListItem.description} />
+                {info?.description && (
+                  <AiSummaryCard summary={info.description} />
                 )}
                 <FilePropertiesPanel
                   info={info}
                   fileListItem={fileListItem}
-                  latestVersion={latestVersion}
+                  latestVersion={currentVersion}
                   format={format}
                   fileSize={fileSize}
                   uploadedBy={uploadedBy}
                   uploadedAt={uploadedAt}
                   statusMeta={statusMeta}
                   versions={versions}
+                  viewingVersionId={viewingVersionId}
+                  canManageVersions={canManageVersions}
+                  onOpenVersion={openVersion}
+                  onManageVersions={() => setVersionsOpen(true)}
                 />
               </>
             ) : activePanelTab === 'issues' ? (
@@ -619,6 +693,7 @@ export function FileViewPage() {
                   fileItemId={fileId}
                   area={info?.area}
                   folderId={fileListItem?.folderId ?? folderId}
+                  readOnly={isVersionView}
                   onToast={showToast}
                 />
               ) : null
@@ -629,17 +704,20 @@ export function FileViewPage() {
                   fileItemId={fileId}
                   // ?folder= có thể vắng (vào thẳng bằng link) -> lấy folder thật của file làm mốc phạm vi.
                   folderId={fileListItem?.folderId ?? folderId}
+                  readOnly={isVersionView}
                 />
               ) : null
             ) : activePanelTab === 'loi' ? (
-              <LoiCheckPanel fileItemId={fileId ?? ''} projectId={projectId} />
+              <LoiCheckPanel fileItemId={fileId ?? ''} projectId={projectId} readOnly={isVersionView} />
+            ) : activePanelTab === 'history' ? (
+              fileId ? <AuditLogPanel mode="file" fileItemId={fileId} showFilters={false} /> : null
             ) : (
               <SignatureHistoryPanel
                 requiresSignature={requiresSignature}
-                canSign={canSignCurrentApproval}
+                canSign={canSignCurrentApproval && !isVersionView}
                 isSignerForCurrentApproval={isSignerForCurrentApproval}
                 signatureApprovals={signatureApprovals}
-                placementActive={signaturePlacementMode}
+                placementActive={placementActive}
                 placementConfirmed={signaturePlacementConfirmed}
                 onStartPlacement={openSignaturePlacement}
               />
@@ -649,6 +727,39 @@ export function FileViewPage() {
       </div>
 
       <Toast toast={toast} className="z-[80]" />
+
+      {versionsOpen && fileId && (
+        <FileVersionsModal
+          fileItemId={fileId}
+          fileName={fileTitle}
+          currentVersionId={currentVersion?.id ?? null}
+          canRestore={canManageVersions}
+          onViewVersion={(versionStateId, isCurrent) => {
+            setVersionsOpen(false);
+            openVersion(isCurrent ? null : versionStateId);
+          }}
+          onClose={() => setVersionsOpen(false)}
+          onRestored={(displayVersion) => {
+            void fileItemApi.getVersions(fileId)
+              .then((res) => setVersions(sortByNewest(res.data.result ?? [], (v) => v.createdAt)))
+              .catch(() => undefined);
+            void fetchView().then(setInfo).catch(() => undefined);
+            showToast(t('documents.versions.restoreSuccess').replace('{version}', displayVersion));
+          }}
+        />
+      )}
+
+      {confirmSetCurrent && (
+        <ConfirmDialog
+          title={t('fileView.versionView.setCurrent')}
+          message={t('fileView.versionView.setCurrentConfirm').replace('{version}', latestVersion?.displayVersion ?? '')}
+          confirmLabel={t('fileView.versionView.setCurrent')}
+          tone="primary"
+          busy={settingCurrent}
+          onConfirm={() => void handleSetCurrentVersion()}
+          onCancel={() => setConfirmSetCurrent(false)}
+        />
+      )}
 
       {signFor && (
         <SmartCaSignModal
@@ -781,6 +892,10 @@ function FilePropertiesPanel({
   uploadedAt,
   statusMeta,
   versions,
+  viewingVersionId,
+  canManageVersions,
+  onOpenVersion,
+  onManageVersions,
 }: {
   info: FileViewInfo | null;
   fileListItem: FileListItem | null;
@@ -791,6 +906,10 @@ function FilePropertiesPanel({
   uploadedAt: string;
   statusMeta: { label: string; className: string };
   versions: FileVersion[];
+  viewingVersionId: string | null;
+  canManageVersions: boolean;
+  onOpenVersion: (versionId: string | null) => void;
+  onManageVersions: () => void;
 }) {
   const name = info?.fileName ?? fileListItem?.name ?? '-';
   const currentVersionLabel = latestVersion?.displayVersion
@@ -800,6 +919,8 @@ function FilePropertiesPanel({
   const isSigned = Boolean(info?.isSigned || fileListItem?.isSigned);
   const status = itemStatusMeta(fileListItem?.status, fileListItem?.hasOpenIssue);
   const yesNo = (v: boolean) => (v ? t('fileView.info.yes') : t('fileView.info.no'));
+  const visibleVersions = versions.slice(0, VERSION_PREVIEW_COUNT);
+  const hiddenVersionCount = versions.length - visibleVersions.length;
 
   return (
     <div>
@@ -842,21 +963,64 @@ function FilePropertiesPanel({
       </div>
 
       <div className="mt-6 border-t border-card-border/70 pt-5">
-        <h3 className="heading-label">{t('fileView.details.history')}</h3>
-        <div className="mt-4 space-y-4">
-          {versions.slice(0, 4).map((version) => (
-            <div key={version.id} className="flex gap-3">
-              <span className={`mt-0.5 h-9 w-1 rounded-full ${version.isCurrent ? 'bg-primary' : 'bg-card-border'}`} />
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-text">
-                  {version.displayVersion} - {version.format.toUpperCase()}
-                </p>
-                <p className="mt-0.5 text-xs text-text-muted">
-                  {formatDateTime(version.createdAt)}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="heading-label">{t('fileView.details.history')}</h3>
+          {canManageVersions && (
+            <ActionIconButton
+              tone="primary"
+              label={t('documents.fileMenu.versions')}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10" />
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+              }
+              onClick={onManageVersions}
+            />
+          )}
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {visibleVersions.map((version) => {
+            const active = version.id === viewingVersionId
+              || (!viewingVersionId && version.isCurrent);
+            return (
+              <button
+                key={version.id}
+                type="button"
+                onClick={() => onOpenVersion(version.isCurrent ? null : version.id)}
+                className={`flex w-full gap-3 rounded-[var(--radius-input)] px-2 py-2 text-left transition-colors ${
+                  active ? 'bg-primary-ghost' : 'hover:bg-content-bg'
+                }`}
+              >
+                <span className={`mt-0.5 w-1 shrink-0 rounded-full ${version.isCurrent ? 'bg-primary' : 'bg-card-border'}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text">
+                    {version.displayVersion} - {version.format.toUpperCase()}
+                    {version.isCurrent && (
+                      <span className="rounded-[var(--radius-badge)] bg-success-light px-2 py-0.5 text-2xs font-semibold normal-case tracking-normal text-success">
+                        {t('documents.versions.current')}
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    {formatDateTime(version.uploadedAt ?? version.createdAt)}
+                    {version.uploadedByName ? ` · ${version.uploadedByName}` : ''}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+
+          {hiddenVersionCount > 0 && (
+            <button
+              type="button"
+              onClick={onManageVersions}
+              className="px-2 text-xs font-semibold text-primary transition-colors hover:text-primary-hover"
+            >
+              {t('fileView.details.showAllVersions').replace('{count}', String(hiddenVersionCount))}
+            </button>
+          )}
 
           {versions.length === 0 && (
             <p className="text-sm text-text-muted">{t('fileView.details.noHistory')}</p>

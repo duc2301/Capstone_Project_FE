@@ -33,7 +33,7 @@ export function useGoogleLogin(): UseGoogleLoginReturn {
         }
 
         signIn(data.result);
-        navigate(getPostLoginPath(data.result.role), { replace: true });
+        navigate(getPostLoginPath(), { replace: true });
       } catch (err) {
         const axiosError = err as AxiosError<ApiResponse>;
         setError(

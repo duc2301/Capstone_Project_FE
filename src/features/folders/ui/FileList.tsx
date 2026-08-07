@@ -11,7 +11,7 @@ import { fileStatusBadge, fileTypeLabel, formatDate, formatSize } from '../model
  * (không kéo dài hàng sang phải), "Thu gọn" để đóng lại — kiểu Facebook. */
 function FileDescription({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = text.length > 80; // ngắn thì 1 dòng hiện đủ, khỏi cần nút
+  const isLong = text.length > 80; // Ngắn thì 1 dòng hiện đủ, không cần nút Xem thêm
 
   return (
     <div className="mt-0.5 text-xs text-text-muted" onDoubleClick={(e) => e.stopPropagation()}>
@@ -55,10 +55,11 @@ interface FileListProps {
   onFileOpen: (file: FileListItem) => void;
 }
 
+/* Cập nhật WarningIcon nhận prop message từ warnningMessage của file */
 function WarningIcon({ message }: { message?: string | null }) {
   return (
     <span
-      title={message ?? t('fileWarn.tooltip')}
+      title={message || t('fileWarn.tooltip')}
       className="inline-flex shrink-0 items-center text-danger"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -108,7 +109,7 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
           </tr>
         </thead>
         <tbody>
-          {/* Thư mục con luôn hiển thị trước danh sách tệp (kiểu file explorer) */}
+          {/* Thư mục con luôn hiển thị trước danh sách tệp */}
           {subfolders.map((folder) => (
             <tr
               key={folder.id}
@@ -146,14 +147,13 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               title={t('documents.files.openHint')}
               className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
-              {/* w-full + max-w-0: cột tên chiếm phần còn lại, không banh hàng sang phải;
-                  tên dài thì xuống dòng (break-words) thay vì cắt mất chữ */}
               <td className="w-full max-w-0 py-3 pr-3">
                 <div className="flex items-start gap-3">
                   <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
                       <span className="break-words">{f.name}</span>
+                      {/* Truyền warnningMessage vào WarningIcon */}
                       {f.warnning && <WarningIcon message={f.warnningMessage} />}
                     </p>
                     {f.description && <FileDescription text={f.description} />}

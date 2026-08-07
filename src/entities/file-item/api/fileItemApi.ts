@@ -27,6 +27,17 @@ export const fileItemApi = {
       `/file-versions/${fileItemId}/restore/${versionStateId}`,
     ),
 
+  getVersionView: (fileItemId: string, versionStateId: string) =>
+    axiosInstance.get<ApiResponse<FileViewInfo>>(
+      `/file-versions/${fileItemId}/${versionStateId}/view`,
+    ),
+
+  downloadVersion: (fileItemId: string, versionStateId: string) =>
+    axiosInstance.get(`/file-versions/${fileItemId}/${versionStateId}/download`, {
+      responseType: 'blob',
+      timeout: 60_000,
+    }),
+
   /** Tải nội dung file về (blob, qua server – có kèm token). */
   download: (fileItemId: string) =>
     axiosInstance.get(`/file-items/${fileItemId}/download`, { responseType: 'blob', timeout: 60_000 }),
@@ -48,6 +59,10 @@ export const fileItemApi = {
 
   /** Xóa file */
   delete: (fileItemId: string) => axiosInstance.delete<ApiResponse<unknown>>(`/file-items/${fileItemId}`),
+
+  /** Niêm phong lưu trữ: PM/Admin chốt bản Published chính thức của file vào vùng Archived. */
+  archive: (fileItemId: string) =>
+    axiosInstance.post<ApiResponse<{ archivedFileItemId: string }>>(`/file-items/${fileItemId}/archive`),
 
   getRelatedFiles: (fileItemId: string) =>
     axiosInstance.get<ApiResponse<RelatedFilesResult>>(`/file-items/${fileItemId}/related-files`),

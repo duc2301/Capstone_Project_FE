@@ -14,4 +14,14 @@ export const profileApi = {
   /** POST /api/profile/change-password */
   changePassword: (payload: ChangePasswordPayload) =>
     axiosInstance.post<ApiResponse<null>>('/profile/change-password', payload),
+
+  uploadAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return axiosInstance.post<ApiResponse<Profile>>('/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+    });
+  },
 };

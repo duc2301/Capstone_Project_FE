@@ -1,50 +1,48 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage, CreateContractPackagePayload, UpdateContractPackagePayload } from '@/entities/contractPackage';
 import { getApiErrorMessage } from '@/shared/api';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
-export function usePackages(projectId?: string) {
-  const [packages, setPackages] = useState<ContractPackage[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const EMPTY_PACKAGES: ContractPackage[] = [];
 
+export function usePackages(projectId?: string) {
   const fetchPackages = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = projectId 
-        ? await contractPackageApi.getByProjectId(projectId)
-        : await contractPackageApi.getAll();
-      setPackages(sortByNewest(response.data?.result || [], (p) => p.createdAt));
-    } catch (err) {
-      setError(getApiErrorMessage(err, t('common.error')));
-    } finally {
-      setLoading(false);
-    }
+    const response = projectId
+      ? await contractPackageApi.getByProjectId(projectId)
+      : await contractPackageApi.getAll();
+    return sortByNewest(response.data?.result || [], (p) => p.createdAt);
   }, [projectId]);
 
-  useEffect(() => {
-    fetchPackages();
-  }, [fetchPackages]);
+  const { data: packages, loading, error, reload } = useAsyncData(
+    projectId ?? '',
+    fetchPackages,
+    {
+      fallback: EMPTY_PACKAGES,
+      toErrorMessage: (err) => getApiErrorMessage(err, t('common.error')),
+    },
+  );
+
+  const refetch = useCallback(async () => reload(), [reload]);
 
   const createPackage = async (payload: CreateContractPackagePayload) => {
     const res = await contractPackageApi.create(payload);
-    await fetchPackages();
+    await reload();
     return res.data?.result;
   };
 
   const updatePackage = async (id: string, payload: UpdateContractPackagePayload) => {
     const res = await contractPackageApi.update(id, payload);
-    await fetchPackages();
+    await reload();
     return res.data?.result;
   };
 
   const deletePackage = async (id: string) => {
     await contractPackageApi.delete(id);
-    await fetchPackages();
+    await reload();
   };
 
-  return { packages, loading, error, createPackage, updatePackage, deletePackage, refetch: fetchPackages };
+  return { packages, loading, error, createPackage, updatePackage, deletePackage, refetch };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { contractPackageApi, parseWorkTypes, workTypeLabel } from '@/entities/contractPackage';
 import type { ContractPackage } from '@/entities/contractPackage';
@@ -7,8 +7,17 @@ import { useProjectDetail } from '@/features/projects';
 import { useAccounts } from '@/features/accounts';
 import { fileItemApi } from '@/entities/file-item';
 import type { FolderContentsFileDto } from '@/entities/folder';
+import { downloadBlob } from '@/shared/lib/download';
 import { Toast, useToast } from '@/shared/components';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
+
+interface PackageDetailData {
+  pkg: ContractPackage | null;
+  docFiles: FolderContentsFileDto[];
+}
+
+const EMPTY_DETAIL: PackageDetailData = { pkg: null, docFiles: [] };
 
 function fmtCurrency(val: number | undefined, cur = 'VND') {
   if (val === undefined) return '';
@@ -36,46 +45,32 @@ function computeElapsedPercent(startDate: string | undefined, endDate: string | 
 export default function PackageDetailPage() {
   const { projectId, packageId } = useParams<{ projectId: string; packageId: string }>();
   const navigate = useNavigate();
-  const [pkg, setPkg] = useState<ContractPackage | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { accounts } = useAccounts();
   const { project } = useProjectDetail(projectId);
   const [now] = useState(() => Date.now());
-  const [docFiles, setDocFiles] = useState<FolderContentsFileDto[]>([]);
   const [viewFileUrl, setViewFileUrl] = useState<{ url: string; name: string; type: string } | null>(null);
 
   const { toast, showToast } = useToast();
 
-  const loadData = () => {
-    if (!packageId) return;
-    setLoading(true);
-    contractPackageApi
-      .getById(packageId)
-      .then((res) => {
-        const p = res.data?.result ?? null;
-        setPkg(p);
-        if (p?.documentFolderId) {
-          import('@/entities/folder').then(({ folderApi }) => {
-            folderApi.getContents(p.documentFolderId!)
-              .then(viewRes => {
-                setDocFiles(viewRes.data?.result?.files ?? []);
-              })
-              .catch(() => {
-                setDocFiles([]);
-              });
-          });
-        } else {
-          setDocFiles([]);
-        }
-      })
-      .catch(() => setPkg(null))
-      .finally(() => setLoading(false));
-  };
+  const fetchPackage = useCallback(async (): Promise<PackageDetailData> => {
+    const res = await contractPackageApi.getById(packageId!);
+    const p = res.data?.result ?? null;
 
-  useEffect(() => {
-    loadData();
+    if (!p?.documentFolderId) return { pkg: p, docFiles: [] };
+
+    const { folderApi } = await import('@/entities/folder');
+    const viewRes = await folderApi.getContents(p.documentFolderId).catch(() => null);
+
+    return { pkg: p, docFiles: viewRes?.data?.result?.files ?? [] };
   }, [packageId]);
+
+  const { data, loading, reload: loadData } = useAsyncData(packageId ?? '', fetchPackage, {
+    fallback: EMPTY_DETAIL,
+    enabled: Boolean(packageId),
+  });
+
+  const { pkg, docFiles } = data;
 
   const st = packageStatusMeta(pkg?.status ?? 0);
 
@@ -521,15 +516,7 @@ export default function PackageDetailPage() {
                         onClick={async () => {
                           try {
                             const res = await fileItemApi.download(file.id);
-                            const blob = res.data as Blob;
-                            const downloadUrl = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = downloadUrl;
-                            link.download = file.name || 'document';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(downloadUrl);
+                            downloadBlob(res.data as Blob, file.name || 'document');
                           } catch (err) {
                             console.error("Tải file thất bại", err);
                             showToast(t('file.download.error'), 'error');

@@ -15,4 +15,24 @@ export const auditLogApi = {
    *  BE lọc quyền trong query DB — FE không tự lọc. */
   getMine: (projectId: string, query: AuditLogQuery) =>
     axiosInstance.get<ApiResponse<AuditLogPage>>(`/audit-logs/projects/${projectId}/my`, { params: query }),
+
+  getMyActivity: (query: AuditLogQuery) =>
+    axiosInstance.get<ApiResponse<AuditLogPage>>('/audit-logs/me', { params: query }),
+
+  getByFileItem: (fileItemId: string, query: AuditLogQuery) =>
+    axiosInstance.get<ApiResponse<AuditLogPage>>(`/audit-logs/files/${fileItemId}`, { params: query }),
+
+  exportSystem: (query: AuditLogQuery) =>
+    axiosInstance.get('/audit-logs/system/export', {
+      params: query,
+      responseType: 'blob',
+      timeout: 60_000,
+    }),
+
+  exportByProject: (projectId: string, query: AuditLogQuery) =>
+    axiosInstance.get(`/audit-logs/projects/${projectId}/export`, {
+      params: query,
+      responseType: 'blob',
+      timeout: 60_000,
+    }),
 };

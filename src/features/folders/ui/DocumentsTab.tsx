@@ -9,6 +9,7 @@ import type { Group } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
+import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
 import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
@@ -38,6 +39,7 @@ import { UploadModal } from './UploadModal';
 
 interface DocumentsTabProps {
   projectId: string;
+  /** Admin hệ thống hoặc PM của dự án — được phép "Niêm phong lưu trữ" ở Published. */
   isProjectManager: boolean;
   /* Nhóm của dự án — trang cha đã tải sẵn, truyền xuống để khỏi gọi API lần hai. */
   signerGroups: Group[];
@@ -55,7 +57,6 @@ interface DocumentsTabProps {
 const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[] = [
   { key: 'canView', label: () => t('documents.perm.view') },
   { key: 'canEdit', label: () => t('documents.perm.edit') },
-  { key: 'canApprove', label: () => t('documents.perm.approve') },
 ];
 
 /* Thư mục hệ thống ở Published được nhận file trực tiếp — khớp Domain/Common/CdeFolderNames.cs */
@@ -84,13 +85,14 @@ interface ModalState {
 }
 
 function canStartApprovalFromArea(area: CdeArea) {
-  return area === CdeArea.Wip || area === CdeArea.Shared || area === CdeArea.Published;
+  // Published là bước cuối của luồng duyệt — không gửi duyệt / chuyển trạng thái ở đây nữa.
+  // Lưu trữ đi qua "Niêm phong lưu trữ" (PM/Admin), ngoài approval flow.
+  return area === CdeArea.Wip || area === CdeArea.Shared;
 }
 
 function nextApprovalTargetZone(area: CdeArea): ApprovalTargetZone | null {
   if (area === CdeArea.Wip) return 'Shared';
   if (area === CdeArea.Shared) return 'Published';
-  if (area === CdeArea.Published) return 'Archived';
   return null;
 }
 
@@ -218,14 +220,7 @@ export function DocumentsTab({
     try {
       showToast(t('documents.toast.downloading'));
       const res = await fileItemApi.download(file.id);
-      const blobUrl = URL.createObjectURL(res.data as Blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = file.format ? `${file.name}.${file.format}` : file.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
+      downloadBlob(res.data as Blob, buildDownloadName(file.name, file.format));
     } catch {
       showToast(t('common.error'), 'error');
     }
@@ -287,7 +282,7 @@ export function DocumentsTab({
   // BE chỉ chuyển vùng thật sự khi Leader approve request đó.
   const canTransferZone = (file: FileListItem) =>
     !!selected
-    && selectedPermission.canApprove
+    && selectedPermission.canEdit
     && canStartApprovalFromArea(selected.area)
     && file.status === FileItemStatus.Approved
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
@@ -296,6 +291,13 @@ export function DocumentsTab({
     && selected.area !== CdeArea.Wip
     && file.status !== FileItemStatus.PendingApproval
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
+
+  // Niêm phong lưu trữ: chỉ Admin/PM, chỉ với file đã ở Published (đã duyệt).
+  const canArchive = (file: FileListItem) =>
+    !!selected
+    && selected.area === CdeArea.Published
+    && (isAccountAdmin(currentUser?.role) || isProjectManager)
+    && file.status === FileItemStatus.Approved;
 
   const handleReturnRequest = async (reason: string) => {
     if (!returnRequestFor) return;
@@ -309,6 +311,18 @@ export function DocumentsTab({
       showToast(zoneTransferErrorMessage(err, t('common.error')), 'error');
     } finally {
       setReturnRequestBusy(false);
+    }
+  };
+
+  // Niêm phong lưu trữ bản Published hiện hành -> tạo/cộng dồn bản lưu trong Archived.
+  const handleArchive = async (file: FileListItem) => {
+    try {
+      await fileItemApi.archive(file.id);
+      await refetch();        // cây cập nhật: bản lưu mới xuất hiện trong vùng Archived
+      await refetchFiles();
+      showToast(t('documents.toast.archived'));
+    } catch (err) {
+      showToast(folderErrorMessage(err, t('common.error')), 'error');
     }
   };
 
@@ -549,6 +563,7 @@ export function DocumentsTab({
           onClose={() => setFileMenu(null)}
           onDetail={() => handleDetail(fileMenu.file)}
           onDownload={() => handleDownload(fileMenu.file)}
+          canManageVersions={selectedPermission.canEdit}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onPermission={() => setFilePermissionFor(fileMenu.file)}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
@@ -557,6 +572,8 @@ export function DocumentsTab({
           onTransferZone={() => openSubmitApproval(fileMenu.file)}
           canReturnToWip={canReturnToWip(fileMenu.file)}
           onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
+          canArchive={canArchive(fileMenu.file)}
+          onArchive={() => handleArchive(fileMenu.file)}
         />
       )}
 
@@ -587,6 +604,11 @@ export function DocumentsTab({
           fileItemId={versionsFor.id}
           fileName={versionsFor.name}
           currentVersionId={versionsFor.currentVersionId}
+          canRestore={selectedPermission.canEdit}
+          onViewVersion={(versionStateId, isCurrent) => {
+            const versionQuery = isCurrent ? '' : `&version=${versionStateId}`;
+            navigate(`/projects/${projectId}/files/${versionsFor.id}/view?folder=${versionsFor.folderId}${versionQuery}`);
+          }}
           onClose={() => setVersionsFor(null)}
           onRestored={(displayVersion) => {
             void refetchFiles();

@@ -8,6 +8,7 @@ interface FileContextMenuProps {
   onClose: () => void;
   onDetail: () => void;
   onDownload: () => void;
+  canManageVersions: boolean;
   onVersions: () => void;
   onPermission: () => void;
   canSubmitApproval: boolean;
@@ -16,6 +17,8 @@ interface FileContextMenuProps {
   onTransferZone: () => void;
   canReturnToWip: boolean;
   onReturnToWip: () => void;
+  canArchive: boolean;
+  onArchive: () => void;
 }
 
 interface Item {
@@ -31,6 +34,7 @@ export function FileContextMenu({
   onClose,
   onDetail,
   onDownload,
+  canManageVersions,
   onVersions,
   onPermission,
   canSubmitApproval,
@@ -39,6 +43,8 @@ export function FileContextMenu({
   onTransferZone,
   canReturnToWip,
   onReturnToWip,
+  canArchive,
+  onArchive,
 }: FileContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -58,10 +64,10 @@ export function FileContextMenu({
       key: 'download', label: t('documents.fileMenu.download'), onClick: onDownload,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
     },
-    {
+    ...(canManageVersions ? [{
       key: 'versions', label: t('documents.fileMenu.versions'), onClick: onVersions,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>,
-    },
+    }] : []),
     ...(canSubmitApproval ? [{
       key: 'submitApproval', label: t('documents.fileMenu.submitApproval'), onClick: onSubmitApproval,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>,
@@ -73,6 +79,10 @@ export function FileContextMenu({
     ...(canReturnToWip ? [{
       key: 'returnToWip', label: t('documents.fileMenu.returnToWip'), onClick: onReturnToWip,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>,
+    }] : []),
+    ...(canArchive ? [{
+      key: 'archive', label: t('documents.fileMenu.archive'), onClick: onArchive,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>,
     }] : []),
     {
       key: 'permission', label: t('documents.fileMenu.permission'), onClick: onPermission,

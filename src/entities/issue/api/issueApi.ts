@@ -197,6 +197,13 @@ export const issueApi = {
     return (unwrap(data) ?? []).map(mapProjectIssueListItem);
   },
 
+  getAssignedToMe: async (): Promise<ProjectIssueListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
+      '/issues/assigned-to-me',
+    );
+    return (unwrap(data) ?? []).map(mapProjectIssueListItem);
+  },
+
   getById: async (issueId: string): Promise<IssueItem> => {
     const { data } = await axiosInstance.get<ApiResponse<RawIssueItem>>(`/issues/${issueId}`);
     return mapIssueItem(unwrap(data));

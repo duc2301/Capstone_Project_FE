@@ -1,9 +1,16 @@
 /* ── Profile ──────────────────────────────────────── */
+export interface ProfileGroupProject {
+  projectId: string;
+  projectName: string;
+}
+
 export interface ProfileGroup {
   groupId: string;
   groupName: string;
   role: string;       // Leader | Member
   joinedAt: string | null;
+  organizationName: string | null;
+  projects: ProfileGroupProject[];
 }
 
 export interface Profile {
@@ -15,6 +22,9 @@ export interface Profile {
   createdAt: string | null;
   updatedAt: string | null;
   avatarUrl: string | null;
+  isEmailVerified: boolean;
+  organizationId: string | null;
+  organizationName: string | null;
   groups: ProfileGroup[];
 }
 

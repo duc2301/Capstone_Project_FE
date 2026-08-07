@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
 import type { FolderNamingConvention, NamingSelection, UploadNamingField } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
 import { getApiErrorMessage } from '@/shared/api';
 import { FileTypeIcon } from '@/shared/components';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
 import { formatSize } from '../model/fileFormat';
@@ -37,33 +38,23 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Quy tắc đặt tên của folder đích (nếu có): render dropdown thay vì đặt tên tự do.
-  const [naming, setNaming] = useState<FolderNamingConvention | null>(null);
-  const [namingLoading, setNamingLoading] = useState(true);
   const [selections, setSelections] = useState<Record<string, string>>({});
   // Field bắt buộc mà autofill từ tên gốc KHÔNG khớp được — viền đỏ bắt chọn tay.
   const [mismatchIds, setMismatchIds] = useState<Set<string>>(new Set());
   // Tệp ngoại lệ (văn bản hành chính: thông tư, nghị định...) — bỏ qua quy tắc, giữ tên gốc.
   const [bypass, setBypass] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setNamingLoading(true);
-    namingConventionApi
-      .getByFolder(targetFolder.id)
-      .then(({ data }) => {
-        if (!cancelled) setNaming(data.result);
-      })
-      .catch(() => {
-        // Không đọc được quy tắc -> vẫn cho upload, BE là chốt chặn cuối.
-        if (!cancelled) setNaming(null);
-      })
-      .finally(() => {
-        if (!cancelled) setNamingLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const fetchNaming = useCallback(async () => {
+    const { data } = await namingConventionApi.getByFolder(targetFolder.id);
+    return data.result;
   }, [targetFolder.id]);
+
+  // Không đọc được quy tắc -> vẫn cho upload, BE là chốt chặn cuối.
+  const { data: naming, loading: namingLoading } = useAsyncData<FolderNamingConvention | null>(
+    targetFolder.id,
+    fetchNaming,
+    { fallback: null },
+  );
 
   const hasConvention = !!naming?.hasNamingConvention && !!naming.fields;
   // Quy tắc thực sự áp cho lượt upload này (bật "tệp ngoại lệ" là thoát chế độ quy tắc).
@@ -203,6 +194,31 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
             </div>
           </div>
 
+          {/* Dropzone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
+            className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed px-6 py-10 text-center transition-colors ${dragOver ? 'border-primary bg-primary-ghost' : 'border-card-border bg-input-bg/30'}`}
+          >
+            <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </span>
+            <p className="font-semibold text-text">{t('documents.uploadModal.dropHere')}</p>
+            <p className="text-sm text-text-muted">
+              {t('documents.uploadModal.chooseLead')}
+              <button type="button" onClick={() => inputRef.current?.click()} className="font-semibold text-primary hover:underline">
+                {t('documents.uploadModal.choose')}
+              </button>
+            </p>
+            <p className="mt-1 text-xs text-text-placeholder">
+              {namingEnforced ? t('naming.upload.singleFile') : t('documents.uploadModal.hint')}
+            </p>
+            <input ref={inputRef} type="file" multiple={!namingEnforced} className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+          </div>
+
           {/* Quy tắc đặt tên (nếu folder có) */}
           {namingLoading ? (
             <p className="rounded-xl border border-card-border bg-input-bg/30 px-3.5 py-2.5 text-xs text-text-muted">
@@ -310,31 +326,6 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
               )}
             </div>
           ) : null}
-
-          {/* Dropzone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
-            className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed px-6 py-10 text-center transition-colors ${dragOver ? 'border-primary bg-primary-ghost' : 'border-card-border bg-input-bg/30'}`}
-          >
-            <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-            </span>
-            <p className="font-semibold text-text">{t('documents.uploadModal.dropHere')}</p>
-            <p className="text-sm text-text-muted">
-              {t('documents.uploadModal.chooseLead')}
-              <button type="button" onClick={() => inputRef.current?.click()} className="font-semibold text-primary hover:underline">
-                {t('documents.uploadModal.choose')}
-              </button>
-            </p>
-            <p className="mt-1 text-xs text-text-placeholder">
-              {namingEnforced ? t('naming.upload.singleFile') : t('documents.uploadModal.hint')}
-            </p>
-            <input ref={inputRef} type="file" multiple={!namingEnforced} className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
-          </div>
 
           {/* Danh sách tệp */}
           <div>

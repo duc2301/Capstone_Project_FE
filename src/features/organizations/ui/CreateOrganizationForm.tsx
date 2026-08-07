@@ -5,6 +5,7 @@ import type { OrganizationType, CreateOrganizationTypePayload } from '@/entities
 import { accountApi } from '@/entities/account';
 import type { Account } from '@/entities/account';
 import { getApiErrorMessage } from '@/shared/api';
+import { UserAvatar } from '@/shared/components';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -23,11 +24,9 @@ interface Props {
 
 export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onSubmit, onCancel, onCreateOrgType }: Props) {
   const isJv = mode === 'joint-venture';
-  
-  // Wizard state
+
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Form state
   const [form, setForm] = useState<CreateOrganizationPayload>({
     taxCode: '',
     legalName: '',
@@ -41,8 +40,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     jointVentureMemberIds: [],
     representativeOrganizationId: '',
   });
-  
-  // Team Setup state
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,12 +52,10 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
 
-  // Fetch accounts for step 2
   useEffect(() => {
     if (step === 2 && accounts.length === 0) {
       accountApi.getAll().then(res => {
         if (res.data.isSuccess && res.data.result) {
-          // Exclude accounts that already belong to an organization (optional, but logical)
           const availableAccounts = res.data.result.filter((a: Account) => !a.organizationId);
           setAccounts(availableAccounts);
         }
@@ -362,7 +358,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                               className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary border border-primary/20"
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                              {org?.displayName || org?.legalName || 'Unknown'}
+                              {org?.displayName || org?.legalName || t('org.form.unknownPartner')}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -515,61 +511,58 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
       {/* --- STEP 2: TEAM SETUP --- */}
       {step === 2 && !isJv && (
         <div className="space-y-4">
-           <div className="flex items-center justify-between">
-              <div>
-                <h3 className="heading-card text-text">{t('org.team.title')}</h3>
-                <p className="field-hint mt-0.5">{t('org.team.desc')}</p>
-              </div>
-           </div>
+          <div>
+            <h3 className="heading-card text-text">{t('org.team.title')}</h3>
+            <p className="field-hint mt-0.5">{t('org.team.desc')}</p>
+          </div>
 
-           <div className="relative">
-             <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-             <input
-               type="text"
-               value={searchQuery}
-               onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder={t('org.team.search')}
-               className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-             />
-           </div>
+          <div className="relative">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('org.team.search')}
+              className="field-input pl-9"
+            />
+          </div>
 
-           <div className="mt-4 border border-card-border rounded-[16px] overflow-hidden">
-              <div className="max-h-[300px] overflow-y-auto">
-                 {filteredAccounts.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-text-muted">
-                      {t('org.team.empty')}
-                    </div>
-                 ) : (
-                    <div className="divide-y divide-card-border">
-                       {filteredAccounts.map(account => {
-                          const isSelected = selectedAccountIds.includes(account.id);
-                          return (
-                             <div 
-                                key={account.id} 
-                                onClick={() => toggleAccountSelection(account.id)}
-                                className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : 'hover:bg-input-bg'}`}
-                             >
-                                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${isSelected ? 'bg-primary border-primary' : 'border-input-border bg-card'}`}>
-                                   {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                                </div>
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-input-bg text-primary font-bold text-xs overflow-hidden">
-                                   {account.avatarUrl ? <img src={account.avatarUrl} alt={account.userName} className="h-full w-full object-cover" /> : account.userName.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                   <p className="text-sm font-bold text-text">{account.userName}</p>
-                                   <p className="text-xs text-text-muted">{account.email}</p>
-                                </div>
-                             </div>
-                          );
-                       })}
-                    </div>
-                 )}
-              </div>
-           </div>
-           
-           <div className="pt-2 text-sm text-text-muted font-medium">
-             {t('org.team.selected')}: <span className="font-bold text-primary">{selectedAccountIds.length}</span> {t('org.team.selectedUnit')}
-           </div>
+          <div className="overflow-hidden rounded-[var(--radius-card)] border border-card-border">
+            <div className="admin-scrollbar max-h-[300px] overflow-y-auto">
+              {filteredAccounts.length === 0 ? (
+                <div className="p-8 text-center text-sm text-text-muted">
+                  {t('org.team.empty')}
+                </div>
+              ) : (
+                <div className="divide-y divide-card-border">
+                  {filteredAccounts.map(account => {
+                    const isSelected = selectedAccountIds.includes(account.id);
+                    return (
+                      <button
+                        key={account.id}
+                        type="button"
+                        onClick={() => toggleAccountSelection(account.id)}
+                        className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${isSelected ? 'bg-primary-ghost' : 'hover:bg-input-bg'}`}
+                      >
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${isSelected ? 'border-primary bg-primary' : 'border-input-border bg-card'}`}>
+                          {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polyline points="20 6 9 17 4 12" /></svg>}
+                        </span>
+                        <UserAvatar userName={account.userName} avatarUrl={account.avatarUrl} size="md" rounded="full" />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-text">{account.userName}</span>
+                          <span className="block truncate text-xs text-text-muted">{account.email}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2 text-sm font-medium text-text-muted">
+            {t('org.team.selected')}: <span className="font-bold text-primary">{selectedAccountIds.length}</span> {t('org.team.selectedUnit')}
+          </div>
         </div>
       )}
       </div>
@@ -583,34 +576,26 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
       {/* Actions */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-t border-card-border bg-card px-8 py-5">
         <div>
-           {step === 2 && !isJv && (
-             <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="btn-modal-ghost"
-             >
-                {t('org.form.back')}
-             </button>
-           )}
+          {step === 2 && !isJv && (
+            <button type="button" onClick={() => setStep(1)} className="btn-modal-ghost">
+              {t('org.form.back')}
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="btn-modal-ghost"
-          >
+          <button type="button" onClick={onCancel} className="btn-modal-ghost">
             {t('account.cancel')}
           </button>
-          
+
           {step === 1 && !isJv ? (
-             <button
-                key="next"
-                type="button"
-                onClick={handleNext}
-                className="btn-modal-primary flex items-center gap-2"
-              >
-                {t('org.form.next')}
-             </button>
+            <button
+              key="next"
+              type="button"
+              onClick={handleNext}
+              className="btn-modal-primary flex items-center gap-2"
+            >
+              {t('org.form.next')}
+            </button>
           ) : (
             <button
               key="submit"

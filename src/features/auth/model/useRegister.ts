@@ -44,7 +44,7 @@ export function useRegister(): UseRegisterReturn {
         }
 
         signIn(data.result);
-        navigate(getPostLoginPath(data.result.role), { replace: true });
+        navigate(getPostLoginPath(), { replace: true });
       } catch (err) {
         const axiosError = err as AxiosError<ApiResponse>;
         const errorMessage = axiosError.response?.data?.message || t('register.error.generic');

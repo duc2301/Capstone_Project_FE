@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 
@@ -12,35 +13,20 @@ interface UseZoneReturnRequestsReturn {
   refetch: () => Promise<void>;
 }
 
+const EMPTY_ITEMS: ZoneReturnRequestItem[] = [];
+
 export function useZoneReturnRequests(): UseZoneReturnRequestsReturn {
-  const [items, setItems] = useState<ZoneReturnRequestItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadItems = useCallback(async (showLoading: boolean, isCancelled: () => boolean = () => false) => {
-    if (showLoading) setLoading(true);
-    setError(null);
-
-    try {
-      const data = await zoneTransferApi.getPendingReturnRequests();
-      if (!isCancelled()) setItems(sortByNewest(data, (item) => item.createdAt));
-    } catch (err) {
-      if (!isCancelled()) setError(zoneTransferErrorMessage(err, t('returnRequests.error')));
-    } finally {
-      if (!isCancelled()) setLoading(false);
-    }
+  const fetchItems = useCallback(async () => {
+    const data = await zoneTransferApi.getPendingReturnRequests();
+    return sortByNewest(data, (item) => item.createdAt);
   }, []);
 
-  const refetch = useCallback(() => loadItems(false), [loadItems]);
+  const { data: items, loading, error, reload } = useAsyncData('pending-return-requests', fetchItems, {
+    fallback: EMPTY_ITEMS,
+    toErrorMessage: (err) => zoneTransferErrorMessage(err, t('returnRequests.error')),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    void loadItems(true, () => cancelled);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loadItems]);
+  const refetch = useCallback(async () => reload(), [reload]);
 
   return { items, loading, error, refetch };
 }

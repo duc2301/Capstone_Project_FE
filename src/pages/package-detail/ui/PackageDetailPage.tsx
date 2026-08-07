@@ -135,43 +135,6 @@ export default function PackageDetailPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              const w = window.open('', '_blank');
-              if (!w) return;
-              w.document.write(`<html><head><title>Báo cáo gói thầu - ${pkg.name}</title><style>body{font-family:sans-serif;padding:40px}h1{font-size:24px}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}.label{color:#888;font-size:12px;text-transform:uppercase}</style></head><body>`);
-              w.document.write(`<h1>${t('packageDetail.report.title')}</h1>`);
-              w.document.write(`<table>`);
-              w.document.write(`<tr><th>${t('packageDetail.report.code')}</th><td>${pkg.code}</td><th>${t('packageDetail.report.name')}</th><td>${pkg.name}</td></tr>`);
-              w.document.write(`<tr><th>${t('packageDetail.report.status')}</th><td>${st.label}</td><th>${t('packageDetail.report.isDefault')}</th><td>${pkg.isDefault ? t('packageDetail.report.yes') : t('packageDetail.report.no')}</td></tr>`);
-              w.document.write(`<tr><th>${t('packageDetail.report.startDate')}</th><td>${fmtDate(pkg.startDate)}</td><th>${t('packageDetail.report.endDate')}</th><td>${fmtDate(pkg.endDate)}</td></tr>`);
-              w.document.write(`<tr><th>${t('packageDetail.report.contractValue')}</th><td>${fmtCurrency(pkg.contractValue, pkg.currency ?? 'VND')}</td><th>${t('packageDetail.report.tax')}</th><td>${pkg.taxRate ?? 10}%</td></tr>`);
-              w.document.write(`<tr><th>${t('packageDetail.report.total')}</th><td colspan="3">${fmtCurrency(total, pkg.currency ?? 'VND')}</td></tr>`);
-              if (pkg.description) w.document.write(`<tr><th>${t('packageDetail.report.description')}</th><td colspan="3">${pkg.description}</td></tr>`);
-              if (pkg.scopeDescription) w.document.write(`<tr><th>${t('packageDetail.report.scope')}</th><td colspan="3">${pkg.scopeDescription}</td></tr>`);
-              if (pkg.workTypes) w.document.write(`<tr><th>${t('packageDetail.report.workTypes')}</th><td colspan="3">${workTypeTags.map(workTypeLabel).join(', ')}</td></tr>`);
-              if (pkg.notes) w.document.write(`<tr><th>${t('packageDetail.report.notes')}</th><td colspan="3">${pkg.notes}</td></tr>`);
-              if (pkg.assignments && pkg.assignments.length > 0) {
-                const a = pkg.assignments[0];
-                w.document.write(`<tr><th>${t('packageDetail.report.contractor')}</th><td>${a.organizationName ?? ''}</td><th>${t('packageDetail.report.representative')}</th><td>${a.representativeName ?? ''}</td></tr>`);
-                w.document.write(`<tr><th>${t('packageDetail.report.contractNumber')}</th><td>${a.contractNumber ?? ''}</td><th>${t('packageDetail.report.signDate')}</th><td>${fmtDate(a.contractSignDate)}</td></tr>`);
-              }
-              w.document.write(`</table>`);
-              w.document.write(`<p style="margin-top:40px;color:#888;font-size:12px">${t('packageDetail.report.exportedAt')}: ${new Date().toLocaleString('vi-VN')}</p>`);
-              w.document.write(`</body></html>`);
-              w.document.close();
-              w.print();
-            }}
-            className="flex items-center gap-2 rounded-xl border border-card-border px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-content-bg"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-            </svg>
-            {t('packageDetail.export')}
-          </button>
-          <button
             onClick={() => setIsEditModalOpen(true)}
             className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-hover"
           >

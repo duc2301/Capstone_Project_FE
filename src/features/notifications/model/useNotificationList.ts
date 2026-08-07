@@ -3,17 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NotificationItem, NotificationQuery } from '@/entities/notification';
 import { notificationApi } from '@/entities/notification';
 import { getApiErrorMessage } from '@/shared/api';
+import type { DateRangeValue } from '@/shared/components';
+import { ALL_TIME, resolveDateRange } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 export type NotificationFilter = 'all' | 'unread' | 'invitation';
-export type NotificationDateRange = 'all' | 'today' | 'week' | 'month';
 
 export const NOTIFICATION_PAGE_SIZE = 10;
-
-const RANGE_DAYS: Record<Exclude<NotificationDateRange, 'all' | 'today'>, number> = {
-  week: 7,
-  month: 30,
-};
 
 export interface NotificationGroup {
   key: string;
@@ -21,16 +17,6 @@ export interface NotificationGroup {
   count: number;
   hasUnread: boolean;
   ids: string[];
-}
-
-function rangeToFrom(range: NotificationDateRange): string | undefined {
-  if (range === 'all') return undefined;
-
-  const from = new Date();
-  if (range === 'today') from.setHours(0, 0, 0, 0);
-  else from.setDate(from.getDate() - RANGE_DAYS[range]);
-
-  return from.toISOString();
 }
 
 export function groupNotifications(items: NotificationItem[]): NotificationGroup[] {
@@ -56,7 +42,7 @@ export function groupNotifications(items: NotificationItem[]): NotificationGroup
 export function useNotificationList() {
   const [query, setQueryState] = useState('');
   const [filter, setFilterState] = useState<NotificationFilter>('all');
-  const [dateRange, setDateRangeState] = useState<NotificationDateRange>('all');
+  const [dateRange, setDateRangeState] = useState<DateRangeValue>(ALL_TIME);
   const [page, setPage] = useState(1);
 
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -72,7 +58,7 @@ export function useNotificationList() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const requestKey = `${page}|${filter}|${debouncedQuery}|${dateRange}|${reloadToken}`;
+  const requestKey = `${page}|${filter}|${debouncedQuery}|${dateRange.preset}|${dateRange.from ?? ''}|${dateRange.to ?? ''}|${reloadToken}`;
   const loading = loadedKey !== requestKey;
 
   const reload = useCallback(() => setReloadToken((v) => v + 1), []);
@@ -87,7 +73,7 @@ export function useNotificationList() {
         unreadOnly: filter === 'unread' || undefined,
         linkType: filter === 'invitation' ? 'ProjectInvitation' : undefined,
         search: debouncedQuery || undefined,
-        from: rangeToFrom(dateRange),
+        ...resolveDateRange(dateRange),
       };
 
       try {
@@ -119,7 +105,7 @@ export function useNotificationList() {
     setPage(1);
   }, []);
 
-  const setDateRange = useCallback((value: NotificationDateRange) => {
+  const setDateRange = useCallback((value: DateRangeValue) => {
     setDateRangeState(value);
     setPage(1);
   }, []);

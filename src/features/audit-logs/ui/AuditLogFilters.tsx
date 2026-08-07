@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import type { AuditLogQuery } from '@/entities/audit-log';
 import { AuditAction, LogScope } from '@/entities/audit-log';
+import type { DateRangeValue } from '@/shared/components';
+import { ALL_TIME, DateRangeFilter, resolveDateRange } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { actionBadge, scopeBadge } from '../model/auditFormat';
 
@@ -19,29 +21,6 @@ interface Props {
 const SCOPES = [LogScope.System, LogScope.Project, LogScope.Group];
 const ACTIONS = Object.values(AuditAction);
 
-type Preset = 'all' | 'today' | '7d' | '30d' | '90d' | 'custom';
-const PRESETS: { id: Preset; key: 'audit.range.all' | 'audit.range.today' | 'audit.range.7d' | 'audit.range.30d' | 'audit.range.90d' | 'audit.range.custom' }[] = [
-  { id: '7d', key: 'audit.range.7d' },
-  { id: '30d', key: 'audit.range.30d' },
-  { id: '90d', key: 'audit.range.90d' },
-  { id: 'today', key: 'audit.range.today' },
-  { id: 'all', key: 'audit.range.all' },
-  { id: 'custom', key: 'audit.range.custom' },
-];
-
-/* Preset -> khoảng [from, to] dạng yyyy-mm-dd cho query BE. */
-function presetToRange(preset: Preset): { from?: string; to?: string } {
-  if (preset === 'all' || preset === 'custom') return { from: undefined, to: undefined };
-  const to = new Date();
-  const from = new Date();
-  if (preset === 'today') from.setHours(0, 0, 0, 0);
-  else if (preset === '7d') from.setDate(from.getDate() - 7);
-  else if (preset === '30d') from.setDate(from.getDate() - 30);
-  else if (preset === '90d') from.setDate(from.getDate() - 90);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(from), to: iso(to) };
-}
-
 const SEARCH_CLASS =
   'w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 const SELECT_CLASS =
@@ -57,31 +36,25 @@ export function AuditLogFilters({
   onNameChange,
   onExport,
 }: Props) {
-  const [preset, setPreset] = useState<Preset>('7d');
+  const [range, setRange] = useState<DateRangeValue>(ALL_TIME);
   const [action, setAction] = useState<AuditAction | undefined>(value.action);
   const [scope, setScope] = useState<LogScope | undefined>(value.scope);
-  const [customFrom, setCustomFrom] = useState('');
-  const [customTo, setCustomTo] = useState('');
 
   const applyQuery = (next: {
-    preset?: Preset;
+    range?: DateRangeValue;
     action?: AuditAction;
     scope?: LogScope;
-    from?: string;
-    to?: string;
   }) => {
-    const usedPreset = next.preset ?? preset;
+    const usedRange = next.range ?? range;
     const usedAction = 'action' in next ? next.action : action;
     const usedScope = 'scope' in next ? next.scope : scope;
 
-    const range = usedPreset === 'custom'
-      ? {
-          from: ('from' in next ? next.from : customFrom) || undefined,
-          to: ('to' in next ? next.to : customTo) || undefined,
-        }
-      : presetToRange(usedPreset);
-
-    onQueryChange({ ...value, action: usedAction, scope: usedScope, ...range });
+    onQueryChange({
+      ...value,
+      action: usedAction,
+      scope: usedScope,
+      ...resolveDateRange(usedRange),
+    });
   };
 
   return (
@@ -116,47 +89,13 @@ export function AuditLogFilters({
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-3">
-        <select
-          className={SELECT_CLASS}
-          title={t('audit.filter.dateRange')}
-          value={preset}
-          onChange={(e) => {
-            const next = e.target.value as Preset;
-            setPreset(next);
-            applyQuery({ preset: next });
+        <DateRangeFilter
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            applyQuery({ range: next });
           }}
-        >
-          {PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>{t(p.key)}</option>
-          ))}
-        </select>
-
-        {preset === 'custom' && (
-          <>
-            <input
-              type="date"
-              value={customFrom}
-              max={customTo || undefined}
-              title={t('audit.range.from')}
-              onChange={(e) => {
-                setCustomFrom(e.target.value);
-                applyQuery({ from: e.target.value });
-              }}
-              className={SELECT_CLASS}
-            />
-            <input
-              type="date"
-              value={customTo}
-              min={customFrom || undefined}
-              title={t('audit.range.to')}
-              onChange={(e) => {
-                setCustomTo(e.target.value);
-                applyQuery({ to: e.target.value });
-              }}
-              className={SELECT_CLASS}
-            />
-          </>
-        )}
+        />
 
         <select
           className={SELECT_CLASS}

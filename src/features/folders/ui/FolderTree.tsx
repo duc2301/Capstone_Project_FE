@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 
-import type { FolderTreeNode } from '@/entities/folder';
+import { CdeArea, type FolderTreeNode } from '@/entities/folder';
 import { FolderGlyph } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
@@ -107,6 +107,16 @@ function FolderNode({ node, depth, selectedId, expandedIds, onToggleExpand, onSe
   );
 }
 
+/* Tiêu đề phân nhóm vùng CDE trong cây (Vùng làm việc / Vùng lưu trữ) */
+function ZoneHeading({ label, icon }: { label: string; icon?: ReactNode }) {
+  return (
+    <p className="mb-1 flex items-center gap-1.5 px-2 text-2xs font-bold uppercase tracking-wider text-text-muted">
+      {icon}
+      {label}
+    </p>
+  );
+}
+
 export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: FolderTreeProps) {
   // id -> parentFolderId, để tìm chuỗi tổ tiên của folder đang chọn
   const parentById = useMemo(() => {
@@ -155,29 +165,56 @@ export function FolderTree({ tree, selectedId, onSelect, onContextMenu }: Folder
     }
   }
 
+  // Tách vùng lưu trữ (Archived) khỏi vùng làm việc (WIP/Shared/Published) cho rõ ràng ở FE.
+  const workingRoots = tree.filter((n) => n.area !== CdeArea.Archived);
+  const archivedRoots = tree.filter((n) => n.area === CdeArea.Archived);
+
+  const renderRoots = (nodes: FolderTreeNode[]) => (
+    // Cây có thể thụt lề rất sâu -> tên folder không bị cắt/tràn ra ngoài khung, thay vào đó
+    // cuộn ngang để xem đủ tên khi cây quá rộng so với khung.
+    <ul className="w-max min-w-full space-y-0.5">
+      {nodes.map((node) => (
+        <FolderNode
+          key={node.id}
+          node={node}
+          depth={0}
+          selectedId={selectedId}
+          expandedIds={expandedIds}
+          onToggleExpand={toggleExpand}
+          onSelect={onSelect}
+          onContextMenu={onContextMenu}
+        />
+      ))}
+    </ul>
+  );
+
   return (
     // Cây dài thì cuộn trong khung, không kéo dài cả trang
     <div className="flex h-full min-h-0 flex-col rounded-[var(--radius-card)] border border-card-border bg-card p-3.5 shadow-card">
       {tree.length === 0 ? (
         <p className="px-2 py-6 text-center text-sm text-text-muted">{t('documents.empty')}</p>
       ) : (
-        // Cây có thể thụt lề rất sâu -> tên folder không bị cắt/tràn ra ngoài khung, thay vào đó
-        // cuộn ngang để xem đủ tên khi cây quá rộng so với khung.
         <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-          <ul className="w-max min-w-full space-y-0.5">
-            {tree.map((node) => (
-              <FolderNode
-                key={node.id}
-                node={node}
-                depth={0}
-                selectedId={selectedId}
-                expandedIds={expandedIds}
-                onToggleExpand={toggleExpand}
-                onSelect={onSelect}
-                onContextMenu={onContextMenu}
+          {/* Vùng làm việc: luồng xử lý tài liệu đang hoạt động (WIP → Shared → Published) */}
+          <ZoneHeading label={t('documents.tree.workingZone')} />
+          {renderRoots(workingRoots)}
+
+          {/* Vùng lưu trữ: bản đã niêm phong — tách hẳn khỏi vùng làm việc để không nhầm lẫn */}
+          {archivedRoots.length > 0 && (
+            <div className="mt-3 border-t border-dashed border-card-border pt-3">
+              <ZoneHeading
+                label={t('documents.tree.archiveZone')}
+                icon={
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="3" width="22" height="5" rx="1" />
+                    <path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8" />
+                    <path d="M10 12h4" />
+                  </svg>
+                }
               />
-            ))}
-          </ul>
+              {renderRoots(archivedRoots)}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,6 +1,20 @@
 export { UserAvatar } from './avatar';
 export type { UserAvatarSize } from './avatar';
 export { ConfirmDialog } from './confirm';
+export {
+  ALL_TIME,
+  DATE_RANGE_PRESETS,
+  DateRangeCalendar,
+  DateRangeFilter,
+  dateRangeLabel,
+  formatDateKey,
+  fromDateKey,
+  presetLabel,
+  presetToDateKeys,
+  resolveDateRange,
+  toDateKey,
+} from './date-range';
+export type { DateRangePreset, DateRangeQuery, DateRangeValue } from './date-range';
 export { extensionOf, fileKindColor, fileKindLabel, fileKindOf, FileTypeIcon, FolderGlyph } from './file-icon';
 export type { FileIconSize, FileKind, FileTypeIconProps, FolderGlyphProps } from './file-icon';
 export { MarkupNoteFilter } from './markup';

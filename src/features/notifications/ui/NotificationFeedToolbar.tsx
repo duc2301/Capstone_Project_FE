@@ -1,29 +1,19 @@
-import { useState } from 'react';
-
+import type { DateRangeValue } from '@/shared/components';
+import { DateRangeFilter } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
-import type {
-  NotificationDateRange,
-  NotificationFilter,
-} from '../model/useNotificationList';
+import type { NotificationFilter } from '../model/useNotificationList';
 
 interface Props {
   query: string;
   onQueryChange: (v: string) => void;
   filter: NotificationFilter;
   onFilterChange: (f: NotificationFilter) => void;
-  dateRange: NotificationDateRange;
-  onDateRangeChange: (d: NotificationDateRange) => void;
+  dateRange: DateRangeValue;
+  onDateRangeChange: (d: DateRangeValue) => void;
   hasUnread: boolean;
   onMarkAllRead: () => void;
   onRefresh: () => void;
 }
-
-const DATE_OPTIONS: { value: NotificationDateRange; labelKey: Parameters<typeof t>[0] }[] = [
-  { value: 'all', labelKey: 'notification.date.all' },
-  { value: 'today', labelKey: 'notification.date.today' },
-  { value: 'week', labelKey: 'notification.date.week' },
-  { value: 'month', labelKey: 'notification.date.month' },
-];
 
 function FilterChip({
   active,
@@ -60,15 +50,8 @@ export function NotificationFeedToolbar({
   onMarkAllRead,
   onRefresh,
 }: Props) {
-  const [dateOpen, setDateOpen] = useState(false);
-
   const toggleFilter = (target: NotificationFilter) => {
     onFilterChange(filter === target ? 'all' : target);
-  };
-
-  const selectDate = (value: NotificationDateRange) => {
-    onDateRangeChange(value);
-    setDateOpen(false);
   };
 
   return (
@@ -118,56 +101,7 @@ export function NotificationFeedToolbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setDateOpen((v) => !v)}
-            aria-expanded={dateOpen}
-            className="flex items-center gap-2 rounded-[var(--radius-input)] border border-card-border bg-card px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-content-bg"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            {t('notification.filter.byDate')}
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-
-          {dateOpen && (
-            <>
-              <button
-                type="button"
-                aria-hidden
-                tabIndex={-1}
-                onClick={() => setDateOpen(false)}
-                className="fixed inset-0 z-10 cursor-default"
-              />
-              <div className="absolute right-0 z-20 mt-2 w-44 animate-scale-in overflow-hidden rounded-[var(--radius-input)] border border-card-border bg-card py-1 shadow-dropdown">
-                {DATE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => selectDate(opt.value)}
-                    className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors hover:bg-content-bg ${
-                      dateRange === opt.value ? 'font-semibold text-primary' : 'text-text-secondary'
-                    }`}
-                  >
-                    {t(opt.labelKey)}
-                    {dateRange === opt.value && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <DateRangeFilter value={dateRange} onChange={onDateRangeChange} />
 
         <button
           type="button"

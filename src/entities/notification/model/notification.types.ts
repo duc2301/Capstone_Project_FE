@@ -16,6 +16,7 @@ export interface NotificationQuery {
   linkType?: string;
   search?: string;
   from?: string;
+  to?: string;
   page?: number;
   pageSize?: number;
 }

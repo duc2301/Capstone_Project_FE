@@ -7,7 +7,7 @@ import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-it
 import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
-import { AuditLogPanel } from '@/features/audit-logs';
+import { FileActivitySection } from '@/features/audit-logs';
 import { FileVersionsModal, formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal, useFolderPermission } from '@/features/folders';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
@@ -132,7 +132,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-const PANEL_TABS = ['properties', 'signatureHistory', 'issues', 'loi', 'related', 'history'] as const;
+const PANEL_TABS = ['properties', 'signatureHistory', 'issues', 'loi', 'related'] as const;
 
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
@@ -652,11 +652,6 @@ export function FileViewPage() {
                 onClick={() => setActivePanelTab('loi')}
               />
             )}
-            <PanelTabButton
-              active={activePanelTab === 'history'}
-              label={t('audit.file.tab')}
-              onClick={() => setActivePanelTab('history')}
-            />
           </div>
 
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
@@ -685,6 +680,7 @@ export function FileViewPage() {
                   onOpenVersion={openVersion}
                   onManageVersions={() => setVersionsOpen(true)}
                 />
+                {fileId && <FileActivitySection fileItemId={fileId} />}
               </>
             ) : activePanelTab === 'issues' ? (
               projectId && fileId ? (
@@ -709,8 +705,6 @@ export function FileViewPage() {
               ) : null
             ) : activePanelTab === 'loi' ? (
               <LoiCheckPanel fileItemId={fileId ?? ''} projectId={projectId} readOnly={isVersionView} />
-            ) : activePanelTab === 'history' ? (
-              fileId ? <AuditLogPanel mode="file" fileItemId={fileId} showFilters={false} /> : null
             ) : (
               <SignatureHistoryPanel
                 requiresSignature={requiresSignature}

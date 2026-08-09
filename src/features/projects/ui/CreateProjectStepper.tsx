@@ -18,6 +18,7 @@ import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 import { AddressField } from './AddressField';
+import { ManagerAccountPicker } from './ManagerAccountPicker';
 
 /* ══════════════════════════════════════════════════════════════
    Types
@@ -53,6 +54,7 @@ interface StepperState {
   packages: StepperPackage[];
   /* Step 4 & 5 */
   groups: GroupDraft[];
+  managerAccountId: string;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -131,6 +133,7 @@ const buildInitialState = (bep?: BepParseResult): StepperState => {
     mandatoryFiles: [],
     packages,
     groups,
+    managerAccountId: '',
   };
 };
 
@@ -400,6 +403,11 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
         await projectApi.uploadImage(project.id, state.projectImage);
       }
 
+      if (state.managerAccountId) {
+        setSubmitProgress(t('projects.stepper.progress.assigningManager'));
+        await projectApi.assignManager(project.id, { accountId: state.managerAccountId });
+      }
+
       /* 2. Upload mandatory files to /Published/Hồ sơ pháp lý */
       if (state.mandatoryFiles.length > 0) {
         setSubmitProgress(t('projects.stepper.progress.uploadingLegal'));
@@ -589,12 +597,13 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
             renderPackageForm={renderPackageForm}
           />
         )}
-        {step === 3 && <Step4Groups state={state} update={update} />}
+        {step === 3 && <Step4Groups state={state} update={update} accounts={accounts} />}
         {step === 4 && <Step5Partners state={state} update={update} organizations={organizations} orgsLoading={orgsLoading} />}
         {step === 5 && (
           <Step6Summary
             state={state}
             organizations={organizations}
+            accounts={accounts}
             submitting={submitting}
             submitProgress={submitProgress}
             submitError={submitError}
@@ -990,7 +999,13 @@ function Step3PackageInfo({
 /* ══════════════════════════════════════════════════════════════
    Step 4: Quản lý nhóm
    ══════════════════════════════════════════════════════════════ */
-function Step4Groups({ state, update }: { state: StepperState; update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void }) {
+function Step4Groups({
+  state, update, accounts,
+}: {
+  state: StepperState;
+  update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void;
+  accounts: Account[];
+}) {
   const groups = state.groups;
   const setGroups = (fn: (prev: GroupDraft[]) => GroupDraft[]) =>
     update('groups', fn(groups));
@@ -1060,6 +1075,24 @@ function Step4Groups({ state, update }: { state: StepperState; update: <K extend
           ))}
         </div>
       )}
+
+      <section className="rounded-[var(--radius-card)] border border-card-border bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="heading-card">{t('projects.stepper.s4.managerTitle')}</h3>
+          <span className="field-hint">{t('projects.stepper.s4.managerOptional')}</span>
+        </div>
+        <p className="mt-1 text-sm text-text-muted">{t('projects.stepper.s4.managerHint')}</p>
+
+        <div className="mt-4">
+          <ManagerAccountPicker
+            accounts={accounts}
+            value={state.managerAccountId}
+            onChange={(accountId) => update('managerAccountId', accountId)}
+            name="stepper-manager"
+            allowClear
+          />
+        </div>
+      </section>
     </div>
   );
 }
@@ -1155,15 +1188,17 @@ function Step5Partners({
    Step 6: Tổng kết & Khởi tạo
    ══════════════════════════════════════════════════════════════ */
 function Step6Summary({
-  state, organizations, submitting, submitProgress, submitError,
+  state, organizations, accounts, submitting, submitProgress, submitError,
 }: {
   state: StepperState;
   organizations: Organization[];
+  accounts: Account[];
   submitting: boolean;
   submitProgress: string;
   submitError: string | null;
 }) {
   const validGroups = state.groups.filter((g) => g.name.trim());
+  const manager = accounts.find((a) => a.id === state.managerAccountId);
   const getOrgName = (id: string) => {
     const org = organizations.find((o) => o.id === id);
     return org ? (org.displayName || org.legalName) : '—';
@@ -1266,6 +1301,14 @@ function Step6Summary({
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
           {t('projects.stepper.s6.groups')} ({validGroups.length})
+        </div>
+        <div className="flex items-center justify-between rounded-lg bg-content-bg px-4 py-2.5 text-sm">
+          <span className="text-text-muted">{t('projects.stepper.s6.manager')}</span>
+          {manager ? (
+            <span className="font-semibold text-text">{manager.userName}</span>
+          ) : (
+            <span className="text-xs italic text-text-placeholder">{t('projects.stepper.s6.noManager')}</span>
+          )}
         </div>
         {validGroups.length > 0 ? (
           <div className="space-y-2">

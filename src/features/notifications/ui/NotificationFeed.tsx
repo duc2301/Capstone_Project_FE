@@ -74,7 +74,7 @@ export function NotificationFeed() {
               <p className="py-20 text-center text-sm text-text-muted">{t('common.loading')}</p>
             ) : showEmpty ? (
               <p className="py-20 text-center text-sm text-text-muted">
-                {list.query || list.filter !== 'all' || list.dateRange !== 'all'
+                {list.query || list.filter !== 'all' || list.dateRange.preset !== 'all'
                   ? t('notification.noResults')
                   : t('notification.empty')}
               </p>

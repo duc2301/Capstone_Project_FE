@@ -41,3 +41,24 @@ export interface UpdateAccountPayload {
   organizationId?: string;
   clearOrganization?: boolean;
 }
+
+/* ── Nhập tài khoản từ Excel ──────────────────────── */
+export interface AccountImportCreated {
+  rowNumber: number;
+  userName: string;
+  email: string;
+}
+
+export interface AccountImportError {
+  rowNumber: number;
+  email: string;
+  reason: string;
+}
+
+export interface AccountImportResult {
+  totalRows: number;
+  createdCount: number;
+  skippedCount: number;
+  created: AccountImportCreated[];
+  errors: AccountImportError[];
+}

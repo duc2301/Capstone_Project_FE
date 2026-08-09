@@ -312,6 +312,33 @@ export const translations = {
   'account.roleHint': 'Vai trò quản lý dự án (PM) được gán riêng trong từng dự án, không đặt tại đây.',
   'account.pagination.members': 'thành viên',
 
+  // ── Nhập tài khoản từ Excel ───────────────────────
+  'account.import.action': 'Nhập từ Excel',
+  'account.import.title': 'Nhập tài khoản hàng loạt từ Excel',
+  'account.import.step1Title': 'Bước 1 — Tải file mẫu',
+  'account.import.step1Hint': 'Dùng đúng file mẫu để đảm bảo các cột khớp với hệ thống.',
+  'account.import.downloadTemplate': 'Tải file mẫu',
+  'account.import.instructions':
+    'Chỉ cần điền hai cột: UserName (họ và tên nhân viên) và Email. Mỗi tài khoản được tạo với mật khẩu mặc định 123456 và vai trò Người dùng. Hãy nhắc nhân viên đổi mật khẩu sau lần đăng nhập đầu tiên, hoặc họ có thể đăng nhập bằng Google với chính email đó.',
+  'account.import.step2Title': 'Bước 2 — Chọn file đã điền',
+  'account.import.dropHint': 'Kéo thả file .xlsx vào đây hoặc',
+  'account.import.browse': 'chọn từ máy tính',
+  'account.import.constraints': 'Chỉ chấp nhận .xlsx, tối đa 2 MB và 500 dòng dữ liệu.',
+  'account.import.removeFile': 'Bỏ file đã chọn',
+  'account.import.errorExtension': 'Chỉ chấp nhận file .xlsx.',
+  'account.import.errorSize': 'File vượt quá 2MB.',
+  'account.import.submit': 'Nhập tài khoản',
+  'account.import.importing': 'Đang nhập...',
+  'account.import.close': 'Đóng',
+  'account.import.summaryCreated': 'Đã tạo {created}/{total} tài khoản',
+  'account.import.summarySkipped': 'Bỏ qua {skipped}',
+  'account.import.errorsTitle': 'Dòng lỗi ({count})',
+  'account.import.createdTitle': 'Tài khoản đã tạo ({count})',
+  'account.import.colRow': 'Dòng',
+  'account.import.colEmail': 'Email',
+  'account.import.colReason': 'Lý do',
+  'account.import.toastSuccess': 'Đã tạo {created}/{total} tài khoản.',
+
   // ── Profile page ──────────────────────────────────
   'profile.title': 'Hồ sơ cá nhân',
   'profile.editButton': 'Chỉnh sửa hồ sơ',

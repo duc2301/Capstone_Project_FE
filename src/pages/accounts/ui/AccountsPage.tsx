@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import type { Account } from '@/entities/account';
 import {
   CreateAccountForm,
+  ImportAccountsModal,
   isAdmin,
   isProjectManager,
   managedProjectsLabel,
@@ -15,7 +16,7 @@ import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, PaginationBar, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
-type FormMode = 'idle' | 'create' | 'edit';
+type FormMode = 'idle' | 'create' | 'edit' | 'import';
 
 const PAGE_SIZE = 10;
 const EMPTY_CELL = '—';
@@ -148,7 +149,7 @@ function UserRow({ account, onEdit, onDelete }: UserRowProps) {
 
 /* ── Main page ─────────────────────────────────────── */
 export function AccountsPage() {
-  const { accounts, loading, error, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const { accounts, loading, error, fetchAccounts, createAccount, updateAccount, deleteAccount } = useAccounts();
 
   const [formMode, setFormMode] = useState<FormMode>('idle');
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -298,19 +299,34 @@ export function AccountsPage() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setFormMode('create')}
-            className="flex shrink-0 items-center justify-center gap-2.5 rounded-[var(--radius-input)] bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover"
-          >
-            <svg width="18" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <line x1="20" y1="8" x2="20" y2="14" />
-              <line x1="23" y1="11" x2="17" y2="11" />
-            </svg>
-            {t('account.createNew')}
-          </button>
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={() => setFormMode('import')}
+              className="flex shrink-0 items-center justify-center gap-2.5 rounded-[var(--radius-input)] border border-card-border bg-card px-5 py-2.5 text-sm font-semibold text-text-secondary shadow-card transition-all duration-200 hover:border-primary/40 hover:text-primary"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {t('account.import.action')}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFormMode('create')}
+              className="flex shrink-0 items-center justify-center gap-2.5 rounded-[var(--radius-input)] bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-[0_6px_10px_-3px_rgba(64,102,35,0.25)] transition-all duration-200 hover:bg-primary-hover"
+            >
+              <svg width="18" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="8.5" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg>
+              {t('account.createNew')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -405,6 +421,17 @@ export function AccountsPage() {
       {formMode === 'create' && (
         <Modal title={t('account.modal.createTitle')} onClose={closeForm} maxWidth="max-w-3xl">
           <CreateAccountForm onSubmit={handleCreate} onCancel={closeForm} />
+        </Modal>
+      )}
+
+      {/* ── Import Modal ───────────────────────────── */}
+      {formMode === 'import' && (
+        <Modal title={t('account.import.title')} onClose={closeForm} maxWidth="max-w-3xl">
+          <ImportAccountsModal
+            onClose={closeForm}
+            onImported={fetchAccounts}
+            showToast={showToast}
+          />
         </Modal>
       )}
 

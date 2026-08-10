@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { fileItemApi } from '@/entities/file-item';
 import { t } from '@/shared/lib/i18n';
 import type { SurfaceBinding } from '../model/binding';
-import { loadPdf, renderPage, type PdfDoc } from '../model/pdf';
+import { destroyPdf, loadPdf, renderPage, type PdfDoc } from '../model/pdf';
 import { MarkupSurface } from './MarkupSurface';
 
 interface Props {
@@ -34,19 +34,20 @@ export function PdfStage({ fileItemId, page, zoom, binding, onLoaded, onError }:
         const res = await fileItemApi.getViewPdf(fileItemId);
         const document = await loadPdf(res.data);
         if (cancelled) {
-          void document.destroy();
+          void destroyPdf(document);
           return;
         }
         loaded = document;
         setDoc(document);
         onLoaded(document.numPages);
-      } catch {
-        if (!cancelled) onError(t('markup.error.load'));
+      } catch (err) {
+        console.error('[PdfStage] loadPdf failed', err);
+        if (!cancelled) onError(t('markup.error.pdfLoad'));
       }
     })();
     return () => {
       cancelled = true;
-      if (loaded) void loaded.destroy();
+      if (loaded) void destroyPdf(loaded);
     };
   }, [fileItemId, onLoaded, onError]);
 

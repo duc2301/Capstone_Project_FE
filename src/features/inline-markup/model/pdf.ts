@@ -13,6 +13,10 @@ export async function loadPdf(data: ArrayBuffer): Promise<PdfDoc> {
   return pdfjs.getDocument({ data: new Uint8Array(data) }).promise;
 }
 
+export function destroyPdf(doc: PdfDoc): Promise<void> {
+  return doc.loadingTask.destroy();
+}
+
 export interface RenderedSize {
   cssWidth: number;
   cssHeight: number;

@@ -13,7 +13,7 @@ import {
   useAccounts,
 } from '@/features/accounts';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, PaginationBar, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, PaginationBar, RowActions, Toast, ToolbarIconButton, UserAvatar, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'edit' | 'import';
@@ -300,18 +300,19 @@ export function AccountsPage() {
           </div>
 
           <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
-            <button
-              type="button"
+            <ToolbarIconButton
+              variant="ghost"
+              label={t('account.import.action')}
               onClick={() => setFormMode('import')}
-              className="flex shrink-0 items-center justify-center gap-2.5 rounded-[var(--radius-input)] border border-card-border bg-card px-5 py-2.5 text-sm font-semibold text-text-secondary shadow-card transition-all duration-200 hover:border-primary/40 hover:text-primary"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              {t('account.import.action')}
-            </button>
+              className="shadow-card hover:border-primary/40 hover:text-primary"
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              }
+            />
 
             <button
               type="button"

@@ -577,7 +577,7 @@ export function ConventionDetail({
                                   t('naming.toast.updated'),
                                 );
                               }}
-                              className="w-24 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-2 py-1.5 text-xs text-text outline-none focus:border-input-focus disabled:opacity-50"
+                              className="field-select w-32 shrink-0 py-1.5 pl-2.5 pr-8 text-xs"
                             >
                               <option value="">{t('naming.detail.noLock')}</option>
                               {activeValues.map((v) => (

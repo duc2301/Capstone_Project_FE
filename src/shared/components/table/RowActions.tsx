@@ -13,7 +13,13 @@ const PILL_TONE = {
   neutral: 'text-text-secondary hover:bg-content-bg hover:text-text',
 } as const;
 
+const ICON_SIZE = {
+  sm: 'h-7 w-7',
+  md: 'h-8 w-8',
+} as const;
+
 export type ActionIconTone = keyof typeof ICON_TONE;
+export type ActionIconSize = keyof typeof ICON_SIZE;
 export type ActionPillTone = keyof typeof PILL_TONE;
 
 interface RowActionsProps {
@@ -40,12 +46,14 @@ interface ActionIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
   label: string;
   icon: ReactNode;
   tone?: ActionIconTone;
+  size?: ActionIconSize;
 }
 
 export function ActionIconButton({
   label,
   icon,
   tone = 'neutral',
+  size = 'md',
   className = '',
   ...rest
 }: ActionIconButtonProps) {
@@ -55,7 +63,7 @@ export function ActionIconButton({
       type="button"
       title={label}
       aria-label={label}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-button)] transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${ICON_TONE[tone]} ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-[var(--radius-button)] transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${ICON_SIZE[size]} ${ICON_TONE[tone]} ${className}`}
     >
       {icon}
     </button>

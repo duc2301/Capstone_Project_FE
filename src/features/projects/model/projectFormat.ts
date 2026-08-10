@@ -15,13 +15,13 @@ const FILTER_LABEL: Record<ProjectFilter, TranslationKey> = {
 const STATUS_META: Record<ProjectStatus, { key: TranslationKey; badgeClass: string; dotClass: string }> = {
   [Status.Active]: {
     key: 'projects.status.active',
-    badgeClass: 'bg-primary text-white',
-    dotClass: 'bg-warning',
+    badgeClass: 'border-primary/25 bg-primary-ghost text-primary',
+    dotClass: 'bg-primary',
   },
   [Status.Completed]: {
     key: 'projects.status.completed',
-    badgeClass: 'bg-[#8A5100] text-white',
-    dotClass: 'bg-white/80',
+    badgeClass: 'border-accent-amber/25 bg-accent-amber-tint text-accent-amber',
+    dotClass: 'bg-accent-amber',
   },
 };
 

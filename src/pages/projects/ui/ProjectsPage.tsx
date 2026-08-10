@@ -1,9 +1,6 @@
-import { isAxiosError } from 'axios';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import type { BepParseResult } from '@/entities/project';
-import { projectApi } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreatePackageForm } from '@/features/packages';
 import type { ProjectFilter } from '@/features/projects';
@@ -13,6 +10,7 @@ import {
   matchesFilter,
   PROJECT_FILTERS,
   ProjectCard,
+  useBepTask,
   useProjects,
 } from '@/features/projects';
 import { Modal, PaginationBar, Toast, useToast } from '@/shared/components';
@@ -31,44 +29,31 @@ export function ProjectsPage() {
   const [filter, setFilter] = useState<ProjectFilter>('all');
   const [page, setPage] = useState(1);
 
-  /* ── Khởi tạo nhanh từ BEP ── */
   const bepInputRef = useRef<HTMLInputElement>(null);
-  const [bepData, setBepData] = useState<BepParseResult | undefined>(undefined);
-  const [parsing, setParsing] = useState(false);
+  const bepTask = useBepTask();
+  const bepData = bepTask.status === 'opened' ? bepTask.result ?? undefined : undefined;
+  const stepperOpen = creating || bepData !== undefined;
+  const parsing = bepTask.status === 'running';
+
+  const clearOpenedBepTask = () => {
+    if (bepTask.status === 'opened') bepTask.dismiss();
+  };
 
   const openBlankCreate = () => {
-    setBepData(undefined);
+    clearOpenedBepTask();
     setCreating(true);
   };
 
   const closeCreate = () => {
     setCreating(false);
-    setBepData(undefined);
-  };
-
-  const runBepParse = async (file: File) => {
-    setParsing(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { data } = await projectApi.parseBep(formData);
-      const result = data.result;
-      if (!result) throw new Error(t('projects.bep.failed'));
-      if (result.extractionEmpty) showToast(t('projects.bep.empty'), 'error');
-      setBepData(result);
-      setCreating(true);
-    } catch (err) {
-      const message = isAxiosError(err) ? (err.response?.data as { message?: string })?.message : null;
-      showToast(message || t('projects.bep.failed'), 'error');
-    } finally {
-      setParsing(false);
-    }
+    clearOpenedBepTask();
   };
 
   const { toast, showToast } = useToast();
 
   const handleStepperComplete = (projectId: string) => {
     setCreating(false);
+    clearOpenedBepTask();
     showToast(t('projects.toast.created'));
     window.location.href = `/projects/${projectId}`;
   };
@@ -105,33 +90,28 @@ export function ProjectsPage() {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 e.target.value = '';
-                if (f) runBepParse(f);
+                if (f) bepTask.start(f);
               }}
             />
             <button
               type="button"
               onClick={() => bepInputRef.current?.click()}
               disabled={parsing}
-              className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-200 hover:bg-primary-ghost disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
             >
               {parsing ? (
-                <>
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
-                  </svg>
-                  {t('projects.bep.parsing')}
-                </>
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
+                </svg>
               ) : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  {t('projects.bep.quickCreate')}
-                </>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
               )}
+              {parsing ? t('projects.bep.parsing') : t('projects.bep.quickCreate')}
             </button>
             <button
               type="button"
@@ -208,7 +188,7 @@ export function ProjectsPage() {
       )}
 
       {/* Create modal */}
-      {creating && (
+      {stepperOpen && (
         <Modal title={t('projects.modal.createTitle')} onClose={closeCreate} maxWidth="max-w-5xl" flush>
           <CreateProjectStepper
             key={bepData ? 'bep' : 'blank'}

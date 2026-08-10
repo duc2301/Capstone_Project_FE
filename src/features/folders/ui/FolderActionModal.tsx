@@ -20,6 +20,10 @@ function flatten(nodes: FolderTreeNode[], depth = 0): { node: FolderTreeNode; de
   return nodes.flatMap((n) => [{ node: n, depth }, ...flatten(n.children, depth + 1)]);
 }
 
+function countDescendants(node: FolderTreeNode): number {
+  return node.children.reduce((total, child) => total + 1 + countDescendants(child), 0);
+}
+
 /* Tập id của node + toàn bộ hậu duệ (không cho di chuyển vào chính mình/con cháu) */
 function collectSubtreeIds(node: FolderTreeNode): Set<string> {
   const ids = new Set<string>();
@@ -41,6 +45,10 @@ const TITLE: Record<FolderAction, () => string> = {
 export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit }: FolderActionModalProps) {
   const [name, setName] = useState(action === 'rename' ? node.name : '');
   const [targetId, setTargetId] = useState('');
+  const descendantCount = useMemo(
+    () => (action === 'delete' ? countDescendants(node) : 0),
+    [action, node],
+  );
 
   // Đích di chuyển hợp lệ: cùng khu vực, có quyền Sửa, không phải node/hậu duệ, không phải cha hiện tại.
   const moveTargets = useMemo(() => {
@@ -119,7 +127,7 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
                 <select
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  className="field-input"
+                  className="field-select"
                 >
                   <option value="">—</option>
                   {moveTargets.map(({ node: n, depth }) => (
@@ -135,6 +143,11 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
               <p className="text-sm text-text">
                 {t('documents.action.deleteTitle')}: <span className="font-semibold">{node.name}</span>
               </p>
+              {descendantCount > 0 && (
+                <p className="text-sm text-text-secondary">
+                  {t('documents.action.deleteSubFolders').replace('{count}', String(descendantCount))}
+                </p>
+              )}
               <p className="text-sm text-danger">{t('documents.action.deleteWarning')}</p>
             </div>
           )}

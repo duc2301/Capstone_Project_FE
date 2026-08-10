@@ -170,7 +170,7 @@ export function SubmitApprovalModal({
               <span className="text-sm font-medium text-text">{t('approvals.submitModal.requiresSignature')}</span>
               {mustRequireSignature && (
                 <span className="ml-auto rounded-full bg-warning-light px-2.5 py-0.5 text-xs font-bold text-warning">
-                  Bắt buộc
+                  {t('approvals.submitModal.required')}
                 </span>
               )}
             </label>
@@ -186,7 +186,7 @@ export function SubmitApprovalModal({
                   </p>
                 ) : signerGroups.length === 0 ? (
                   <p className="rounded-[var(--radius-card)] border border-card-border bg-card px-3.5 py-3 text-sm text-text-muted">
-                    Chưa có nhóm hoặc thành viên để chọn.
+                    {t('approvals.submitModal.noSigners')}
                   </p>
                 ) : signerGroups.map((group) => {
                   // Shared->Published bắt buộc signer đích danh phải là Leader active của 1 nhóm nào
@@ -233,7 +233,7 @@ export function SubmitApprovalModal({
                 })}
               </div>
               <p className="text-xs text-text-muted">
-                Tick vào tên nhóm để chọn hoặc bỏ chọn toàn bộ thành viên trong nhóm.
+                {t('approvals.submitModal.groupTickHint')}
               </p>
             </div>
           )}

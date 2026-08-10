@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { sessionApi } from '@/entities/session';
 import type { ApiResponse } from '@/shared/api';
+import { t } from '@/shared/lib/i18n';
 
 interface UseResetPasswordReturn {
   loading: boolean;
@@ -32,7 +33,7 @@ export function useResetPassword(): UseResetPasswordReturn {
         const axiosError = err as AxiosError<ApiResponse>;
         setError(
           axiosError.response?.data?.message ||
-            'Token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.',
+            t('auth.resetPassword.tokenExpired'),
         );
       } finally {
         setLoading(false);

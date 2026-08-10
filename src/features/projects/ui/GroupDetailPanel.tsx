@@ -5,7 +5,7 @@ import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
 import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
-import { ActionIconButton, ConfirmDialog, Modal, PaginationBar, RowActions, UserAvatar } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, Modal, PaginationBar, RowActions, ToolbarIconButton, UserAvatar } from '@/shared/components';
 import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
 import type { InviteManyInput, InviteManyResult } from '../model/useProjectInvite';
@@ -97,16 +97,17 @@ export function GroupDetailPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5">
-      <button
-        type="button"
+      <ToolbarIconButton
+        size="sm"
+        variant="ghost"
+        label={t('projectDetail.teams.detail.back')}
         onClick={onBack}
-        className="flex w-fit shrink-0 items-center gap-1.5 text-sm font-semibold text-text-muted transition-colors hover:text-primary"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-        {t('projectDetail.teams.detail.back')}
-      </button>
+        icon={
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        }
+      />
 
       <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 items-start gap-3">
@@ -221,7 +222,7 @@ export function GroupDetailPanel({
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value as RoleFilter); resetPage(); }}
           aria-label={t('projectDetail.teams.detail.roleFilter')}
-          className="shrink-0 rounded-[var(--radius-input)] border border-card-border bg-card px-4 py-2.5 text-sm text-text shadow-card outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+          className="field-select w-auto shrink-0 border-card-border bg-card shadow-card"
         >
           {ROLE_FILTERS.map((f) => (
             <option key={f.id} value={f.id}>{t(f.key)}</option>

@@ -18,7 +18,9 @@ import { RejectApprovalModal } from './RejectApprovalModal';
 import { RejectReturnModal } from './RejectReturnModal';
 
 const approvalApproveLabel = (targetZone?: string | null) =>
-  targetZone ? `Duyệt qua ${targetZone}` : t('approvals.action.approve');
+  targetZone
+    ? t('approvals.action.approveTo').replace('{zone}', targetZone)
+    : t('approvals.action.approve');
 
 interface PendingApprovalsModalProps {
   onClose: () => void;

@@ -15,8 +15,7 @@ const PAGE_SIZE = 20;
 
 const SEARCH_CLASS =
   'w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
-const SELECT_CLASS =
-  'rounded-[var(--radius-input)] border border-card-border bg-card px-4 py-2.5 text-sm text-text shadow-card outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20';
+const SELECT_CLASS = 'field-select w-auto border-card-border bg-card shadow-card';
 
 interface Props {
   projectId: string;

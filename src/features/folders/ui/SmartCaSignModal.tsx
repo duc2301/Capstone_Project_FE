@@ -340,7 +340,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
                     value={certificateSerial}
                     onChange={(e) => setCertificateSerial(e.target.value)}
                     disabled={certificates.length === 0}
-                    className="h-11 rounded-lg border border-input-border bg-input-bg px-3 text-sm font-semibold text-text outline-none focus:border-input-focus disabled:opacity-60"
+                    className="field-select h-11 w-auto rounded-lg py-0 pl-3 font-semibold"
                   >
                     <option value="">{t('smartca.signModal.selectCertificate')}</option>
                     {certificates.map((certificate) => (

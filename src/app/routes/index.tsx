@@ -31,6 +31,7 @@ const ViewerPage = lazy(() => import('@/pages/viewer').then((m) => ({ default: m
 const FileViewPage = lazy(() => import('@/pages/file-view').then((m) => ({ default: m.FileViewPage })));
 const LoiReportPage = lazy(() => import('@/pages/loi-report').then((m) => ({ default: m.LoiReportPage })));
 const IssueDetailPage = lazy(() => import('@/pages/issue-detail').then((m) => ({ default: m.IssueDetailPage })));
+const MyIssuesPage = lazy(() => import('@/pages/issues').then((m) => ({ default: m.MyIssuesPage })));
 const ContractPackagesPage = lazy(() => import('@/pages/contract-packages').then((m) => ({ default: m.ContractPackagesPage })));
 const AuditLogsPage = lazy(() => import('@/pages/audit-logs').then((m) => ({ default: m.AuditLogsPage })));
 
@@ -162,6 +163,16 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <ContractPackagesPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/issues"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <MyIssuesPage />
               </AdminLayout>
             </RequireAuth>
           }

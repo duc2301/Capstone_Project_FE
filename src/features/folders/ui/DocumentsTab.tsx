@@ -10,7 +10,7 @@ import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
-import { Toast, useToast } from '@/shared/components';
+import { Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -62,6 +62,10 @@ const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[
 /* Thư mục hệ thống ở Published được nhận file trực tiếp — khớp Domain/Common/CdeFolderNames.cs */
 const PACKAGES_FOLDER_NAME = 'Các gói thầu';
 const LEGAL_FOLDER_NAME = 'Hồ sơ pháp lý';
+
+function subtreeIds(node: FolderTreeNode): string[] {
+  return [node.id, ...node.children.flatMap(subtreeIds)];
+}
 
 /* Tìm node theo id trong cây */
 function findNode(nodes: FolderTreeNode[], id: string | null): FolderTreeNode | null {
@@ -237,7 +241,7 @@ export function DocumentsTab({
       else await deleteFolder(node.id);
 
       await refetch();
-      if (action === 'delete' && selectedId === node.id) setSelectedId(null);
+      if (action === 'delete' && selectedId && subtreeIds(node).includes(selectedId)) setSelectedId(null);
       showToast(
         action === 'create' ? t('documents.toast.created')
         : action === 'rename' ? t('documents.toast.renamed')
@@ -337,36 +341,33 @@ export function DocumentsTab({
         <h2 className="heading-tab shrink-0">{t('projectDetail.tab.documents')}</h2>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
+          <ToolbarIconButton
+            label={t('approvals.pending.title')}
             onClick={() => setPendingApprovalsOpen(true)}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-            </svg>
-            {t('approvals.pending.title')}
-          </button>
-          <button
-            type="button"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+            }
+          />
+          <ToolbarIconButton
+            label={t('approvals.history.title')}
             onClick={() => setApprovalHistoryOpen(true)}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-            </svg>
-            {t('approvals.history.title')}
-          </button>
-          <button
-            type="button"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+            }
+          />
+          <ToolbarIconButton
+            label={t('documents.upload')}
             onClick={() => { if (selected) openUpload(selected); else showToast(t('documents.selectFolderToCreate'), 'error'); }}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            {t('documents.upload')}
-          </button>
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            }
+          />
           <button
             type="button"
             onClick={handleNewFolderClick}
@@ -446,19 +447,17 @@ export function DocumentsTab({
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
-                          {selected.children.length === 0 && (
-                            <button
-                              type="button"
-                              title={t('documents.menu.delete')}
-                              onClick={() => setModal({ action: 'delete', node: selected })}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-danger-light hover:text-danger"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              </svg>
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            title={t('documents.menu.delete')}
+                            onClick={() => setModal({ action: 'delete', node: selected })}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-danger-light hover:text-danger"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
                         </>
                       )}
                     </div>

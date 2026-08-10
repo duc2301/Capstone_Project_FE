@@ -5,6 +5,8 @@ import { t } from '@/shared/lib/i18n';
 
 import { useResetPassword } from '../model/useResetPassword';
 
+const WELCOME_TEMP_PASSWORD = '123456';
+
 const INPUT_BASE =
   'h-12 w-full rounded-xl border border-border-sage bg-white text-base text-text-strong placeholder:text-text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
 const LABEL_CLASS =
@@ -66,11 +68,11 @@ export function ResetPasswordForm() {
     setLocalError(null);
 
     if (newPassword.length < 6) {
-      setLocalError('Mật khẩu phải có ít nhất 6 ký tự.');
+      setLocalError(t('auth.resetPassword.minLength'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setLocalError('Xác nhận mật khẩu không khớp.');
+      setLocalError(t('auth.resetPassword.mismatch'));
       return;
     }
 
@@ -87,25 +89,21 @@ export function ResetPasswordForm() {
           </svg>
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="heading-page">
-            Liên kết không hợp lệ
-          </h1>
-          <p className="text-base text-text-secondary">
-            Liên kết đặt mật khẩu này không hợp lệ hoặc đã hết hạn.
-          </p>
+          <h1 className="heading-page">{t('auth.resetPassword.invalidTitle')}</h1>
+          <p className="text-base text-text-secondary">{t('auth.resetPassword.invalidBody')}</p>
         </div>
         <div className="flex w-full flex-col items-center gap-3">
           <Link
             to="/login"
             className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-primary px-6 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
           >
-            Đến trang đăng nhập
+            {t('auth.resetPassword.goLogin')}
           </Link>
           <Link
             to="/forgot-password"
             className="text-sm font-semibold text-primary transition-colors hover:underline"
           >
-            Yêu cầu liên kết mới
+            {t('auth.resetPassword.requestNew')}
           </Link>
         </div>
       </div>
@@ -120,17 +118,15 @@ export function ResetPasswordForm() {
         </div>
         <div className="flex flex-col gap-2">
           <h1 className="heading-page">
-            {isWelcome ? 'Đặt mật khẩu thành công!' : 'Đặt lại mật khẩu thành công!'}
+            {isWelcome ? t('auth.resetPassword.doneWelcome') : t('auth.resetPassword.doneTitle')}
           </h1>
-          <p className="text-base text-text-secondary">
-            Mật khẩu của bạn đã được cập nhật. Đang chuyển hướng đến trang đăng nhập...
-          </p>
+          <p className="text-base text-text-secondary">{t('auth.resetPassword.doneBody')}</p>
         </div>
         <Link
           to="/login"
           className="text-sm font-semibold text-primary transition-colors hover:underline"
         >
-          Đăng nhập ngay
+          {t('auth.resetPassword.loginNow')}
         </Link>
       </div>
     );
@@ -143,22 +139,18 @@ export function ResetPasswordForm() {
       <header className="flex flex-col gap-1">
         {isWelcome ? (
           <>
-            <h1 className="heading-page">
-              Chào mừng! Đặt mật khẩu của bạn
-            </h1>
+            <h1 className="heading-page">{t('auth.resetPassword.welcomeTitle')}</h1>
             <p className="text-base text-text-secondary">
-              Quản trị viên đã tạo tài khoản <strong>{email}</strong> cho bạn. Hãy đặt mật khẩu
-              của riêng bạn để bắt đầu. Bạn cũng có thể tiếp tục dùng mật khẩu tạm{' '}
-              <strong>123456</strong> và đổi sau.
+              {t('auth.resetPassword.welcomeBody')
+                .replace('{email}', email)
+                .replace('{password}', WELCOME_TEMP_PASSWORD)}
             </p>
           </>
         ) : (
           <>
-            <h1 className="heading-page">
-              Đặt lại mật khẩu
-            </h1>
+            <h1 className="heading-page">{t('auth.resetPassword.title')}</h1>
             <p className="text-base text-text-secondary">
-              Nhập mật khẩu mới cho tài khoản <strong>{email}</strong>.
+              {t('auth.resetPassword.subtitle').replace('{email}', email)}
             </p>
           </>
         )}
@@ -184,7 +176,7 @@ export function ResetPasswordForm() {
                 <div className="flex flex-col gap-2 border-t border-red-200 pt-3">
                   {isWelcome && (
                     <p className="text-xs text-text-secondary">
-                      Bạn vẫn có thể đăng nhập bằng mật khẩu tạm <strong>123456</strong>.
+                      {t('auth.resetPassword.tempHint').replace('{password}', WELCOME_TEMP_PASSWORD)}
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">
@@ -192,13 +184,13 @@ export function ResetPasswordForm() {
                       to="/login"
                       className="inline-flex h-9 items-center justify-center rounded-[var(--radius-button)] bg-primary px-4 text-xs font-semibold text-white transition-colors hover:bg-primary-hover"
                     >
-                      Đến trang đăng nhập
+                      {t('auth.resetPassword.goLogin')}
                     </Link>
                     <Link
                       to="/forgot-password"
                       className="inline-flex h-9 items-center justify-center rounded-[var(--radius-button)] border border-primary px-4 text-xs font-semibold text-primary transition-colors hover:bg-primary/5"
                     >
-                      Gửi lại liên kết mới
+                      {t('auth.resetPassword.resendNew')}
                     </Link>
                   </div>
                 </div>
@@ -208,7 +200,7 @@ export function ResetPasswordForm() {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="reset-new-password" className={LABEL_CLASS}>
-              Mật khẩu mới
+              {t('auth.resetPassword.newPassword')}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
@@ -228,7 +220,7 @@ export function ResetPasswordForm() {
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 tabIndex={-1}
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? t('auth.password.hide') : t('auth.password.show')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
               >
                 <EyeIcon open={showPassword} />
@@ -238,7 +230,7 @@ export function ResetPasswordForm() {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="reset-confirm-password" className={LABEL_CLASS}>
-              Xác nhận mật khẩu mới
+              {t('auth.resetPassword.confirmPassword')}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
@@ -258,7 +250,7 @@ export function ResetPasswordForm() {
                 type="button"
                 onClick={() => setShowConfirm((prev) => !prev)}
                 tabIndex={-1}
-                aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showConfirm ? t('auth.password.hide') : t('auth.password.show')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
               >
                 <EyeIcon open={showConfirm} />
@@ -272,7 +264,7 @@ export function ResetPasswordForm() {
             disabled={loading}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-primary text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span>{loading ? t('common.processing') : isWelcome ? 'Đặt mật khẩu' : t('auth.resetPassword.submit')}</span>
+            <span>{loading ? t('common.processing') : isWelcome ? t('auth.resetPassword.setPassword') : t('auth.resetPassword.submit')}</span>
             {!loading && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 5l7 7-7 7" />
@@ -284,7 +276,7 @@ export function ResetPasswordForm() {
 
       <p className="text-center text-sm font-semibold tracking-[0.14px] text-text-secondary">
         <Link to="/login" className="text-primary transition-colors hover:underline">
-          ← Quay lại đăng nhập
+          {`← ${t('auth.forgot.backToLogin')}`}
         </Link>
       </p>
     </div>

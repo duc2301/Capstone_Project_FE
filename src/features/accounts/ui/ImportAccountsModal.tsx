@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import type { AccountImportResult } from '@/entities/account';
 import type { ToastType } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
-import { apiErrorMessage } from '../model/accountError';
+import { apiErrorMessage, blobApiErrorMessage } from '../model/accountError';
 import { useImportAccounts } from '../model/useImportAccounts';
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -28,25 +28,24 @@ export function ImportAccountsModal({ onClose, onImported, showToast }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   /* ── Chọn / validate file ─────────────────────────── */
+  const validate = (picked: File): string | null => {
+    if (!picked.name.toLowerCase().endsWith('.xlsx')) return t('account.import.errorExtension');
+    if (picked.size > MAX_BYTES) return t('account.import.errorSize');
+    return null;
+  };
+
   const pickFile = (picked: File | undefined) => {
     if (!picked) return;
-    const isXlsx = picked.name.toLowerCase().endsWith('.xlsx');
-    if (!isXlsx) {
-      setFileError(t('account.import.errorExtension'));
-      return;
-    }
-    if (picked.size > MAX_BYTES) {
-      setFileError(t('account.import.errorSize'));
-      return;
-    }
-    setFileError(null);
+    const error = validate(picked);
+    setFileError(error);
     setResult(null);
-    setFile(picked);
+    setFile(error ? null : picked);
   };
 
   const clearFile = () => {
     setFile(null);
     setFileError(null);
+    setResult(null);
     if (inputRef.current) inputRef.current.value = '';
   };
 
@@ -55,7 +54,7 @@ export function ImportAccountsModal({ onClose, onImported, showToast }: Props) {
     try {
       await downloadTemplate();
     } catch (err) {
-      showToast(apiErrorMessage(err), 'error');
+      showToast(await blobApiErrorMessage(err), 'error');
     }
   };
 
@@ -65,6 +64,8 @@ export function ImportAccountsModal({ onClose, onImported, showToast }: Props) {
     try {
       const res = await importFile(file);
       setResult(res);
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = '';
       if (res.createdCount > 0) {
         onImported();
         showToast(
@@ -184,7 +185,10 @@ export function ImportAccountsModal({ onClose, onImported, showToast }: Props) {
             type="file"
             accept={ACCEPT}
             className="hidden"
-            onChange={(e) => pickFile(e.target.files?.[0])}
+            onChange={(e) => {
+              pickFile(e.target.files?.[0]);
+              e.target.value = '';
+            }}
           />
         </div>
         {fileError && <p className="text-xs font-medium text-danger">{fileError}</p>}

@@ -3,19 +3,18 @@ import { useMemo } from 'react';
 
 import { approvalApi } from '@/entities/approval';
 import type { ApprovalListItem } from '@/entities/approval';
-import { auditLogApi } from '@/entities/audit-log';
-import type { AuditLogItem } from '@/entities/audit-log';
-import { AuditAction } from '@/entities/audit-log';
 import { invitationApi } from '@/entities/invitation';
 import type { MyInvitation } from '@/entities/invitation';
 import { issueApi } from '@/entities/issue';
 import type { ProjectIssueListItem } from '@/entities/issue';
+import { useNotifications } from '@/entities/notification';
 import { projectApi } from '@/entities/project';
 import type { Project } from '@/entities/project';
 import { useSession } from '@/entities/session';
 import { zoneTransferApi } from '@/entities/zone-transfer';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import type { ApiResponse } from '@/shared/api';
+import { toDateKey } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import type { TranslationKey } from '@/shared/lib/i18n';
@@ -30,15 +29,7 @@ export interface WorkItem {
   context: string;
   createdAt: string;
   waitingDays: number;
-  isOverdue: boolean;
   link: string | null;
-}
-
-export interface RecentFileItem {
-  id: string;
-  detail: string;
-  createdAt: string | null;
-  link: string;
 }
 
 export interface MyProjectItem {
@@ -48,12 +39,22 @@ export interface MyProjectItem {
   isManager: boolean;
 }
 
+export interface DeadlineItem {
+  id: string;
+  title: string;
+  context: string;
+  dueDate: string;
+  dueDateKey: string;
+  daysLeft: number;
+  isOverdue: boolean;
+  link: string;
+}
+
 const EMPTY_APPROVALS: ApprovalListItem[] = [];
 const EMPTY_RETURN_REQUESTS: ZoneReturnRequestItem[] = [];
 const EMPTY_INVITATIONS: MyInvitation[] = [];
 const EMPTY_ISSUES: ProjectIssueListItem[] = [];
 const EMPTY_PROJECTS: Project[] = [];
-const EMPTY_LOGS: AuditLogItem[] = [];
 
 const ZONE_SHORT_KEY: Record<string, TranslationKey> = {
   wip: 'documents.zone.wipShort',
@@ -82,16 +83,6 @@ function loadErrorMessage(): string {
 }
 
 const MS_PER_DAY = 86_400_000;
-const RECENT_FILE_LIMIT = 5;
-const ACTIVITY_LIMIT = 8;
-
-const FILE_ACTIONS = new Set<number>([
-  AuditAction.Upload,
-  AuditAction.NewVersion,
-  AuditAction.Download,
-  AuditAction.Sign,
-  AuditAction.ZoneTransfer,
-]);
 
 function waitingDaysSince(iso: string | null | undefined): number {
   if (!iso) return 0;
@@ -141,7 +132,6 @@ function approvalWorkItem(item: ApprovalListItem, accountId: string | undefined)
     context: joinContext([item.projectName, zoneFlow, item.requestedByName]),
     createdAt: item.createdAt,
     waitingDays: waitingDaysSince(item.createdAt),
-    isOverdue: false,
     link: item.projectId ? `/projects/${item.projectId}/files/${item.fileItemId}/view` : null,
   };
 }
@@ -154,7 +144,6 @@ function returnRequestWorkItem(item: ZoneReturnRequestItem): WorkItem {
     context: joinContext([zoneShortLabel(item.currentZone), item.requestedByName]),
     createdAt: item.createdAt,
     waitingDays: waitingDaysSince(item.createdAt),
-    isOverdue: false,
     link: '/zone-return-requests',
   };
 }
@@ -176,7 +165,6 @@ function invitationWorkItem(item: MyInvitation): WorkItem {
     context: joinContext([item.groupName, item.invitedByName]),
     createdAt: item.createdAt,
     waitingDays: waitingDaysSince(item.createdAt),
-    isOverdue: false,
     link: '/notifications',
   };
 }
@@ -185,6 +173,34 @@ function isPastDue(dueDate: string | null): boolean {
   if (!dueDate) return false;
   const due = new Date(dueDate).getTime();
   return !Number.isNaN(due) && due < Date.now();
+}
+
+function startOfDay(value: Date): number {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+}
+
+function calendarDaysUntil(dueDate: string): number {
+  const due = new Date(dueDate);
+  if (Number.isNaN(due.getTime())) return 0;
+  return Math.round((startOfDay(due) - startOfDay(new Date())) / MS_PER_DAY);
+}
+
+function deadlineItem(item: ProjectIssueListItem): DeadlineItem {
+  const dueDate = item.dueDate ?? '';
+  const daysLeft = calendarDaysUntil(dueDate);
+  const parsed = new Date(dueDate);
+  return {
+    id: `deadline-${item.id}`,
+    title: item.title,
+    context: joinContext([item.linkedFileName, item.linkedFolderName, item.assignedToName]),
+    dueDate,
+    dueDateKey: Number.isNaN(parsed.getTime()) ? '' : toDateKey(parsed),
+    daysLeft,
+    isOverdue: daysLeft < 0,
+    link: item.linkedFileItemId
+      ? `/projects/${item.projectId}/files/${item.linkedFileItemId}/issues/${item.id}`
+      : `/projects/${item.projectId}?tab=issues`,
+  };
 }
 
 function issueWorkItem(item: ProjectIssueListItem): WorkItem {
@@ -196,7 +212,6 @@ function issueWorkItem(item: ProjectIssueListItem): WorkItem {
     context: joinContext([item.linkedFileName, item.linkedFolderName, item.raisedByName]),
     createdAt,
     waitingDays: waitingDaysSince(createdAt),
-    isOverdue: isPastDue(item.dueDate),
     link: item.linkedFileItemId
       ? `/projects/${item.projectId}/files/${item.linkedFileItemId}/issues/${item.id}`
       : `/projects/${item.projectId}?tab=issues`,
@@ -205,6 +220,7 @@ function issueWorkItem(item: ProjectIssueListItem): WorkItem {
 
 export function useDashboard() {
   const { currentUser } = useSession();
+  const { unreadCount } = useNotifications();
 
   const approvals = useAsyncData(
     'dashboard-approvals',
@@ -230,16 +246,6 @@ export function useDashboard() {
     { fallback: EMPTY_ISSUES, toErrorMessage: loadErrorMessage },
   );
 
-  const activity = useAsyncData(
-    'dashboard-activity',
-    async () => {
-      const { data } = await auditLogApi.getMyActivity({ page: 1, pageSize: 30 });
-      if (!data.isSuccess) throw new Error(data.message || t('common.error'));
-      return data.result?.items ?? EMPTY_LOGS;
-    },
-    { fallback: EMPTY_LOGS, toErrorMessage: loadErrorMessage },
-  );
-
   const projects = useAsyncData(
     'dashboard-projects',
     async () => listOf(await projectApi.getMine()),
@@ -253,34 +259,21 @@ export function useDashboard() {
           ...approvals.data.map((item) => approvalWorkItem(item, currentUser?.accountId)),
           ...returnRequests.data.map(returnRequestWorkItem),
           ...invitations.data.map(invitationWorkItem),
-          ...assignedIssues.data.map(issueWorkItem),
+          ...assignedIssues.data.filter((issue) => !issue.dueDate).map(issueWorkItem),
         ],
         (item) => item.createdAt,
       ),
     [approvals.data, returnRequests.data, invitations.data, assignedIssues.data, currentUser],
   );
 
-  const recentFiles = useMemo<RecentFileItem[]>(() => {
-    const seen = new Set<string>();
-    const rows: RecentFileItem[] = [];
-
-    for (const log of activity.data) {
-      if (log.entityType !== 'FileItem' || !log.projectId || !log.detail) continue;
-      if (!FILE_ACTIONS.has(log.action)) continue;
-      if (seen.has(log.entityId)) continue;
-
-      seen.add(log.entityId);
-      rows.push({
-        id: log.id,
-        detail: log.detail,
-        createdAt: log.createdAt,
-        link: `/projects/${log.projectId}/files/${log.entityId}/view`,
-      });
-      if (rows.length === RECENT_FILE_LIMIT) break;
-    }
-
-    return rows;
-  }, [activity.data]);
+  const deadlines = useMemo<DeadlineItem[]>(
+    () =>
+      assignedIssues.data
+        .filter((issue) => Boolean(issue.dueDate))
+        .map(deadlineItem)
+        .sort((a, b) => a.daysLeft - b.daysLeft),
+    [assignedIssues.data],
+  );
 
   const myProjects = useMemo<MyProjectItem[]>(
     () =>
@@ -298,10 +291,8 @@ export function useDashboard() {
     greetingKey: getGreetingKey(),
     todayStr: formatTodayVi(),
     overdueIssues: assignedIssues.data.filter((issue) => isPastDue(issue.dueDate)).length,
-    recentFiles,
-    activityLogs: activity.data.slice(0, ACTIVITY_LIMIT),
-    activityLoading: activity.loading,
-    activityError: activity.error,
+    unreadNotifications: unreadCount,
+    deadlines,
     workItems,
     workItemsLoading:
       approvals.loading || returnRequests.loading || invitations.loading || assignedIssues.loading,

@@ -342,6 +342,7 @@ export function DocumentsTab({
 
         <div className="flex flex-wrap items-center gap-3">
           <ToolbarIconButton
+            showLabel
             label={t('approvals.pending.title')}
             onClick={() => setPendingApprovalsOpen(true)}
             icon={
@@ -351,6 +352,7 @@ export function DocumentsTab({
             }
           />
           <ToolbarIconButton
+            showLabel
             label={t('approvals.history.title')}
             onClick={() => setApprovalHistoryOpen(true)}
             icon={
@@ -360,6 +362,7 @@ export function DocumentsTab({
             }
           />
           <ToolbarIconButton
+            showLabel
             label={t('documents.upload')}
             onClick={() => { if (selected) openUpload(selected); else showToast(t('documents.selectFolderToCreate'), 'error'); }}
             icon={

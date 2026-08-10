@@ -104,6 +104,7 @@ export function NotificationFeedToolbar({
         <DateRangeFilter value={dateRange} onChange={onDateRangeChange} />
 
         <ToolbarIconButton
+          showLabel
           label={t('notification.markAllRead')}
           onClick={onMarkAllRead}
           disabled={!hasUnread}

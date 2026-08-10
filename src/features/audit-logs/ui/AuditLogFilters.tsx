@@ -131,6 +131,7 @@ export function AuditLogFilters({
         {showExport && (
           <ToolbarIconButton
             variant="solid"
+            showLabel
             label={exporting ? t('audit.exporting') : t('audit.export')}
             onClick={onExport}
             disabled={exporting}

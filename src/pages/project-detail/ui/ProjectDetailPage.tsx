@@ -722,6 +722,7 @@ export function ProjectDetailPage() {
             {canViewAllTabs && (
               <div className="flex flex-wrap items-center gap-3">
                 <ToolbarIconButton
+                  showLabel
                   label={t('projectDetail.teams.manage')}
                   onClick={() => setManageOpen(true)}
                   icon={

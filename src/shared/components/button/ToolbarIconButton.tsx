@@ -13,6 +13,12 @@ const SIZE = {
   md: 'h-10 w-10',
 } as const;
 
+const SIZE_WITH_LABEL = {
+  xs: 'h-6 gap-1.5 px-2.5 text-xs',
+  sm: 'h-8 gap-1.5 px-3.5 text-xs',
+  md: 'h-10 gap-2 px-5 text-sm',
+} as const;
+
 export type ToolbarIconVariant = keyof typeof VARIANT;
 export type ToolbarIconSize = keyof typeof SIZE;
 
@@ -21,6 +27,7 @@ interface ToolbarIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   icon: ReactNode;
   variant?: ToolbarIconVariant;
   size?: ToolbarIconSize;
+  showLabel?: boolean;
 }
 
 export function ToolbarIconButton({
@@ -28,6 +35,7 @@ export function ToolbarIconButton({
   icon,
   variant = 'outline',
   size = 'md',
+  showLabel = false,
   className = '',
   ...rest
 }: ToolbarIconButtonProps) {
@@ -35,11 +43,12 @@ export function ToolbarIconButton({
     <button
       {...rest}
       type="button"
-      title={label}
-      aria-label={label}
-      className={`flex shrink-0 items-center justify-center rounded-[var(--radius-button)] transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${SIZE[size]} ${VARIANT[variant]} ${className}`}
+      title={showLabel ? undefined : label}
+      aria-label={showLabel ? undefined : label}
+      className={`flex shrink-0 items-center justify-center rounded-[var(--radius-button)] font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${showLabel ? SIZE_WITH_LABEL[size] : SIZE[size]} ${VARIANT[variant]} ${className}`}
     >
       {icon}
+      {showLabel && <span className="whitespace-nowrap">{label}</span>}
     </button>
   );
 }

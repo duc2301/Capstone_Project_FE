@@ -136,6 +136,7 @@ export default function PackageDetailPage() {
         <div className="flex items-center gap-3">
           <ToolbarIconButton
             variant="solid"
+            showLabel
             label={t('packageDetail.edit')}
             onClick={() => setIsEditModalOpen(true)}
             icon={

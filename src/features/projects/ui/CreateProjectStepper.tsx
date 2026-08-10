@@ -15,6 +15,7 @@ import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, DeleteIcon, EditIcon, RowActions } from '@/shared/components';
 import { numberToWordsVN } from '@/shared/lib/format';
+import { newLocalId } from '@/shared/lib/id';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
@@ -85,20 +86,15 @@ const DEFAULT_GROUP_KEYS: TranslationKey[] = [
   'projects.defaultGroup.supervision',
 ];
 
-const newKey = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `g-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
 const buildDefaultGroups = (): GroupDraft[] =>
-  DEFAULT_GROUP_KEYS.map((key) => ({ key: newKey(), name: t(key), description: '', organizationId: null }));
+  DEFAULT_GROUP_KEYS.map((key) => ({ key: newLocalId(), name: t(key), description: '', organizationId: null }));
 
 /* ── Khởi tạo nhanh từ BEP: seed state + match tên tổ chức -> Guid ── */
 const buildInitialState = (bep?: BepParseResult): StepperState => {
   const groups: GroupDraft[] =
     bep && bep.groups.length > 0
       ? bep.groups.map((g) => ({
-          key: newKey(),
+          key: newLocalId(),
           name: g.name,
           description: g.description ?? '',
           organizationId: null,
@@ -108,7 +104,7 @@ const buildInitialState = (bep?: BepParseResult): StepperState => {
   const packages: StepperPackage[] =
     bep && bep.packages.length > 0
       ? bep.packages.map((p) => ({
-          id: newKey(),
+          id: newLocalId(),
           payload: {
             projectId: '',
             name: p.name,
@@ -864,7 +860,7 @@ function Step3PackageInfo({
         p.id === editingPackageId ? { ...p, payload, files } : p
       ));
     } else {
-      update('packages', [...state.packages, { id: newKey(), payload, files }]);
+      update('packages', [...state.packages, { id: newLocalId(), payload, files }]);
     }
     setIsFormOpen(false);
   };
@@ -1015,7 +1011,7 @@ function Step4Groups({
     setGroups((prev) => prev.map((g) => (g.key === key ? { ...g, ...patch } : g)));
 
   const addGroup = () =>
-    setGroups((prev) => [...prev, { key: newKey(), name: '', description: '', organizationId: '' }]);
+    setGroups((prev) => [...prev, { key: newLocalId(), name: '', description: '', organizationId: '' }]);
 
   const removeGroup = (key: string) =>
     setGroups((prev) => prev.filter((g) => g.key !== key));

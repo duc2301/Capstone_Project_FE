@@ -1759,6 +1759,7 @@ export const translations = {
   'markup.status.resolved': 'Đã xử lý',
   'markup.panel.openCount': 'Chưa xử lý',
   'markup.error.load': 'Không tải được ghi chú markup.',
+  'markup.error.pdfLoad': 'Không mở được tệp PDF. Kiểm tra kết nối tới máy chủ rồi tải lại trang.',
   'markup.error.save': 'Không lưu được ghi chú. Vui lòng thử lại.',
   // Bộ lọc ghi chú markup (theo người tạo / trạng thái)
   'markup.filter.author': 'Người tạo',

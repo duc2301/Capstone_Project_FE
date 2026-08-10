@@ -302,6 +302,7 @@ export function AccountsPage() {
           <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
             <ToolbarIconButton
               variant="ghost"
+              showLabel
               label={t('account.import.action')}
               onClick={() => setFormMode('import')}
               className="shadow-card hover:border-primary/40 hover:text-primary"

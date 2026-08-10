@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { newLocalId } from '@/shared/lib/id';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import type { CreateProjectWithGroupsInput, ProjectGroupDraft } from '../model/useProjects';
@@ -24,13 +25,8 @@ interface GroupRow extends ProjectGroupDraft {
   key: string;
 }
 
-const newKey = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `g-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
 const buildDefaultGroups = (): GroupRow[] =>
-  DEFAULT_GROUP_KEYS.map((key) => ({ key: newKey(), name: t(key), description: '' }));
+  DEFAULT_GROUP_KEYS.map((key) => ({ key: newLocalId(), name: t(key), description: '' }));
 
 export function CreateProjectForm({ onSubmit, onCancel }: Props) {
   const [projectName, setProjectName] = useState('');
@@ -45,7 +41,7 @@ export function CreateProjectForm({ onSubmit, onCancel }: Props) {
     setGroups((prev) => prev.map((g) => (g.key === key ? { ...g, ...patch } : g)));
   };
 
-  const addGroup = () => setGroups((prev) => [...prev, { key: newKey(), name: '', description: '' }]);
+  const addGroup = () => setGroups((prev) => [...prev, { key: newLocalId(), name: '', description: '' }]);
 
   const removeGroup = (key: string) =>
     setGroups((prev) => prev.filter((g) => g.key !== key));

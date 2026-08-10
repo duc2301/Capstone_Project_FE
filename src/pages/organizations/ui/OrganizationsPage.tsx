@@ -135,6 +135,7 @@ export function OrganizationsPage() {
         <h1 className="heading-page">{t('org.title')}</h1>
         <div className="flex shrink-0 items-center gap-3">
           <ToolbarIconButton
+            showLabel
             label={t('org.createJv')}
             onClick={() => setFormMode('create-jv')}
             icon={

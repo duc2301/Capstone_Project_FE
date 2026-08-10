@@ -65,6 +65,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
             {canConfigure && (
               <div className="flex flex-wrap items-center gap-3">
                 <ToolbarIconButton
+                  showLabel
                   label={t('naming.downloadTemplate')}
                   onClick={() => void handleDownloadTemplate()}
                   icon={

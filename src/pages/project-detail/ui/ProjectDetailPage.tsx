@@ -28,7 +28,7 @@ import {
 } from '@/features/projects';
 import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, RowActions, Toast, ToolbarIconButton, UserAvatar, useToast } from '@/shared/components';
 import { formatDate, formatRelativeTime } from '@/shared/lib/format';
 import { useUrlTab } from '@/shared/lib/url';
 import type { TranslationKey } from '@/shared/lib/i18n';
@@ -620,7 +620,8 @@ export function ProjectDetailPage() {
                 <h3 className="heading-eyebrow">
                   {t('projectDetail.sidebar.details')}
                 </h3>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusMeta(project.status).badgeClass}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusMeta(project.status).dotClass}`} />
                   {statusMeta(project.status).label}
                 </span>
               </div>
@@ -720,19 +721,16 @@ export function ProjectDetailPage() {
             </h2>
             {canViewAllTabs && (
               <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setManageOpen(true);
-                  }}
-                  className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  {t('projectDetail.teams.manage')}
-                </button>
+                <ToolbarIconButton
+                  label={t('projectDetail.teams.manage')}
+                  onClick={() => setManageOpen(true)}
+                  icon={
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  }
+                />
                 {isAdmin && (
                   <button
                     type="button"
@@ -839,7 +837,7 @@ export function ProjectDetailPage() {
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Tạo gói thầu
+              {t('packages.createNew')}
             </button>
           </div>
 

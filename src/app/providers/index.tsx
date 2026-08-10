@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { NotificationProvider } from '@/entities/notification';
 import { SessionProvider, useSession } from '@/entities/session';
+import { BepTaskProvider } from '@/features/projects';
 
 interface Props {
   children: ReactNode;
@@ -21,7 +22,9 @@ export const AppProvider: FC<Props> = ({ children }) => {
   return (
     <BrowserRouter>
       <SessionProvider>
-        <NotificationGate>{children}</NotificationGate>
+        <NotificationGate>
+          <BepTaskProvider>{children}</BepTaskProvider>
+        </NotificationGate>
       </SessionProvider>
     </BrowserRouter>
   );

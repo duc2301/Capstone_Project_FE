@@ -1,10 +1,10 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-import { useSession } from '@/entities/session';
 import { NotificationBell } from '@/features/notifications';
-import { useProfile } from '@/features/profile';
-import { UserAvatar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
+
+import { resolveBackTarget } from '../model/backTarget';
+import { UserMenu } from './UserMenu';
 
 interface AdminTopBarProps {
   onMenuToggle: () => void;
@@ -13,9 +13,13 @@ interface AdminTopBarProps {
 export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useSession();
-  const { profile } = useProfile();
   const isHome = location.pathname === '/dashboard';
+  const backTarget = resolveBackTarget(location.pathname, location.search);
+
+  const goBack = () => {
+    if (backTarget) navigate(backTarget);
+    else navigate(-1);
+  };
 
   return (
     <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border-sage bg-page-cream px-8 backdrop-blur-[6px]">
@@ -38,7 +42,7 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
         {!isHome && (
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             aria-label={t('projectDetail.back')}
             title={t('projectDetail.back')}
             className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-card hover:text-text"
@@ -58,17 +62,7 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
         <NotificationBell variant="admin" />
 
         {/* User name + avatar */}
-        <Link to="/profile" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-          <span className="hidden whitespace-nowrap text-sm font-semibold text-text sm:inline">
-            {currentUser?.userName}
-          </span>
-          <UserAvatar
-            userName={currentUser?.userName ?? ''}
-            avatarUrl={profile?.avatarUrl}
-            size="sm"
-            rounded="full"
-          />
-        </Link>
+        <UserMenu />
       </div>
     </header>
   );

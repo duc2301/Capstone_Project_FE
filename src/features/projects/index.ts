@@ -1,3 +1,7 @@
+export { BepTaskProvider } from './model/BepTaskProvider';
+export type { BepTaskStatus } from './model/bepTaskContext';
+export { useBepTask } from './model/useBepTask';
+export { BepTaskToast } from './ui/BepTaskToast';
 export {
   filterLabel,
   matchesFilter,

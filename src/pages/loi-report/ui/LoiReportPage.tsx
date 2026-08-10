@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { fileItemApi } from '@/entities/file-item';
 import type { LoiCheckResult, LoiStage } from '@/entities/loi-check';
@@ -98,20 +98,11 @@ export function LoiReportPage() {
   const { result, loading, error } = useLoiCheck(fileId, projectId);
   const fileName = useFileName(fileId);
 
-  const backHref = projectId && fileId ? `/projects/${projectId}/files/${fileId}/view` : '/';
   const ready = result !== null && result.status === LoiCheckStatus.Done;
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="heading-page">{t('loi.report.title')}</h1>
-        <Link
-          to={backHref}
-          className="whitespace-nowrap rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
-        >
-          {t('loi.report.back')}
-        </Link>
-      </div>
+      <h1 className="heading-page">{t('loi.report.title')}</h1>
 
       {loading && <p className="text-sm text-text-muted">{t('loi.loading')}</p>}
       {error && <p className="text-sm font-medium text-danger">{error}</p>}

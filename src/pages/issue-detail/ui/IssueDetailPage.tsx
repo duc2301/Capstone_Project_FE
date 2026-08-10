@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import type { FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
@@ -27,10 +27,7 @@ function isInlineMarkupContentType(contentType: string | null | undefined): bool
 }
 
 export function IssueDetailPage() {
-  const { projectId, fileId, issueId } = useParams<{ projectId: string; fileId: string; issueId: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const folderId = searchParams.get('folder');
+  const { fileId, issueId } = useParams<{ projectId: string; fileId: string; issueId: string }>();
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
   const [versions, setVersions] = useState<FileVersion[]>([]);
@@ -92,15 +89,6 @@ export function IssueDetailPage() {
       clearInterval(timer);
     };
   }, [fileId, isModelProcessing, fetchView]);
-
-  const goBackToFile = useCallback(() => {
-    if (!projectId || !fileId) {
-      navigate('/projects');
-      return;
-    }
-    const folderQuery = folderId ? `?folder=${folderId}` : '';
-    navigate(`/projects/${projectId}/files/${fileId}/view${folderQuery}`);
-  }, [navigate, projectId, fileId, folderId]);
 
   const latestVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
   const fileVersionId = latestVersion?.id ?? null;
@@ -188,16 +176,6 @@ export function IssueDetailPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={goBackToFile}
-            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-            {t('issues.page.backToFile')}
-          </button>
         </header>
 
         <main className="relative min-h-0 flex-1 overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">

@@ -18,7 +18,7 @@ interface MarkupNoteFilterProps {
 }
 
 const SELECT_CLASS =
-  'min-w-0 flex-1 rounded-lg border border-card-border bg-content-bg/50 px-2 py-1.5 text-xs font-medium text-text outline-none focus:border-primary';
+  'field-select min-w-0 flex-1 rounded-lg border-card-border bg-content-bg/50 py-1.5 pl-2 pr-8 text-xs font-medium';
 
 export function MarkupNoteFilter({
   authors,

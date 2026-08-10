@@ -45,6 +45,7 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
 /* ── Input CSS class ── */
 const inputCls =
   'field-input';
+const selectCls = 'field-select';
 const readOnlyCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-content-bg px-4 py-3 text-sm text-text-muted cursor-not-allowed';
 
@@ -192,9 +193,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* ── Header subtitle ── */}
-      <p className="text-sm text-text-muted -mt-2">
-        Khởi tạo và thiết lập các thông số chi tiết cho gói thầu dự án.
-      </p>
+      <p className="text-sm text-text-muted -mt-2">{t('packages.form.subtitle')}</p>
 
       {/* ══════ Section 1: Thông tin cơ bản ══════ */}
       <section>
@@ -258,7 +257,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
                 className={inputCls}
               />
               <span className="rounded-[var(--radius-input)] border border-input-border bg-content-bg px-3 py-3 text-sm font-medium text-text-muted whitespace-nowrap">
-                Ngày
+                {t('packages.form.daysUnit')}
               </span>
             </div>
           </div>
@@ -331,7 +330,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-3 text-sm font-semibold text-text"
+                className="field-select w-auto py-3 pl-3 font-semibold"
               >
                 <option value="VND">VND</option>
                 <option value="USD">USD</option>
@@ -368,7 +367,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
           {contractValue ? (
             <div className="sm:col-span-2">
               <p className="text-sm italic text-text-muted">
-                Bằng chữ (Tổng giá trị): <span className="font-semibold text-text not-italic">{numberToWordsVN((contractValue || 0) + vatAmount)}</span>
+                {t('packages.form.totalInWords')}: <span className="font-semibold text-text not-italic">{numberToWordsVN((contractValue || 0) + vatAmount)}</span>
               </p>
             </div>
           ) : null}
@@ -385,13 +384,13 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               value={contractorOrgId}
               onChange={(e) => setContractorOrgId(e.target.value)}
               required
-              className={inputCls}
+              className={selectCls}
               disabled={orgsLoading}
             >
               <option value="">{orgsLoading ? t('packages.form.partnerLoading') : t('packages.form.partnerPlaceholder')}</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
-                  {org.isJointVenture ? '⭐ [Liên doanh] ' : ''}
+                  {org.isJointVenture ? `⭐ [${t('org.jointVenture')}] ` : ''}
                   {org.displayName || org.legalName}
                   {org.taxCode ? ` (MST: ${org.taxCode})` : ''}
                 </option>
@@ -404,7 +403,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
               value={representativeId}
               onChange={(e) => setRepresentativeId(e.target.value)}
               required
-              className={inputCls}
+              className={selectCls}
             >
               <option value="">{t('packages.form.representativePlaceholder')}</option>
               {accounts.map((acc) => (
@@ -584,7 +583,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
           onClick={onCancel}
           className="rounded-[var(--radius-button)] border border-card-border px-6 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
         >
-          Hủy bỏ
+          {t('packages.form.cancel')}
         </button>
         <button
           type="submit"

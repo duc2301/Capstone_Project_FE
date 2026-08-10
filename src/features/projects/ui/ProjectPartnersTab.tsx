@@ -105,7 +105,7 @@ export function ProjectPartnersTab({ partners, groups }: Props) {
         <select
           value={groupFilter}
           onChange={(e) => resetTo(() => setGroupFilter(e.target.value))}
-          className="shrink-0 rounded-[var(--radius-card)] border border-card-border/50 bg-card px-4 py-3 text-sm font-semibold text-text-secondary outline-none transition-colors focus:border-primary"
+          className="field-select w-auto shrink-0 rounded-[var(--radius-card)] border-card-border/50 bg-card py-3 font-semibold text-text-secondary"
         >
           <option value="all">{t('projectDetail.partners.allGroups')}</option>
           {groups.map((g) => (

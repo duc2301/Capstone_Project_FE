@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { AuditLogQuery } from '@/entities/audit-log';
 import { AuditAction, LogScope } from '@/entities/audit-log';
 import type { DateRangeValue } from '@/shared/components';
-import { ALL_TIME, DateRangeFilter, resolveDateRange } from '@/shared/components';
+import { ALL_TIME, DateRangeFilter, resolveDateRange, ToolbarIconButton } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { actionBadge, scopeBadge } from '../model/auditFormat';
 
@@ -23,8 +23,7 @@ const ACTIONS = Object.values(AuditAction);
 
 const SEARCH_CLASS =
   'w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
-const SELECT_CLASS =
-  'rounded-[var(--radius-input)] border border-card-border bg-card px-4 py-2.5 text-sm text-text shadow-card outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20';
+const SELECT_CLASS = 'field-select w-auto border-card-border bg-card shadow-card';
 
 export function AuditLogFilters({
   value,
@@ -130,19 +129,19 @@ export function AuditLogFilters({
         </select>
 
         {showExport && (
-          <button
-            type="button"
+          <ToolbarIconButton
+            variant="solid"
+            label={exporting ? t('audit.exporting') : t('audit.export')}
             onClick={onExport}
             disabled={exporting}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            {exporting ? t('audit.exporting') : t('audit.export')}
-          </button>
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            }
+          />
         )}
       </div>
     </div>

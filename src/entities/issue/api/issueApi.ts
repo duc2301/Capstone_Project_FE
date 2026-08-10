@@ -140,6 +140,7 @@ function mapIssueItem(item: RawIssueItem): IssueItem {
 interface RawProjectIssueListItem {
   id: string;
   projectId: string;
+  projectName?: string | null;
   type: number | string;
   title: string;
   description?: string | null;
@@ -162,6 +163,7 @@ function mapProjectIssueListItem(item: RawProjectIssueListItem): ProjectIssueLis
   return {
     id: item.id,
     projectId: item.projectId,
+    projectName: item.projectName ?? null,
     type: normalizeIssueType(item.type),
     title: item.title,
     description: item.description ?? null,
@@ -193,6 +195,13 @@ export const issueApi = {
   getByProject: async (projectId: string): Promise<ProjectIssueListItem[]> => {
     const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
       `/issues/by-project/${projectId}`,
+    );
+    return (unwrap(data) ?? []).map(mapProjectIssueListItem);
+  },
+
+  getForMyProjects: async (): Promise<ProjectIssueListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
+      '/issues/my-projects',
     );
     return (unwrap(data) ?? []).map(mapProjectIssueListItem);
   },

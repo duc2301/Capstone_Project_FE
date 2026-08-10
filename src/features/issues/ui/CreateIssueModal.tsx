@@ -99,7 +99,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
                 value={type}
                 onChange={(e) => setType(e.target.value as IssueType)}
                 disabled={busy}
-                className="field-input"
+                className="field-select"
               >
                 <option value="Issue">{t('issues.type.issue')}</option>
                 <option value="Rfi">{t('issues.type.rfi')}</option>
@@ -112,7 +112,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as IssuePriority)}
                 disabled={busy}
-                className="field-input"
+                className="field-select"
               >
                 <option value="Low">{t('issues.priority.low')}</option>
                 <option value="Medium">{t('issues.priority.medium')}</option>
@@ -140,7 +140,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               disabled={busy || membersLoading}
-              className="field-input"
+              className="field-select"
             >
               <option value="">{t('issues.create.assigneePlaceholder')}</option>
               {assignableMembers.map((m) => (
@@ -155,7 +155,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               value={assigneeOrgId}
               onChange={(e) => setAssigneeOrgId(e.target.value)}
               disabled={busy || !!assigneeId}
-              className="field-input"
+              className="field-select"
             >
               <option value="">{t('issues.create.assigneeOrgPlaceholder')}</option>
               {assignableOrganizations.map((o) => (

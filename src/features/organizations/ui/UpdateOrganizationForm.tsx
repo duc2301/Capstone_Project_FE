@@ -120,6 +120,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
   };
 
   const inputClass = 'field-input';
+  const selectClass = 'field-select';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -231,7 +232,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                           }));
                         }
                       }}
-                      className={inputClass}
+                      className={selectClass}
                     >
                       <option value="">{t('org.form.addJvPartner')}</option>
                       {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
@@ -281,7 +282,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                     value={form.representativeOrganizationId || ''}
                     onChange={(e) => setForm(prev => ({ ...prev, representativeOrganizationId: e.target.value }))}
                     required={organization.isJointVenture}
-                    className={inputClass}
+                    className={selectClass}
                   >
                     <option value="">{t('org.form.selectLeadUnit')}</option>
                     {(form.jointVentureMemberIds || []).map((orgId) => {
@@ -326,7 +327,7 @@ export function UpdateOrganizationForm({ organization, organizations, orgTypes, 
                 id="edit-orgType"
                 value={form.organizationTypeId ?? ''}
                 onChange={handleTypeSelect}
-                className={inputClass}
+                className={selectClass}
               >
                 <option value="">{t('org.selectType')}</option>
                 {orgTypes.filter((ot) => ot.isActive).map((ot) => (

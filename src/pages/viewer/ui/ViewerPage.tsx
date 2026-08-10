@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 
 import { ModelDropzone, TranslationProgress, useModelUpload } from '@/features/model-upload';
+import { ToolbarIconButton } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { Header } from '@/widgets/Header';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -55,13 +56,19 @@ export function ViewerPage() {
           {!urnFromQuery && (
             <div className="flex items-center justify-between gap-4 bg-viewer-shell-dark px-6 py-3">
               <p className="truncate text-sm text-white/80">{fileName}</p>
-              <button
-                type="button"
+              <ToolbarIconButton
+                size="sm"
+                variant="ghost"
+                label={t('viewer.back')}
                 onClick={reset}
-                className="shrink-0 rounded-[var(--radius-button)] border border-white/30 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                {t('viewer.back')}
-              </button>
+                className="border-white/30 bg-transparent text-white hover:bg-white/10"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                  </svg>
+                }
+              />
             </div>
           )}
           <div className="relative flex-1">

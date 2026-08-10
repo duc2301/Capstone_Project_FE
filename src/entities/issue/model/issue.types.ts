@@ -42,6 +42,7 @@ export interface IssueItem {
 export interface ProjectIssueListItem {
   id: string;
   projectId: string;
+  projectName: string | null;
   type: IssueType;
   title: string;
   description: string | null;

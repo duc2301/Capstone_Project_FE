@@ -11,7 +11,7 @@ import { statusMeta as accountStatusMeta } from '@/features/accounts';
 import { useOrganizationTypes, useOrganizations, UpdateOrganizationForm } from '@/features/organizations';
 import { ProjectCard } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
-import { ConfirmDialog, Modal, PaginationBar, Toast, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, Modal, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { useUrlTab } from '@/shared/lib/url';
 
@@ -466,9 +466,14 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
                       {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString('vi-VN') : t('orgDetail.members.recently')}
                     </td>
                     <td className="px-6 py-4 text-right text-text-placeholder">
-                      <button onClick={() => onRemoveMember(m.id)} className="hover:text-danger p-1" title={t('orgDetail.members.remove')}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                      </button>
+                      <RowActions>
+                        <ActionIconButton
+                          tone="danger"
+                          label={t('orgDetail.members.remove')}
+                          icon={<DeleteIcon />}
+                          onClick={() => onRemoveMember(m.id)}
+                        />
+                      </RowActions>
                     </td>
                   </tr>
                 ))

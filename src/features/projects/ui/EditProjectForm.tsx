@@ -11,6 +11,8 @@ import { AddressField } from './AddressField';
 const inputCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 
+const selectCls = 'field-select py-3';
+
 const labelCls = 'mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-text-secondary';
 
 interface Props {
@@ -128,7 +130,7 @@ export function EditProjectForm({ project, organizations, onSaved, onCancel }: P
               id="edit-project-owner"
               value={ownerOrganizationId}
               onChange={(e) => setOwnerOrganizationId(e.target.value)}
-              className={inputCls}
+              className={selectCls}
             >
               <option value="">{t('projects.form.ownerSelect')}</option>
               {organizations.map((org) => (

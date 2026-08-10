@@ -185,7 +185,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
                 value={organizationFilter}
                 onChange={(e) => setOrganizationFilter(e.target.value)}
                 aria-label={t('projects.invite.filterOrganization')}
-                className="rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text outline-none transition-colors focus:border-primary sm:max-w-56"
+                className="field-select w-auto pl-3 sm:max-w-56"
               >
                 <option value="">{t('projects.invite.allOrganizations')}</option>
                 {organizationOptions.map((o) => (
@@ -243,11 +243,11 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
                             setLeaderId('');
                           }
                         }}
-                        className={`shrink-0 rounded-lg border px-2 py-1.5 text-xs font-semibold outline-none transition-colors ${isLeader ? 'border-primary bg-primary-light text-primary' : 'border-input-border bg-input-bg text-text-secondary'
+                        className={`field-select w-auto shrink-0 rounded-lg py-1.5 pl-2.5 pr-8 text-xs font-semibold ${isLeader ? 'border-primary bg-primary-light text-primary' : 'border-input-border bg-input-bg text-text-secondary'
                           }`}
                       >
-                        <option value="member">{t('projectDetail.teams.role.member') || 'Thành viên'}</option>
-                        <option value="leader">{t('projectDetail.teams.role.leader') || 'Trưởng nhóm'}</option>
+                        <option value="member">{t('projectDetail.teams.role.member')}</option>
+                        <option value="leader">{t('projectDetail.teams.role.leader')}</option>
                       </select>
                     )}
                   </div>

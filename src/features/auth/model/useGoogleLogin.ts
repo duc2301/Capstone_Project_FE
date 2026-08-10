@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { getPostLoginPath, sessionApi, useSession } from '@/entities/session';
 import type { ApiResponse } from '@/shared/api';
+import { t } from '@/shared/lib/i18n';
 
 interface UseGoogleLoginReturn {
   loading: boolean;
@@ -28,7 +29,7 @@ export function useGoogleLogin(): UseGoogleLoginReturn {
         const { data } = await sessionApi.googleLogin(credential);
 
         if (!data.isSuccess || !data.result) {
-          setError(data.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.');
+          setError(data.message || t('auth.google.loginFailed'));
           return;
         }
 
@@ -38,7 +39,7 @@ export function useGoogleLogin(): UseGoogleLoginReturn {
         const axiosError = err as AxiosError<ApiResponse>;
         setError(
           axiosError.response?.data?.message ||
-          'Đăng nhập bằng Google thất bại. Vui lòng thử lại.',
+          t('auth.google.loginFailed'),
         );
       } finally {
         setLoading(false);

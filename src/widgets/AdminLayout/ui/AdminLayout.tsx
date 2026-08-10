@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Suspense, useState } from 'react';
 
+import { BepTaskToast } from '@/features/projects';
+
 import { AdminSidebar } from './AdminSidebar';
 import { AdminTopBar } from './AdminTopBar';
 
@@ -36,6 +38,8 @@ export function AdminLayout({ children }: Props) {
   return (
     // Shell cố định bằng màn hình; chỉ <main> cuộn.
     <div className="flex h-screen overflow-hidden bg-content-bg">
+      <BepTaskToast />
+
       {/* Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}

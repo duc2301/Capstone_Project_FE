@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { sessionApi } from '@/entities/session';
 import type { ApiResponse } from '@/shared/api';
+import { t } from '@/shared/lib/i18n';
 
 interface UseForgotPasswordReturn {
   loading: boolean;
@@ -28,7 +29,7 @@ export function useForgotPassword(): UseForgotPasswordReturn {
       const axiosError = err as AxiosError<ApiResponse>;
       setError(
         axiosError.response?.data?.message ||
-          'Có lỗi xảy ra. Vui lòng thử lại.',
+          t('auth.forgot.error'),
       );
     } finally {
       setLoading(false);

@@ -13,6 +13,7 @@ import { organizationApi } from '@/entities/organization';
 import type { BepParseResult } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { getApiErrorMessage } from '@/shared/api';
+import { ActionIconButton, DeleteIcon, EditIcon, RowActions } from '@/shared/components';
 import { numberToWordsVN } from '@/shared/lib/format';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
@@ -162,6 +163,8 @@ const matchOrg = (name: string | null | undefined, orgs: Organization[]): Organi
 
 const inputCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
+
+const selectCls = 'field-select py-3';
 
 // removed emptyPkg()
 
@@ -731,7 +734,7 @@ function Step1ProjectInfo({
             value={state.ownerOrganizationId}
             onChange={(e) => update('ownerOrganizationId', e.target.value)}
             disabled={orgsLoading}
-            className={inputCls}
+            className={selectCls}
           >
             <option value="">{orgsLoading ? t('common.loading') : t('projects.form.ownerSelect')}</option>
             {organizations.map((org) => (
@@ -916,25 +919,23 @@ function Step3PackageInfo({
                     })()}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
+                <RowActions>
+                  <ActionIconButton
+                    tone="primary"
+                    label={t('projects.stepper.s3.edit')}
+                    icon={<EditIcon />}
                     onClick={() => {
                       setEditingPackageId(pkgItem.id);
                       setIsFormOpen(true);
                     }}
-                    className="p-2 text-text-muted hover:text-primary transition-colors"
-                  >
-                    {t('projects.stepper.s3.edit')}
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <ActionIconButton
+                    tone="danger"
+                    label={t('projects.stepper.s3.delete')}
+                    icon={<DeleteIcon />}
                     onClick={() => removePackage(pkgItem.id)}
-                    className="p-2 text-text-muted hover:text-danger transition-colors"
-                  >
-                    {t('projects.stepper.s3.delete')}
-                  </button>
-                </div>
+                  />
+                </RowActions>
               </div>
             ))}
           </div>
@@ -1164,7 +1165,7 @@ function Step5Partners({
                     <select
                       value={group.organizationId || ''}
                       onChange={(e) => setOrgForGroup(group.key, e.target.value)}
-                      className={inputCls}
+                      className={selectCls}
                     >
                       <option value="">{t('projects.stepper.s5.select')}</option>
                       {organizations.map((org) => (

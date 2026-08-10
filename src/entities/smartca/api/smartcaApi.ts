@@ -1,6 +1,9 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 
+import type { TranslationKey } from '@/shared/lib/i18n';
+import { t } from '@/shared/lib/i18n';
+
 import type {
   Certificate,
   PdfPageInfo,
@@ -229,16 +232,15 @@ export const smartcaApi = {
  * dịch rõ để phân biệt 2 nguyên nhân khác nhau: (1) folder CHƯA được cấp quyền CanApprove cho nhóm
  * nào cả (lỗi cấu hình phân quyền, không phải do actor thiếu vai trò Leader); (2) đã có nhóm được
  * cấp quyền nhưng actor không phải Leader của nhóm đó. */
-const TEAM_LEADER_MESSAGES: Record<string, string> = {
+const TEAM_LEADER_MESSAGES: Record<string, TranslationKey> = {
   'No group has been granted approve permission on this folder yet. Please ask the project Admin to configure it.':
-    'Thư mục này chưa được cấp quyền Duyệt (CanApprove) cho nhóm nào cả. Hãy nhờ quản trị dự án vào "Phân quyền" cấu hình quyền Duyệt cho đúng nhóm phụ trách trước khi thao tác.',
-  'Only the Team Leader can perform this action.':
-    'Bạn chưa được phân quyền để thực hiện thao tác này trên tài liệu này.',
+    'smartca.error.noApproveGroup',
+  'Only the Team Leader can perform this action.': 'approvals.error.leaderOnlyAction',
 };
 
 function translateTeamLeaderMessage(message: string): string {
   const knownKey = Object.keys(TEAM_LEADER_MESSAGES).find((m) => message.includes(m));
-  return knownKey ? TEAM_LEADER_MESSAGES[knownKey] : message;
+  return knownKey ? t(TEAM_LEADER_MESSAGES[knownKey]) : message;
 }
 
 export function smartcaErrorMessage(err: unknown, fallback: string): string {

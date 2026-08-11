@@ -1645,6 +1645,7 @@ export const translations = {
   'docSearch.passages': 'đoạn khớp trong tài liệu',
   'docSearch.openHint': 'Bấm để mở xem chi tiết tài liệu',
   'docSearch.underRevision': 'Bản lưu trữ',
+  'docSearch.archivedHint': 'Tài liệu này nằm ở khu vực Lưu trữ — bản niêm phong chỉ đọc.',
   'docSearch.underRevisionHint':
     'Tài liệu này đang được cập nhật. Bản chính thức đã được rút về để chỉnh sửa, nên nội dung hiển thị là bản niêm phong gần nhất trong khu vực Lưu trữ.',
   // ── Nhật ký hoạt động (audit log) ──────────────────────────────

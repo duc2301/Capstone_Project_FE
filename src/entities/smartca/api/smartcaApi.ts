@@ -136,6 +136,8 @@ function mapSignedFileInfo(item: RawSignedFileInfo): SignedFileInfo {
   };
 }
 
+const SIGN_REQUEST_TIMEOUT_MS = 60_000;
+
 export const smartcaApi = {
   getCertificates: async (
     approvalId: string,
@@ -158,7 +160,7 @@ export const smartcaApi = {
     const { data } = await axiosInstance.post<ApiResponse<RawSignRequestResult>>(
       `/approvals/${approvalId}/vnpt-smartca/sign-request`,
       { userId, certificateSerial },
-      { timeout: 60_000 },
+      { timeout: SIGN_REQUEST_TIMEOUT_MS },
     );
 
     return mapSignRequest(unwrap(data));
@@ -216,7 +218,7 @@ export const smartcaApi = {
     const { data } = await axiosInstance.post<ApiResponse<RawSignedFileInfo>>(
       `/approvals/${approvalId}/generate-signed-pdf`,
       undefined,
-      { timeout: 60_000 },
+      { timeout: SIGN_REQUEST_TIMEOUT_MS },
     );
 
     return mapSignedFileInfo(unwrap(data));

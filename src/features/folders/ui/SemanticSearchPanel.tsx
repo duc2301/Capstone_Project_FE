@@ -2,6 +2,7 @@ import type { DocumentSearchResult } from '@/entities/document-search';
 import { t } from '@/shared/lib/i18n';
 
 import type { SemanticSearchState } from '../model/useSemanticSearch';
+import { zoneLabel } from '../model/zoneTransferFormat';
 
 interface BarProps {
   search: SemanticSearchState;
@@ -106,12 +107,19 @@ export function SemanticSearchResults({ search, onOpenFile }: ResultsProps) {
             >
               <div className="flex items-start justify-between gap-3">
                 <p className="min-w-0 flex-1 cell-wrap text-sm font-semibold text-text">{r.fileName}</p>
-                {r.isUnderRevision && (
+                {r.isUnderRevision ? (
                   <span className="flex shrink-0 items-center gap-1 rounded-full bg-warning-light px-2.5 py-0.5 text-xs font-bold text-warning">
                     <WarningIcon />
                     {t('docSearch.underRevision')}
                   </span>
-                )}
+                ) : r.area === 'Archived' ? (
+                  <span
+                    title={t('docSearch.archivedHint')}
+                    className="shrink-0 rounded-full bg-content-bg px-2.5 py-0.5 text-xs font-bold text-text-secondary"
+                  >
+                    {zoneLabel(r.area)}
+                  </span>
+                ) : null}
                 <span className="shrink-0 rounded-full bg-success-light px-2.5 py-0.5 text-xs font-bold text-success">
                   {Math.round(r.similarity * 100)}% {t('docSearch.match')}
                 </span>

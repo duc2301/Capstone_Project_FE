@@ -1,2 +1,2 @@
 export { documentSearchApi } from './api/documentSearchApi';
-export type { DocumentSearchResult } from './model/documentSearch.types';
+export type { DocumentSearchArea, DocumentSearchResult } from './model/documentSearch.types';

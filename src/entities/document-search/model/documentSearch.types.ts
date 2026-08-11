@@ -12,4 +12,9 @@ export interface DocumentSearchResult {
   similarity: number;
   /* Số đoạn trong file khớp với câu hỏi */
   matchCount: number;
+  /* Vùng hiện tại của tài liệu: 'Published' | 'Archived' */
+  area: string;
+  /* True khi kết quả là bản niêm phong ở Archived đang thế chỗ cho bản Published
+   * bị rút về sửa. Hiện cảnh báo vàng để giải thích vì sao không thấy bản mới nhất. */
+  isUnderRevision: boolean;
 }

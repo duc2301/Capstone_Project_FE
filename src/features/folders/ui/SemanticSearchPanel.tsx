@@ -28,6 +28,16 @@ function SparkIcon() {
   );
 }
 
+function WarningIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
 /* Thanh tìm kiếm ngữ nghĩa + danh sách kết quả.
  * Chỉ hiện ở vùng Published/Archived (nơi tài liệu đã được index vào RAG). */
 export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
@@ -125,6 +135,12 @@ export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{r.fileName}</p>
+                      {r.isUnderRevision && (
+                        <span className="flex shrink-0 items-center gap-1 rounded-full bg-warning-light px-2.5 py-0.5 text-xs font-bold text-warning">
+                          <WarningIcon />
+                          {t('docSearch.underRevision')}
+                        </span>
+                      )}
                       <span className="shrink-0 rounded-full bg-success-light px-2.5 py-0.5 text-xs font-bold text-success">
                         {Math.round(r.similarity * 100)}% {t('docSearch.match')}
                       </span>
@@ -135,6 +151,12 @@ export function SemanticSearchPanel({ projectId, onOpenFile }: Props) {
                     <p className="mt-1.5 text-xs text-text-muted">
                       {r.matchCount} {t('docSearch.passages')}
                     </p>
+                    {/* Giải thích vì sao kết quả không phải bản mới nhất — tránh người dùng hiểu nhầm RAG bỏ sót. */}
+                    {r.isUnderRevision && (
+                      <p className="mt-2 rounded-[var(--radius-card)] border border-warning/20 bg-warning-light px-2.5 py-1.5 text-xs leading-relaxed text-warning">
+                        {t('docSearch.underRevisionHint')}
+                      </p>
+                    )}
                   </button>
                 </li>
               ))}

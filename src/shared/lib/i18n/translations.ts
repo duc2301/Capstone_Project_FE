@@ -1644,7 +1644,9 @@ export const translations = {
   'docSearch.match': 'khớp',
   'docSearch.passages': 'đoạn khớp trong tài liệu',
   'docSearch.openHint': 'Bấm để mở xem chi tiết tài liệu',
-
+  'docSearch.underRevision': 'Bản lưu trữ',
+  'docSearch.underRevisionHint':
+    'Tài liệu này đang được cập nhật. Bản chính thức đã được rút về để chỉnh sửa, nên nội dung hiển thị là bản niêm phong gần nhất trong khu vực Lưu trữ.',
   // ── Nhật ký hoạt động (audit log) ──────────────────────────────
   'projectDetail.tab.audit': 'Nhật ký hệ thống',
 

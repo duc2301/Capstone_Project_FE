@@ -158,6 +158,7 @@ export const smartcaApi = {
     const { data } = await axiosInstance.post<ApiResponse<RawSignRequestResult>>(
       `/approvals/${approvalId}/vnpt-smartca/sign-request`,
       { userId, certificateSerial },
+      { timeout: 60_000 },
     );
 
     return mapSignRequest(unwrap(data));
@@ -214,6 +215,8 @@ export const smartcaApi = {
   generateSignedPdf: async (approvalId: string): Promise<SignedFileInfo> => {
     const { data } = await axiosInstance.post<ApiResponse<RawSignedFileInfo>>(
       `/approvals/${approvalId}/generate-signed-pdf`,
+      undefined,
+      { timeout: 60_000 },
     );
 
     return mapSignedFileInfo(unwrap(data));

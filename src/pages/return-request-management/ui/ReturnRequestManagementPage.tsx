@@ -9,10 +9,21 @@ import {
   useZoneReturnRequests,
   zoneLabel,
 } from '@/features/folders';
-import { ActionPillButton, ConfirmDialog, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
+import type { ListTableColumn } from '@/shared/components';
+import { ActionPillButton, ConfirmDialog, ListErrorCard, ListLoadingCard, ListTable, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 const PAGE_SIZE = 20;
+
+const RETURN_REQUEST_COLUMNS: ListTableColumn[] = [
+  { key: 'file', label: t('returnRequests.page.colFile'), width: 'w-[22%]' },
+  { key: 'zone', label: t('returnRequests.page.colZone'), width: 'w-[120px]' },
+  { key: 'requestedBy', label: t('returnRequests.page.colRequestedBy'), width: 'w-[150px]' },
+  { key: 'reason', label: t('returnRequests.page.colReason') },
+  { key: 'date', label: t('returnRequests.page.colDate'), width: 'w-[150px]' },
+  { key: 'status', label: t('returnRequests.page.colStatus'), width: 'w-[130px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[190px]', align: 'right' },
+];
 
 export function ReturnRequestManagementPage() {
   const { items, loading, error, refetch } = useZoneReturnRequests();
@@ -64,37 +75,13 @@ export function ReturnRequestManagementPage() {
       <h1 className="heading-page shrink-0">{t('returnRequests.page.title')}</h1>
 
       {loading ? (
-        <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
-          <p className="text-sm text-text-muted">{t('common.loading')}</p>
-        </div>
+        <ListLoadingCard />
       ) : error ? (
-        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
-          <p className="text-sm font-medium text-danger">{error}</p>
-        </div>
+        <ListErrorCard message={error} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="table-list min-w-[1020px]">
-              <colgroup>
-                <col className="w-[22%]" />
-                <col className="w-[120px]" />
-                <col className="w-[150px]" />
-                <col />
-                <col className="w-[150px]" />
-                <col className="w-[130px]" />
-                <col className="w-[190px]" />
-              </colgroup>
-              <thead className="sticky top-0 z-10">
-                <tr className="table-head bg-content-bg">
-                  <th className="px-6 py-3.5">{t('returnRequests.page.colFile')}</th>
-                  <th className="px-5 py-3.5">{t('returnRequests.page.colZone')}</th>
-                  <th className="px-5 py-3.5">{t('returnRequests.page.colRequestedBy')}</th>
-                  <th className="px-5 py-3.5">{t('returnRequests.page.colReason')}</th>
-                  <th className="px-5 py-3.5">{t('returnRequests.page.colDate')}</th>
-                  <th className="px-5 py-3.5">{t('returnRequests.page.colStatus')}</th>
-                  <th className="px-5 py-3.5 text-right">{t('common.col.actions')}</th>
-                </tr>
-              </thead>
+            <ListTable columns={RETURN_REQUEST_COLUMNS} minWidth="min-w-[1020px]">
               <tbody className="divide-y divide-card-border">
                 {paged.length === 0 ? (
                   <tr>
@@ -131,7 +118,7 @@ export function ReturnRequestManagementPage() {
                   })
                 )}
               </tbody>
-            </table>
+            </ListTable>
           </div>
 
           <PaginationBar

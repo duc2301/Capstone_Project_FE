@@ -6,7 +6,8 @@ import { approvalApi, approvalErrorMessage } from '@/entities/approval';
 import type { Group } from '@/entities/group';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
-import { ActionPillButton, ConfirmDialog, RowActions, Toast, useToast } from '@/shared/components';
+import type { ListTableColumn } from '@/shared/components';
+import { ActionPillButton, ConfirmDialog, ListTable, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner, recipientNames } from '../model/approvalFormat';
@@ -21,6 +22,25 @@ const approvalApproveLabel = (targetZone?: string | null) =>
   targetZone
     ? t('approvals.action.approveTo').replace('{zone}', targetZone)
     : t('approvals.action.approve');
+
+const RETURN_REQUEST_COLUMNS: ListTableColumn[] = [
+  { key: 'file', label: t('returnRequests.page.colFile'), width: 'w-[24%]' },
+  { key: 'zone', label: t('returnRequests.page.colZone'), width: 'w-[110px]' },
+  { key: 'requestedBy', label: t('returnRequests.page.colRequestedBy'), width: 'w-[140px]' },
+  { key: 'reason', label: t('returnRequests.page.colReason') },
+  { key: 'date', label: t('returnRequests.page.colDate'), width: 'w-[140px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[180px]', align: 'right' },
+];
+
+const APPROVAL_COLUMNS: ListTableColumn[] = [
+  { key: 'name', label: t('approvals.pending.colName') },
+  { key: 'sender', label: t('approvals.pending.colSender'), width: 'w-[140px]' },
+  { key: 'recipient', label: t('approvals.pending.colRecipient'), width: 'w-[140px]' },
+  { key: 'date', label: t('approvals.pending.colDate'), width: 'w-[140px]' },
+  { key: 'status', label: t('approvals.pending.colStatus'), width: 'w-[120px]' },
+  { key: 'signature', label: t('approvals.pending.colSignature'), width: 'w-[120px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[330px]', align: 'right' },
+];
 
 interface PendingApprovalsModalProps {
   onClose: () => void;
@@ -217,25 +237,13 @@ export function PendingApprovalsModal({
                 <section className="space-y-3">
                   <h3 className="heading-label">{t('returnRequests.page.title')}</h3>
                   <div className="overflow-x-auto">
-                    <table className="table-list min-w-[900px]">
-                      <colgroup>
-                        <col className="w-[24%]" />
-                        <col className="w-[110px]" />
-                        <col className="w-[140px]" />
-                        <col />
-                        <col className="w-[140px]" />
-                        <col className="w-[180px]" />
-                      </colgroup>
-                      <thead>
-                        <tr className="table-head">
-                          <th className="py-2.5 pr-3">{t('returnRequests.page.colFile')}</th>
-                          <th className="px-3 py-2.5">{t('returnRequests.page.colZone')}</th>
-                          <th className="px-3 py-2.5">{t('returnRequests.page.colRequestedBy')}</th>
-                          <th className="px-3 py-2.5">{t('returnRequests.page.colReason')}</th>
-                          <th className="px-3 py-2.5">{t('returnRequests.page.colDate')}</th>
-                          <th className="px-3 py-2.5 text-right">{t('common.col.actions')}</th>
-                        </tr>
-                      </thead>
+                    <ListTable
+                      columns={RETURN_REQUEST_COLUMNS}
+                      minWidth="min-w-[900px]"
+                      dense
+                      stickyHead={false}
+                      filledHead={false}
+                    >
                       <tbody>
                         {returnRequests.map((request) => {
                           const busy = returnBusyId === request.id;
@@ -271,7 +279,7 @@ export function PendingApprovalsModal({
                           );
                         })}
                       </tbody>
-                    </table>
+                    </ListTable>
                   </div>
                 </section>
               )}
@@ -366,27 +374,13 @@ function ApprovalItemsTable({
     <section className="space-y-3">
       <h3 className="heading-label">{title}</h3>
       <div className="overflow-x-auto">
-        <table className="table-list min-w-[1080px]">
-          <colgroup>
-            <col />
-            <col className="w-[140px]" />
-            <col className="w-[140px]" />
-            <col className="w-[140px]" />
-            <col className="w-[120px]" />
-            <col className="w-[120px]" />
-            <col className="w-[330px]" />
-          </colgroup>
-          <thead>
-            <tr className="table-head">
-              <th className="py-2.5 pr-3">{t('approvals.pending.colName')}</th>
-              <th className="px-3 py-2.5">{t('approvals.pending.colSender')}</th>
-              <th className="px-3 py-2.5">{t('approvals.pending.colRecipient')}</th>
-              <th className="px-3 py-2.5">{t('approvals.pending.colDate')}</th>
-              <th className="px-3 py-2.5">{t('approvals.pending.colStatus')}</th>
-              <th className="px-3 py-2.5">{t('approvals.pending.colSignature')}</th>
-              <th className="px-3 py-2.5 text-right">{t('common.col.actions')}</th>
-            </tr>
-          </thead>
+        <ListTable
+          columns={APPROVAL_COLUMNS}
+          minWidth="min-w-[1080px]"
+          dense
+          stickyHead={false}
+          filledHead={false}
+        >
           <tbody>
             {items.map((it) => {
               const badge = approvalStatusBadge(it.status);
@@ -448,7 +442,7 @@ function ApprovalItemsTable({
               );
             })}
           </tbody>
-        </table>
+        </ListTable>
       </div>
     </section>
   );

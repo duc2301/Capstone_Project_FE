@@ -379,6 +379,7 @@ export const translations = {
   'common.close': 'Đóng',
   'common.col.actions': 'Thao tác',
   'common.cancel': 'Hủy',
+  'common.clear': 'Xoá nội dung tìm kiếm',
   'common.confirm': 'Xác nhận',
   'common.action.edit': 'Chỉnh sửa',
   'common.action.delete': 'Xóa',

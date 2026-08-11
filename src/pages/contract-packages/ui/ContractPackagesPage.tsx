@@ -65,7 +65,13 @@ export function ContractPackagesPage() {
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="table-list min-w-[780px]">
+              <colgroup>
+                <col className="w-[26%]" />
+                <col />
+                <col className="w-[150px]" />
+                <col className="w-[130px]" />
+              </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="table-head bg-content-bg">
                   <th className="px-6 py-3.5">{t('packages.col.project')}</th>
@@ -101,9 +107,9 @@ export function ContractPackagesPage() {
                                   {project.projectName.charAt(0).toUpperCase()}
                                 </div>
                               )}
-                              <div>
-                                <div className="font-semibold text-text">{project.projectName}</div>
-                                {project.projectCode && <div className="text-xs text-text-muted mt-0.5">{project.projectCode}</div>}
+                              <div className="min-w-0">
+                                <div className="cell-wrap font-semibold text-text">{project.projectName}</div>
+                                {project.projectCode && <div className="cell-wrap text-xs text-text-muted mt-0.5">{project.projectCode}</div>}
                               </div>
                             </div>
                           ) : (
@@ -111,8 +117,8 @@ export function ContractPackagesPage() {
                           )}
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-semibold text-text">{pkg.name}</div>
-                          {pkg.code && <div className="text-xs text-text-muted mt-0.5">{t('packages.contractNo')}: {pkg.code}</div>}
+                          <div className="cell-wrap font-semibold text-text">{pkg.name}</div>
+                          {pkg.code && <div className="cell-wrap text-xs text-text-muted mt-0.5">{t('packages.contractNo')}: {pkg.code}</div>}
                         </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-2xs font-semibold ${status.badgeClass}`}>

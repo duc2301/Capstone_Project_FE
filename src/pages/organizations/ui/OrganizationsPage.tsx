@@ -219,7 +219,14 @@ export function OrganizationsPage() {
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="table-list min-w-[780px]">
+              <colgroup>
+                <col />
+                <col className="w-[170px]" />
+                <col className="w-[22%]" />
+                <col className="w-[110px]" />
+                <col className="w-[120px]" />
+              </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="table-head bg-content-bg">
                   <th className="px-6 py-3.5">{t('org.col.name')}</th>
@@ -249,7 +256,7 @@ export function OrganizationsPage() {
                             {initialsOf(org)}
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-text">{org.displayName || org.legalName}</p>
+                            <p className="cell-wrap font-semibold text-text">{org.displayName || org.legalName}</p>
                             {org.isJointVenture && (
                               <span className="mt-0.5 inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-2xs font-bold text-info">
                                 {t('org.jointVenture')}
@@ -263,7 +270,7 @@ export function OrganizationsPage() {
                           {org.taxCode || '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-text-secondary">{orgTypeName(org.organizationTypeId)}</td>
+                      <td className="cell-wrap px-5 py-4 text-text-secondary">{orgTypeName(org.organizationTypeId)}</td>
                       <td className="px-5 py-4 text-text-secondary">{org.participatingProjectsCount ?? 0}</td>
                       <td className="px-5 py-4">
                         <RowActions>

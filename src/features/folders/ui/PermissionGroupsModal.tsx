@@ -98,19 +98,43 @@ function SelectBox({ checked }: { checked: boolean }) {
   );
 }
 
+function TickBox({ granted }: { granted: boolean }) {
+  return granted ? (
+    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-success text-white transition-opacity group-hover:opacity-80">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+  ) : (
+    <span className="h-5 w-5 rounded-[var(--radius-card)] border-2 border-card-border bg-card transition-colors group-hover:border-success" />
+  );
+}
+
 /* Ô tick quyền: bấm để cấp/gỡ quyền của nhóm ở panel phải */
 function PermissionTick({ granted, onToggle }: { granted: boolean; onToggle: () => void }) {
   return (
     <button type="button" onClick={onToggle} className="group flex justify-center">
-      {granted ? (
-        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-success text-white transition-opacity group-hover:opacity-80">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </span>
-      ) : (
-        <span className="h-5 w-5 rounded-[var(--radius-card)] border-2 border-card-border bg-card transition-colors group-hover:border-success" />
-      )}
+      <TickBox granted={granted} />
+    </button>
+  );
+}
+
+function PermissionColumnHeader({ label, granted, disabled, onToggle }: {
+  label: string;
+  granted: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onToggle}
+      title={(granted ? t('folderPermission.revokeAll') : t('folderPermission.grantAll')).replace('{permission}', label)}
+      className="group flex flex-col items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span className="text-2xs font-bold leading-tight text-text-muted">{label}</span>
+      <TickBox granted={granted} />
     </button>
   );
 }
@@ -198,6 +222,17 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
       prev.map((it) =>
         it.projectParticipantId === participantId ? { ...it, [key]: !it[key] } : it,
       ),
+    );
+  };
+
+  const isColumnFullyGranted = (key: PermissionFlagKey) =>
+    filteredSelected.length > 0 && filteredSelected.every((it) => it[key]);
+
+  const toggleColumn = (key: PermissionFlagKey) => {
+    const nextValue = !isColumnFullyGranted(key);
+    const visibleIds = new Set(filteredSelected.map((it) => it.projectParticipantId));
+    setSelected((prev) =>
+      prev.map((it) => (visibleIds.has(it.projectParticipantId) ? { ...it, [key]: nextValue } : it)),
     );
   };
 
@@ -325,9 +360,13 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
                     <span />
                     <span />
                     {PERMISSION_FLAGS.map((f) => (
-                      <span key={f.key} className="text-center text-2xs font-bold leading-tight text-text-muted">
-                        {f.label()}
-                      </span>
+                      <PermissionColumnHeader
+                        key={f.key}
+                        label={f.label()}
+                        granted={isColumnFullyGranted(f.key)}
+                        disabled={filteredSelected.length === 0}
+                        onToggle={() => toggleColumn(f.key)}
+                      />
                     ))}
                   </div>
                   {filteredSelected.map((it) => {

@@ -217,15 +217,23 @@ export function PendingApprovalsModal({
                 <section className="space-y-3">
                   <h3 className="heading-label">{t('returnRequests.page.title')}</h3>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="table-list min-w-[900px]">
+                      <colgroup>
+                        <col className="w-[24%]" />
+                        <col className="w-[110px]" />
+                        <col className="w-[140px]" />
+                        <col />
+                        <col className="w-[140px]" />
+                        <col className="w-[180px]" />
+                      </colgroup>
                       <thead>
                         <tr className="table-head">
-                          <th className="w-56 whitespace-nowrap py-2.5 pr-3">{t('returnRequests.page.colFile')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5">{t('returnRequests.page.colZone')}</th>
-                          <th className="w-36 px-3 py-2.5">{t('returnRequests.page.colRequestedBy')}</th>
+                          <th className="py-2.5 pr-3">{t('returnRequests.page.colFile')}</th>
+                          <th className="px-3 py-2.5">{t('returnRequests.page.colZone')}</th>
+                          <th className="px-3 py-2.5">{t('returnRequests.page.colRequestedBy')}</th>
                           <th className="px-3 py-2.5">{t('returnRequests.page.colReason')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5">{t('returnRequests.page.colDate')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5 text-right">{t('common.col.actions')}</th>
+                          <th className="px-3 py-2.5">{t('returnRequests.page.colDate')}</th>
+                          <th className="px-3 py-2.5 text-right">{t('common.col.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -233,11 +241,11 @@ export function PendingApprovalsModal({
                           const busy = returnBusyId === request.id;
                           return (
                             <tr key={request.id} className="border-b border-card-border/60">
-                              <td className="w-56 py-3 pr-3 font-medium text-text break-words">{request.fileName}</td>
-                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{zoneLabel(request.currentZone)}</td>
-                              <td className="w-36 px-3 py-3 text-text-secondary break-words">{request.requestedByName}</td>
-                              <td className="max-w-60 px-3 py-3 text-text-secondary break-words">{request.reason}</td>
-                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(request.createdAt)}</td>
+                              <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{request.fileName}</td>
+                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{zoneLabel(request.currentZone)}</td>
+                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{request.requestedByName}</td>
+                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{request.reason}</td>
+                              <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(request.createdAt)}</td>
                               {/* /return-requests/pending chỉ trả về khi actor đúng là Leader của nhóm
                                   phụ trách file này (403 nếu không phải leader ở đâu cả) — có mặt trong
                                   danh sách nghĩa là chắc chắn được thao tác, không cần kiểm tra thêm. */}
@@ -358,16 +366,25 @@ function ApprovalItemsTable({
     <section className="space-y-3">
       <h3 className="heading-label">{title}</h3>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="table-list min-w-[1080px]">
+          <colgroup>
+            <col />
+            <col className="w-[140px]" />
+            <col className="w-[140px]" />
+            <col className="w-[140px]" />
+            <col className="w-[120px]" />
+            <col className="w-[120px]" />
+            <col className="w-[330px]" />
+          </colgroup>
           <thead>
             <tr className="table-head">
-              <th className="w-64 whitespace-nowrap py-2.5 pr-3">{t('approvals.pending.colName')}</th>
-              <th className="w-36 px-3 py-2.5">{t('approvals.pending.colSender')}</th>
-              <th className="w-36 px-3 py-2.5">{t('approvals.pending.colRecipient')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colDate')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colStatus')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colSignature')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5 text-right">{t('common.col.actions')}</th>
+              <th className="py-2.5 pr-3">{t('approvals.pending.colName')}</th>
+              <th className="px-3 py-2.5">{t('approvals.pending.colSender')}</th>
+              <th className="px-3 py-2.5">{t('approvals.pending.colRecipient')}</th>
+              <th className="px-3 py-2.5">{t('approvals.pending.colDate')}</th>
+              <th className="px-3 py-2.5">{t('approvals.pending.colStatus')}</th>
+              <th className="px-3 py-2.5">{t('approvals.pending.colSignature')}</th>
+              <th className="px-3 py-2.5 text-right">{t('common.col.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -388,19 +405,19 @@ function ApprovalItemsTable({
               const canRejectItem = isTeamLeaderForItem || (!hideDecisionActions && canSignWithSmartCa && isSignerForItem);
               return (
                 <tr key={it.id} className="border-b border-card-border/60">
-                  <td className="w-64 py-3 pr-3 font-medium text-text break-words">{it.fileName}</td>
-                  <td className="w-36 px-3 py-3 text-text-secondary break-words">{it.requestedByName}</td>
-                  <td className="w-36 px-3 py-3 text-text-secondary break-words">{recipientNames(it)}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(it.createdAt)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
+                  <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{it.fileName}</td>
+                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{it.requestedByName}</td>
+                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{recipientNames(it)}</td>
+                  <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(it.createdAt)}</td>
+                  <td className="px-3 py-3 align-top">
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-text-secondary">
+                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">
                     {canSignWithSmartCa
                       ? (it.isSigned ? t('smartca.status.signed') : t('smartca.signature.required'))
                       : t('approvals.detail.no')}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right">
+                  <td className="px-3 py-3 text-right align-top">
                     <RowActions columns={4}>
                       <ActionPillButton onClick={() => onDetail(it.id)}>
                         {t('approvals.action.detail')}

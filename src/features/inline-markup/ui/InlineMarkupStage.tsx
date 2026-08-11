@@ -24,46 +24,57 @@ export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
   return (
     <div ref={rootRef} className="absolute inset-0 flex flex-col bg-viewer-canvas">
       <div className="z-20 flex flex-wrap items-center gap-2 border-b border-white/60 bg-card/85 px-3 py-2 shadow-sm backdrop-blur">
-        <div className="flex items-center gap-1">
-          {INLINE_TOOLS.map((td) => (
-            <ToolButton
-              key={td.id}
-              active={c.tool === td.id}
-              label={t(td.labelKey as TranslationKey)}
-              onClick={() => c.setTool(td.id)}
-            >
-              <ToolGlyph id={td.id} />
-            </ToolButton>
-          ))}
-        </div>
+        {c.readOnly ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-content-bg px-3 py-1 text-xs font-semibold text-text-secondary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            {t('markup.readOnly')}
+          </span>
+        ) : (
+          <>
+            <div className="flex items-center gap-1">
+              {INLINE_TOOLS.map((td) => (
+                <ToolButton
+                  key={td.id}
+                  active={c.tool === td.id}
+                  label={t(td.labelKey as TranslationKey)}
+                  onClick={() => c.setTool(td.id)}
+                >
+                  <ToolGlyph id={td.id} />
+                </ToolButton>
+              ))}
+            </div>
 
-        <span className="mx-1 h-5 w-px bg-card-border" />
+            <span className="mx-1 h-5 w-px bg-card-border" />
 
-        <div className="flex items-center gap-1" title={t('markup.inline.color')}>
-          {MARKUP_COLORS.map((col) => (
-            <button
-              key={col}
-              type="button"
-              onClick={() => c.applyStyle({ color: col })}
-              aria-label={col}
-              className={`h-5 w-5 rounded-full border-2 ${c.style.color === col ? 'border-text' : 'border-white'} shadow`}
-              style={{ backgroundColor: col }}
-            />
-          ))}
-        </div>
+            <div className="flex items-center gap-1" title={t('markup.inline.color')}>
+              {MARKUP_COLORS.map((col) => (
+                <button
+                  key={col}
+                  type="button"
+                  onClick={() => c.applyStyle({ color: col })}
+                  aria-label={col}
+                  className={`h-5 w-5 rounded-full border-2 ${c.style.color === col ? 'border-text' : 'border-white'} shadow`}
+                  style={{ backgroundColor: col }}
+                />
+              ))}
+            </div>
 
-        <div className="flex items-center gap-1" title={t('markup.inline.width')}>
-          {STROKE_WIDTHS.map((w) => (
-            <button
-              key={w}
-              type="button"
-              onClick={() => c.applyStyle({ strokeWidth: w })}
-              className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${c.style.strokeWidth === w ? 'bg-primary/15' : 'hover:bg-content-bg'}`}
-            >
-              <span className="rounded-full bg-text" style={{ width: w + 2, height: w + 2 }} />
-            </button>
-          ))}
-        </div>
+            <div className="flex items-center gap-1" title={t('markup.inline.width')}>
+              {STROKE_WIDTHS.map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => c.applyStyle({ strokeWidth: w })}
+                  className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${c.style.strokeWidth === w ? 'bg-primary/15' : 'hover:bg-content-bg'}`}
+                >
+                  <span className="rounded-full bg-text" style={{ width: w + 2, height: w + 2 }} />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {!c.isImage && c.pageCount > 1 && (
           <>

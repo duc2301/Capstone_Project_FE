@@ -130,7 +130,14 @@ export function ProjectIssuesTab({ projectId }: Props) {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="table-list min-w-[780px]">
+              <colgroup>
+                <col />
+                <col className="w-[120px]" />
+                <col className="w-[130px]" />
+                <col className="w-[170px]" />
+                <col className="w-[150px]" />
+              </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="table-head bg-content-bg">
                   <th className="px-6 py-3.5">{t('projectIssues.col.title')}</th>
@@ -158,29 +165,29 @@ export function ProjectIssuesTab({ projectId }: Props) {
                         onClick={() => openIssue(issue.linkedFileItemId, issue.id)}
                         className={`transition-colors ${clickable ? 'cursor-pointer hover:bg-content-bg' : ''}`}
                       >
-                        <td className="px-6 py-4">
-                          <p className="font-semibold text-text">{issue.title}</p>
-                          <p className="mt-0.5 text-xs text-text-muted">
+                        <td className="px-6 py-4 align-top">
+                          <p className="cell-wrap font-semibold text-text">{issue.title}</p>
+                          <p className="cell-wrap mt-0.5 text-xs text-text-muted">
                             {issue.linkedFileName
                               ? `${t('projectIssues.inFile')}: ${issue.linkedFileName}`
                               : t('projectIssues.noFile')}
                             {issue.linkedFolderName ? ` · ${issue.linkedFolderName}` : ''}
                           </p>
                         </td>
-                        <td className="px-5 py-4">
-                          <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityBadge.className}`}>
+                        <td className="px-5 py-4 align-top">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityBadge.className}`}>
                             {priorityBadge.label}
                           </span>
                         </td>
-                        <td className="px-5 py-4">
-                          <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadge.className}`}>
+                        <td className="px-5 py-4 align-top">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadge.className}`}>
                             {statusBadge.label}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-text-secondary">
+                        <td className="cell-wrap px-5 py-4 align-top text-text-secondary">
                           {issue.assignedToName ?? <span className="italic text-text-placeholder">{t('projectIssues.unassigned')}</span>}
                         </td>
-                        <td className="whitespace-nowrap px-5 py-4 text-text-muted">
+                        <td className="px-5 py-4 align-top text-text-muted">
                           {formatIssueDateTime(issue.createdAt)}
                         </td>
                       </tr>

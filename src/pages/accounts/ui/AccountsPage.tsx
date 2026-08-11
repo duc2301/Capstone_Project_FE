@@ -109,7 +109,7 @@ function UserRow({ account, onEdit, onDelete }: UserRowProps) {
 
       {/* Doanh nghiệp / Công ty */}
       <td className="px-5 py-3">
-        <span className="text-sm text-text-secondary">
+        <span className="cell-wrap block text-sm text-text-secondary">
           {account.organizationName ?? <span className="text-text-placeholder">{EMPTY_CELL}</span>}
         </span>
       </td>
@@ -356,7 +356,14 @@ export function AccountsPage() {
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="table-list min-w-[780px]">
+              <colgroup>
+                <col />
+                <col className="w-[24%]" />
+                <col className="w-[150px]" />
+                <col className="w-[140px]" />
+                <col className="w-[120px]" />
+              </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="table-head bg-content-bg">
                   <th className="px-6 py-3.5">

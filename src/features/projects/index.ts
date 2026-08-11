@@ -17,6 +17,7 @@ export { useProjectInvite } from './model/useProjectInvite';
 export type { InviteManyInput, InviteManyResult } from './model/useProjectInvite';
 export { useProjects } from './model/useProjects';
 export type { CreateProjectWithGroupsInput, ProjectGroupDraft } from './model/useProjects';
+export { AddPartnerModal } from './ui/AddPartnerModal';
 export { AddressField } from './ui/AddressField';
 export { AssignManagerForm } from './ui/AssignManagerForm';
 export { CreateGroupForm } from './ui/CreateGroupForm';

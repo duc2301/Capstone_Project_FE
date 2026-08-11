@@ -232,7 +232,13 @@ export function GroupDetailPanel({
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
         <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="table-list min-w-[720px]">
+            <colgroup>
+              <col />
+              <col className="w-[150px]" />
+              <col className="w-[150px]" />
+              <col className="w-[130px]" />
+            </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="table-head bg-content-bg">
                 <th className="px-6 py-3.5">{t('projectDetail.teams.detail.col.member')}</th>
@@ -262,8 +268,8 @@ export function GroupDetailPanel({
                         <div className="flex items-center gap-3">
                           <UserAvatar userName={member.userName} className="ring-[3px] ring-primary/10" />
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-text">{member.userName}</p>
-                            {member.email && <p className="truncate text-xs text-text-muted">{member.email}</p>}
+                            <p className="cell-wrap text-sm font-semibold text-text">{member.userName}</p>
+                            {member.email && <p className="cell-wrap text-xs text-text-muted">{member.email}</p>}
                           </div>
                         </div>
                       </td>

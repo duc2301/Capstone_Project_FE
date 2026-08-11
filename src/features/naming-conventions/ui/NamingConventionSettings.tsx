@@ -122,7 +122,15 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
             </div>
           ) : (
             <div className={`${cardClass} overflow-x-auto`}>
-              <table className="w-full text-left text-sm">
+              <table className="table-list min-w-[760px] text-left">
+                <colgroup>
+                  <col />
+                  <col className="w-[120px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[34%]" />
+                  <col className="w-[150px]" />
+                  <col className="w-[50px]" />
+                </colgroup>
                 <thead>
                   <tr className="table-head">
                     <th className="pb-3">{t('naming.table.name')}</th>
@@ -142,17 +150,17 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
                         onClick={() => setSelectedId(c.id)}
                         className="cursor-pointer transition-colors hover:bg-content-bg"
                       >
-                        <td className="py-4 pr-4">
-                          <p className="font-medium text-primary">{c.name}</p>
-                          <p className="mt-0.5 truncate font-mono text-xs text-text-muted">
+                        <td className="py-4 pr-4 align-top">
+                          <p className="cell-wrap font-medium text-primary">{c.name}</p>
+                          <p className="cell-wrap mt-0.5 font-mono text-xs text-text-muted">
                             {sortedCodes.join(c.delimiter)}
                           </p>
                         </td>
-                        <td className="py-4 text-center">
+                        <td className="py-4 text-center align-top">
                           <span className="rounded-full bg-content-bg px-2.5 py-1 font-mono text-xs font-bold text-text-secondary">{c.delimiter}</span>
                         </td>
-                        <td className="py-4 text-center font-semibold">{c.fields.length}</td>
-                        <td className="max-w-56 py-4 pr-4">
+                        <td className="py-4 text-center align-top font-semibold">{c.fields.length}</td>
+                        <td className="py-4 pr-4 align-top">
                           {c.assignedFolders.length === 0 ? (
                             <span className="text-xs text-text-muted">—</span>
                           ) : (
@@ -169,7 +177,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
                             </div>
                           )}
                         </td>
-                        <td className="py-4 text-center">
+                        <td className="py-4 text-center align-top">
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${c.isActive ? 'bg-success-light text-success' : 'bg-content-bg text-text-muted'}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${c.isActive ? 'bg-success' : 'bg-text-placeholder'}`} />
                             {c.isActive ? t('naming.status.active') : t('naming.status.inactive')}

@@ -5,7 +5,7 @@ import type { FolderTreeNode } from '@/entities/folder';
 import { FileTypeIcon, FolderGlyph } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
-import { fileStatusBadge, fileTypeLabel, formatDate, formatSize } from '../model/fileFormat';
+import { fileStatusBadge, formatDate, formatSize } from '../model/fileFormat';
 
 /* Tóm tắt AI dưới tên file: mặc định cắt 1 dòng (…), "Xem thêm" mở rộng XUỐNG DƯỚI
  * (không kéo dài hàng sang phải), "Thu gọn" để đóng lại — kiểu Facebook. */
@@ -71,21 +71,6 @@ function WarningIcon({ message }: { message?: string | null }) {
   );
 }
 
-/* Nút 3 chấm — ẩn mặc định, hiện khi hover lên dòng (tr có class "group") */
-function DotsButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-button)] text-text-muted opacity-0 transition-all hover:bg-content-bg hover:text-text focus-visible:opacity-100 group-hover:opacity-100"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" />
-      </svg>
-    </button>
-  );
-}
-
 export function FileList({ subfolders, files, loading, error, onFolderOpen, onFolderMenu, onFileMenu, onFileOpen }: FileListProps) {
   if (loading)
     return <p className="py-12 text-center text-sm text-text-muted">{t('common.loading')}</p>;
@@ -96,16 +81,21 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
 
   return (
     <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-      <table className="w-full text-sm">
+      <table className="table-list min-w-[560px]">
+        <colgroup>
+          <col />
+          <col className="w-[92px]" />
+          <col className="w-[92px]" />
+          <col className="w-[124px]" />
+          <col className="w-[124px]" />
+        </colgroup>
         <thead className="sticky top-0 z-10 bg-card">
           <tr className="table-head">
             <th className="py-2.5 pr-3">{t('documents.files.colName')}</th>
             <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colVersion')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colType')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colStatus')}</th>
             <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colSize')}</th>
             <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colModified')}</th>
-            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colAuthor')}</th>
+            <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colStatus')}</th>
           </tr>
         </thead>
         <tbody>
@@ -128,15 +118,6 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
-              <td className="px-3 py-3 text-text-muted">—</td>
-              <td className="px-3 py-3">
-                <div className="flex items-center justify-between gap-2 text-text-muted">
-                  <span>—</span>
-                  {onFolderMenu && (
-                    <DotsButton onClick={(e) => { e.stopPropagation(); onFolderMenu(e, folder); }} />
-                  )}
-                </div>
-              </td>
             </tr>
           ))}
           {files.map((f) => (
@@ -147,12 +128,12 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               title={t('documents.files.openHint')}
               className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
-              <td className="w-full max-w-0 py-3 pr-3">
+              <td className="py-3 pr-3">
                 <div className="flex items-start gap-3">
                   <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
-                      <span className="break-words">{f.name}</span>
+                      <span className="cell-wrap">{f.name}</span>
                       {/* Truyền warnningMessage vào WarningIcon */}
                       {f.warnning && <WarningIcon message={f.warnningMessage} />}
                     </p>
@@ -165,7 +146,8 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   {f.displayVersion ?? `V${f.currentVersionNumber}`}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{fileTypeLabel(f.fileType)}</td>
+              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
+              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
               <td className="whitespace-nowrap px-3 py-3">
                 {(() => {
                   const badge = fileStatusBadge(f);
@@ -175,14 +157,6 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                     </span>
                   );
                 })()}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
-              <td className="px-3 py-3">
-                <div className="flex items-center justify-between gap-2 text-text-secondary">
-                  <span className="truncate">{f.authorName ?? '—'}</span>
-                  <DotsButton onClick={(e) => { e.stopPropagation(); onFileMenu(e, f); }} />
-                </div>
               </td>
             </tr>
           ))}

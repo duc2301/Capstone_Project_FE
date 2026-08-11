@@ -432,16 +432,12 @@ export function ProjectDetailPage() {
   };
 
   const handleAssignPartner = async (groupId: string, organizationId: string) => {
-    try {
-      const group = groups.find(g => g.id === groupId);
-      if (group?.organizationId !== organizationId) {
-        await groupApi.update(groupId, { organizationId });
-        await refreshGroups();
-        showToast(t('projectDetail.teams.toast.partnerAssigned'));
-      }
-    } catch (err) {
-      showToast(getApiErrorMessage(err, t('common.error')), 'error');
-    }
+    const group = groups.find(g => g.id === groupId);
+    if (group?.organizationId === organizationId) return;
+
+    await groupApi.update(groupId, { organizationId });
+    await refreshGroups();
+    showToast(t('projectDetail.teams.toast.partnerAssigned'));
   };
 
 
@@ -732,7 +728,7 @@ export function ProjectDetailPage() {
                     </svg>
                   }
                 />
-                {isAdmin && (
+                {canViewAllTabs && (
                   <button
                     type="button"
                     onClick={() => setAddGroupOpen(true)}
@@ -804,7 +800,15 @@ export function ProjectDetailPage() {
 
       {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
 
-      {tab === 'partners' && <ProjectPartnersTab partners={projectPartners} groups={groups} />}
+      {tab === 'partners' && (
+        <ProjectPartnersTab
+          partners={projectPartners}
+          groups={groups}
+          organizations={organizations}
+          canManage={canViewAllTabs}
+          onAssignPartner={handleAssignPartner}
+        />
+      )}
 
       {/* ── Tab: Nhật ký hoạt động ──────
           Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
@@ -843,7 +847,16 @@ export function ProjectDetailPage() {
           </div>
 
           <div className={`${cardClass} overflow-x-auto`}>
-            <table className="w-full text-left text-sm">
+            <table className="table-list min-w-[900px] text-left">
+              <colgroup>
+                <col />
+                <col className="w-[150px]" />
+                <col className="w-[20%]" />
+                <col className="w-[110px]" />
+                <col className="w-[110px]" />
+                <col className="w-[130px]" />
+                <col className="w-[90px]" />
+              </colgroup>
               <thead>
                 <tr className="table-head">
                   <th className="pb-3">{t('packages.col.name')}</th>
@@ -872,19 +885,19 @@ export function ProjectDetailPage() {
                   const pkgStatus = packageStatusMeta(p.status);
                   return (
                     <tr key={p.id} className="hover:bg-card-hover transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}/packages/${p.id}`)}>
-                      <td className="py-4 font-medium text-primary max-w-[200px] truncate" title={p.name}>
+                      <td className="cell-wrap py-4 pr-4 align-top font-medium text-primary" title={p.name}>
                         <span className="hover:underline">{p.name}</span>
                       </td>
-                      <td className="py-4 font-bold text-primary">{p.code}</td>
-                      <td className="py-4 text-text-muted">{partnerName}</td>
-                      <td className="py-4">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="py-4">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="py-4">
+                      <td className="cell-wrap py-4 pr-4 align-top font-bold text-primary">{p.code}</td>
+                      <td className="cell-wrap py-4 pr-4 align-top text-text-muted">{partnerName}</td>
+                      <td className="py-4 align-top">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 align-top">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 align-top">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pkgStatus.badgeClass}`}>
                           {pkgStatus.label}
                         </span>
                       </td>
-                      <td className="py-4">
+                      <td className="py-4 align-top">
                         <RowActions>
                           <ActionIconButton
                             label={t('packages.action.edit')}

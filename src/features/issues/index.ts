@@ -1,4 +1,5 @@
 export { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from './model/issueFormat';
+export { useIssueDetail } from './model/useIssueDetail';
 export { useIssueDiscussion } from './model/useIssueDiscussion';
 export { useIssues } from './model/useIssues';
 export { useMyIssues } from './model/useMyIssues';

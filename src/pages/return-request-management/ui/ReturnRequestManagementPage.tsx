@@ -74,7 +74,16 @@ export function ReturnRequestManagementPage() {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="table-list min-w-[1020px]">
+              <colgroup>
+                <col className="w-[22%]" />
+                <col className="w-[120px]" />
+                <col className="w-[150px]" />
+                <col />
+                <col className="w-[150px]" />
+                <col className="w-[130px]" />
+                <col className="w-[190px]" />
+              </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="table-head bg-content-bg">
                   <th className="px-6 py-3.5">{t('returnRequests.page.colFile')}</th>
@@ -99,15 +108,15 @@ export function ReturnRequestManagementPage() {
                     const busy = actionBusyId === req.id;
                     return (
                       <tr key={req.id} className="transition-colors duration-150 hover:bg-content-bg">
-                        <td className="px-6 py-4 font-semibold text-text">{req.fileName}</td>
-                        <td className="px-5 py-4 text-text-secondary">{zoneLabel(req.currentZone)}</td>
-                        <td className="px-5 py-4 text-text-secondary">{req.requestedByName}</td>
-                        <td className="px-5 py-4 text-text-secondary">{req.reason}</td>
-                        <td className="px-5 py-4 text-text-muted">{formatDateTime(req.createdAt)}</td>
-                        <td className="px-5 py-4">
-                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
+                        <td className="cell-wrap px-6 py-4 align-top font-semibold text-text">{req.fileName}</td>
+                        <td className="cell-wrap px-5 py-4 align-top text-text-secondary">{zoneLabel(req.currentZone)}</td>
+                        <td className="cell-wrap px-5 py-4 align-top text-text-secondary">{req.requestedByName}</td>
+                        <td className="cell-wrap px-5 py-4 align-top text-text-secondary">{req.reason}</td>
+                        <td className="px-5 py-4 align-top text-text-muted">{formatDateTime(req.createdAt)}</td>
+                        <td className="px-5 py-4 align-top">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                         </td>
-                        <td className="px-5 py-4">
+                        <td className="px-5 py-4 align-top">
                           <RowActions>
                             <ActionPillButton tone="success" disabled={busy} onClick={() => setConfirmApprove(req)}>
                               {t('returnRequests.page.approve')}

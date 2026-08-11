@@ -63,6 +63,7 @@ export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) 
               key={n.id}
               note={n}
               selected={n.id === c.selectedId}
+              readOnly={c.readOnly}
               onJump={() => jumpTo(n)}
               onResolve={() => c.resolveNote(n.id, n.status === FileNoteStatus.Resolved ? FileNoteStatus.Open : FileNoteStatus.Resolved)}
               onDelete={() => {
@@ -82,12 +83,14 @@ export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) 
 function NoteRow({
   note,
   selected,
+  readOnly,
   onJump,
   onResolve,
   onDelete,
 }: {
   note: FileNote;
   selected: boolean;
+  readOnly: boolean;
   onJump: () => void;
   onResolve: () => void;
   onDelete: () => void;
@@ -109,7 +112,7 @@ function NoteRow({
         <span className={`rounded-full px-2 py-0.5 text-2xs font-bold ${resolved ? 'bg-success-light text-success' : 'bg-warning-light text-warning'}`}>
           {resolved ? t('markup.status.resolved') : t('markup.status.open')}
         </span>
-        <div className="ml-auto flex items-center gap-1">
+        <div className={`ml-auto flex items-center gap-1 ${readOnly ? 'hidden' : ''}`}>
           <ActionIconButton
             size="sm"
             tone={resolved ? 'neutral' : 'primary'}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { IssueItem, IssuePriority, IssueType } from '@/entities/issue';
 import { ISSUE_DESCRIPTION_MIN, ISSUE_TITLE_MIN, issueApi, issueErrorMessage } from '@/entities/issue';
+import { toDateKey } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { useAssignableMembers } from '../model/useAssignableMembers';
@@ -33,11 +34,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
     if (membersError) onToast(membersError, 'error');
   }, [membersError, onToast]);
 
+  const today = toDateKey(new Date());
   const titleTooShort = title.trim().length > 0 && title.trim().length < ISSUE_TITLE_MIN;
   const descriptionTooShort = description.trim().length > 0 && description.trim().length < ISSUE_DESCRIPTION_MIN;
+  const dueDateInPast = dueDate.length > 0 && dueDate < today;
   const canSubmit =
     title.trim().length >= ISSUE_TITLE_MIN
     && description.trim().length >= ISSUE_DESCRIPTION_MIN
+    && !dueDateInPast
     && !busy;
 
   const handleSubmit = async () => {
@@ -127,11 +131,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
             <input
               type="date"
               value={dueDate}
+              min={today}
               onChange={(e) => setDueDate(e.target.value)}
               disabled={busy}
               className="field-input"
             />
-            <span className="field-hint">{t('issues.create.dueDateHint')}</span>
+            {dueDateInPast
+              ? <span className="field-hint text-danger">{t('issues.create.dueDatePast')}</span>
+              : <span className="field-hint">{t('issues.create.dueDateHint')}</span>}
           </label>
 
           <label className="flex flex-col gap-1.5">

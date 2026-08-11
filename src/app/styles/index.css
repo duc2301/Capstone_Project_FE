@@ -156,6 +156,8 @@
   .heading-entity { @apply font-heading text-lg font-semibold text-text; }
   .heading-label  { @apply font-heading text-sm font-bold text-text; }
   .table-head     { @apply border-b border-card-border text-left text-xs font-bold uppercase tracking-wider text-text-muted; }
+  .table-list     { @apply w-full table-fixed text-sm; }
+  .cell-wrap      { @apply break-words hyphens-auto; }
 }
 
 /* ── Thang chữ trong thẻ/popup & form ───────────────── */

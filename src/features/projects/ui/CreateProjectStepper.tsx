@@ -10,7 +10,7 @@ import { folderApi } from '@/entities/folder';
 import { groupApi } from '@/entities/group';
 import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
-import type { BepParseResult } from '@/entities/project';
+import type { BepParseResult, Project } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, DeleteIcon, EditIcon, RowActions } from '@/shared/components';
@@ -157,6 +157,17 @@ const matchOrg = (name: string | null | undefined, orgs: Organization[]): Organi
   });
 };
 
+/* Trùng = khớp sau khi bỏ dấu, gộp khoảng trắng, không phân biệt hoa/thường. */
+const findDuplicates = (
+  projects: Project[],
+  value: string,
+  pick: (project: Project) => string | null | undefined,
+): Project[] => {
+  const target = stripVN(value);
+  if (!target) return [];
+  return projects.filter((p) => stripVN(pick(p) ?? '') === target);
+};
+
 const inputCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 
@@ -187,6 +198,36 @@ function SectionLabel({ children, required }: { children: React.ReactNode; requi
       {children}
       {required && <span className="text-danger ml-1">*</span>}
     </label>
+  );
+}
+
+/* ── Cảnh báo trùng dự án (chỉ cảnh báo, vẫn cho đi tiếp) ── */
+const DUPLICATE_PREVIEW_LIMIT = 3;
+
+function DuplicateProjectWarning({ messageKey, matches }: { messageKey: TranslationKey; matches: Project[] }) {
+  if (matches.length === 0) return null;
+
+  const shown = matches.slice(0, DUPLICATE_PREVIEW_LIMIT);
+  const hidden = matches.length - shown.length;
+
+  return (
+    <div className="mt-2 rounded-[var(--radius-input)] border border-warning/40 bg-warning-light/60 px-3.5 py-2.5">
+      <p className="text-xs font-semibold text-warning">{t(messageKey)}</p>
+      <ul className="mt-1.5 space-y-0.5">
+        {shown.map((project) => (
+          <li key={project.id} className="truncate text-xs text-text-secondary">
+            • {project.projectName}
+            {project.projectCode ? ` · ${t('projects.stepper.s1.code')}: ${project.projectCode}` : ''}
+            {project.ownerOrganizationName ? ` · ${project.ownerOrganizationName}` : ''}
+          </li>
+        ))}
+      </ul>
+      {hidden > 0 && (
+        <p className="mt-1 text-xs text-text-muted">
+          + {hidden} {t('projects.stepper.s1.duplicateMoreSuffix')}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -304,15 +345,19 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [orgsLoading, setOrgsLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  /* Dự án đã có — dùng để cảnh báo trùng tên/trùng mã ngay ở bước 1. */
+  const [existingProjects, setExistingProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     Promise.all([
       organizationApi.getAll(),
-      accountApi.getAll()
+      accountApi.getAll(),
+      projectApi.getAll()
     ])
-      .then(([orgRes, accRes]) => {
+      .then(([orgRes, accRes, projectRes]) => {
         setOrganizations(sortByNewest(orgRes.data.result ?? [], (o) => o.createdAt));
         setAccounts(sortByNewest(accRes.data.result ?? [], (a) => a.createdAt));
+        setExistingProjects(projectRes.data.result ?? []);
       })
       .catch(() => { })
       .finally(() => setOrgsLoading(false));
@@ -588,6 +633,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
             update={update}
             organizations={organizations}
             orgsLoading={orgsLoading}
+            existingProjects={existingProjects}
           />
         )}
         {step === 1 && <Step2MandatoryFiles state={state} update={update} />}
@@ -671,15 +717,26 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
    Step 1: Thông tin dự án
    ══════════════════════════════════════════════════════════════ */
 function Step1ProjectInfo({
-  state, update, organizations, orgsLoading,
+  state, update, organizations, orgsLoading, existingProjects,
 }: {
   state: StepperState;
   update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void;
   organizations: Organization[];
   orgsLoading: boolean;
+  existingProjects: Project[];
 }) {
   const [projectImagePreview, setProjectImagePreview] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
+
+  const duplicateNames = useMemo(
+    () => findDuplicates(existingProjects, state.projectName, (p) => p.projectName),
+    [existingProjects, state.projectName],
+  );
+
+  const duplicateCodes = useMemo(
+    () => findDuplicates(existingProjects, state.projectCode, (p) => p.projectCode),
+    [existingProjects, state.projectCode],
+  );
 
   const pickProjectImage = (file: File | null) => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -704,6 +761,7 @@ function Step1ProjectInfo({
             required
             className={inputCls}
           />
+          <DuplicateProjectWarning messageKey="projects.stepper.s1.duplicateName" matches={duplicateNames} />
         </div>
 
         <div>
@@ -715,6 +773,7 @@ function Step1ProjectInfo({
             required
             className={inputCls}
           />
+          <DuplicateProjectWarning messageKey="projects.stepper.s1.duplicateCode" matches={duplicateCodes} />
         </div>
 
         <div>

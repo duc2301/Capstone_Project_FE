@@ -197,12 +197,14 @@ function FileDropzone({
   onRemove,
   label,
   hint,
+  required,
 }: {
   files: File[];
   onAdd: (newFiles: File[]) => void;
   onRemove: (index: number) => void;
   label: string;
   hint?: string;
+  required?: boolean;
 }) {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -217,7 +219,7 @@ function FileDropzone({
 
   return (
     <div className="space-y-3">
-      <SectionLabel>{label}</SectionLabel>
+      <SectionLabel required={required}>{label}</SectionLabel>
       {hint && <p className="text-xs text-text-muted -mt-1 mb-2">{hint}</p>}
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -348,8 +350,10 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
   /* ── Navigation ── */
   const canProceed = useMemo(() => {
     switch (step) {
-      case 0: return state.projectName.trim().length > 0;
-      case 1: return true; // files optional
+      case 0: return state.projectName.trim().length > 0
+        && state.projectCode.trim().length > 0
+        && state.ownerOrganizationId.length > 0;
+      case 1: return state.mandatoryFiles.length > 0;
       case 2: return true; // package optional
       case 3: return state.groups.some((g) => g.name.trim());
       case 4: return true; // org assignment optional
@@ -703,11 +707,12 @@ function Step1ProjectInfo({
         </div>
 
         <div>
-          <SectionLabel>{t('projects.stepper.s1.code')}</SectionLabel>
+          <SectionLabel required>{t('projects.stepper.s1.code')}</SectionLabel>
           <input
             value={state.projectCode}
             onChange={(e) => update('projectCode', e.target.value)}
             placeholder={t('projects.stepper.s1.codePlaceholder')}
+            required
             className={inputCls}
           />
         </div>
@@ -725,11 +730,12 @@ function Step1ProjectInfo({
 
         {/* Chủ đầu tư — trường thông tin đầu tiên của BEP, lưu FK sang Organizations */}
         <div>
-          <SectionLabel>{t('projects.form.owner')}</SectionLabel>
+          <SectionLabel required>{t('projects.form.owner')}</SectionLabel>
           <select
             value={state.ownerOrganizationId}
             onChange={(e) => update('ownerOrganizationId', e.target.value)}
             disabled={orgsLoading}
+            required
             className={selectCls}
           >
             <option value="">{orgsLoading ? t('common.loading') : t('projects.form.ownerSelect')}</option>
@@ -828,11 +834,12 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
         onRemove={(idx) => update('mandatoryFiles', state.mandatoryFiles.filter((_, i) => i !== idx))}
         label={t('projects.stepper.s2.uploadLabel')}
         hint={t('projects.stepper.s2.hint')}
+        required
       />
 
       {state.mandatoryFiles.length === 0 && (
-        <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
-          <p className="text-sm text-text-muted">{t('projects.stepper.s2.empty')}</p>
+        <div className="rounded-xl border border-dashed border-danger/40 bg-danger-light/50 p-6 text-center">
+          <p className="text-sm font-medium text-danger">{t('projects.stepper.s2.empty')}</p>
         </div>
       )}
     </div>

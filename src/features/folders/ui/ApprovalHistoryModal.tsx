@@ -32,15 +32,23 @@ export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
             <p className="py-12 text-center text-sm text-text-muted">{t('approvals.history.empty')}</p>
           ) : (
             <div className="admin-scrollbar overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="table-list min-w-[900px]">
+                <colgroup>
+                  <col className="w-[24%]" />
+                  <col className="w-[150px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[150px]" />
+                  <col className="w-[140px]" />
+                  <col />
+                </colgroup>
                 <thead>
                   <tr className="table-head">
-                    <th className="min-w-[220px] whitespace-nowrap py-2.5 pr-3">{t('approvals.history.colFile')}</th>
-                    <th className="min-w-[150px] whitespace-nowrap px-3 py-2.5">{t('approvals.history.colSender')}</th>
-                    <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.history.colStatus')}</th>
-                    <th className="min-w-[150px] whitespace-nowrap px-3 py-2.5">{t('approvals.history.colApprover')}</th>
-                    <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.history.colApprovedAt')}</th>
-                    <th className="min-w-[180px] whitespace-nowrap px-3 py-2.5">{t('approvals.history.colRejectReason')}</th>
+                    <th className="py-2.5 pr-3">{t('approvals.history.colFile')}</th>
+                    <th className="px-3 py-2.5">{t('approvals.history.colSender')}</th>
+                    <th className="px-3 py-2.5">{t('approvals.history.colStatus')}</th>
+                    <th className="px-3 py-2.5">{t('approvals.history.colApprover')}</th>
+                    <th className="px-3 py-2.5">{t('approvals.history.colApprovedAt')}</th>
+                    <th className="px-3 py-2.5">{t('approvals.history.colRejectReason')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -48,14 +56,14 @@ export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
                     const badge = approvalStatusBadge(it.status);
                     return (
                       <tr key={it.id} className="border-b border-card-border/60">
-                        <td className="min-w-[220px] py-3 pr-3 font-medium text-text break-words">{it.fileName}</td>
-                        <td className="min-w-[150px] px-3 py-3 text-text-secondary break-words">{it.requestedByName}</td>
-                        <td className="whitespace-nowrap px-3 py-3">
-                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
+                        <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{it.fileName}</td>
+                        <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{it.requestedByName}</td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                         </td>
-                        <td className="min-w-[150px] px-3 py-3 text-text-secondary break-words">{it.approvedByName ?? '—'}</td>
-                        <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(it.approvedAt)}</td>
-                        <td className="min-w-[180px] px-3 py-3 text-text-secondary break-words">{it.rejectReason ?? '—'}</td>
+                        <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{it.approvedByName ?? '—'}</td>
+                        <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(it.approvedAt)}</td>
+                        <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{it.rejectReason ?? '—'}</td>
                       </tr>
                     );
                   })}

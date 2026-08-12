@@ -13,6 +13,7 @@ interface Props {
   fileItemId: string;
   fileVersionId: string | null;
   issueId?: string | null;
+  readOnly?: boolean;
 }
 
 function formatDateTime(iso: string | null): string {
@@ -22,7 +23,7 @@ function formatDateTime(iso: string | null): string {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId }: Props) {
+export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId, readOnly = false }: Props) {
   const { notes, loading, saving, error, addViewpointNote, deleteNote, resolveNote } = useModelMarkup(fileItemId, fileVersionId, issueId);
   const [drawing, setDrawing] = useState(false);
   const [draftText, setDraftText] = useState('');
@@ -90,7 +91,7 @@ export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId 
         </div>
       )}
 
-      {drawing ? (
+      {readOnly ? null : drawing ? (
         <div className="space-y-2 rounded-xl border border-card-border bg-content-bg/50 p-3">
           <p className="text-xs font-medium text-text-secondary">{t('markup.model.drawHint')}</p>
           <textarea
@@ -168,7 +169,7 @@ export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId 
                   </div>
                   {note.content && <p className="whitespace-pre-wrap break-words text-sm text-text">{note.content}</p>}
                   <p className="mt-1 text-xs text-text-muted">{formatDateTime(note.createdAt)}</p>
-                  <div className="mt-2 flex items-center gap-1">
+                  <div className={`mt-2 flex items-center gap-1 ${readOnly ? 'hidden' : ''}`}>
                     <ActionIconButton
                       size="sm"
                       tone={resolved ? 'neutral' : 'primary'}

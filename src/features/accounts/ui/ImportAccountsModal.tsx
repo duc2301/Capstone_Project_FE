@@ -256,7 +256,12 @@ function ImportResultPanel({ result }: { result: AccountImportResult }) {
             {t('account.import.errorsTitle').replace('{count}', String(result.errors.length))}
           </p>
           <div className="admin-scrollbar max-h-64 overflow-auto rounded-[var(--radius-card)] border border-card-border">
-            <table className="w-full min-w-[420px] text-sm">
+            <table className="table-list min-w-[420px]">
+              <colgroup>
+                <col className="w-[80px]" />
+                <col className="w-[38%]" />
+                <col />
+              </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="table-head bg-content-bg">
                   <th className="px-4 py-2.5 text-left">{t('account.import.colRow')}</th>
@@ -267,9 +272,9 @@ function ImportResultPanel({ result }: { result: AccountImportResult }) {
               <tbody>
                 {result.errors.map((row, i) => (
                   <tr key={`${row.rowNumber}-${i}`} className="border-t border-card-border/60">
-                    <td className="whitespace-nowrap px-4 py-2.5 font-medium text-text-secondary">{row.rowNumber}</td>
-                    <td className="px-4 py-2.5 text-text">{row.email || '—'}</td>
-                    <td className="px-4 py-2.5 text-danger">{row.reason}</td>
+                    <td className="px-4 py-2.5 align-top font-medium text-text-secondary">{row.rowNumber}</td>
+                    <td className="cell-wrap px-4 py-2.5 align-top text-text">{row.email || '—'}</td>
+                    <td className="cell-wrap px-4 py-2.5 align-top text-danger">{row.reason}</td>
                   </tr>
                 ))}
               </tbody>
@@ -297,7 +302,12 @@ function ImportResultPanel({ result }: { result: AccountImportResult }) {
           </button>
           {showCreated && (
             <div className="admin-scrollbar max-h-56 overflow-auto rounded-[var(--radius-card)] border border-card-border">
-              <table className="w-full min-w-[420px] text-sm">
+              <table className="table-list min-w-[420px]">
+                <colgroup>
+                  <col className="w-[80px]" />
+                  <col />
+                  <col className="w-[44%]" />
+                </colgroup>
                 <thead className="sticky top-0 z-10">
                   <tr className="table-head bg-content-bg">
                     <th className="px-4 py-2.5 text-left">{t('account.import.colRow')}</th>
@@ -308,9 +318,9 @@ function ImportResultPanel({ result }: { result: AccountImportResult }) {
                 <tbody>
                   {result.created.map((row, i) => (
                     <tr key={`${row.rowNumber}-${i}`} className="border-t border-card-border/60">
-                      <td className="whitespace-nowrap px-4 py-2.5 font-medium text-text-secondary">{row.rowNumber}</td>
-                      <td className="px-4 py-2.5 text-text">{row.userName}</td>
-                      <td className="px-4 py-2.5 text-text-secondary">{row.email}</td>
+                      <td className="px-4 py-2.5 align-top font-medium text-text-secondary">{row.rowNumber}</td>
+                      <td className="cell-wrap px-4 py-2.5 align-top text-text">{row.userName}</td>
+                      <td className="cell-wrap px-4 py-2.5 align-top text-text-secondary">{row.email}</td>
                     </tr>
                   ))}
                 </tbody>

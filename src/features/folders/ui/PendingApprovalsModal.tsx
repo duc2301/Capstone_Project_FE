@@ -6,7 +6,8 @@ import { approvalApi, approvalErrorMessage } from '@/entities/approval';
 import type { Group } from '@/entities/group';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
-import { ActionPillButton, ConfirmDialog, RowActions, Toast, useToast } from '@/shared/components';
+import type { ListTableColumn } from '@/shared/components';
+import { ActionPillButton, ConfirmDialog, ListTable, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner, recipientNames } from '../model/approvalFormat';
@@ -21,6 +22,25 @@ const approvalApproveLabel = (targetZone?: string | null) =>
   targetZone
     ? t('approvals.action.approveTo').replace('{zone}', targetZone)
     : t('approvals.action.approve');
+
+const RETURN_REQUEST_COLUMNS: ListTableColumn[] = [
+  { key: 'file', label: t('returnRequests.page.colFile'), width: 'w-[24%]' },
+  { key: 'zone', label: t('returnRequests.page.colZone'), width: 'w-[110px]' },
+  { key: 'requestedBy', label: t('returnRequests.page.colRequestedBy'), width: 'w-[140px]' },
+  { key: 'reason', label: t('returnRequests.page.colReason') },
+  { key: 'date', label: t('returnRequests.page.colDate'), width: 'w-[140px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[180px]', align: 'right' },
+];
+
+const APPROVAL_COLUMNS: ListTableColumn[] = [
+  { key: 'name', label: t('approvals.pending.colName') },
+  { key: 'sender', label: t('approvals.pending.colSender'), width: 'w-[140px]' },
+  { key: 'recipient', label: t('approvals.pending.colRecipient'), width: 'w-[140px]' },
+  { key: 'date', label: t('approvals.pending.colDate'), width: 'w-[140px]' },
+  { key: 'status', label: t('approvals.pending.colStatus'), width: 'w-[120px]' },
+  { key: 'signature', label: t('approvals.pending.colSignature'), width: 'w-[120px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[330px]', align: 'right' },
+];
 
 interface PendingApprovalsModalProps {
   onClose: () => void;
@@ -217,27 +237,23 @@ export function PendingApprovalsModal({
                 <section className="space-y-3">
                   <h3 className="heading-label">{t('returnRequests.page.title')}</h3>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="table-head">
-                          <th className="w-56 whitespace-nowrap py-2.5 pr-3">{t('returnRequests.page.colFile')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5">{t('returnRequests.page.colZone')}</th>
-                          <th className="w-36 px-3 py-2.5">{t('returnRequests.page.colRequestedBy')}</th>
-                          <th className="px-3 py-2.5">{t('returnRequests.page.colReason')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5">{t('returnRequests.page.colDate')}</th>
-                          <th className="whitespace-nowrap px-3 py-2.5 text-right">{t('common.col.actions')}</th>
-                        </tr>
-                      </thead>
+                    <ListTable
+                      columns={RETURN_REQUEST_COLUMNS}
+                      minWidth="min-w-[900px]"
+                      dense
+                      stickyHead={false}
+                      filledHead={false}
+                    >
                       <tbody>
                         {returnRequests.map((request) => {
                           const busy = returnBusyId === request.id;
                           return (
                             <tr key={request.id} className="border-b border-card-border/60">
-                              <td className="w-56 py-3 pr-3 font-medium text-text break-words">{request.fileName}</td>
-                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{zoneLabel(request.currentZone)}</td>
-                              <td className="w-36 px-3 py-3 text-text-secondary break-words">{request.requestedByName}</td>
-                              <td className="max-w-60 px-3 py-3 text-text-secondary break-words">{request.reason}</td>
-                              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(request.createdAt)}</td>
+                              <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{request.fileName}</td>
+                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{zoneLabel(request.currentZone)}</td>
+                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{request.requestedByName}</td>
+                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{request.reason}</td>
+                              <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(request.createdAt)}</td>
                               {/* /return-requests/pending chỉ trả về khi actor đúng là Leader của nhóm
                                   phụ trách file này (403 nếu không phải leader ở đâu cả) — có mặt trong
                                   danh sách nghĩa là chắc chắn được thao tác, không cần kiểm tra thêm. */}
@@ -263,7 +279,7 @@ export function PendingApprovalsModal({
                           );
                         })}
                       </tbody>
-                    </table>
+                    </ListTable>
                   </div>
                 </section>
               )}
@@ -358,18 +374,13 @@ function ApprovalItemsTable({
     <section className="space-y-3">
       <h3 className="heading-label">{title}</h3>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="table-head">
-              <th className="w-64 whitespace-nowrap py-2.5 pr-3">{t('approvals.pending.colName')}</th>
-              <th className="w-36 px-3 py-2.5">{t('approvals.pending.colSender')}</th>
-              <th className="w-36 px-3 py-2.5">{t('approvals.pending.colRecipient')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colDate')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colStatus')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{t('approvals.pending.colSignature')}</th>
-              <th className="whitespace-nowrap px-3 py-2.5 text-right">{t('common.col.actions')}</th>
-            </tr>
-          </thead>
+        <ListTable
+          columns={APPROVAL_COLUMNS}
+          minWidth="min-w-[1080px]"
+          dense
+          stickyHead={false}
+          filledHead={false}
+        >
           <tbody>
             {items.map((it) => {
               const badge = approvalStatusBadge(it.status);
@@ -388,19 +399,19 @@ function ApprovalItemsTable({
               const canRejectItem = isTeamLeaderForItem || (!hideDecisionActions && canSignWithSmartCa && isSignerForItem);
               return (
                 <tr key={it.id} className="border-b border-card-border/60">
-                  <td className="w-64 py-3 pr-3 font-medium text-text break-words">{it.fileName}</td>
-                  <td className="w-36 px-3 py-3 text-text-secondary break-words">{it.requestedByName}</td>
-                  <td className="w-36 px-3 py-3 text-text-secondary break-words">{recipientNames(it)}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDateTime(it.createdAt)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
+                  <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{it.fileName}</td>
+                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{it.requestedByName}</td>
+                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{recipientNames(it)}</td>
+                  <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(it.createdAt)}</td>
+                  <td className="px-3 py-3 align-top">
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-text-secondary">
+                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">
                     {canSignWithSmartCa
                       ? (it.isSigned ? t('smartca.status.signed') : t('smartca.signature.required'))
                       : t('approvals.detail.no')}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right">
+                  <td className="px-3 py-3 text-right align-top">
                     <RowActions columns={4}>
                       <ActionPillButton onClick={() => onDetail(it.id)}>
                         {t('approvals.action.detail')}
@@ -431,7 +442,7 @@ function ApprovalItemsTable({
               );
             })}
           </tbody>
-        </table>
+        </ListTable>
       </div>
     </section>
   );

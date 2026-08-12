@@ -33,7 +33,8 @@ import { FolderPermissionModal } from './FolderPermissionModal';
 import { FolderTree } from './FolderTree';
 import { PendingApprovalsModal } from './PendingApprovalsModal';
 import { ReturnRequestModal } from './ReturnRequestModal';
-import { SemanticSearchPanel } from './SemanticSearchPanel';
+import { SemanticSearchBar, SemanticSearchResults } from './SemanticSearchPanel';
+import { useSemanticSearch } from '../model/useSemanticSearch';
 import { SubmitApprovalModal } from './SubmitApprovalModal';
 import { UploadModal } from './UploadModal';
 
@@ -149,6 +150,7 @@ export function DocumentsTab({
   const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
+  const semanticSearch = useSemanticSearch(projectId);
 
   const selected = findNode(tree, selectedId);
   const { permission: selectedPermissionRaw } = useFolderPermission(selectedId, hasFullFolderAccess);
@@ -413,7 +415,7 @@ export function DocumentsTab({
               </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-card-border pb-3">
+                <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-card-border pb-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -421,7 +423,20 @@ export function DocumentsTab({
                       </svg>
                     </span>
                     <h3 className="heading-entity truncate">{selected.name}</h3>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {PERMISSION_FLAGS.filter((f) => selectedPermission[f.key]).map((f) => (
+                        <span
+                          key={f.key}
+                          title={t('documents.yourPermission')}
+                          className="rounded-full bg-success-light px-2.5 py-0.5 text-xs font-semibold text-success"
+                        >
+                          {f.label()}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+
+                  {showSemanticSearch && projectId && <SemanticSearchBar search={semanticSearch} />}
 
                   {/* Nút thao tác nhanh trên thư mục đang chọn */}
                   {selectedPermission.canEdit && (
@@ -467,28 +482,9 @@ export function DocumentsTab({
                   )}
                 </div>
 
-                {/* Quyền của bạn trên thư mục này */}
-                <div className="shrink-0 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
-                    {t('documents.yourPermission')}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {PERMISSION_FLAGS.filter((f) => selectedPermission[f.key]).map((f) => (
-                      <span
-                        key={f.key}
-                        className="rounded-full bg-success-light px-3 py-1 text-xs font-semibold text-success"
-                      >
-                        {f.label()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Tra cứu tài liệu theo ngữ nghĩa (RAG) — chỉ ở Published/Archived */}
                 {showSemanticSearch && projectId && (
-                  <div className="shrink-0">
-                    <SemanticSearchPanel projectId={projectId} onOpenFile={handleOpenSearchResult} />
-                  </div>
+                  <SemanticSearchResults search={semanticSearch} onOpenFile={handleOpenSearchResult} />
                 )}
 
                 {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}

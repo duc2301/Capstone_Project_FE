@@ -11,6 +11,7 @@ export interface InlineMarkupContextValue {
   contentType: string | null;
   fileName: string;
   isImage: boolean;
+  readOnly: boolean;
 
   notes: FileNote[];
   loading: boolean;

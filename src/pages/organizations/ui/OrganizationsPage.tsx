@@ -15,18 +15,31 @@ import {
   ConfirmDialog,
   DeleteIcon,
   EditIcon,
+  ListErrorCard,
+  ListLoadingCard,
+  ListTable,
   Modal,
   PaginationBar,
   RowActions,
+  SearchField,
   Toast,
   ToolbarIconButton,
   useToast,
 } from '@/shared/components';
+import type { ListTableColumn } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 type FormMode = 'idle' | 'create' | 'create-jv' | 'edit';
 
 const PAGE_SIZE = 10;
+
+const ORGANIZATION_COLUMNS: ListTableColumn[] = [
+  { key: 'name', label: t('org.col.name') },
+  { key: 'taxCode', label: t('org.col.taxCode'), width: 'w-[170px]' },
+  { key: 'type', label: t('org.type'), width: 'w-[22%]' },
+  { key: 'projects', label: t('org.col.projects'), width: 'w-[110px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[120px]', align: 'right' },
+];
 
 /* ── Main page ─────────────────────────────────────── */
 export function OrganizationsPage() {
@@ -164,71 +177,30 @@ export function OrganizationsPage() {
       {/* ── Toolbar ────────────────────────────────── */}
       {!loading && !error && (
         <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-[420px]">
-            <svg
-              width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => changeSearch(e.target.value)}
-              placeholder={t('org.search')}
-              className="w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-11 pr-10 text-sm text-text shadow-card outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => changeSearch('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
-          </div>
+          <SearchField
+            value={searchQuery}
+            onChange={changeSearch}
+            placeholder={t('org.search')}
+            className="w-full lg:max-w-[420px]"
+          />
         </div>
       )}
 
       {/* ── Loading ────────────────────────────────── */}
       {loading && (
-        <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
-          <div className="flex flex-col items-center gap-3">
-            <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p className="text-sm text-text-muted">{t('common.loading')}</p>
-          </div>
-        </div>
+        <ListLoadingCard />
       )}
 
       {/* ── Error ──────────────────────────────────── */}
       {error && (
-        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
-          <p className="text-sm font-medium text-danger">{error}</p>
-        </div>
+        <ListErrorCard message={error} />
       )}
 
       {/* ── Data Table ─────────────────────────────── */}
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
-              <thead className="sticky top-0 z-10">
-                <tr className="table-head bg-content-bg">
-                  <th className="px-6 py-3.5">{t('org.col.name')}</th>
-                  <th className="px-5 py-3.5">{t('org.col.taxCode')}</th>
-                  <th className="px-5 py-3.5">{t('org.type')}</th>
-                  <th className="px-5 py-3.5">{t('org.col.projects')}</th>
-                  <th className="px-5 py-3.5 text-right">{t('common.col.actions')}</th>
-                </tr>
-              </thead>
+            <ListTable columns={ORGANIZATION_COLUMNS} minWidth="min-w-[780px]">
               <tbody className="divide-y divide-card-border">
                 {paged.length === 0 ? (
                   <tr>
@@ -249,7 +221,7 @@ export function OrganizationsPage() {
                             {initialsOf(org)}
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-text">{org.displayName || org.legalName}</p>
+                            <p className="cell-wrap font-semibold text-text">{org.displayName || org.legalName}</p>
                             {org.isJointVenture && (
                               <span className="mt-0.5 inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-2xs font-bold text-info">
                                 {t('org.jointVenture')}
@@ -263,7 +235,7 @@ export function OrganizationsPage() {
                           {org.taxCode || '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-text-secondary">{orgTypeName(org.organizationTypeId)}</td>
+                      <td className="cell-wrap px-5 py-4 text-text-secondary">{orgTypeName(org.organizationTypeId)}</td>
                       <td className="px-5 py-4 text-text-secondary">{org.participatingProjectsCount ?? 0}</td>
                       <td className="px-5 py-4">
                         <RowActions>
@@ -285,7 +257,7 @@ export function OrganizationsPage() {
                   ))
                 )}
               </tbody>
-            </table>
+            </ListTable>
           </div>
 
           <PaginationBar

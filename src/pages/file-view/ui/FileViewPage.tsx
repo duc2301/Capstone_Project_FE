@@ -168,6 +168,7 @@ export function FileViewPage() {
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
   const currentVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
   const viewedVersion = viewingVersionId
@@ -277,10 +278,10 @@ export function FileViewPage() {
         ? await fileItemApi.downloadVersion(fileId, viewingVersionId)
         : await fileItemApi.download(fileId);
       downloadBlob(res.data as Blob, info.fileName);
-    } catch {
-      setError(t('common.error'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
-  }, [fileId, info, isVersionView, viewingVersionId]);
+  }, [fileId, info, isVersionView, viewingVersionId, showToast]);
 
   const handleRetranslate = useCallback(async () => {
     if (!fileId) return;
@@ -290,12 +291,12 @@ export function FileViewPage() {
       await fileItemApi.retranslate(fileId);
       const result = await fetchView();
       setInfo(result);
-    } catch {
-      setError(t('fileView.error'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('fileView.error')), 'error');
     } finally {
       setRetrying(false);
     }
-  }, [fileId, fetchView]);
+  }, [fileId, fetchView, showToast]);
 
   const isModelReady =
     info?.kind === 'model' && status === ModelViewerStatus.Ready && !!info.urn;
@@ -340,8 +341,6 @@ export function FileViewPage() {
     fileListItem?.isSigned ||
     signatureApprovals.some((approval) => approval.isSigned),
   );
-
-  const { toast, showToast } = useToast();
 
   const openSignaturePlacement = useCallback(async () => {
     if (!requiresSignature) return;

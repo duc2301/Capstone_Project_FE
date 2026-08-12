@@ -13,12 +13,13 @@ interface Props {
   contentType: string | null;
   /** Chỉ bật tính năng này nếu file đó có hỗ trợ vẽ vời (PDF, ảnh, docx...) */
   enabled: boolean;
+  readOnly?: boolean;
   issueId?: string | null;
   children: ReactNode;
 }
 
 /** Cục này ôm toàn bộ state của markup 2D để chia sẻ cho các component con */
-export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url, contentType, enabled, issueId, children }: Props) {
+export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url, contentType, enabled, readOnly = false, issueId, children }: Props) {
   const { notes, saving, loading, error, createNote, updateNote, deleteNote, resolveNote } = useInlineMarkup(
     fileItemId,
     fileVersionId,
@@ -48,6 +49,7 @@ export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url,
       notes,
       tool,
       style,
+      readOnly,
       selectedId,
       onSelectedIdChange: setSelectedId,
       onCreate: createNote,
@@ -55,7 +57,7 @@ export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url,
       onDelete: deleteNote,
       onToolReset: () => setTool('select'),
     }),
-    [notes, tool, style, selectedId, createNote, updateNote, deleteNote],
+    [notes, tool, style, readOnly, selectedId, createNote, updateNote, deleteNote],
   );
 
   const value: InlineMarkupContextValue = useMemo(
@@ -65,6 +67,7 @@ export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url,
       contentType,
       fileName,
       isImage: (contentType ?? '').startsWith('image/'),
+      readOnly,
       notes,
       loading,
       saving,
@@ -88,7 +91,7 @@ export function InlineMarkupProvider({ fileItemId, fileVersionId, fileName, url,
       binding,
     }),
     [
-      fileItemId, url, contentType, fileName, notes, loading, saving, error, resolveNote, deleteNote,
+      fileItemId, url, contentType, fileName, readOnly, notes, loading, saving, error, resolveNote, deleteNote,
       tool, style, applyStyle, selectedId, page, pageCount, zoom, loadError, binding,
     ],
   );

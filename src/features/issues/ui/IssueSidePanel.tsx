@@ -4,7 +4,8 @@ import type { IssueItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { useSession } from '@/entities/session';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
-import { useAsyncData } from '@/shared/lib/async';
+import { UserAvatar } from '@/shared/components';
+import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
 
 import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
@@ -16,12 +17,18 @@ type SideTab = 'info' | 'discussion' | 'markup';
 interface IssueSidePanelProps {
   issueId: string;
   fileItemId: string;
+  issue: IssueItem | null;
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
   onToast: (message: string, type?: 'success' | 'error') => void;
   onIssueChanged?: () => void;
   markupSlot: ReactNode;
 }
 
-export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, markupSlot }: IssueSidePanelProps) {
+export function IssueSidePanel({
+  issueId, fileItemId, issue, loading, error, reload, onToast, onIssueChanged, markupSlot,
+}: IssueSidePanelProps) {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<SideTab>('info');
 
@@ -29,17 +36,6 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
   const [showParticipantPicker, setShowParticipantPicker] = useState(false);
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnReason, setReturnReason] = useState('');
-
-  const fetchIssue = useCallback(() => issueApi.getById(issueId), [issueId]);
-
-  const { data: issue, loading, error, reload } = useAsyncData<IssueItem | null>(
-    issueId,
-    fetchIssue,
-    {
-      fallback: null,
-      toErrorMessage: (err) => issueErrorMessage(err, t('issues.error')),
-    },
-  );
 
   const loadIssue = useCallback(async () => reload(), [reload]);
 
@@ -160,41 +156,92 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
 
       <div className="min-h-0 flex-1 overflow-hidden">
       {tab === 'info' && (
-      <div className="admin-scrollbar h-full space-y-4 overflow-y-auto px-5 py-4">
-        <section className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${issueStatusBadge(issue.status).className}`}>
-              {issueStatusBadge(issue.status).label}
-            </span>
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${issuePriorityBadge(issue.priority).className}`}>
-              {issuePriorityBadge(issue.priority).label}
-            </span>
-            {issue.linkedReturnRequestStatus && (
-              <span className="rounded-full bg-warning-light px-2.5 py-0.5 text-xs font-semibold text-warning">
-                {t('issues.detail.returnRequestStatus')}: {issue.linkedReturnRequestStatus}
-              </span>
+      <div className="admin-scrollbar h-full space-y-5 overflow-y-auto px-5 py-4">
+        <section className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <InfoField label={t('projectIssues.col.status')}>
+              <StatePill meta={issueStatusBadge(issue.status)} />
+            </InfoField>
+            <InfoField label={t('issues.create.priorityLabel')}>
+              <StatePill meta={issuePriorityBadge(issue.priority)} />
+            </InfoField>
+          </div>
+
+          {issue.linkedReturnRequestStatus && (
+            <InfoField label={t('issues.detail.returnRequestStatus')}>
+              <StatePill meta={{ label: issue.linkedReturnRequestStatus, className: 'bg-warning-light text-warning' }} />
+            </InfoField>
+          )}
+
+          <InfoField label={t('issues.detail.titleLabel')}>
+            <p className="field-input-readonly cell-wrap">{issue.title}</p>
+          </InfoField>
+
+          <InfoField label={t('issues.detail.descriptionLabel')}>
+            <p className="field-input-readonly cell-wrap whitespace-pre-line">
+              {issue.description?.trim() || t('issues.detail.noDescription')}
+            </p>
+          </InfoField>
+
+          <div className="grid grid-cols-2 gap-4">
+            <InfoField label={t('issues.detail.raisedBy')}>
+              <PersonLine name={issue.raisedByName ?? t('issues.unknownUser')} />
+            </InfoField>
+            <InfoField label={t('issues.detail.createdAt')}>
+              <p className="text-sm font-medium text-text">{formatIssueDateTime(issue.createdAt)}</p>
+            </InfoField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <InfoField label={t('issues.detail.assignee')}>
+              {issue.assignedToAccountId ? (
+                <PersonLine name={issue.assignedToName ?? t('issues.unknownUser')} />
+              ) : (
+                <p className="text-sm italic text-text-placeholder">{t('issues.detail.noAssignee')}</p>
+              )}
+            </InfoField>
+            {issue.dueDate && (
+              <InfoField label={t('issues.detail.dueDate')}>
+                <p className="text-sm font-medium text-text">{formatDate(issue.dueDate)}</p>
+              </InfoField>
             )}
           </div>
-          <h2 className="heading-entity">{issue.title}</h2>
-          {issue.description && <p className="text-sm text-text-secondary">{issue.description}</p>}
-          <p className="text-xs text-text-muted">
-            {t('issues.detail.raisedBy')}: {issue.raisedByName ?? t('issues.unknownUser')} · {formatIssueDateTime(issue.createdAt)}
-          </p>
-          {issue.assignedToAccountId && (
-            <p className="text-xs text-text-muted">
-              {t('issues.detail.assignee')}: <span className="font-semibold text-text">{issue.assignedToName ?? t('issues.unknownUser')}</span>
-            </p>
-          )}
         </section>
 
-        {(canStart || canAnswer) && (
-          <section className="flex flex-wrap gap-2">
+        {(canStart || canAnswer || (!isResolved && isCreator)) && (
+          <section className="grid grid-cols-2 gap-2 border-t border-card-border/70 pt-4">
+            {!isResolved && isCreator && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={handleResolve}
+                className="btn-modal-primary flex min-h-11 items-center justify-center gap-2 px-3 text-center leading-snug"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <circle cx="12" cy="12" r="10" /><polyline points="8 12 11 15 16 9" />
+                </svg>
+                {t('issues.detail.markResolved')}
+              </button>
+            )}
+            {!isResolved && isCreator && (
+              <button
+                type="button"
+                disabled={busy || !!issue.linkedReturnRequestStatus}
+                onClick={() => setShowReturnForm((v) => !v)}
+                className="btn-modal-ghost flex min-h-11 items-center justify-center gap-2 px-3 text-center leading-snug"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M9 14 4 9l5-5" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+                </svg>
+                {t('issues.detail.requestReturnToWip')}
+              </button>
+            )}
             {canStart && (
               <button
                 type="button"
                 disabled={busy}
                 onClick={handleStart}
-                className="rounded-[var(--radius-button)] border border-primary px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-modal-ghost flex min-h-11 items-center justify-center px-3 text-center leading-snug"
               >
                 {t('issues.action.start')}
               </button>
@@ -204,32 +251,11 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
                 type="button"
                 disabled={busy}
                 onClick={handleAnswer}
-                className="rounded-[var(--radius-button)] border border-primary px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-modal-ghost flex min-h-11 items-center justify-center px-3 text-center leading-snug"
               >
                 {t('issues.action.answer')}
               </button>
             )}
-          </section>
-        )}
-
-        {!isResolved && isCreator && (
-          <section className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={handleResolve}
-              className="rounded-[var(--radius-button)] bg-success px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t('issues.detail.markResolved')}
-            </button>
-            <button
-              type="button"
-              disabled={busy || !!issue.linkedReturnRequestStatus}
-              onClick={() => setShowReturnForm((v) => !v)}
-              className="rounded-lg border border-card-border px-3 py-1.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t('issues.detail.requestReturnToWip')}
-            </button>
           </section>
         )}
         {!isResolved && !isCreator && (
@@ -263,65 +289,110 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
           </section>
         )}
 
-        <section className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{t('issues.detail.participants')}</p>
-          <div className="flex flex-wrap gap-2">
-            {issue.participants.length === 0 && (
-              <span className="text-sm text-text-muted">{t('issues.detail.noParticipants')}</span>
-            )}
-            {issue.participants.map((p) => (
-              <span key={p.accountId} className="flex items-center gap-1.5 rounded-full border border-card-border bg-content-bg/60 px-3 py-1 text-xs font-medium text-text">
-                {p.name ?? t('issues.unknownUser')}
-                {isCreator && (
-                  <button type="button" onClick={() => handleRemoveParticipant(p.accountId)} className="text-text-muted hover:text-danger">×</button>
-                )}
-              </span>
-            ))}
-          </div>
-          {!isResolved && isCreator && (
-            <div className="relative">
+        <section className="space-y-3 border-t border-card-border/70 pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
+              {t('issues.detail.participants')} ({issue.participants.length})
+            </p>
+            {!isResolved && isCreator && (
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => setShowParticipantPicker((v) => !v)}
-                className="rounded-lg border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50"
               >
-                + {t('issues.detail.addParticipant')}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  {showParticipantPicker
+                    ? <path d="M18 6 6 18M6 6l12 12" />
+                    : <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></>}
+                </svg>
+                {showParticipantPicker ? t('issues.detail.closePicker') : t('issues.detail.addParticipant')}
               </button>
+            )}
+          </div>
 
-              {showParticipantPicker && (
-                <div className="absolute z-10 mt-2 w-72 rounded-[var(--radius-card)] border border-card-border bg-card p-2 shadow-dropdown">
-                  <input
-                    autoFocus
-                    value={participantQuery}
-                    onChange={(e) => setParticipantQuery(e.target.value)}
-                    placeholder={t('issues.detail.addParticipantPlaceholder')}
-                    className="mb-2 w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus"
-                  />
-                  <div className="max-h-56 overflow-y-auto">
-                    {membersLoading ? (
-                      <p className="px-2 py-3 text-center text-xs text-text-muted">{t('common.loading')}</p>
-                    ) : participantCandidates.length === 0 ? (
-                      <p className="px-2 py-3 text-center text-xs text-text-muted">{t('issues.detail.noMemberFound')}</p>
-                    ) : (
-                      <ul className="space-y-0.5">
-                        {participantCandidates.map(([accountId, m]) => (
-                          <li key={accountId}>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleAddParticipant(accountId)}
-                              className="w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <span className="block font-medium text-text">{m.userName} — {m.groupNames.join(', ')}</span>
-                              {m.email && <span className="block text-xs text-text-muted">{m.email}</span>}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+          {issue.participants.length === 0 ? (
+            <p className="text-sm text-text-muted">{t('issues.detail.noParticipants')}</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {issue.participants.map((p) => {
+                const name = p.name ?? t('issues.unknownUser');
+                return (
+                  <li
+                    key={p.accountId}
+                    className="flex items-center gap-2.5 rounded-[var(--radius-button)] border border-card-border bg-content-bg/40 px-2.5 py-2"
+                  >
+                    <UserAvatar userName={name} size="sm" rounded="full" />
+                    <span className="cell-wrap min-w-0 flex-1 text-sm font-medium text-text">{name}</span>
+                    {!isResolved && isCreator && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        title={t('issues.detail.removeParticipant')}
+                        onClick={() => handleRemoveParticipant(p.accountId)}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                          <path d="M18 6 6 18M6 6l12 12" />
+                        </svg>
+                      </button>
                     )}
-                  </div>
-                </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {!isResolved && isCreator && showParticipantPicker && (
+            <div className="space-y-2 rounded-[var(--radius-card)] border border-card-border bg-content-bg/40 p-3">
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
+                <input
+                  autoFocus
+                  value={participantQuery}
+                  onChange={(e) => setParticipantQuery(e.target.value)}
+                  placeholder={t('issues.detail.addParticipantPlaceholder')}
+                  className="field-input py-2 pl-9"
+                />
+              </div>
+
+              {membersLoading ? (
+                <p className="py-4 text-center text-xs text-text-muted">{t('common.loading')}</p>
+              ) : participantCandidates.length === 0 ? (
+                <p className="py-4 text-center text-xs text-text-muted">{t('issues.detail.noMemberFound')}</p>
+              ) : (
+                <ul className="admin-scrollbar max-h-56 space-y-1 overflow-y-auto pr-1">
+                  {participantCandidates.map(([accountId, m]) => (
+                    <li key={accountId}>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleAddParticipant(accountId)}
+                        className="group flex w-full items-center gap-2.5 rounded-[var(--radius-button)] border border-card-border bg-card px-2.5 py-2 text-left transition-colors hover:border-primary/50 hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <UserAvatar userName={m.userName} size="sm" rounded="full" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block cell-wrap text-sm font-medium text-text">{m.userName}</span>
+                          {m.email && <span className="block cell-wrap field-hint">{m.email}</span>}
+                          <span className="mt-1 flex flex-wrap gap-1">
+                            {m.groupNames.map((g) => (
+                              <span key={g} className="rounded-full bg-primary-light px-2 py-0.5 text-2xs font-semibold text-primary">{g}</span>
+                            ))}
+                          </span>
+                        </span>
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-content-bg text-text-muted transition-colors group-hover:bg-primary group-hover:text-white">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           )}
@@ -343,6 +414,33 @@ export function IssueSidePanel({ issueId, fileItemId, onToast, onIssueChanged, m
         <div className="admin-scrollbar h-full overflow-y-auto px-4 py-4">{markupSlot}</div>
       )}
       </div>
+    </div>
+  );
+}
+
+function InfoField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function StatePill({ meta }: { meta: { label: string; className: string } }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${meta.className}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+      {meta.label}
+    </span>
+  );
+}
+
+function PersonLine({ name }: { name: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <UserAvatar userName={name} size="sm" rounded="full" />
+      <p className="cell-wrap min-w-0 text-sm font-semibold text-text">{name}</p>
     </div>
   );
 }

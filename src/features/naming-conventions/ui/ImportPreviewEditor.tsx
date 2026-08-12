@@ -10,7 +10,7 @@ interface ImportPreviewEditorProps {
 }
 
 const inputClass =
-  'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus';
+  'rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2 text-sm text-text outline-none focus:border-input-focus';
 
 /* Editor thuần client-state cho bước preview trước khi lưu:
  * sửa/thêm/xóa field + value, đổi thứ tự bằng nút ↑↓. OrderIndex chốt theo vị trí mảng khi lưu. */

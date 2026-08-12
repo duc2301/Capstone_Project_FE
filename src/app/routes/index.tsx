@@ -34,6 +34,7 @@ const IssueDetailPage = lazy(() => import('@/pages/issue-detail').then((m) => ({
 const MyIssuesPage = lazy(() => import('@/pages/issues').then((m) => ({ default: m.MyIssuesPage })));
 const ContractPackagesPage = lazy(() => import('@/pages/contract-packages').then((m) => ({ default: m.ContractPackagesPage })));
 const AuditLogsPage = lazy(() => import('@/pages/audit-logs').then((m) => ({ default: m.AuditLogsPage })));
+const LoiRulesPage = lazy(() => import('@/pages/loi-rules').then((m) => ({ default: m.LoiRulesPage })));
 
 /* Fallback toàn màn hình cho các trang KHÔNG bọc AdminLayout (login/home/viewer). Trang trong
  * AdminLayout có Suspense riêng ở vùng nội dung (shell không nhấp nháy). */
@@ -100,6 +101,18 @@ export const AppRoutes = () => {
               <RequireAdmin>
                 <AdminLayout>
                   <OrganizationDetailsPage />
+                </AdminLayout>
+              </RequireAdmin>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/loi-rules"
+          element={
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminLayout>
+                  <LoiRulesPage />
                 </AdminLayout>
               </RequireAdmin>
             </RequireAuth>

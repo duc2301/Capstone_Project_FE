@@ -84,6 +84,9 @@ export interface LoiSection {
 export interface LoiMissingField {
   fieldName: string;
   variant: string | null;
+  discipline: number;
+  componentCode: string;
+  componentName: string;
   group: LoiParamGroup;
   stage: number;
   missingCount: number;

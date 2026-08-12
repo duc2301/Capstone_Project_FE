@@ -11,7 +11,7 @@ import { statusMeta as accountStatusMeta } from '@/features/accounts';
 import { useOrganizationTypes, useOrganizations, UpdateOrganizationForm } from '@/features/organizations';
 import { ProjectCard } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
-import { ConfirmDialog, Modal, PaginationBar, Toast, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, Modal, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { useUrlTab } from '@/shared/lib/url';
 
@@ -43,7 +43,11 @@ export function OrganizationDetailsPage() {
     if (accRes.data.isSuccess && accRes.data.result) {
       const allAccs = accRes.data.result;
       setMembers(allAccs.filter((acc: Account) => acc.organizationId === id));
-      setAvailableAccounts(allAccs.filter((acc: Account) => !acc.organizationId));
+      setAvailableAccounts(
+        allAccs
+          .filter((acc: Account) => acc.organizationId !== id)
+          .sort((a: Account, b: Account) => Number(!!a.organizationId) - Number(!!b.organizationId)),
+      );
     }
   }, [id]);
 
@@ -240,23 +244,36 @@ export function OrganizationDetailsPage() {
             {availableAccounts.length === 0 ? (
               <p className="modal-text p-4 text-center text-text-muted">{t('orgDetail.invite.empty')}</p>
             ) : (
-              availableAccounts.map(acc => (
-                <label key={acc.id} className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition hover:bg-input-bg">
-                  <input
-                    type="checkbox"
-                    checked={selectedAccountIds.includes(acc.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedAccountIds([...selectedAccountIds, acc.id]);
-                      else setSelectedAccountIds(selectedAccountIds.filter(id => id !== acc.id));
-                    }}
-                    className="h-4 w-4 rounded border-card-border text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1">
-                    <p className="modal-text font-medium text-text">{acc.userName}</p>
-                    <p className="field-hint">{acc.email}</p>
-                  </div>
-                </label>
-              ))
+              availableAccounts.map(acc => {
+                const isTaken = !!acc.organizationId;
+                return (
+                  <label
+                    key={acc.id}
+                    title={isTaken ? t('org.team.inOrgHint') : undefined}
+                    className={`flex items-center gap-3 rounded-lg p-3 transition ${isTaken ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-input-bg'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={isTaken}
+                      checked={selectedAccountIds.includes(acc.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedAccountIds([...selectedAccountIds, acc.id]);
+                        else setSelectedAccountIds(selectedAccountIds.filter(id => id !== acc.id));
+                      }}
+                      className="h-4 w-4 rounded border-card-border text-primary focus:ring-primary disabled:cursor-not-allowed"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="modal-text truncate font-medium text-text">{acc.userName}</p>
+                      <p className="field-hint truncate">{acc.email}</p>
+                    </div>
+                    {isTaken && (
+                      <span className="max-w-[45%] shrink-0 truncate rounded-full bg-content-bg px-2.5 py-1 text-xs font-semibold text-text-muted">
+                        {t('org.team.inOrg')}: {acc.organizationName ?? '—'}
+                      </span>
+                    )}
+                  </label>
+                );
+              })
             )}
           </div>
           <div className="flex justify-end gap-3">
@@ -416,7 +433,14 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
 
       <div className="overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-sm pb-2">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-list min-w-[820px]">
+            <colgroup>
+              <col />
+              <col className="w-[130px]" />
+              <col className="w-[150px]" />
+              <col className="w-[160px]" />
+              <col className="w-[110px]" />
+            </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="table-head bg-content-bg">
                 <th className="px-6 py-3.5">{t('orgDetail.members.colMember')}</th>
@@ -445,9 +469,9 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
                             m.userName.substring(0, 2).toUpperCase()
                           )}
                         </div>
-                        <div>
-                          <p className="font-bold text-text text-sm">{m.userName}</p>
-                          <p className="text-xs text-text-placeholder mt-0.5">{m.email}</p>
+                        <div className="min-w-0">
+                          <p className="cell-wrap font-bold text-text text-sm">{m.userName}</p>
+                          <p className="cell-wrap text-xs text-text-placeholder mt-0.5">{m.email}</p>
                         </div>
                       </div>
                     </td>
@@ -466,9 +490,14 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
                       {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString('vi-VN') : t('orgDetail.members.recently')}
                     </td>
                     <td className="px-6 py-4 text-right text-text-placeholder">
-                      <button onClick={() => onRemoveMember(m.id)} className="hover:text-danger p-1" title={t('orgDetail.members.remove')}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                      </button>
+                      <RowActions>
+                        <ActionIconButton
+                          tone="danger"
+                          label={t('orgDetail.members.remove')}
+                          icon={<DeleteIcon />}
+                          onClick={() => onRemoveMember(m.id)}
+                        />
+                      </RowActions>
                     </td>
                   </tr>
                 ))

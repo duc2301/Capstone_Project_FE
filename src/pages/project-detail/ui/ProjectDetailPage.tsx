@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import type { ContractPackage } from '@/entities/contractPackage';
 import { contractPackageApi } from '@/entities/contractPackage';
-import type { CreateGroupPayload, Group, GroupMember } from '@/entities/group';
+import type { CreateGroupPayload, Group } from '@/entities/group';
 import { groupApi, GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import type { Organization } from '@/entities/organization';
@@ -16,7 +16,9 @@ import { packageStatusMeta, PackageFormModal, usePackages } from '@/features/pac
 import type { AddGroupInput } from '@/features/projects';
 import {
   CreateGroupForm,
+  EditGroupModal,
   EditProjectForm,
+  GroupDetailPanel,
   ManageProjectPanel,
   ProjectPartnersTab,
   statusMeta,
@@ -26,7 +28,7 @@ import {
 } from '@/features/projects';
 import { AuditLogPanel } from '@/features/audit-logs';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, DeleteIcon, EditIcon, Modal, RowActions, Toast, UserAvatar, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, RowActions, Toast, ToolbarIconButton, UserAvatar, useToast } from '@/shared/components';
 import { formatDate, formatRelativeTime } from '@/shared/lib/format';
 import { useUrlTab } from '@/shared/lib/url';
 import type { TranslationKey } from '@/shared/lib/i18n';
@@ -116,126 +118,34 @@ function ProjectMap({
   );
 }
 
-/* ── Group member row ──────────────────────────────────── */
-function MemberRow({
-  member,
-  groupId,
-  isAdminOrManager,
-  onChangeRole,
-  onRemoveMember,
-}: {
-  member: GroupMember;
-  groupId: string;
-  isAdminOrManager?: boolean;
-  onChangeRole: (groupId: string, accountId: string, newRole: number) => Promise<void>;
-  onRemoveMember: (groupId: string, accountId: string) => Promise<void>;
-}) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const isLeader = member.role === GroupMemberRole.Leader;
-
-  const run = async (action: () => Promise<void>) => {
-    setMenuOpen(false);
-    setBusy(true);
-    try {
-      await action();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-3 group/member">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
-        {member.userName.charAt(0).toUpperCase()}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-text">{member.userName}</p>
-        {member.email && <p className="truncate text-xs text-text-muted">{member.email}</p>}
-      </div>
-      <span
-        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isLeader ? 'bg-primary text-white' : 'bg-content-bg text-text-secondary'
-          }`}
-      >
-        {isLeader ? t('projectDetail.teams.role.leader') : t('projectDetail.teams.role.member')}
-      </span>
-
-      {/* 3-dot menu */}
-      {isAdminOrManager && (
-        <div className="relative">
-          <button
-            disabled={busy}
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-content-bg hover:text-primary opacity-0 group-hover/member:opacity-100 transition-all disabled:opacity-50"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="12" cy="5" r="1" />
-              <circle cx="12" cy="19" r="1" />
-            </svg>
-          </button>
-
-          {menuOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-10 z-50 w-48 rounded-[var(--radius-card)] border border-card-border bg-card p-1 shadow-dropdown animate-fade-in">
-                <button
-                  onClick={() => {
-                    const newRole = isLeader ? GroupMemberRole.Member : GroupMemberRole.Leader;
-                    run(() => onChangeRole(groupId, member.accountId, newRole));
-                  }}
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text transition-colors hover:bg-content-bg hover:text-primary"
-                >
-                  {isLeader ? t('projectDetail.teams.member.demote') : t('projectDetail.teams.member.promote')}
-                </button>
-                <button
-                  onClick={() => run(() => onRemoveMember(groupId, member.accountId))}
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-danger transition-colors hover:bg-danger-light"
-                >
-                  {t('projectDetail.teams.member.remove')}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ── Group (team) card ─────────────────────────────────── */
 function GroupCard({
   group,
   organizations,
   isAdmin,
   isAdminOrManager,
+  onOpen,
   onUpdateGroup,
   onRemoveGroup,
-  onChangeRole,
-  onRemoveMember,
   onShowToast,
 }: {
   group: Group;
   organizations: Organization[];
   isAdmin: boolean;
   isAdminOrManager: boolean;
+  onOpen: (groupId: string) => void;
   onUpdateGroup: (groupId: string, payload: Partial<CreateGroupPayload>) => Promise<void>;
   onRemoveGroup: (groupId: string) => Promise<void>;
-  onChangeRole: (groupId: string, accountId: string, newRole: number) => Promise<void>;
-  onRemoveMember: (groupId: string, accountId: string) => Promise<void>;
   onShowToast: (msg: string, type?: 'success' | 'error') => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [removingGroup, setRemovingGroup] = useState(false);
-  const [editingName, setEditingName] = useState(group.name);
-  const [editingDesc, setEditingDesc] = useState(group.description || '');
-  const [editingOrgId, setEditingOrgId] = useState<string | null>(group.organizationId || null);
-  const [updatingGroup, setUpdatingGroup] = useState(false);
 
   const partner = organizations.find(o => o.id === group.organizationId);
   const partnerNames = partner ? (partner.displayName || partner.legalName) : '';
+
+  const activeMemberCount = group.members.filter((m) => m.status !== GroupMemberStatus.Left).length;
 
   return (
     <div className="flex flex-col gap-4 rounded-[var(--radius-card-lg)] border border-border-sage bg-card p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
@@ -260,12 +170,7 @@ function GroupCard({
               label={t('projectDetail.teams.editGroup')}
               tone="primary"
               icon={<EditIcon />}
-              onClick={() => {
-                setEditingName(group.name);
-                setEditingDesc(group.description || '');
-                setEditingOrgId(group.organizationId || null);
-                setEditGroupModalOpen(true);
-              }}
+              onClick={() => setEditGroupModalOpen(true)}
             />
           )}
           {isAdmin && (
@@ -307,194 +212,53 @@ function GroupCard({
             <circle cx="9" cy="7" r="4" />
           </svg>
           <span>
-            {group.members.length} {t('projectDetail.teams.membersSuffix')}
+            {activeMemberCount} {t('projectDetail.teams.membersSuffix')}
           </span>
         </div>
       </div>
 
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpen(group.id)}
         className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[rgba(88,127,57,0.1)] py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
       >
-        {open ? t('projectDetail.teams.hideDetail') : t('projectDetail.teams.viewDetail')}
-        <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          className={`transition-transform ${open ? 'rotate-180' : ''}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
+        {t('projectDetail.teams.viewDetail')}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="9 18 15 12 9 6" />
         </svg>
       </button>
 
-      {open && (
-        <div className="space-y-3 border-t border-card-border pt-4">
-          {(() => {
-            const activeMembers = group.members.filter((m) => m.status !== GroupMemberStatus.Left);
-            return activeMembers.length === 0 ? (
-              <p className="text-sm text-text-muted">{t('projectDetail.teams.noMembers')}</p>
-            ) : (
-              activeMembers.map((m) => (
-                <MemberRow
-                  key={m.accountId}
-                  member={m}
-                  groupId={group.id}
-                  isAdminOrManager={isAdminOrManager}
-                  onChangeRole={onChangeRole}
-                  onRemoveMember={onRemoveMember}
-                />
-              ))
-            );
-          })()}
-        </div>
-      )}
-
       {editGroupModalOpen && (
-        <Modal title={t('projectDetail.teams.editGroup.title')} onClose={() => setEditGroupModalOpen(false)}>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="field-label">{t('projectDetail.teams.editGroup.name')}</label>
-              <input
-                type="text"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                className="field-input"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="field-label">{t('projectDetail.teams.editGroup.description')}</label>
-              <input
-                type="text"
-                value={editingDesc}
-                onChange={(e) => setEditingDesc(e.target.value)}
-                className="field-input"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="field-label">{t('projectDetail.teams.editGroup.partner')}</label>
-              <div className="flex flex-col gap-3 max-h-48 overflow-y-auto admin-scrollbar pr-2">
-                <button
-                  onClick={() => setEditingOrgId(null)}
-                  className={`flex items-center gap-3 rounded-[var(--radius-button)] border p-3 text-left transition-colors ${!editingOrgId ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
-                    }`}
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-content-bg text-text-muted">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-text">{t('projectDetail.teams.editGroup.noPartner')}</p>
-                </button>
-                {organizations.map((org) => {
-                  const orgName = org.displayName || org.legalName;
-                  const isSelected = editingOrgId === org.id;
-                  return (
-                    <button
-                      key={org.id}
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setEditingOrgId(null);
-                        } else {
-                          setEditingOrgId(org.id);
-                        }
-                      }}
-                      className={`flex items-center gap-3 rounded-[var(--radius-button)] border p-3 text-left transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-card-border bg-card hover:border-primary/50'
-                        }`}
-                    >
-                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${isSelected ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
-                        }`}>
-                        {orgName.charAt(0).toUpperCase()}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-text">{orgName}</p>
-                        <p className="truncate text-xs text-text-muted">{org.taxCode || '---'}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={updatingGroup}
-                onClick={() => setEditGroupModalOpen(false)}
-                className="btn-modal-ghost"
-              >
-                {t('projectDetail.teams.editGroup.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={!editingName.trim() || updatingGroup}
-                onClick={async () => {
-                  try {
-                    setUpdatingGroup(true);
-                    await onUpdateGroup(group.id, {
-                      name: editingName.trim(),
-                      description: editingDesc.trim() || undefined,
-                      organizationId: editingOrgId || undefined,
-                    });
-                    setEditGroupModalOpen(false);
-                    onShowToast(t('projectDetail.teams.toast.groupUpdated'));
-                  } catch (err) {
-                    onShowToast(getApiErrorMessage(err, t('common.error')), 'error');
-                  } finally {
-                    setUpdatingGroup(false);
-                  }
-                }}
-                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-              >
-                {updatingGroup ? t('common.loading') : t('projectDetail.teams.editGroup.save')}
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <EditGroupModal
+          group={group}
+          onClose={() => setEditGroupModalOpen(false)}
+          onSubmit={async (groupId, payload) => {
+            await onUpdateGroup(groupId, payload);
+            onShowToast(t('projectDetail.teams.toast.groupUpdated'));
+          }}
+          onError={(msg) => onShowToast(msg, 'error')}
+        />
       )}
 
       {removeConfirmOpen && (
-        <Modal title={t('projectDetail.teams.removeGroup.title')} onClose={() => setRemoveConfirmOpen(false)}>
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-text-secondary">
-              {t('projectDetail.teams.removeGroup.desc')}
-            </p>
-            <div className="flex items-center gap-3 rounded-xl border border-card-border bg-content-bg p-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                {group.name.charAt(0).toUpperCase()}
-              </span>
-              <p className="truncate text-sm font-semibold text-text">{group.name}</p>
-            </div>
-            <div className="mt-2 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={removingGroup}
-                onClick={() => setRemoveConfirmOpen(false)}
-                className="btn-modal-ghost"
-              >
-                {t('projectDetail.teams.removeGroup.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={removingGroup}
-                onClick={async () => {
-                  try {
-                    setRemovingGroup(true);
-                    await onRemoveGroup(group.id);
-                    setRemoveConfirmOpen(false);
-                  } finally {
-                    setRemovingGroup(false);
-                  }
-                }}
-                className="btn-modal-danger"
-              >
-                {removingGroup ? t('common.loading') : t('projectDetail.teams.removeGroup.submit')}
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <ConfirmDialog
+          title={t('projectDetail.teams.removeGroup.title')}
+          message={t('projectDetail.teams.removeGroup.desc')}
+          confirmLabel={t('projectDetail.teams.removeGroup.submit')}
+          cancelLabel={t('projectDetail.teams.removeGroup.cancel')}
+          tone="danger"
+          busy={removingGroup}
+          onConfirm={async () => {
+            try {
+              setRemovingGroup(true);
+              await onRemoveGroup(group.id);
+              setRemoveConfirmOpen(false);
+            } finally {
+              setRemovingGroup(false);
+            }
+          }}
+          onCancel={() => setRemoveConfirmOpen(false)}
+        />
       )}
     </div>
   );
@@ -519,6 +283,8 @@ export function ProjectDetailPage() {
   const { currentUser } = useSession();
 
   const [tab, selectTab] = useUrlTab(TAB_IDS, 'info');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openedGroupId = searchParams.get('group');
   const [manageOpen, setManageOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
@@ -557,6 +323,29 @@ export function ProjectDetailPage() {
   const isAdmin = isAccountAdmin(currentUser?.role);
   const isManager = project?.managerAccountId === currentUser?.accountId;
   const canViewAllTabs = isAdmin || isManager;
+
+  const openedGroup = useMemo(
+    () => (openedGroupId ? groups.find((g) => g.id === openedGroupId) ?? null : null),
+    [groups, openedGroupId],
+  );
+
+  const isLeaderOfOpenedGroup = Boolean(
+    openedGroup?.members.some(
+      (m) =>
+        m.accountId === currentUser?.accountId
+        && m.role === GroupMemberRole.Leader
+        && m.status === GroupMemberStatus.Active,
+    ),
+  );
+
+  const openGroup = useCallback((groupId: string | null) => {
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params);
+      if (groupId) next.set('group', groupId);
+      else next.delete('group');
+      return next;
+    });
+  }, [setSearchParams]);
   // Leader active của ít nhất 1 group trong project — được vào tab Cài đặt (bản rút gọn).
   const isProjectLeader = groups.some((g) =>
     g.members.some(
@@ -643,16 +432,12 @@ export function ProjectDetailPage() {
   };
 
   const handleAssignPartner = async (groupId: string, organizationId: string) => {
-    try {
-      const group = groups.find(g => g.id === groupId);
-      if (group?.organizationId !== organizationId) {
-        await groupApi.update(groupId, { organizationId });
-        await refreshGroups();
-        showToast(t('projectDetail.teams.toast.partnerAssigned'));
-      }
-    } catch (err) {
-      showToast(getApiErrorMessage(err, t('common.error')), 'error');
-    }
+    const group = groups.find(g => g.id === groupId);
+    if (group?.organizationId === organizationId) return;
+
+    await groupApi.update(groupId, { organizationId });
+    await refreshGroups();
+    showToast(t('projectDetail.teams.toast.partnerAssigned'));
   };
 
 
@@ -831,7 +616,8 @@ export function ProjectDetailPage() {
                 <h3 className="heading-eyebrow">
                   {t('projectDetail.sidebar.details')}
                 </h3>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusMeta(project.status).badgeClass}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusMeta(project.status).dotClass}`} />
                   {statusMeta(project.status).label}
                 </span>
               </div>
@@ -905,8 +691,25 @@ export function ProjectDetailPage() {
         </div>
       )}
 
+      {tab === 'teams' && openedGroup && (
+        <GroupDetailPanel
+          projectId={projectId!}
+          group={openedGroup}
+          organizations={organizations}
+          accounts={accounts}
+          canManage={canViewAllTabs}
+          canChangeRole={canViewAllTabs || isLeaderOfOpenedGroup}
+          onBack={() => openGroup(null)}
+          onUpdateGroup={handleUpdateGroup}
+          onChangeRole={handleChangeRole}
+          onRemoveMember={handleRemoveMember}
+          onInvite={handleInvite}
+          onShowToast={showToast}
+        />
+      )}
+
       {/* ── Tab: Nhóm (teams) ─────────────────────────── */}
-      {tab === 'teams' && (
+      {tab === 'teams' && !openedGroup && (
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="heading-tab">
@@ -914,20 +717,18 @@ export function ProjectDetailPage() {
             </h2>
             {canViewAllTabs && (
               <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setManageOpen(true);
-                  }}
-                  className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  {t('projectDetail.teams.manage')}
-                </button>
-                {isAdmin && (
+                <ToolbarIconButton
+                  showLabel
+                  label={t('projectDetail.teams.manage')}
+                  onClick={() => setManageOpen(true)}
+                  icon={
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  }
+                />
+                {canViewAllTabs && (
                   <button
                     type="button"
                     onClick={() => setAddGroupOpen(true)}
@@ -961,10 +762,9 @@ export function ProjectDetailPage() {
                   organizations={organizations}
                   isAdmin={isAdmin}
                   isAdminOrManager={canViewAllTabs}
+                  onOpen={openGroup}
                   onUpdateGroup={handleUpdateGroup}
                   onRemoveGroup={handleRemoveGroup}
-                  onChangeRole={handleChangeRole}
-                  onRemoveMember={handleRemoveMember}
                   onShowToast={showToast}
                 />
               ))}
@@ -1000,7 +800,15 @@ export function ProjectDetailPage() {
 
       {tab === 'issues' && <ProjectIssuesTab projectId={project.id} />}
 
-      {tab === 'partners' && <ProjectPartnersTab partners={projectPartners} groups={groups} />}
+      {tab === 'partners' && (
+        <ProjectPartnersTab
+          partners={projectPartners}
+          groups={groups}
+          organizations={organizations}
+          canManage={canViewAllTabs}
+          onAssignPartner={handleAssignPartner}
+        />
+      )}
 
       {/* ── Tab: Nhật ký hoạt động ──────
           Admin/PM -> toàn bộ log dự án. Thành viên thường -> endpoint /my,
@@ -1034,12 +842,21 @@ export function ProjectDetailPage() {
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Tạo gói thầu
+              {t('packages.createNew')}
             </button>
           </div>
 
           <div className={`${cardClass} overflow-x-auto`}>
-            <table className="w-full text-left text-sm">
+            <table className="table-list min-w-[900px] text-left">
+              <colgroup>
+                <col />
+                <col className="w-[150px]" />
+                <col className="w-[20%]" />
+                <col className="w-[110px]" />
+                <col className="w-[110px]" />
+                <col className="w-[130px]" />
+                <col className="w-[90px]" />
+              </colgroup>
               <thead>
                 <tr className="table-head">
                   <th className="pb-3">{t('packages.col.name')}</th>
@@ -1068,19 +885,19 @@ export function ProjectDetailPage() {
                   const pkgStatus = packageStatusMeta(p.status);
                   return (
                     <tr key={p.id} className="hover:bg-card-hover transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}/packages/${p.id}`)}>
-                      <td className="py-4 font-medium text-primary max-w-[200px] truncate" title={p.name}>
+                      <td className="cell-wrap py-4 pr-4 align-top font-medium text-primary" title={p.name}>
                         <span className="hover:underline">{p.name}</span>
                       </td>
-                      <td className="py-4 font-bold text-primary">{p.code}</td>
-                      <td className="py-4 text-text-muted">{partnerName}</td>
-                      <td className="py-4">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="py-4">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="py-4">
+                      <td className="cell-wrap py-4 pr-4 align-top font-bold text-primary">{p.code}</td>
+                      <td className="cell-wrap py-4 pr-4 align-top text-text-muted">{partnerName}</td>
+                      <td className="py-4 align-top">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 align-top">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 align-top">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pkgStatus.badgeClass}`}>
                           {pkgStatus.label}
                         </span>
                       </td>
-                      <td className="py-4">
+                      <td className="py-4 align-top">
                         <RowActions>
                           <ActionIconButton
                             label={t('packages.action.edit')}

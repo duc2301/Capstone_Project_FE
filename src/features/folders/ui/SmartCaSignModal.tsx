@@ -340,7 +340,7 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
                     value={certificateSerial}
                     onChange={(e) => setCertificateSerial(e.target.value)}
                     disabled={certificates.length === 0}
-                    className="h-11 rounded-lg border border-input-border bg-input-bg px-3 text-sm font-semibold text-text outline-none focus:border-input-focus disabled:opacity-60"
+                    className="field-select h-11 w-auto rounded-lg py-0 pl-3 font-semibold"
                   >
                     <option value="">{t('smartca.signModal.selectCertificate')}</option>
                     {certificates.map((certificate) => (
@@ -437,7 +437,8 @@ function SmartCaSuccessView({
   signatureInfo: SignatureInfo | null;
   signedFile: SignedFileInfo | null;
 }) {
-  const signerName = signatureInfo?.signedBy ?? approval.approvedByName ?? t('smartca.signModal.currentLeader');
+  const signedAt = signedFile?.signedAt ?? signatureInfo?.signedAt;
+  const signerName = signedFile?.signedBy ?? signatureInfo?.signedBy ?? approval.approvedByName ?? t('smartca.signModal.currentLeader');
 
   return (
     <section className="flex flex-col items-center text-center">
@@ -463,7 +464,7 @@ function SmartCaSuccessView({
           </>
         )}
         <div className="my-3 h-px bg-card-border/70" />
-        <InfoRow label={t('smartca.success.signedAt')} value={formatDateTime(signatureInfo?.signedAt)} />
+        <InfoRow label={t('smartca.success.signedAt')} value={formatDateTime(signedAt)} />
         <div className="my-3 h-px bg-card-border/70" />
         <InfoRow label={t('smartca.success.signedBy')} value={signerName} />
       </div>

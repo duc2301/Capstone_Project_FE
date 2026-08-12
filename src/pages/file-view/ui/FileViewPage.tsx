@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
@@ -13,7 +13,7 @@ import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, FileTypeIcon, Toast, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, FileTypeIcon, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
@@ -137,7 +137,6 @@ const PANEL_TABS = ['properties', 'signatureHistory', 'issues', 'loi', 'related'
 export function FileViewPage() {
   const { projectId, fileId } = useParams<{ projectId: string; fileId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const folderId = searchParams.get('folder');
   const viewingVersionId = searchParams.get('version');
   const { currentUser } = useSession();
@@ -169,6 +168,7 @@ export function FileViewPage() {
   const [signFor, setSignFor] = useState<ApprovalListItem | null>(null);
   // File model (CAD 2D) khong co info.inlineUrl (xem qua ModelViewer/URN) -> lay rieng URL ban PDF dung de dat vi tri ky.
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
   const currentVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
   const viewedVersion = viewingVersionId
@@ -270,16 +270,6 @@ export function FileViewPage() {
     };
   }, [fileId, isModelProcessing, fetchView]);
 
-  const goBack = useCallback(() => {
-    if (!projectId) {
-      navigate('/projects');
-      return;
-    }
-
-    const folderQuery = folderId ? `&folder=${folderId}` : '';
-    navigate(`/projects/${projectId}?tab=documents${folderQuery}`);
-  }, [navigate, projectId, folderId]);
-
   const handleDownload = useCallback(async () => {
     if (!fileId || !info) return;
 
@@ -288,10 +278,10 @@ export function FileViewPage() {
         ? await fileItemApi.downloadVersion(fileId, viewingVersionId)
         : await fileItemApi.download(fileId);
       downloadBlob(res.data as Blob, info.fileName);
-    } catch {
-      setError(t('common.error'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('common.error')), 'error');
     }
-  }, [fileId, info, isVersionView, viewingVersionId]);
+  }, [fileId, info, isVersionView, viewingVersionId, showToast]);
 
   const handleRetranslate = useCallback(async () => {
     if (!fileId) return;
@@ -301,12 +291,12 @@ export function FileViewPage() {
       await fileItemApi.retranslate(fileId);
       const result = await fetchView();
       setInfo(result);
-    } catch {
-      setError(t('fileView.error'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('fileView.error')), 'error');
     } finally {
       setRetrying(false);
     }
-  }, [fileId, fetchView]);
+  }, [fileId, fetchView, showToast]);
 
   const isModelReady =
     info?.kind === 'model' && status === ModelViewerStatus.Ready && !!info.urn;
@@ -351,8 +341,6 @@ export function FileViewPage() {
     fileListItem?.isSigned ||
     signatureApprovals.some((approval) => approval.isSigned),
   );
-
-  const { toast, showToast } = useToast();
 
   const openSignaturePlacement = useCallback(async () => {
     if (!requiresSignature) return;
@@ -488,21 +476,20 @@ export function FileViewPage() {
               <span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
                 {statusMeta.label}
               </span>
-              <button
-                type="button"
-                onClick={goBack}
-                className="whitespace-nowrap rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
-              >
-                {t('fileView.back')}
-              </button>
-              <button
-                type="button"
+              <ToolbarIconButton
+                size="sm"
+                variant="solid"
+                label={t('fileView.download.button')}
                 onClick={handleDownload}
                 disabled={!info}
-                className="whitespace-nowrap rounded-[var(--radius-button)] bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {t('fileView.download.button')}
-              </button>
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                }
+              />
             </div>
           </header>
 
@@ -623,7 +610,7 @@ export function FileViewPage() {
 
         {/* Panel cao bằng khung xem file, nội dung cuộn bên trong */}
         <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card xl:w-[400px]">
-          <div className="flex shrink-0 items-center justify-between border-b border-card-border px-2">
+          <div className="flex shrink-0 items-stretch border-b border-card-border px-1">
             <PanelTabButton
               active={activePanelTab === 'properties'}
               label={t('fileView.tabs.properties')}
@@ -833,12 +820,12 @@ function PanelTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex h-14 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
+      className={`relative flex h-14 min-w-0 flex-auto items-center justify-center gap-1.5 px-2 text-xs font-bold uppercase transition-colors ${active ? 'text-primary' : 'text-text-muted hover:bg-content-bg hover:text-text'
         }`}
     >
-      {label}
+      <span className="truncate leading-6">{label}</span>
       {badge ? (
-        <span className={`rounded-full px-1.5 py-0.5 text-2xs font-bold ${active ? 'bg-primary text-white' : 'bg-danger text-white'}`}>
+        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold ${active ? 'bg-primary text-white' : 'bg-danger text-white'}`}>
           {badge}
         </span>
       ) : null}

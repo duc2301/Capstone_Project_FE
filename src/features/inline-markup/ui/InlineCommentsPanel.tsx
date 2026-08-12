@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import type { FileNote, MarkupType } from '@/entities/file-note';
 import { buildMarkupAuthorOptions, FileNoteStatus, filterMarkupNotes, MarkupType as MT } from '@/entities/file-note';
-import { MarkupNoteFilter, type MarkupStatusFilter } from '@/shared/components';
+import { ActionIconButton, DeleteIcon, MarkupNoteFilter, type MarkupStatusFilter } from '@/shared/components';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { useInlineMarkupContext } from '../model/inlineMarkupContext';
@@ -63,6 +63,7 @@ export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) 
               key={n.id}
               note={n}
               selected={n.id === c.selectedId}
+              readOnly={c.readOnly}
               onJump={() => jumpTo(n)}
               onResolve={() => c.resolveNote(n.id, n.status === FileNoteStatus.Resolved ? FileNoteStatus.Open : FileNoteStatus.Resolved)}
               onDelete={() => {
@@ -82,12 +83,14 @@ export function InlineCommentsPanel({ onJumpToNote }: InlineCommentsPanelProps) 
 function NoteRow({
   note,
   selected,
+  readOnly,
   onJump,
   onResolve,
   onDelete,
 }: {
   note: FileNote;
   selected: boolean;
+  readOnly: boolean;
   onJump: () => void;
   onResolve: () => void;
   onDelete: () => void;
@@ -109,12 +112,27 @@ function NoteRow({
         <span className={`rounded-full px-2 py-0.5 text-2xs font-bold ${resolved ? 'bg-success-light text-success' : 'bg-warning-light text-warning'}`}>
           {resolved ? t('markup.status.resolved') : t('markup.status.open')}
         </span>
-        <button type="button" onClick={onResolve} className="ml-auto rounded-[var(--radius-button)] px-1.5 py-0.5 text-xs font-semibold text-text-secondary hover:bg-content-bg hover:text-text">
-          {resolved ? t('markup.action.reopen') : t('markup.action.markDone')}
-        </button>
-        <button type="button" onClick={onDelete} className="rounded-[var(--radius-button)] px-1.5 py-0.5 text-xs font-semibold text-danger hover:bg-danger-light">
-          {t('markup.action.delete')}
-        </button>
+        <div className={`ml-auto flex items-center gap-1 ${readOnly ? 'hidden' : ''}`}>
+          <ActionIconButton
+            size="sm"
+            tone={resolved ? 'neutral' : 'primary'}
+            label={resolved ? t('markup.action.reopen') : t('markup.action.markDone')}
+            onClick={onResolve}
+            icon={resolved ? (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>) : (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>)}
+          />
+          <ActionIconButton
+            size="sm"
+            tone="danger"
+            label={t('markup.action.delete')}
+            onClick={onDelete}
+            icon={<DeleteIcon size={15} />}
+          />
+        </div>
       </div>
     </li>
   );

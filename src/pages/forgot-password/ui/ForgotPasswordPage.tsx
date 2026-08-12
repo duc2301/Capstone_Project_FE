@@ -1,5 +1,6 @@
 import { ForgotPasswordForm } from '@/features/auth';
 import { AuthLayout } from '@/widgets/AuthLayout';
+import { t } from '@/shared/lib/i18n';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1280&q=80';
@@ -20,12 +21,8 @@ function BrandPanel() {
       />
       <div className="relative z-[2] flex max-w-[512px] flex-col gap-6">
         <div className="flex flex-col gap-3">
-          <h2 className="heading-hero text-white">
-            Khôi phục tài khoản của bạn
-          </h2>
-          <p className="text-lg leading-7 text-white/80">
-            Chỉ cần email, chúng tôi sẽ giúp bạn lấy lại quyền truy cập an toàn và nhanh chóng.
-          </p>
+          <h2 className="heading-hero text-white">{t('auth.forgot.brandTitle')}</h2>
+          <p className="text-lg leading-7 text-white/80">{t('auth.forgot.brandSubtitle')}</p>
         </div>
       </div>
     </aside>

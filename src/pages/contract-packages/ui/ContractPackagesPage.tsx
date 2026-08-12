@@ -2,13 +2,21 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage } from '@/entities/contractPackage';
-import { ActionPillButton, PaginationBar, RowActions } from '@/shared/components';
+import type { ListTableColumn } from '@/shared/components';
+import { ActionPillButton, ListErrorCard, ListLoadingCard, ListTable, PaginationBar, RowActions } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 import { packageStatusMeta } from '@/features/packages';
 import { useProjects } from '@/features/projects';
 
 const PAGE_SIZE = 20;
+
+const PACKAGE_COLUMNS: ListTableColumn[] = [
+  { key: 'project', label: t('packages.col.project'), width: 'w-[26%]' },
+  { key: 'package', label: t('packages.col.package') },
+  { key: 'status', label: t('packages.col.status'), width: 'w-[150px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[130px]', align: 'right' },
+];
 
 export function ContractPackagesPage() {
   const navigate = useNavigate();
@@ -51,29 +59,17 @@ export function ContractPackagesPage() {
       <h1 className="heading-page shrink-0">{t('admin.nav.packages')}</h1>
 
       {loading && (
-        <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
-          <p className="text-sm text-text-muted">{t('common.loading')}</p>
-        </div>
+        <ListLoadingCard />
       )}
 
       {error && !loading && (
-        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
-          <p className="text-sm font-medium text-danger">{error}</p>
-        </div>
+        <ListErrorCard message={error} />
       )}
 
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[780px] text-sm">
-              <thead className="sticky top-0 z-10">
-                <tr className="table-head bg-content-bg">
-                  <th className="px-6 py-3.5">{t('packages.col.project')}</th>
-                  <th className="px-5 py-3.5">{t('packages.col.package')}</th>
-                  <th className="px-5 py-3.5">{t('packages.col.status')}</th>
-                  <th className="px-5 py-3.5 text-right">{t('common.col.actions')}</th>
-                </tr>
-              </thead>
+            <ListTable columns={PACKAGE_COLUMNS} minWidth="min-w-[780px]">
               <tbody className="divide-y divide-card-border">
                 {paged.length === 0 ? (
                   <tr>
@@ -101,9 +97,9 @@ export function ContractPackagesPage() {
                                   {project.projectName.charAt(0).toUpperCase()}
                                 </div>
                               )}
-                              <div>
-                                <div className="font-semibold text-text">{project.projectName}</div>
-                                {project.projectCode && <div className="text-xs text-text-muted mt-0.5">{project.projectCode}</div>}
+                              <div className="min-w-0">
+                                <div className="cell-wrap font-semibold text-text">{project.projectName}</div>
+                                {project.projectCode && <div className="cell-wrap text-xs text-text-muted mt-0.5">{project.projectCode}</div>}
                               </div>
                             </div>
                           ) : (
@@ -111,8 +107,8 @@ export function ContractPackagesPage() {
                           )}
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-semibold text-text">{pkg.name}</div>
-                          {pkg.code && <div className="text-xs text-text-muted mt-0.5">{t('packages.contractNo')}: {pkg.code}</div>}
+                          <div className="cell-wrap font-semibold text-text">{pkg.name}</div>
+                          {pkg.code && <div className="cell-wrap text-xs text-text-muted mt-0.5">{t('packages.contractNo')}: {pkg.code}</div>}
                         </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-2xs font-semibold ${status.badgeClass}`}>
@@ -137,7 +133,7 @@ export function ContractPackagesPage() {
                   })
                 )}
               </tbody>
-            </table>
+            </ListTable>
           </div>
 
           <PaginationBar

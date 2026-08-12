@@ -1,7 +1,12 @@
 export { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from './model/issueFormat';
+export { useIssueDetail } from './model/useIssueDetail';
 export { useIssueDiscussion } from './model/useIssueDiscussion';
 export { useIssues } from './model/useIssues';
+export { useMyIssues } from './model/useMyIssues';
+export type { MyIssueItem } from './model/useMyIssues';
 export { useProjectIssues } from './model/useProjectIssues';
+export { IssueTableRow } from './ui/IssueTableRow';
+export type { IssueRowItem } from './ui/IssueTableRow';
 export { ProjectIssuesTab } from './ui/ProjectIssuesTab';
 export { CreateIssueModal } from './ui/CreateIssueModal';
 export { IssueSidePanel } from './ui/IssueSidePanel';

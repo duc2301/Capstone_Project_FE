@@ -1,5 +1,7 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance, getApiErrorMessage } from '@/shared/api';
+import type { TranslationKey } from '@/shared/lib/i18n';
+import { t } from '@/shared/lib/i18n';
 
 import type { ApprovalDetail, ApprovalListItem, ApprovalSigner, ApprovalSignerStatus, ApprovalStatus, SubmitApprovalPayload } from '../model/approval.types';
 
@@ -151,19 +153,14 @@ export function approvalErrorMessage(err: unknown, fallback: string): string {
 /* Các lỗi BE trả khi người dùng/người ký chưa thuộc nhóm phụ trách, chưa phải Leader, hoặc folder
  * chưa được cấu hình quyền Duyệt (CanApprove) cho nhóm nào cả — mỗi lỗi có hướng khắc phục khác
  * nhau (thêm vào nhóm / đổi vai trò Leader ở tab "Nhóm", hay vào "Phân quyền" cấu hình CanApprove). */
-const TEAM_PERMISSION_MESSAGES: Record<string, string> = {
-  'Only members of the file team can submit approval.':
-    'Bạn chưa thuộc nhóm phụ trách thư mục này nên không thể gửi yêu cầu phê duyệt. Hãy nhờ quản trị dự án thêm bạn vào nhóm ở tab "Nhóm".',
-  'Current user is not required to sign this approval request.':
-    'Bạn chưa được chỉ định là người ký cho yêu cầu phê duyệt này. Hãy nhờ người gửi yêu cầu chọn lại người ký, hoặc thêm bạn vào nhóm ký ở tab "Nhóm".',
+const TEAM_PERMISSION_MESSAGES: Record<string, TranslationKey> = {
+  'Only members of the file team can submit approval.': 'approvals.error.notTeamMember',
+  'Current user is not required to sign this approval request.': 'approvals.error.notSigner',
   'No group has been granted approve permission on this folder yet. Please ask the project Admin to configure it.':
-    'Thư mục này chưa được cấp quyền Duyệt (CanApprove) cho nhóm nào cả. Hãy nhờ quản trị dự án vào "Phân quyền" cấu hình quyền Duyệt cho đúng nhóm phụ trách.',
-  'Only the Team Leader can approve or reject this file.':
-    'Chỉ Leader của nhóm phụ trách mới được phê duyệt/từ chối tài liệu này. Hãy nhờ quản trị dự án đổi vai trò Leader ở tab "Nhóm".',
-  'Only the Team Leader can perform this action.':
-    'Bạn chưa được phân quyền để thực hiện thao tác này trên tài liệu này.',
-  'Signer must be an active Team Leader of a group in this project.':
-    'Người ký được chọn phải là Leader active của 1 nhóm trong dự án. Vui lòng chọn lại người ký hoặc nhờ quản trị dự án đổi vai trò Leader ở tab "Nhóm".',
+    'approvals.error.noApproveGroup',
+  'Only the Team Leader can approve or reject this file.': 'approvals.error.leaderOnlyApprove',
+  'Only the Team Leader can perform this action.': 'approvals.error.leaderOnlyAction',
+  'Signer must be an active Team Leader of a group in this project.': 'approvals.error.signerMustBeLeader',
 };
 
 /* Phát hiện các lỗi "thiếu quyền theo nhóm/vai trò" ở trên để FE hiện cảnh báo rõ ràng
@@ -175,14 +172,14 @@ export function isTeamPermissionError(err: unknown): boolean {
 
 function formatApprovalErrorMessage(message: string): string {
   const teamMessageKey = Object.keys(TEAM_PERMISSION_MESSAGES).find((m) => message.includes(m));
-  if (teamMessageKey) return TEAM_PERMISSION_MESSAGES[teamMessageKey];
+  if (teamMessageKey) return t(TEAM_PERMISSION_MESSAGES[teamMessageKey]);
 
   if (message.includes('requires successful VNPT SmartCA digital signature')) {
-    return 'Tài liệu này cần ký số VNPT SmartCA thành công trước khi phê duyệt.';
+    return t('approvals.error.needSmartCa');
   }
 
   if (message.includes('Signed PDF must be generated before approval')) {
-    return 'Tài liệu cần tạo PDF đã ký trước khi phê duyệt.';
+    return t('approvals.error.needSignedPdf');
   }
 
   return message;

@@ -100,7 +100,7 @@ function PasswordField({
           type="button"
           onClick={() => setVisible((prev) => !prev)}
           tabIndex={-1}
-          aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          aria-label={visible ? t('auth.password.hide') : t('auth.password.show')}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
         >
           <EyeIcon open={visible} />
@@ -282,10 +282,10 @@ export function RegisterForm() {
             if (credentialResponse.credential) {
               handleGoogleCredential(credentialResponse.credential);
             } else {
-              setGError('Không nhận được thông tin từ Google.');
+              setGError(t('auth.google.noCredential'));
             }
           }}
-          onError={() => setGError('Đăng ký bằng Google thất bại. Vui lòng thử lại.')}
+          onError={() => setGError(t('auth.google.registerFailed'))}
           width="448"
           text="signup_with"
           shape="rectangular"

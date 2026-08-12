@@ -56,8 +56,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
     if (step === 2 && accounts.length === 0) {
       accountApi.getAll().then(res => {
         if (res.data.isSuccess && res.data.result) {
-          const availableAccounts = res.data.result.filter((a: Account) => !a.organizationId);
-          setAccounts(availableAccounts);
+          setAccounts(res.data.result);
         }
       });
     }
@@ -171,11 +170,14 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
   };
 
   const inputClass = 'field-input';
+  const selectClass = 'field-select';
 
-  const filteredAccounts = accounts.filter(acc => 
-    acc.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    acc.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAccounts = accounts
+    .filter(acc =>
+      acc.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      acc.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => Number(!!a.organizationId) - Number(!!b.organizationId));
 
   const toggleAccountSelection = (id: string) => {
     setSelectedAccountIds(prev => 
@@ -338,7 +340,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                           }));
                         }
                       }}
-                      className={inputClass}
+                      className={selectClass}
                     >
                       <option value="">{t('org.form.addJvPartner')}</option>
                       {organizations.filter(o => !form.jointVentureMemberIds?.includes(o.id)).map((org) => (
@@ -388,7 +390,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                     value={form.representativeOrganizationId || ''}
                     onChange={(e) => setForm(prev => ({ ...prev, representativeOrganizationId: e.target.value }))}
                     required={isJv}
-                    className={inputClass}
+                    className={selectClass}
                   >
                     <option value="">{t('org.form.selectLeadUnit')}</option>
                     {(form.jointVentureMemberIds || []).map((orgId) => {
@@ -434,7 +436,7 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                 value={form.organizationTypeId}
                 onChange={handleTypeSelect}
                 required
-                className={inputClass}
+                className={selectClass}
               >
                 <option value="">{t('org.selectType')}</option>
                 {orgTypes.filter((ot) => ot.isActive).map((ot) => (
@@ -537,21 +539,37 @@ export function CreateOrganizationForm({ mode, orgTypes, organizations = [], onS
                 <div className="divide-y divide-card-border">
                   {filteredAccounts.map(account => {
                     const isSelected = selectedAccountIds.includes(account.id);
+                    const isTaken = !!account.organizationId;
                     return (
                       <button
                         key={account.id}
                         type="button"
+                        disabled={isTaken}
+                        title={isTaken ? t('org.team.inOrgHint') : undefined}
                         onClick={() => toggleAccountSelection(account.id)}
-                        className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${isSelected ? 'bg-primary-ghost' : 'hover:bg-input-bg'}`}
+                        className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${
+                          isTaken ? 'cursor-not-allowed opacity-60' : isSelected ? 'bg-primary-ghost' : 'hover:bg-input-bg'
+                        }`}
                       >
-                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${isSelected ? 'border-primary bg-primary' : 'border-input-border bg-card'}`}>
-                          {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polyline points="20 6 9 17 4 12" /></svg>}
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                          isTaken ? 'border-card-border bg-content-bg' : isSelected ? 'border-primary bg-primary' : 'border-input-border bg-card'
+                        }`}>
+                          {isTaken ? (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                          ) : isSelected && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polyline points="20 6 9 17 4 12" /></svg>
+                          )}
                         </span>
                         <UserAvatar userName={account.userName} avatarUrl={account.avatarUrl} size="md" rounded="full" />
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-semibold text-text">{account.userName}</span>
                           <span className="block truncate text-xs text-text-muted">{account.email}</span>
                         </span>
+                        {isTaken && (
+                          <span className="ml-auto max-w-[45%] shrink-0 truncate rounded-full bg-content-bg px-2.5 py-1 text-xs font-semibold text-text-muted">
+                            {t('org.team.inOrg')}: {account.organizationName ?? '—'}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

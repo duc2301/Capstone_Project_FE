@@ -288,10 +288,10 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
                                 return nextSet;
                               });
                           }}
-                          className={`w-full rounded-[var(--radius-input)] border px-3 py-2 text-sm text-text outline-none disabled:opacity-50 ${
+                          className={`field-select py-2 pl-3 ${
                             mismatchIds.has(field.id)
                               ? 'border-danger bg-danger-light/30 focus:border-danger'
-                              : 'border-input-border bg-card focus:border-input-focus'
+                              : 'border-input-border bg-card'
                           }`}
                         >
                           <option value="">{t('naming.upload.select')}</option>

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import type { FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
-import { IssueSidePanel } from '@/features/issues';
+import { IssueSidePanel, useIssueDetail } from '@/features/issues';
 import { ModelCommentsPanel } from '@/features/model-markup';
 import { Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
@@ -27,10 +27,7 @@ function isInlineMarkupContentType(contentType: string | null | undefined): bool
 }
 
 export function IssueDetailPage() {
-  const { projectId, fileId, issueId } = useParams<{ projectId: string; fileId: string; issueId: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const folderId = searchParams.get('folder');
+  const { fileId, issueId } = useParams<{ projectId: string; fileId: string; issueId: string }>();
 
   const [info, setInfo] = useState<FileViewInfo | null>(null);
   const [versions, setVersions] = useState<FileVersion[]>([]);
@@ -41,6 +38,9 @@ export function IssueDetailPage() {
   const [viewer, setViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
 
   const { toast, showToast } = useToast();
+
+  const { data: issue, loading: issueLoading, error: issueError, reload: reloadIssue } = useIssueDetail(issueId);
+  const issueResolved = issue?.status === 'Closed';
 
   const handleViewerReady = useCallback((v: Autodesk.Viewing.GuiViewer3D | null) => setViewer(v), []);
 
@@ -92,15 +92,6 @@ export function IssueDetailPage() {
       clearInterval(timer);
     };
   }, [fileId, isModelProcessing, fetchView]);
-
-  const goBackToFile = useCallback(() => {
-    if (!projectId || !fileId) {
-      navigate('/projects');
-      return;
-    }
-    const folderQuery = folderId ? `?folder=${folderId}` : '';
-    navigate(`/projects/${projectId}/files/${fileId}/view${folderQuery}`);
-  }, [navigate, projectId, fileId, folderId]);
 
   const latestVersion = versions.find((v) => v.isCurrent) ?? versions[0] ?? null;
   const fileVersionId = latestVersion?.id ?? null;
@@ -162,12 +153,23 @@ export function IssueDetailPage() {
   let markupSlot: React.ReactNode;
   if (info?.kind === 'model') {
     markupSlot = viewer && fileId
-      ? <ModelCommentsPanel viewer={viewer} fileItemId={fileId} fileVersionId={fileVersionId} issueId={issueId} />
+      ? <ModelCommentsPanel viewer={viewer} fileItemId={fileId} fileVersionId={fileVersionId} issueId={issueId} readOnly={issueResolved} />
       : <p className="py-8 text-center text-sm text-text-muted">{t('markup.model.viewerLoading')}</p>;
   } else if (canMarkupInline) {
     markupSlot = <InlineCommentsPanel />;
   } else {
     markupSlot = <p className="py-8 text-center text-sm text-text-muted">{t('issues.page.markupUnsupported')}</p>;
+  }
+
+  if (issueResolved) {
+    markupSlot = (
+      <div className="space-y-3">
+        <p className="rounded-[var(--radius-card)] border border-success/30 bg-success-light px-3 py-2 text-xs font-medium text-success">
+          {t('issues.detail.resolvedReadOnly')}
+        </p>
+        {markupSlot}
+      </div>
+    );
   }
 
   const layout = (
@@ -188,16 +190,6 @@ export function IssueDetailPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={goBackToFile}
-            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-content-bg"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-            {t('issues.page.backToFile')}
-          </button>
         </header>
 
         <main className="relative min-h-0 flex-1 overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
@@ -209,7 +201,16 @@ export function IssueDetailPage() {
       {/* 400px: đồng nhất với panel trang chi tiết file */}
       <aside className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-card-border bg-card shadow-card xl:w-[400px]">
         {issueId && fileId ? (
-          <IssueSidePanel issueId={issueId} fileItemId={fileId} onToast={showToast} markupSlot={markupSlot} />
+          <IssueSidePanel
+            issueId={issueId}
+            fileItemId={fileId}
+            issue={issue}
+            loading={issueLoading}
+            error={issueError}
+            reload={reloadIssue}
+            onToast={showToast}
+            markupSlot={markupSlot}
+          />
         ) : null}
       </aside>
     </div>
@@ -226,6 +227,7 @@ export function IssueDetailPage() {
           url={info?.url ?? null}
           contentType={info?.contentType ?? null}
           enabled
+          readOnly={issueResolved}
           issueId={issueId}
         >
           {layout}

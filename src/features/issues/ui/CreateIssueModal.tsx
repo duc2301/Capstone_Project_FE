@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { IssueItem, IssuePriority, IssueType } from '@/entities/issue';
 import { ISSUE_DESCRIPTION_MIN, ISSUE_TITLE_MIN, issueApi, issueErrorMessage } from '@/entities/issue';
+import { toDateKey } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { useAssignableMembers } from '../model/useAssignableMembers';
@@ -33,11 +34,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
     if (membersError) onToast(membersError, 'error');
   }, [membersError, onToast]);
 
+  const today = toDateKey(new Date());
   const titleTooShort = title.trim().length > 0 && title.trim().length < ISSUE_TITLE_MIN;
   const descriptionTooShort = description.trim().length > 0 && description.trim().length < ISSUE_DESCRIPTION_MIN;
+  const dueDateInPast = dueDate.length > 0 && dueDate < today;
   const canSubmit =
     title.trim().length >= ISSUE_TITLE_MIN
     && description.trim().length >= ISSUE_DESCRIPTION_MIN
+    && !dueDateInPast
     && !busy;
 
   const handleSubmit = async () => {
@@ -99,7 +103,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
                 value={type}
                 onChange={(e) => setType(e.target.value as IssueType)}
                 disabled={busy}
-                className="field-input"
+                className="field-select"
               >
                 <option value="Issue">{t('issues.type.issue')}</option>
                 <option value="Rfi">{t('issues.type.rfi')}</option>
@@ -112,7 +116,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as IssuePriority)}
                 disabled={busy}
-                className="field-input"
+                className="field-select"
               >
                 <option value="Low">{t('issues.priority.low')}</option>
                 <option value="Medium">{t('issues.priority.medium')}</option>
@@ -127,11 +131,14 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
             <input
               type="date"
               value={dueDate}
+              min={today}
               onChange={(e) => setDueDate(e.target.value)}
               disabled={busy}
               className="field-input"
             />
-            <span className="field-hint">{t('issues.create.dueDateHint')}</span>
+            {dueDateInPast
+              ? <span className="field-hint text-danger">{t('issues.create.dueDatePast')}</span>
+              : <span className="field-hint">{t('issues.create.dueDateHint')}</span>}
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -140,7 +147,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               disabled={busy || membersLoading}
-              className="field-input"
+              className="field-select"
             >
               <option value="">{t('issues.create.assigneePlaceholder')}</option>
               {assignableMembers.map((m) => (
@@ -155,7 +162,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               value={assigneeOrgId}
               onChange={(e) => setAssigneeOrgId(e.target.value)}
               disabled={busy || !!assigneeId}
-              className="field-input"
+              className="field-select"
             >
               <option value="">{t('issues.create.assigneeOrgPlaceholder')}</option>
               {assignableOrganizations.map((o) => (

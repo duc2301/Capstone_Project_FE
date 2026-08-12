@@ -1,5 +1,7 @@
 export { UserAvatar } from './avatar';
 export type { UserAvatarSize } from './avatar';
+export { ToolbarIconButton } from './button';
+export type { ToolbarIconSize, ToolbarIconVariant } from './button';
 export { ConfirmDialog } from './confirm';
 export {
   ALL_TIME,
@@ -23,7 +25,8 @@ export { Modal } from './modal';
 export type { ModalProps } from './modal';
 export { Pagination, PaginationBar } from './pagination';
 export type { PaginationBarProps, PaginationProps } from './pagination';
-export { ActionIconButton, ActionPillButton, DeleteIcon, EditIcon, RowActions, ViewIcon } from './table';
-export type { ActionIconTone, ActionPillTone } from './table';
+export { SearchField } from './search';
+export { ActionIconButton, ActionPillButton, DeleteIcon, EditIcon, ListErrorCard, ListLoadingCard, ListTable, RowActions, ViewIcon } from './table';
+export type { ActionIconSize, ActionIconTone, ActionPillTone, ListTableColumn } from './table';
 export { Toast, useToast } from './toast';
 export type { ToastMessage, ToastType } from './toast';

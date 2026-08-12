@@ -1,4 +1,5 @@
 import { apsConfig } from '@/shared/config';
+import { t } from '@/shared/lib/i18n';
 
 let sdkPromise: Promise<void> | null = null;
 
@@ -33,7 +34,7 @@ export const loadViewerSdk = (): Promise<void> => {
     script.onerror = () => {
       sdkPromise = null;
       script.remove();
-      reject(new Error('Không nạp được APS Viewer SDK từ CDN của Autodesk.'));
+      reject(new Error(t('viewer.error.sdkLoadFailed')));
     };
 
     document.head.appendChild(script);

@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import type { FileVersion } from '@/entities/file-item';
 import { fileItemApi } from '@/entities/file-item';
 import { getApiErrorMessage } from '@/shared/api';
-import { ConfirmDialog, Modal } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, Modal, RowActions } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
@@ -127,26 +127,33 @@ export function FileVersionsModal({
                     {v.uploadedByName ? ` · ${v.uploadedByName}` : ''}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); void handleDownload(v); }}
-                  disabled={downloadingId !== null}
-                  className="shrink-0 rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {downloadingId === v.id
-                    ? t('documents.versions.downloading')
-                    : t('documents.versions.download')}
-                </button>
-                {canRestore && !isCurrent(v) && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setActionError(null); setConfirmVersion(v); }}
-                    disabled={restoringId !== null}
-                    className="shrink-0 rounded-[var(--radius-button)] border border-card-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {t('documents.versions.setCurrent')}
-                  </button>
-                )}
+                <RowActions>
+                  <ActionIconButton
+                    tone="primary"
+                    label={downloadingId === v.id
+                      ? t('documents.versions.downloading')
+                      : t('documents.versions.download')}
+                    disabled={downloadingId !== null}
+                    onClick={(e) => { e.stopPropagation(); void handleDownload(v); }}
+                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>}
+                  />
+                  {canRestore && !isCurrent(v) && (
+                    <ActionIconButton
+                      tone="primary"
+                      label={t('documents.versions.setCurrent')}
+                      disabled={restoringId !== null}
+                      onClick={(e) => { e.stopPropagation(); setActionError(null); setConfirmVersion(v); }}
+                      icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="1 4 1 10 7 10" />
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                      </svg>}
+                    />
+                  )}
+                </RowActions>
               </li>
             ))}
           </ul>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { buildMarkupAuthorOptions, FileNoteStatus, filterMarkupNotes } from '@/entities/file-note';
-import { MarkupNoteFilter, type MarkupStatusFilter } from '@/shared/components';
+import { ActionIconButton, DeleteIcon, MarkupNoteFilter, type MarkupStatusFilter } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { beginDraw, endDraw, hideMarkups, restoreNote } from '../model/apsMarkup';
 import { useModelMarkup } from '../model/useModelMarkup';
@@ -13,6 +13,7 @@ interface Props {
   fileItemId: string;
   fileVersionId: string | null;
   issueId?: string | null;
+  readOnly?: boolean;
 }
 
 function formatDateTime(iso: string | null): string {
@@ -22,7 +23,7 @@ function formatDateTime(iso: string | null): string {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId }: Props) {
+export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId, readOnly = false }: Props) {
   const { notes, loading, saving, error, addViewpointNote, deleteNote, resolveNote } = useModelMarkup(fileItemId, fileVersionId, issueId);
   const [drawing, setDrawing] = useState(false);
   const [draftText, setDraftText] = useState('');
@@ -90,7 +91,7 @@ export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId 
         </div>
       )}
 
-      {drawing ? (
+      {readOnly ? null : drawing ? (
         <div className="space-y-2 rounded-xl border border-card-border bg-content-bg/50 p-3">
           <p className="text-xs font-medium text-text-secondary">{t('markup.model.drawHint')}</p>
           <textarea
@@ -168,21 +169,26 @@ export function ModelCommentsPanel({ viewer, fileItemId, fileVersionId, issueId 
                   </div>
                   {note.content && <p className="whitespace-pre-wrap break-words text-sm text-text">{note.content}</p>}
                   <p className="mt-1 text-xs text-text-muted">{formatDateTime(note.createdAt)}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      type="button"
+                  <div className={`mt-2 flex items-center gap-1 ${readOnly ? 'hidden' : ''}`}>
+                    <ActionIconButton
+                      size="sm"
+                      tone={resolved ? 'neutral' : 'primary'}
+                      label={resolved ? t('markup.action.reopen') : t('markup.action.markDone')}
                       onClick={() => void resolveNote(note.id, resolved ? FileNoteStatus.Open : FileNoteStatus.Resolved)}
-                      className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
-                    >
-                      {resolved ? t('markup.action.reopen') : t('markup.action.markDone')}
-                    </button>
-                    <button
-                      type="button"
+                      icon={resolved ? (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="1 4 1 10 7 10" />
+                          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                        </svg>) : (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>)}
+                    />
+                    <ActionIconButton
+                      size="sm"
+                      tone="danger"
+                      label={t('markup.action.delete')}
                       onClick={() => void deleteNote(note.id)}
-                      className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-light"
-                    >
-                      {t('markup.action.delete')}
-                    </button>
+                      icon={<DeleteIcon size={15} />}
+                    />
                   </div>
                 </div>
               </li>

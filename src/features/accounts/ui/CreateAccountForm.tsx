@@ -12,6 +12,7 @@ interface Props {
 }
 
 const iconFieldClass = 'field-input pl-11';
+const iconSelectClass = 'field-select pl-11';
 const labelClass = 'field-label';
 const iconClass = 'pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted';
 
@@ -107,7 +108,7 @@ export function CreateAccountForm({ onSubmit, onCancel }: Props) {
               value={organizationId}
               onChange={(e) => setOrganizationId(e.target.value)}
               disabled={loadingOrganizations}
-              className={iconFieldClass}
+              className={iconSelectClass}
             >
               <option value="">{t('account.organizationNone')}</option>
               {organizations.map((organization) => (

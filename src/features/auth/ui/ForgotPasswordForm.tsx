@@ -44,19 +44,17 @@ export function ForgotPasswordForm() {
           <CheckCircleIcon />
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="heading-page">
-            Kiểm tra email của bạn
-          </h1>
+          <h1 className="heading-page">{t('auth.forgot.sentTitle')}</h1>
           <p className="text-base text-text-secondary">
-            Nếu email <strong>{email}</strong> tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.
-            Link có hiệu lực trong <strong>{t('auth.otpExpiry')}</strong>.
+            {t('auth.forgot.sentBody').replace('{email}', email)}{' '}
+            {t('auth.forgot.sentExpiry').replace('{duration}', t('auth.otpExpiry'))}
           </p>
         </div>
         <Link
           to="/login"
           className="text-sm font-semibold text-primary transition-colors hover:underline"
         >
-          ← Quay lại đăng nhập
+          {`← ${t('auth.forgot.backToLogin')}`}
         </Link>
       </div>
     );
@@ -65,12 +63,8 @@ export function ForgotPasswordForm() {
   return (
     <div className="flex w-full max-w-[448px] flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="heading-page">
-          Quên mật khẩu?
-        </h1>
-        <p className="text-base text-text-secondary">
-          Nhập email của bạn và chúng tôi sẽ gửi link để đặt lại mật khẩu.
-        </p>
+        <h1 className="heading-page">{t('auth.forgot.title')}</h1>
+        <p className="text-base text-text-secondary">{t('auth.forgot.subtitle')}</p>
       </header>
 
       <div className="flex flex-col gap-4 rounded-3xl border border-border-sage/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
@@ -90,7 +84,7 @@ export function ForgotPasswordForm() {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="forgot-email" className={LABEL_CLASS}>
-              Email công việc
+              {t('login.emailLabel')}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
@@ -115,7 +109,7 @@ export function ForgotPasswordForm() {
             disabled={loading}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] bg-primary text-sm font-semibold tracking-[0.14px] text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span>{loading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}</span>
+            <span>{loading ? t('auth.forgot.sending') : t('auth.forgot.submit')}</span>
             {!loading && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 5l7 7-7 7" />
@@ -126,9 +120,9 @@ export function ForgotPasswordForm() {
       </div>
 
       <p className="text-center text-sm font-semibold tracking-[0.14px] text-text-secondary">
-        Nhớ mật khẩu rồi?{' '}
+        {t('auth.forgot.remembered')}{' '}
         <Link to="/login" className="text-primary transition-colors hover:underline">
-          Đăng nhập
+          {t('login.submitShort')}
         </Link>
       </p>
     </div>

@@ -38,14 +38,21 @@ export function AuditLogTable({ items, loading }: Props) {
 
   return (
     <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-      <table className="w-full min-w-[820px] text-sm">
+      <table className="table-list min-w-[820px]">
+        <colgroup>
+          <col className="w-[140px]" />
+          <col className="w-[190px]" />
+          <col className="w-[150px]" />
+          <col className="w-[140px]" />
+          <col />
+        </colgroup>
         <thead className="sticky top-0 z-10">
           <tr className="table-head bg-content-bg">
             <th className={firstThClass}>{t('audit.col.time')}</th>
             <th className={thClass}>{t('audit.col.user')}</th>
             <th className={thClass}>{t('audit.col.action')}</th>
             <th className={thClass}>{t('audit.col.module')}</th>
-            <th className={`${thClass} w-full`}>{t('audit.col.detail')}</th>
+            <th className={thClass}>{t('audit.col.detail')}</th>
           </tr>
         </thead>
         <tbody>
@@ -61,17 +68,17 @@ export function AuditLogTable({ items, loading }: Props) {
                 </td>
 
                 {/* Người dùng: avatar chữ cái + tên */}
-                <td className="whitespace-nowrap px-5 py-4">
+                <td className="px-5 py-4 align-top">
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
                       {initial}
                     </span>
-                    <p className="text-sm font-medium text-text">{log.actorName ?? t('audit.unknownActor')}</p>
+                    <p className="cell-wrap min-w-0 text-sm font-medium text-text">{log.actorName ?? t('audit.unknownActor')}</p>
                   </div>
                 </td>
 
                 {/* Thao tác: pill + chấm màu cùng tông chữ */}
-                <td className="whitespace-nowrap px-5 py-4">
+                <td className="px-5 py-4 align-top">
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${action.className}`}>
                     <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
                     {action.label}
@@ -79,17 +86,17 @@ export function AuditLogTable({ items, loading }: Props) {
                 </td>
 
                 {/* Phân hệ (suy diễn) */}
-                <td className="whitespace-nowrap px-5 py-4 text-sm text-text-secondary">
+                <td className="cell-wrap px-5 py-4 align-top text-sm text-text-secondary">
                   {moduleLabel(log)}
                 </td>
 
                 {/* Chi tiết: dòng chính + phụ */}
-                <td className="px-5 py-4">
-                  <p className={`text-sm ${DETAIL_TONE_CLASS[detailTone(log.action)]}`}>
+                <td className="px-5 py-4 align-top">
+                  <p className={`cell-wrap text-sm ${DETAIL_TONE_CLASS[detailTone(log.action)]}`}>
                     {log.detail ?? `${log.entityType} · ${log.entityId}`}
                   </p>
                   {log.detail && log.entityType && (
-                    <p className="mt-0.5 text-xs text-text-muted">{log.entityType}</p>
+                    <p className="cell-wrap mt-0.5 text-xs text-text-muted">{log.entityType}</p>
                   )}
                 </td>
               </tr>

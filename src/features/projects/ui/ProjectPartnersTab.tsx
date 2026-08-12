@@ -8,6 +8,8 @@ import { Modal, PaginationBar } from '@/shared/components';
 import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
 
+import { AddPartnerModal } from './AddPartnerModal';
+
 const PAGE_SIZE = 8;
 
 interface PartnerCardData {
@@ -44,13 +46,17 @@ function buildPartner(organization: Organization, allGroups: Group[]): PartnerCa
 interface Props {
   partners: Organization[];
   groups: Group[];
+  organizations: Organization[];
+  canManage: boolean;
+  onAssignPartner: (groupId: string, organizationId: string) => Promise<void>;
 }
 
-export function ProjectPartnersTab({ partners, groups }: Props) {
+export function ProjectPartnersTab({ partners, groups, organizations, canManage, onAssignPartner }: Props) {
   const [query, setQuery] = useState('');
   const [groupFilter, setGroupFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<PartnerCardData | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const cards = useMemo(
     () => partners.map((org) => buildPartner(org, groups)),
@@ -105,13 +111,27 @@ export function ProjectPartnersTab({ partners, groups }: Props) {
         <select
           value={groupFilter}
           onChange={(e) => resetTo(() => setGroupFilter(e.target.value))}
-          className="shrink-0 rounded-[var(--radius-card)] border border-card-border/50 bg-card px-4 py-3 text-sm font-semibold text-text-secondary outline-none transition-colors focus:border-primary"
+          className="field-select w-auto shrink-0 rounded-[var(--radius-card)] border-card-border/50 bg-card py-3 font-semibold text-text-secondary"
         >
           <option value="all">{t('projectDetail.partners.allGroups')}</option>
           {groups.map((g) => (
             <option key={g.id} value={g.id}>{g.name}</option>
           ))}
         </select>
+
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="flex shrink-0 items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            {t('projectDetail.partners.add')}
+          </button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -143,6 +163,15 @@ export function ProjectPartnersTab({ partners, groups }: Props) {
         <Modal title={orgName(detail.organization)} onClose={() => setDetail(null)}>
           <PartnerDetail card={detail} />
         </Modal>
+      )}
+
+      {addOpen && (
+        <AddPartnerModal
+          groups={groups}
+          organizations={organizations}
+          onClose={() => setAddOpen(false)}
+          onSubmit={onAssignPartner}
+        />
       )}
     </div>
   );

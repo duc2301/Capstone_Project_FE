@@ -508,7 +508,14 @@ export function ConventionDetail({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] border-collapse text-left">
+            <table className="table-list min-w-[760px] border-collapse text-left">
+              <colgroup>
+                <col className="w-[22%]" />
+                <col />
+                <col className="w-[130px]" />
+                <col className="w-[150px]" />
+                <col className="w-[230px]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-card-border">
                   <th className={nameThClass}>{t('naming.table.component')}</th>
@@ -525,19 +532,19 @@ export function ConventionDetail({
                   return (
                     <tr key={field.id} className="border-b border-card-border align-middle last:border-b-0">
                       <td className="py-4 pr-4">
-                        <p className="text-sm font-semibold text-primary">{field.displayName}</p>
-                        <p className="font-mono text-xs text-text-muted">{field.code}</p>
+                        <p className="cell-wrap text-sm font-semibold text-primary">{field.displayName}</p>
+                        <p className="cell-wrap font-mono text-xs text-text-muted">{field.code}</p>
                       </td>
-                      <td className="py-4 pr-4 text-sm text-text-secondary">
+                      <td className="cell-wrap py-4 pr-4 text-sm text-text-secondary">
                         {field.description || <span className="text-text-placeholder">—</span>}
                       </td>
                       <td className="py-4 pr-4">
-                        <span className="inline-block rounded-md bg-input-bg px-2.5 py-1 font-mono text-xs font-semibold tracking-widest text-text-secondary">
+                        <span className="cell-wrap inline-block rounded-md bg-input-bg px-2.5 py-1 font-mono text-xs font-semibold tracking-widest text-text-secondary">
                           {fieldFormat(field)}
                         </span>
                       </td>
                       <td className="py-4 pr-4">
-                        <span className="font-mono text-sm font-semibold text-text">{fieldExample(field) || '—'}</span>
+                        <span className="cell-wrap block font-mono text-sm font-semibold text-text">{fieldExample(field) || '—'}</span>
                       </td>
                       <td className="py-4 pr-0">
                         {canConfigure ? (
@@ -577,7 +584,7 @@ export function ConventionDetail({
                                   t('naming.toast.updated'),
                                 );
                               }}
-                              className="w-24 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-2 py-1.5 text-xs text-text outline-none focus:border-input-focus disabled:opacity-50"
+                              className="field-select w-32 shrink-0 py-1.5 pl-2.5 pr-8 text-xs"
                             >
                               <option value="">{t('naming.detail.noLock')}</option>
                               {activeValues.map((v) => (

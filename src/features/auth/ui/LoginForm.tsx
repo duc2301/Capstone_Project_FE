@@ -63,12 +63,8 @@ export function LoginForm() {
   return (
     <div className="flex w-full max-w-[448px] flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="heading-page">
-          Chào mừng trở lại
-        </h1>
-        <p className="text-base text-text-secondary">
-          Vui lòng đăng nhập để truy cập dự án của bạn.
-        </p>
+        <h1 className="heading-page">{t('login.title')}</h1>
+        <p className="text-base text-text-secondary">{t('login.subtitle')}</p>
       </header>
 
       <div className="flex flex-col gap-4 rounded-3xl border border-border-sage/30 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
@@ -88,7 +84,7 @@ export function LoginForm() {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="login-email" className={LABEL_CLASS}>
-              Email công việc
+              {t('login.emailLabel')}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
@@ -137,7 +133,7 @@ export function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 tabIndex={-1}
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? t('auth.password.hide') : t('auth.password.show')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
               >
                 <EyeIcon open={showPassword} />
@@ -198,10 +194,10 @@ export function LoginForm() {
                 if (credentialResponse.credential) {
                   handleGoogleCredential(credentialResponse.credential);
                 } else {
-                  setGError('Không nhận được thông tin từ Google.');
+                  setGError(t('auth.google.noCredential'));
                 }
               }}
-              onError={() => setGError('Đăng nhập bằng Google thất bại. Vui lòng thử lại.')}
+              onError={() => setGError(t('auth.google.loginFailed'))}
               width="400"
               text="continue_with"
               shape="rectangular"

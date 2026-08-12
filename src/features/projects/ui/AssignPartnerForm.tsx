@@ -64,9 +64,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
 
   return (
     <div className="flex flex-col gap-6 pt-4">
-      <p className="text-sm text-text-secondary">
-        Chọn nhóm trong dự án, sau đó gán tổ chức quản lý cho nhóm đó.
-      </p>
+      <p className="text-sm text-text-secondary">{t('projects.assignPartner.subtitle')}</p>
 
       {error && (
         <div className="rounded-[var(--radius-input)] border border-danger/20 bg-danger-light p-3 text-sm text-danger">
@@ -158,7 +156,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
           onClick={handleSubmit}
           className="btn-modal-primary"
         >
-          {submitting ? t('common.loading') : 'Gán đối tác cho nhóm'}
+          {submitting ? t('common.loading') : t('projects.assignPartner.submit')}
         </button>
       </div>
     </div>

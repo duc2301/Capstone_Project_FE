@@ -113,7 +113,7 @@ function CheckControls({ stage, onStageChange, onCheck, busy, label }: CheckCont
         value={stage}
         onChange={(e) => onStageChange(Number(e.target.value) as LoiStage)}
         disabled={busy}
-        className="w-full rounded-[var(--radius-input)] border border-card-border bg-white/60 px-3 py-2.5 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
+        className="field-select border-card-border bg-white/60 pl-3 font-medium"
       >
         {LOI_STAGE_OPTIONS.map((option) => (
           <option key={option} value={option}>{stageLabel(option)}</option>

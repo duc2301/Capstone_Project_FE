@@ -13,7 +13,9 @@ import { organizationApi } from '@/entities/organization';
 import type { BepParseResult } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { getApiErrorMessage } from '@/shared/api';
+import { ActionIconButton, DeleteIcon, EditIcon, RowActions } from '@/shared/components';
 import { numberToWordsVN } from '@/shared/lib/format';
+import { newLocalId } from '@/shared/lib/id';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
@@ -84,20 +86,15 @@ const DEFAULT_GROUP_KEYS: TranslationKey[] = [
   'projects.defaultGroup.supervision',
 ];
 
-const newKey = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `g-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
 const buildDefaultGroups = (): GroupDraft[] =>
-  DEFAULT_GROUP_KEYS.map((key) => ({ key: newKey(), name: t(key), description: '', organizationId: null }));
+  DEFAULT_GROUP_KEYS.map((key) => ({ key: newLocalId(), name: t(key), description: '', organizationId: null }));
 
 /* ── Khởi tạo nhanh từ BEP: seed state + match tên tổ chức -> Guid ── */
 const buildInitialState = (bep?: BepParseResult): StepperState => {
   const groups: GroupDraft[] =
     bep && bep.groups.length > 0
       ? bep.groups.map((g) => ({
-          key: newKey(),
+          key: newLocalId(),
           name: g.name,
           description: g.description ?? '',
           organizationId: null,
@@ -107,7 +104,7 @@ const buildInitialState = (bep?: BepParseResult): StepperState => {
   const packages: StepperPackage[] =
     bep && bep.packages.length > 0
       ? bep.packages.map((p) => ({
-          id: newKey(),
+          id: newLocalId(),
           payload: {
             projectId: '',
             name: p.name,
@@ -163,6 +160,8 @@ const matchOrg = (name: string | null | undefined, orgs: Organization[]): Organi
 const inputCls =
   'w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg px-4 py-3 text-sm text-text outline-none transition-all duration-200 placeholder:text-text-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20';
 
+const selectCls = 'field-select py-3';
+
 // removed emptyPkg()
 
 function fmtCurrency(value: number, currency: string): string {
@@ -198,12 +197,14 @@ function FileDropzone({
   onRemove,
   label,
   hint,
+  required,
 }: {
   files: File[];
   onAdd: (newFiles: File[]) => void;
   onRemove: (index: number) => void;
   label: string;
   hint?: string;
+  required?: boolean;
 }) {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -218,7 +219,7 @@ function FileDropzone({
 
   return (
     <div className="space-y-3">
-      <SectionLabel>{label}</SectionLabel>
+      <SectionLabel required={required}>{label}</SectionLabel>
       {hint && <p className="text-xs text-text-muted -mt-1 mb-2">{hint}</p>}
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -349,8 +350,10 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
   /* ── Navigation ── */
   const canProceed = useMemo(() => {
     switch (step) {
-      case 0: return state.projectName.trim().length > 0;
-      case 1: return true; // files optional
+      case 0: return state.projectName.trim().length > 0
+        && state.projectCode.trim().length > 0
+        && state.ownerOrganizationId.length > 0;
+      case 1: return state.mandatoryFiles.length > 0;
       case 2: return true; // package optional
       case 3: return state.groups.some((g) => g.name.trim());
       case 4: return true; // org assignment optional
@@ -704,11 +707,12 @@ function Step1ProjectInfo({
         </div>
 
         <div>
-          <SectionLabel>{t('projects.stepper.s1.code')}</SectionLabel>
+          <SectionLabel required>{t('projects.stepper.s1.code')}</SectionLabel>
           <input
             value={state.projectCode}
             onChange={(e) => update('projectCode', e.target.value)}
             placeholder={t('projects.stepper.s1.codePlaceholder')}
+            required
             className={inputCls}
           />
         </div>
@@ -726,12 +730,13 @@ function Step1ProjectInfo({
 
         {/* Chủ đầu tư — trường thông tin đầu tiên của BEP, lưu FK sang Organizations */}
         <div>
-          <SectionLabel>{t('projects.form.owner')}</SectionLabel>
+          <SectionLabel required>{t('projects.form.owner')}</SectionLabel>
           <select
             value={state.ownerOrganizationId}
             onChange={(e) => update('ownerOrganizationId', e.target.value)}
             disabled={orgsLoading}
-            className={inputCls}
+            required
+            className={selectCls}
           >
             <option value="">{orgsLoading ? t('common.loading') : t('projects.form.ownerSelect')}</option>
             {organizations.map((org) => (
@@ -829,11 +834,12 @@ function Step2MandatoryFiles({ state, update }: { state: StepperState; update: <
         onRemove={(idx) => update('mandatoryFiles', state.mandatoryFiles.filter((_, i) => i !== idx))}
         label={t('projects.stepper.s2.uploadLabel')}
         hint={t('projects.stepper.s2.hint')}
+        required
       />
 
       {state.mandatoryFiles.length === 0 && (
-        <div className="rounded-xl border border-dashed border-card-border bg-content-bg p-6 text-center">
-          <p className="text-sm text-text-muted">{t('projects.stepper.s2.empty')}</p>
+        <div className="rounded-xl border border-dashed border-danger/40 bg-danger-light/50 p-6 text-center">
+          <p className="text-sm font-medium text-danger">{t('projects.stepper.s2.empty')}</p>
         </div>
       )}
     </div>
@@ -861,7 +867,7 @@ function Step3PackageInfo({
         p.id === editingPackageId ? { ...p, payload, files } : p
       ));
     } else {
-      update('packages', [...state.packages, { id: newKey(), payload, files }]);
+      update('packages', [...state.packages, { id: newLocalId(), payload, files }]);
     }
     setIsFormOpen(false);
   };
@@ -916,25 +922,23 @@ function Step3PackageInfo({
                     })()}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
+                <RowActions>
+                  <ActionIconButton
+                    tone="primary"
+                    label={t('projects.stepper.s3.edit')}
+                    icon={<EditIcon />}
                     onClick={() => {
                       setEditingPackageId(pkgItem.id);
                       setIsFormOpen(true);
                     }}
-                    className="p-2 text-text-muted hover:text-primary transition-colors"
-                  >
-                    {t('projects.stepper.s3.edit')}
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <ActionIconButton
+                    tone="danger"
+                    label={t('projects.stepper.s3.delete')}
+                    icon={<DeleteIcon />}
                     onClick={() => removePackage(pkgItem.id)}
-                    className="p-2 text-text-muted hover:text-danger transition-colors"
-                  >
-                    {t('projects.stepper.s3.delete')}
-                  </button>
-                </div>
+                  />
+                </RowActions>
               </div>
             ))}
           </div>
@@ -1014,7 +1018,7 @@ function Step4Groups({
     setGroups((prev) => prev.map((g) => (g.key === key ? { ...g, ...patch } : g)));
 
   const addGroup = () =>
-    setGroups((prev) => [...prev, { key: newKey(), name: '', description: '', organizationId: '' }]);
+    setGroups((prev) => [...prev, { key: newLocalId(), name: '', description: '', organizationId: '' }]);
 
   const removeGroup = (key: string) =>
     setGroups((prev) => prev.filter((g) => g.key !== key));
@@ -1164,7 +1168,7 @@ function Step5Partners({
                     <select
                       value={group.organizationId || ''}
                       onChange={(e) => setOrgForGroup(group.key, e.target.value)}
-                      className={inputCls}
+                      className={selectCls}
                     >
                       <option value="">{t('projects.stepper.s5.select')}</option>
                       {organizations.map((org) => (

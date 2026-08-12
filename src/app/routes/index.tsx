@@ -24,6 +24,7 @@ const OrganizationDetailsPage = lazy(() => import('@/pages/organization-details'
 const ProfilePage = lazy(() => import('@/pages/profile').then((m) => ({ default: m.ProfilePage })));
 const ProjectsPage = lazy(() => import('@/pages/projects').then((m) => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('@/pages/project-detail').then((m) => ({ default: m.ProjectDetailPage })));
+const PermissionMatrixPage = lazy(() => import('@/pages/permission-matrix').then((m) => ({ default: m.PermissionMatrixPage })));
 const PackageDetailPage = lazy(() => import('@/pages/package-detail').then((m) => ({ default: m.PackageDetailPage })));
 const ReturnRequestManagementPage = lazy(() => import('@/pages/return-request-management').then((m) => ({ default: m.ReturnRequestManagementPage })));
 const NotificationsPage = lazy(() => import('@/pages/notifications').then((m) => ({ default: m.NotificationsPage })));
@@ -143,6 +144,16 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <ProjectDetailPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:projectId/permission-matrix"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <PermissionMatrixPage />
               </AdminLayout>
             </RequireAuth>
           }

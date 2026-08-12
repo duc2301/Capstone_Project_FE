@@ -515,6 +515,22 @@ export function ProjectDetailPage() {
               {t(item.key)}
             </button>
           ))}
+
+        {/* Lối tắt sang màn ma trận phân quyền (route riêng). Hiển thị cho Admin/PM/Leader;
+            BE vẫn chốt 403 nên trang tự xử lý khi không đủ quyền. */}
+        {(isAdmin || isManager || isProjectLeader) && (
+          <button
+            type="button"
+            onClick={() => navigate(`/projects/${project.id}/permission-matrix`)}
+            className="-mb-px ml-auto inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent py-3 text-sm font-semibold tracking-[0.01em] text-text-secondary/70 transition-colors hover:text-primary"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
+            </svg>
+            {t('projectDetail.nav.permissionMatrix')}
+          </button>
+        )}
       </nav>
 
       {/* Nội dung tab tự cuộn -> thanh tab nằm ngoài vùng cuộn nên đứng yên */}

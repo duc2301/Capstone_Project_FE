@@ -13,7 +13,7 @@ import type {
 import { MatrixTargetType, PermissionLevel as Level, permissionMatrixApi } from '@/entities/permission-matrix';
 import { getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
-import { cellKey, cellSelectValue } from './permissionMatrixFormat';
+import { areaAllowsWrite, cellKey, cellSelectValue } from './permissionMatrixFormat';
 
 export interface SaveOutcome {
   ok: boolean;
@@ -45,8 +45,10 @@ export interface UsePermissionMatrixReturn {
   save: () => Promise<SaveOutcome>;
 }
 
-/* Kiểm tra mức hợp lệ theo loại đối tượng (mirror ràng buộc BE để đỡ round-trip). */
-function isLevelAllowed(targetType: MatrixTargetType, level: PermissionLevel): boolean {
+/* Kiểm tra mức hợp lệ theo loại đối tượng + khu vực (mirror ràng buộc BE để đỡ round-trip). */
+function isLevelAllowed(targetType: MatrixTargetType, area: MatrixArea, level: PermissionLevel): boolean {
+  // Ghi (W) chỉ cho phép ở WIP — các vùng khác là chỉ đọc.
+  if (level === Level.Write && !areaAllowsWrite(area)) return false;
   if (targetType === MatrixTargetType.Folder) {
     return level === Level.NoAccess || level === Level.Read || level === Level.Write;
   }
@@ -62,7 +64,7 @@ function buildChanges(
   for (const [key, level] of overrides) {
     const [targetId, projectParticipantId] = key.split('|');
     const row = rowByTarget.get(targetId);
-    if (!row || !isLevelAllowed(row.targetType, level)) continue;
+    if (!row || !isLevelAllowed(row.targetType, row.area, level)) continue;
     changes.push({ targetId, targetType: row.targetType, projectParticipantId, level });
   }
   return changes;
@@ -191,7 +193,7 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
   const setCell = useCallback(
     (row: MatrixRow, cell: MatrixCell, level: PermissionLevel) => {
       if (!cell.editable || !row.assignable) return;
-      if (!isLevelAllowed(row.targetType, level)) return;
+      if (!isLevelAllowed(row.targetType, row.area, level)) return;
       const key = cellKey(row.targetId, cell.projectParticipantId);
       const original = cellSelectValue(cell);
       setOverrides((prev) => {

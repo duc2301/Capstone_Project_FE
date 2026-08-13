@@ -1,12 +1,6 @@
 import type { MatrixCell, MatrixRow, PermissionLevel } from '@/entities/permission-matrix';
 import { MatrixTargetType, PermissionLevel as Level } from '@/entities/permission-matrix';
-import {
-  FILE_LEVEL_OPTIONS,
-  FOLDER_LEVEL_OPTIONS,
-  levelLabel,
-  levelLetter,
-  levelSwatchClass,
-} from '../model/permissionMatrixFormat';
+import { levelLabel, levelLetter, levelOptionsFor, levelSwatchClass } from '../model/permissionMatrixFormat';
 
 interface PermissionCellProps {
   row: MatrixRow;
@@ -19,7 +13,10 @@ interface PermissionCellProps {
 
 export function PermissionCell({ row, cell, value, dirty, onChange }: PermissionCellProps) {
   const isFile = row.targetType === MatrixTargetType.File;
-  const options = isFile ? FILE_LEVEL_OPTIONS : FOLDER_LEVEL_OPTIONS;
+  // Tuỳ chọn theo khu vực (Shared/Published/Archived không có Ghi). Vẫn giữ giá trị
+  // hiện tại nếu vì lý do nào đó nằm ngoài danh sách -> select không bị trống.
+  const areaOptions = levelOptionsFor(row.targetType, row.area);
+  const options = areaOptions.includes(value) ? areaOptions : [value, ...areaOptions];
   // Người dùng vừa chọn "đặt lại về kế thừa" (chưa lưu).
   const inheritPending = value === Level.Inherit;
   // File đang kế thừa từ thư mục cha và chưa bị sửa -> tô nhạt/nghiêng.

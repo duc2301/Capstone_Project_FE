@@ -1,5 +1,5 @@
-import type { MatrixArea, MatrixCell, PermissionLevel } from '@/entities/permission-matrix';
-import { MatrixArea as Area, PermissionLevel as Level } from '@/entities/permission-matrix';
+import type { MatrixArea, MatrixCell, MatrixTargetType, PermissionLevel } from '@/entities/permission-matrix';
+import { MatrixArea as Area, MatrixTargetType as TargetType, PermissionLevel as Level } from '@/entities/permission-matrix';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -45,15 +45,18 @@ export const levelSwatchClass = (level: PermissionLevel): string => {
   }
 };
 
-/* Các tuỳ chọn của dropdown theo loại đối tượng.
- * Folder: N/R/W. File: Inherit + N/R/W. */
-export const FOLDER_LEVEL_OPTIONS: PermissionLevel[] = [Level.NoAccess, Level.Read, Level.Write];
-export const FILE_LEVEL_OPTIONS: PermissionLevel[] = [
-  Level.Inherit,
-  Level.NoAccess,
-  Level.Read,
-  Level.Write,
-];
+/* Ghi (W) chỉ được phép ở khu vực WIP — Shared/Published/Archived là vùng chỉ đọc,
+ * không dành cho việc tải/ghi tệp. */
+export const areaAllowsWrite = (area: MatrixArea): boolean => area === Area.Wip;
+
+/* Các tuỳ chọn của dropdown theo loại đối tượng + khu vực.
+ * Folder: N/R(/W ở WIP). File: Inherit + N/R(/W ở WIP). */
+export const levelOptionsFor = (targetType: MatrixTargetType, area: MatrixArea): PermissionLevel[] => {
+  const base: PermissionLevel[] = areaAllowsWrite(area)
+    ? [Level.NoAccess, Level.Read, Level.Write]
+    : [Level.NoAccess, Level.Read];
+  return targetType === TargetType.File ? [Level.Inherit, ...base] : base;
+};
 
 /* Giá trị "đang chọn" của dropdown cho 1 ô = mức hiệu lực của ô.
  * File đang kế thừa vẫn hiển thị chữ cái mức hiệu lực (tô nhạt/nghiêng ở UI),

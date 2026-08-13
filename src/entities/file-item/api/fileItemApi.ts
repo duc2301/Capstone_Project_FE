@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { FileListItem, FilePermissionEntry, FilePermissionUiDto, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
+import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
@@ -59,6 +59,9 @@ export const fileItemApi = {
 
   /** Xóa file */
   delete: (fileItemId: string) => axiosInstance.delete<ApiResponse<unknown>>(`/file-items/${fileItemId}`),
+
+  deleteFlagged: (fileItemId: string) =>
+    axiosInstance.delete<ApiResponse<DeleteFileResult>>(`/file-items/${fileItemId}/flagged`),
 
   /** Niêm phong lưu trữ: PM/Admin chốt bản Published chính thức của file vào vùng Archived. */
   archive: (fileItemId: string) =>

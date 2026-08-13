@@ -10,7 +10,7 @@ import { issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
 import { useProjectIssues } from '../model/useProjectIssues';
 import { IssueTableRow } from './IssueTableRow';
 
-const STATUS_FILTERS: (IssueStatus | 'all')[] = ['all', 'Open', 'InProgress', 'Answered', 'Closed'];
+const STATUS_FILTERS: (IssueStatus | 'all')[] = ['all', 'Open', 'InProgress', 'Closed'];
 const PRIORITY_FILTERS: (IssuePriority | 'all')[] = ['all', 'Low', 'Medium', 'High', 'Critical'];
 
 const PAGE_SIZE = 20;

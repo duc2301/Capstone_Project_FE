@@ -5,8 +5,8 @@ import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
 import type {
+  AssignableGroup,
   AssignableMember,
-  AssignableOrganization,
   CreateIssuePayload,
   IssueAttachment,
   IssueItem,
@@ -17,10 +17,11 @@ import type {
   ProjectIssueListItem,
 } from '../model/issue.types';
 
-interface RawAssignableOrganization {
-  organizationId: string;
+interface RawAssignableGroup {
+  groupId: string;
+  groupName?: string | null;
   organizationName?: string | null;
-  groupNames?: string[] | null;
+  memberCount?: number | null;
 }
 
 interface RawIssueParticipant {
@@ -55,6 +56,9 @@ interface RawIssueItem {
   assignedToAccountId?: string | null;
   assignedToName?: string | null;
   assignedToOrganizationId?: string | null;
+  assignedToOrganizationName?: string | null;
+  assignedToGroupId?: string | null;
+  assignedToGroupName?: string | null;
   dueDate?: string | null;
   linkedFolderId?: string | null;
   linkedFileItemId?: string | null;
@@ -78,7 +82,7 @@ function normalizeIssueType(value: number | string): IssueType {
 
 function normalizeIssueStatus(value: number | string): IssueStatus {
   if (value === 1 || value === 'InProgress') return 'InProgress';
-  if (value === 2 || value === 'Answered') return 'Answered';
+  if (value === 2 || value === 'Answered') return 'InProgress';
   if (value === 3 || value === 'Closed') return 'Closed';
   return 'Open';
 }
@@ -125,6 +129,9 @@ function mapIssueItem(item: RawIssueItem): IssueItem {
     assignedToAccountId: item.assignedToAccountId ?? null,
     assignedToName: item.assignedToName ?? null,
     assignedToOrganizationId: item.assignedToOrganizationId ?? null,
+    assignedToOrganizationName: item.assignedToOrganizationName ?? null,
+    assignedToGroupId: item.assignedToGroupId ?? null,
+    assignedToGroupName: item.assignedToGroupName ?? null,
     dueDate: item.dueDate ?? null,
     linkedFolderId: item.linkedFolderId ?? null,
     linkedFileItemId: item.linkedFileItemId ?? null,
@@ -138,6 +145,8 @@ function mapIssueItem(item: RawIssueItem): IssueItem {
 }
 
 interface RawProjectIssueListItem {
+  assignedToGroupId?: string | null;
+  assignedToGroupName?: string | null;
   id: string;
   projectId: string;
   projectName?: string | null;
@@ -173,6 +182,8 @@ function mapProjectIssueListItem(item: RawProjectIssueListItem): ProjectIssueLis
     raisedByName: item.raisedByName ?? null,
     assignedToAccountId: item.assignedToAccountId ?? null,
     assignedToName: item.assignedToName ?? null,
+    assignedToGroupId: item.assignedToGroupId ?? null,
+    assignedToGroupName: item.assignedToGroupName ?? null,
     dueDate: item.dueDate ?? null,
     createdAt: item.createdAt ?? null,
     updatedAt: item.updatedAt ?? null,
@@ -232,24 +243,15 @@ export const issueApi = {
     return mapIssueItem(unwrap(data));
   },
 
-  start: async (issueId: string): Promise<IssueItem> => {
-    const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(`/issues/${issueId}/start`);
-    return mapIssueItem(unwrap(data));
-  },
-
-  answer: async (issueId: string): Promise<IssueItem> => {
-    const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(`/issues/${issueId}/answer`);
-    return mapIssueItem(unwrap(data));
-  },
-
-  getAssignableOrganizations: async (fileItemId: string): Promise<AssignableOrganization[]> => {
-    const { data } = await axiosInstance.get<ApiResponse<RawAssignableOrganization[]>>(
-      `/issues/assignable-organizations/${fileItemId}`,
+  getAssignableGroups: async (fileItemId: string): Promise<AssignableGroup[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawAssignableGroup[]>>(
+      `/issues/assignable-groups/${fileItemId}`,
     );
-    return (unwrap(data) ?? []).map((o) => ({
-      organizationId: o.organizationId,
-      organizationName: o.organizationName ?? '',
-      groupNames: o.groupNames ?? [],
+    return (unwrap(data) ?? []).map((g) => ({
+      groupId: g.groupId,
+      groupName: g.groupName ?? '',
+      organizationName: g.organizationName ?? null,
+      memberCount: g.memberCount ?? 0,
     }));
   },
 

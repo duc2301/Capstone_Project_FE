@@ -53,6 +53,7 @@ export interface FolderContentsFileDto {
   /* Nhãn phiên bản BE dựng sẵn, vd "P03.01", "C01" */
   displayVersion: string | null;
   uploaderEmail: string | null;
+  uploadedByAccountId?: string | null;
   fileSizeBytes: number;
   /* Định dạng của bản hiện hành, vd "DWG", "RVT" (null nếu chưa có nội dung) */
   format?: string | null;

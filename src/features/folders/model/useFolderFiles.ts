@@ -35,6 +35,7 @@ function toFileListItem(dto: FolderContentsFileDto): FileListItem {
     sizeBytes: dto.fileSizeBytes,
     format: dto.format ?? null,
     createdByAccountId: null,
+    currentVersionUploadedByAccountId: dto.uploadedByAccountId ?? null,
     authorName: dto.uploaderEmail,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,

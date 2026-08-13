@@ -2,7 +2,8 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { LoiCheckResult, LoiStage, LoiUnmappedParam } from '@/entities/loi-check';
-import { DEFAULT_LOI_STAGE, loiAliasApi, loiCheckApi, LoiCheckStatus } from '@/entities/loi-check';
+import { DEFAULT_LOI_STAGE, loiAliasApi, loiCheckApi, LoiCheckStatus, loiRuleApi } from '@/entities/loi-check';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
 const POLL_INTERVAL_MS = 3000;
@@ -21,6 +22,17 @@ export function useLoiCheck(fileItemId: string | undefined, projectId: string | 
   const [recomputing, setRecomputing] = useState(false);
   const [mappingParam, setMappingParam] = useState<string | null>(null);
   const [mappingError, setMappingError] = useState<string | null>(null);
+
+  /* Tên bộ luật dự án đang áp dụng — chỉ để hiển thị, hỏng thì panel vẫn chạy. */
+  const { data: ruleSetName } = useAsyncData<string | null>(
+    `loi-rule-set:${projectId ?? ''}`,
+    async () => {
+      if (!projectId) return null;
+      const { data } = await loiRuleApi.getProjectRuleSet(projectId);
+      return data.isSuccess ? data.result?.name ?? null : null;
+    },
+    { fallback: null, enabled: Boolean(projectId) },
+  );
 
   const fetchOnce = useCallback(async (): Promise<LoiCheckResult | null> => {
     if (!fileItemId) return null;
@@ -122,6 +134,7 @@ export function useLoiCheck(fileItemId: string | undefined, projectId: string | 
 
   return {
     result,
+    ruleSetName,
     stage,
     setStage,
     loading,

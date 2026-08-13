@@ -251,12 +251,13 @@ function MappingSection({ items, onConfirm, busyParam, error }: MappingSectionPr
 
 interface ResultBodyProps {
   result: LoiCheckResult;
+  ruleSetName: string | null;
   controls: React.ReactNode;
   mapping: React.ReactNode;
   reportHref: string | null;
 }
 
-function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) {
+function ResultBody({ result, ruleSetName, controls, mapping, reportHref }: ResultBodyProps) {
   const meta = verdictMeta(result.verdict);
   const notEvaluated = isNotEvaluated(result);
   const byDiscipline = useMemo(() => {
@@ -282,7 +283,9 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
         <h2 className="heading-entity">{t('loi.title')}</h2>
         <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>
       </div>
-      <p className="mt-1 text-sm text-text-muted">{t('loi.subtitle')}</p>
+      <p className="mt-1 text-sm text-text-muted">
+        {ruleSetName ? `${t('loi.ruleSet')}: ${ruleSetName}` : t('loi.ruleSetNone')}
+      </p>
 
       <div className="mt-5 rounded-[var(--radius-card)] border border-card-border bg-white/60 p-4">
         <div className="flex items-end justify-between">
@@ -378,7 +381,7 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
 
 export function LoiCheckPanel({ fileItemId, projectId, readOnly = false }: { fileItemId: string; projectId?: string; readOnly?: boolean }) {
   const {
-    result, stage, setStage, loading, error, recompute, recomputing, isRunning,
+    result, ruleSetName, stage, setStage, loading, error, recompute, recomputing, isRunning,
     canMap, confirmMapping, mappingParam, mappingError,
   } = useLoiCheck(fileItemId, projectId);
 
@@ -450,5 +453,13 @@ export function LoiCheckPanel({ fileItemId, projectId, readOnly = false }: { fil
     );
   }
 
-  return <ResultBody result={result} controls={controls} mapping={mapping} reportHref={reportHref} />;
+  return (
+    <ResultBody
+      result={result}
+      ruleSetName={ruleSetName}
+      controls={controls}
+      mapping={mapping}
+      reportHref={reportHref}
+    />
+  );
 }

@@ -10,7 +10,7 @@ import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
-import { Toast, ToolbarIconButton, useToast } from '@/shared/components';
+import { ConfirmDialog, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -136,6 +136,8 @@ export function DocumentsTab({
 
   const [uploadFolder, setUploadFolder] = useState<FolderTreeNode | null>(null);
   const [fileMenu, setFileMenu] = useState<{ file: FileListItem; x: number; y: number } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FileListItem | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [versionsFor, setVersionsFor] = useState<FileListItem | null>(null);
   const [submitApprovalFor, setSubmitApprovalFor] = useState<FileListItem | null>(null);
   const [submitApprovalError, setSubmitApprovalError] = useState<string | null>(null);
@@ -323,6 +325,33 @@ export function DocumentsTab({
   };
 
   // Niêm phong lưu trữ bản Published hiện hành -> tạo/cộng dồn bản lưu trong Archived.
+  const canDeleteFlagged = (file: FileListItem) =>
+    !!selected
+    && selected.area === CdeArea.Wip
+    && file.warnning === true
+    && file.status === FileItemStatus.Draft
+    && !file.isSigned
+    && (isAccountAdmin(currentUser?.role)
+      || isProjectManager
+      || file.currentVersionUploadedByAccountId === currentUser?.accountId);
+
+  const handleDeleteFlagged = async () => {
+    if (!deleteTarget) return;
+    setDeleteBusy(true);
+    try {
+      const { data } = await fileItemApi.deleteFlagged(deleteTarget.id);
+      await refetchFiles();
+      showToast(data.result?.fileRemoved
+        ? t('documents.delete.toastFile')
+        : t('documents.delete.toastVersion'));
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast(folderErrorMessage(err, t('common.error')), 'error');
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
   const handleArchive = async (file: FileListItem) => {
     try {
       await fileItemApi.archive(file.id);
@@ -574,6 +603,19 @@ export function DocumentsTab({
           onReturnToWip={() => setReturnRequestFor(fileMenu.file)}
           canArchive={canArchive(fileMenu.file)}
           onArchive={() => handleArchive(fileMenu.file)}
+          canDelete={canDeleteFlagged(fileMenu.file)}
+          onDelete={() => setDeleteTarget(fileMenu.file)}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('documents.delete.title')}
+          message={`${deleteTarget.name} · ${deleteTarget.displayVersion ?? ''} — ${t('documents.delete.message')}`}
+          confirmLabel={t('common.action.delete')}
+          busy={deleteBusy}
+          onConfirm={handleDeleteFlagged}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
 

@@ -2477,7 +2477,6 @@ export const translations = {
   'matrix.level.noAccess': 'Không truy cập',
   'matrix.level.read': 'Đọc',
   'matrix.level.write': 'Ghi',
-  'matrix.legend.inherited': 'Kế thừa từ thư mục',
   'matrix.col.target': 'Thư mục / Tệp',
   'matrix.tree.expandAll': 'Mở tất cả',
   'matrix.tree.collapseAll': 'Thu tất cả',

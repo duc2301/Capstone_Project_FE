@@ -20,46 +20,39 @@ interface PermissionCellProps {
 export function PermissionCell({ row, cell, value, dirty, onChange }: PermissionCellProps) {
   const isFile = row.targetType === MatrixTargetType.File;
   const options = isFile ? FILE_LEVEL_OPTIONS : FOLDER_LEVEL_OPTIONS;
-  const inheritSelected = isFile && value === Level.Inherit;
-  // Mức hiển thị (màu + chữ cái): khi kế thừa -> mức hiệu lực của thư mục cha.
-  const effective = inheritSelected ? cell.level : value;
+  // Người dùng vừa chọn "đặt lại về kế thừa" (chưa lưu).
+  const inheritPending = value === Level.Inherit;
+  // File đang kế thừa từ thư mục cha và chưa bị sửa -> tô nhạt/nghiêng.
+  const showInherited = isFile && cell.isInherited && !dirty;
   const disabled = !cell.editable;
 
   const className = [
-    'w-full min-w-[68px] cursor-pointer appearance-none rounded-md border px-2 py-1.5 text-center',
-    'text-xs font-semibold outline-none transition-colors focus:ring-2 focus:ring-primary/30',
-    levelSwatchClass(effective),
-    inheritSelected ? 'italic opacity-75' : '',
-    dirty ? 'ring-2 ring-primary ring-offset-1 ring-offset-card' : '',
+    'w-full min-w-[52px] cursor-pointer appearance-none rounded border px-1.5 py-1 text-center',
+    'text-sm font-bold outline-none transition-colors focus:ring-2 focus:ring-primary/30',
+    levelSwatchClass(inheritPending ? Level.Inherit : value),
+    showInherited || inheritPending ? 'italic opacity-70' : '',
+    dirty ? 'ring-2 ring-primary ring-offset-1 ring-offset-content-bg' : '',
     disabled ? 'cursor-not-allowed opacity-60' : '',
   ].join(' ');
+
+  const title = showInherited
+    ? `${levelLabel(cell.level)} · ${levelLabel(Level.Inherit)}`
+    : levelLabel(inheritPending ? Level.Inherit : value);
 
   return (
     <select
       className={className}
       value={value}
       disabled={disabled}
-      aria-label={`${row.name} · ${levelLabel(effective)}`}
-      title={
-        disabled
-          ? levelLabel(effective)
-          : inheritSelected
-            ? `${levelLabel(Level.Inherit)} → ${levelLabel(cell.level)}`
-            : levelLabel(effective)
-      }
+      aria-label={`${row.name} · ${title}`}
+      title={title}
       onChange={(e) => onChange(Number(e.target.value) as PermissionLevel)}
     >
-      {options.map((lvl) =>
-        lvl === Level.Inherit ? (
-          <option key={lvl} value={lvl}>
-            {levelLabel(lvl)} ({levelLetter(cell.level)})
-          </option>
-        ) : (
-          <option key={lvl} value={lvl}>
-            {levelLetter(lvl)} · {levelLabel(lvl)}
-          </option>
-        ),
-      )}
+      {options.map((lvl) => (
+        <option key={lvl} value={lvl} title={levelLabel(lvl)}>
+          {levelLetter(lvl)}
+        </option>
+      ))}
     </select>
   );
 }

@@ -58,7 +58,7 @@ export function PermissionMatrixPage() {
   };
 
   const header = (
-    <header className="flex flex-col gap-2 border-b border-card-border/60 pb-4">
+    <header className="flex shrink-0 flex-col gap-2 border-b border-card-border/60 pb-4">
       <BackButton onClick={goBack} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -89,9 +89,9 @@ export function PermissionMatrixPage() {
   } else {
     const data = matrix.data;
     body = (
-      <div className="space-y-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
         {/* Thanh công cụ: lọc khu vực + lưu/huỷ */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-text-secondary">{t('matrix.filter.area')}</label>
             <select
@@ -135,7 +135,7 @@ export function PermissionMatrixPage() {
 
         {/* Phạm vi của leader: chỉ sửa được thư mục được uỷ quyền */}
         {!data.actor.isFullAccess && (
-          <div className="rounded-[var(--radius-card)] border border-info/20 bg-info-light/50 px-4 py-3 text-sm text-text-secondary">
+          <div className="shrink-0 rounded-[var(--radius-card)] border border-info/20 bg-info-light/50 px-4 py-3 text-sm text-text-secondary">
             {t('matrix.scope.leader')}
           </div>
         )}
@@ -148,7 +148,7 @@ export function PermissionMatrixPage() {
   return (
     <>
       <Toast toast={toast} className="z-[60]" />
-      <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 pb-3">
         {header}
         {body}
       </div>

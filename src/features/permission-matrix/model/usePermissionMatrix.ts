@@ -177,7 +177,7 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
   const valueOf = useCallback(
     (row: MatrixRow, cell: MatrixCell): PermissionLevel => {
       const override = overrides.get(cellKey(row.targetId, cell.projectParticipantId));
-      return override ?? cellSelectValue(cell, row.targetType);
+      return override ?? cellSelectValue(cell);
     },
     [overrides],
   );
@@ -193,7 +193,7 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
       if (!cell.editable || !row.assignable) return;
       if (!isLevelAllowed(row.targetType, level)) return;
       const key = cellKey(row.targetId, cell.projectParticipantId);
-      const original = cellSelectValue(cell, row.targetType);
+      const original = cellSelectValue(cell);
       setOverrides((prev) => {
         const next = new Map(prev);
         if (level === original) next.delete(key);

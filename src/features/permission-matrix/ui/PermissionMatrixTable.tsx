@@ -4,7 +4,7 @@ import type { MatrixCell, PermissionMatrixResponse } from '@/entities/permission
 import { MatrixTargetType } from '@/entities/permission-matrix';
 import { t } from '@/shared/lib/i18n';
 import { collapsibleRowIds, flattenMatrixRows } from '../model/matrixTree';
-import { levelLabel, levelSwatchClass } from '../model/permissionMatrixFormat';
+import { levelLabel, levelLetter, levelSwatchClass } from '../model/permissionMatrixFormat';
 import { PermissionLevel } from '@/entities/permission-matrix';
 import type { UsePermissionMatrixReturn } from '../model/usePermissionMatrix';
 import { PermissionCell } from './PermissionCell';
@@ -14,21 +14,19 @@ interface PermissionMatrixTableProps {
   matrix: Pick<UsePermissionMatrixReturn, 'valueOf' | 'isDirty' | 'setCell'>;
 }
 
-/* Chú thích màu các mức quyền. */
+/* Chú thích: hộp màu + "R-Đọc" cho từng mức quyền. */
 function Legend() {
   const items = [PermissionLevel.NoAccess, PermissionLevel.Read, PermissionLevel.Write];
   return (
-    <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">
+    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-text-secondary">
       {items.map((lvl) => (
         <span key={lvl} className="inline-flex items-center gap-1.5">
-          <span className={`inline-flex h-4 w-4 items-center justify-center rounded border text-[10px] font-bold ${levelSwatchClass(lvl)}`} />
-          {levelLabel(lvl)}
+          <span className={`inline-block h-4 w-6 rounded border ${levelSwatchClass(lvl)}`} />
+          <span>
+            <span className="font-bold">{levelLetter(lvl)}</span>-{levelLabel(lvl)}
+          </span>
         </span>
       ))}
-      <span className="inline-flex items-center gap-1.5 italic opacity-75">
-        <span className="inline-block h-4 w-4 rounded border border-dashed border-card-border" />
-        {t('matrix.legend.inherited')}
-      </span>
     </div>
   );
 }
@@ -64,9 +62,11 @@ function TargetGlyph({ isFolder }: { isFolder: boolean }) {
   );
 }
 
+/* Đường kẻ đậm (input-border) + kẻ dọc để tách nhóm/ô rõ hơn. */
 const HEAD_CELL =
-  'sticky top-0 z-20 border-b border-card-border bg-content-bg px-3 py-3 text-xs font-bold uppercase tracking-wide text-text-muted';
-const NAME_CELL = 'sticky left-0 border-b border-card-border bg-card px-3 py-2 text-left align-middle';
+  'sticky top-0 z-20 border-b-2 border-r border-input-border bg-content-bg px-3 py-3 text-xs font-bold uppercase tracking-wide text-text-muted';
+const NAME_CELL =
+  'sticky left-0 border-b border-r-2 border-input-border bg-content-bg px-3 py-2 text-left align-middle';
 
 export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTableProps) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
@@ -93,8 +93,8 @@ export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTablePro
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <Legend />
         <div className="flex items-center gap-2">
           <button type="button" onClick={expandAll} className="rounded-md border border-card-border bg-card px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-content-bg">
@@ -106,11 +106,13 @@ export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTablePro
         </div>
       </div>
 
-      <div className="admin-scrollbar max-h-[calc(100vh-320px)] overflow-auto rounded-[var(--radius-card)] border border-card-border bg-card shadow-card">
+      {/* Khung bo góc ôm vừa bảng (rộng tối đa bằng màn hình, cao tối đa bằng vùng còn lại);
+          vượt quá thì cuộn NGANG/DỌC trong khung — trang ngoài không cuộn theo. */}
+      <div className="admin-scrollbar w-fit min-h-0 max-h-full max-w-full self-start overflow-auto rounded-[var(--radius-card)] border-2 border-input-border">
         <table className="border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              <th className={`${HEAD_CELL} left-0 z-30 min-w-[260px] text-left`}>
+              <th className={`${HEAD_CELL} left-0 z-30 min-w-[260px] border-r-2 text-left`}>
                 {t('matrix.col.target')}
               </th>
               {columns.map((col) => (
@@ -136,10 +138,10 @@ export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTablePro
                 const isHeader = row.isRootArea || !row.assignable;
 
                 return (
-                  <tr key={row.targetId} className={isHeader ? 'bg-primary/[0.04]' : 'group/row hover:bg-content-bg'}>
+                  <tr key={row.targetId} className={isHeader ? 'bg-primary-ghost' : 'group/row hover:bg-primary-ghost'}>
                     <th
                       scope="row"
-                      className={`${NAME_CELL} transition-colors ${isHeader ? 'z-10 bg-primary/[0.06]' : 'z-10 group-hover/row:bg-content-bg'}`}
+                      className={`${NAME_CELL} z-10 transition-colors ${isHeader ? 'bg-primary-ghost' : 'group-hover/row:bg-primary-ghost'}`}
                       style={{ paddingLeft: 12 + depth * 18 }}
                     >
                       <div className="flex items-center gap-1.5">
@@ -167,12 +169,12 @@ export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTablePro
                     </th>
 
                     {isHeader ? (
-                      <td colSpan={columns.length} className="border-b border-card-border bg-primary/[0.02]" />
+                      <td colSpan={columns.length} className="border-b border-input-border" />
                     ) : (
                       columns.map((col) => {
                         const cell = cellByPid.get(col.projectParticipantId);
                         return (
-                          <td key={col.projectParticipantId} className="border-b border-card-border px-2 py-1.5 text-center align-middle">
+                          <td key={col.projectParticipantId} className="border-b border-r border-input-border px-2 py-1.5 text-center align-middle">
                             {cell ? (
                               <PermissionCell
                                 row={row}

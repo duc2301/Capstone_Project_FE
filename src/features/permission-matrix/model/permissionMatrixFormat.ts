@@ -1,10 +1,5 @@
-import type {
-  MatrixArea,
-  MatrixCell,
-  MatrixRow,
-  PermissionLevel,
-} from '@/entities/permission-matrix';
-import { MatrixArea as Area, MatrixTargetType, PermissionLevel as Level } from '@/entities/permission-matrix';
+import type { MatrixArea, MatrixCell, PermissionLevel } from '@/entities/permission-matrix';
+import { MatrixArea as Area, PermissionLevel as Level } from '@/entities/permission-matrix';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
@@ -35,17 +30,18 @@ const LEVEL_LABEL_KEY: Record<PermissionLevel, TranslationKey> = {
 
 export const levelLabel = (level: PermissionLevel): string => t(LEVEL_LABEL_KEY[level]);
 
-/* Màu sắc theo mức: N xám, R xanh dương, W xanh lá (theo gợi ý UX). */
+/* Màu sắc theo mức: N xám, R xanh dương, W xanh lá (theo gợi ý UX).
+ * Dùng nền pha alpha từ màu gốc -> đậm hơn biến thể *-light. */
 export const levelSwatchClass = (level: PermissionLevel): string => {
   switch (level) {
     case Level.Write:
-      return 'bg-success-light text-success border-success/30';
+      return 'bg-success/20 text-success border-success/45';
     case Level.Read:
-      return 'bg-info-light text-info border-info/30';
+      return 'bg-info/20 text-info border-info/45';
     case Level.NoAccess:
-      return 'bg-content-bg text-text-muted border-card-border';
+      return 'bg-text-muted/20 text-text-secondary border-text-muted/40';
     default:
-      return 'bg-content-bg text-text-placeholder border-dashed border-card-border';
+      return 'bg-transparent text-text-placeholder border-dashed border-card-border';
   }
 };
 
@@ -59,12 +55,10 @@ export const FILE_LEVEL_OPTIONS: PermissionLevel[] = [
   Level.Write,
 ];
 
-/* Giá trị "đang chọn" của dropdown cho 1 ô.
- * File đang kế thừa -> Inherit; ngược lại -> chính mức của ô. */
-export const cellSelectValue = (cell: MatrixCell, targetType: MatrixRow['targetType']): PermissionLevel => {
-  if (targetType === MatrixTargetType.File && cell.isInherited) return Level.Inherit;
-  return cell.level;
-};
+/* Giá trị "đang chọn" của dropdown cho 1 ô = mức hiệu lực của ô.
+ * File đang kế thừa vẫn hiển thị chữ cái mức hiệu lực (tô nhạt/nghiêng ở UI),
+ * còn tuỳ chọn "Kế thừa" (—) là hành động đặt lại về kế thừa. */
+export const cellSelectValue = (cell: MatrixCell): PermissionLevel => cell.level;
 
 /* ── Khu vực CDE ─────────────────────────────────────────── */
 const AREA_LABEL_KEY: Record<MatrixArea, TranslationKey> = {

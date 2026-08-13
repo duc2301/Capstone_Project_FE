@@ -29,12 +29,29 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
   const [importing, setImporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const busy = importing || saving;
+  const nameReady = name.trim().length > 0;
+
+  /* Chốt chặn dùng chung cho MỌI lối rời bước 1 (nút "Tiếp tục" lẫn import tệp):
+   * tên là trường bắt buộc phía BE, thiếu tên thì phải chặn ngay tại chỗ nhập chứ
+   * không để lọt sang bước 2 rồi vỡ ở lúc lưu. */
+  const ensureName = () => {
+    if (nameReady) {
+      setNameError(null);
+      return true;
+    }
+    setNameError(t('naming.createModal.nameRequired'));
+    nameRef.current?.focus();
+    return false;
+  };
 
   const handleImport = async (file: File | null) => {
     if (!file) return;
+    if (!ensureName()) return;
     setError(null);
     if (!file.name.toLowerCase().endsWith('.xlsx') || file.size > 2 * 1024 * 1024) {
       setError(t('naming.createModal.importHint'));
@@ -55,15 +72,18 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
 
   const handleNext = () => {
     setError(null);
-    if (!name.trim()) {
-      setError(t('naming.createModal.nameRequired'));
-      return;
-    }
+    if (!ensureName()) return;
     setStep(2);
   };
 
   const handleSave = async () => {
     setError(null);
+    // Chốt chặn cuối: nếu bằng cách nào đó tới được đây mà chưa có tên thì quay lại
+    // bước 1 (input remount + autoFocus) thay vì để BE trả 400 khó hiểu.
+    if (!ensureName()) {
+      setStep(1);
+      return;
+    }
     // Chỉ giữ dòng có mã; tên hiển thị trống thì lấy chính mã.
     const cleaned = fields
       .map((f) => ({ ...f, code: f.code.trim(), values: f.values.filter((v) => v.code.trim()) }))
@@ -111,14 +131,19 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
         {step === 1 ? (
           <>
             <div>
-              <label className={labelClass}>{t('naming.createModal.name')}</label>
+              <label className={labelClass}>
+                {t('naming.createModal.name')} <span className="text-danger">*</span>
+              </label>
               <input
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); if (nameError) setNameError(null); }}
                 placeholder={t('naming.createModal.namePlaceholder')}
-                className={inputClass}
+                aria-invalid={nameError ? true : undefined}
+                className={`${inputClass} ${nameError ? 'border-danger bg-danger-light/30 focus:border-danger' : ''}`}
                 autoFocus
               />
+              {nameError && <p className="mt-1.5 text-sm font-medium text-danger">{nameError}</p>}
             </div>
 
             <div>
@@ -144,23 +169,34 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
             {/* Import xlsx (tùy chọn) */}
             <div>
               <label className={labelClass}>{t('naming.createModal.import')}</label>
-              <div className="flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed border-card-border bg-input-bg/30 px-6 py-8 text-center">
+              <div
+                className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-card)] border-2 border-dashed bg-input-bg/30 px-6 py-8 text-center transition-opacity ${
+                  nameReady ? 'border-card-border' : 'border-card-border/60 opacity-70'
+                }`}
+              >
                 <span className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                     <line x1="9" y1="15" x2="15" y2="15" /><line x1="9" y1="18" x2="13" y2="18" />
                   </svg>
                 </span>
+                {/* Không mở hộp thoại chọn tệp khi chưa có tên: bấm vào sẽ báo lỗi
+                    và đưa con trỏ về ô tên, thay vì im lặng nhảy sang bước 2. */}
                 <button
                   type="button"
-                  onClick={() => fileRef.current?.click()}
+                  onClick={() => { if (ensureName()) fileRef.current?.click(); }}
                   disabled={importing}
+                  aria-disabled={!nameReady}
                   className="font-semibold text-primary hover:underline disabled:opacity-50"
                 >
                   {importing ? t('naming.createModal.importing') : t('naming.createModal.importChoose')}
                 </button>
                 <p className="text-xs text-text-placeholder">{t('naming.createModal.importHint')}</p>
-                <p className="text-xs text-text-muted">{t('naming.createModal.orManual')}</p>
+                {nameReady ? (
+                  <p className="text-xs text-text-muted">{t('naming.createModal.orManual')}</p>
+                ) : (
+                  <p className="text-xs font-semibold text-warning">{t('naming.createModal.importNeedsName')}</p>
+                )}
                 <input
                   ref={fileRef}
                   type="file"
@@ -173,6 +209,25 @@ export function CreateConventionModal({ projectId, onClose, onCreated }: CreateC
           </>
         ) : (
           <>
+            {/* Nhắc lại thông tin bước 1 — người dùng luôn thấy mình đang tạo bộ nào. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-card-border bg-input-bg/50 px-3.5 py-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                {t('naming.createModal.name')}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{name.trim()}</span>
+              <span className="shrink-0 rounded-full bg-content-bg px-2.5 py-1 font-mono text-xs font-bold text-text-secondary">
+                {delimiter}
+              </span>
+              <button
+                type="button"
+                onClick={() => { setStep(1); setError(null); }}
+                disabled={busy}
+                className="shrink-0 text-xs font-semibold text-primary transition-colors hover:underline disabled:opacity-50"
+              >
+                {t('naming.createModal.editInfo')}
+              </button>
+            </div>
+
             {warnings.length > 0 && (
               <div className="space-y-1 rounded-xl border border-warning/30 bg-warning-light px-4 py-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-warning">{t('naming.createModal.warnings')}</p>

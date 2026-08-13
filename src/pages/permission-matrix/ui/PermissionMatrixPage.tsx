@@ -1,51 +1,40 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import type { MatrixArea } from '@/entities/permission-matrix';
 import { areaLabel, AREA_OPTIONS, PermissionMatrixTable, usePermissionMatrix } from '@/features/permission-matrix';
 import { useProjectDetail } from '@/features/projects';
-import { ConfirmDialog, Toast, useToast } from '@/shared/components';
+import { ConfirmDialog, ListErrorCard, ListLoadingCard, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
-function BackButton({ onClick }: { onClick: () => void }) {
+const AREA_SELECT_ID = 'permission-matrix-area';
+
+function DiscardIcon() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-2 text-sm font-medium text-text-muted transition-colors hover:text-primary"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12" />
-        <polyline points="12 19 5 12 12 5" />
-      </svg>
-      {t('matrix.back')}
-    </button>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="1 4 1 10 7 10" />
+      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    </svg>
   );
 }
 
-function StateCard({ tone, children }: { tone: 'danger' | 'muted'; children: React.ReactNode }) {
-  const cls =
-    tone === 'danger'
-      ? 'border-danger/20 bg-danger-light text-danger'
-      : 'border-card-border bg-card text-text-muted';
+function SaveIcon() {
   return (
-    <div className={`rounded-[var(--radius-card)] border p-6 text-center text-sm font-medium ${cls}`}>
-      {children}
-    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
   );
 }
 
 export function PermissionMatrixPage() {
   const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate();
   const { project } = useProjectDetail(projectId);
   const matrix = usePermissionMatrix(projectId);
   const { toast, showToast } = useToast();
 
-  // Đổi khu vực khi đang có thay đổi chưa lưu -> hỏi lại (reload sẽ bỏ diff).
   const [pendingArea, setPendingArea] = useState<{ area: MatrixArea | undefined } | null>(null);
-
-  const goBack = () => navigate(`/projects/${projectId}`);
 
   const applyArea = (area: MatrixArea | undefined) => {
     if (matrix.dirtyCount > 0) setPendingArea({ area });
@@ -57,44 +46,37 @@ export function PermissionMatrixPage() {
     if (res.message) showToast(res.message, res.ok ? 'success' : 'error');
   };
 
-  const header = (
-    <header className="flex shrink-0 flex-col gap-2 border-b border-card-border/60 pb-4">
-      <BackButton onClick={goBack} />
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="heading-page">{t('matrix.title')}</h1>
-          {project && <p className="mt-1 text-sm text-text-secondary">{project.projectName}</p>}
-        </div>
-      </div>
-      <p className="max-w-3xl text-sm text-text-muted">{t('matrix.subtitle')}</p>
-    </header>
-  );
-
   let body: React.ReactNode;
   if (matrix.loading) {
-    body = <StateCard tone="muted">{t('common.loading')}</StateCard>;
+    body = <ListLoadingCard />;
   } else if (matrix.forbidden) {
-    body = <StateCard tone="danger">{matrix.accessMessage ?? t('matrix.forbidden')}</StateCard>;
+    body = <ListErrorCard message={matrix.accessMessage ?? t('matrix.forbidden')} />;
   } else if (matrix.notFound) {
-    body = <StateCard tone="danger">{matrix.accessMessage ?? t('matrix.notFound')}</StateCard>;
+    body = <ListErrorCard message={matrix.accessMessage ?? t('matrix.notFound')} />;
   } else if (matrix.error || !matrix.data) {
     body = (
-      <div className="space-y-4">
-        <StateCard tone="danger">{matrix.error ?? t('common.error')}</StateCard>
-        <button type="button" onClick={() => void matrix.reload()} className="btn-modal-ghost">
-          {t('matrix.retry')}
-        </button>
+      <div className="flex flex-col items-center gap-4">
+        <ListErrorCard message={matrix.error ?? t('common.error')} />
+        <ToolbarIconButton
+          variant="ghost"
+          showLabel
+          label={t('matrix.retry')}
+          onClick={() => void matrix.reload()}
+          icon={<DiscardIcon />}
+        />
       </div>
     );
   } else {
     const data = matrix.data;
     body = (
-      <div className="flex min-h-0 flex-1 flex-col gap-4">
-        {/* Thanh công cụ: lọc khu vực + lưu/huỷ */}
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-text-secondary">{t('matrix.filter.area')}</label>
+      <>
+        <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2.5">
+            <label htmlFor={AREA_SELECT_ID} className="text-sm font-medium text-text-secondary">
+              {t('matrix.filter.area')}
+            </label>
             <select
+              id={AREA_SELECT_ID}
               className="field-select w-auto border-card-border bg-card shadow-card"
               value={matrix.area ?? ''}
               onChange={(e) => applyArea(e.target.value === '' ? undefined : (Number(e.target.value) as MatrixArea))}
@@ -108,48 +90,65 @@ export function PermissionMatrixPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {matrix.dirtyCount > 0 && (
-              <span className="text-sm font-medium text-text-secondary">
+              <span className="inline-flex items-center rounded-[var(--radius-badge)] bg-accent-amber-tint px-3 py-1 text-xs font-bold text-accent-amber-strong">
                 {t('matrix.dirty.count').replace('{n}', String(matrix.dirtyCount))}
               </span>
             )}
-            <button
-              type="button"
+            <ToolbarIconButton
+              variant="ghost"
+              showLabel
+              label={t('matrix.action.discard')}
               onClick={matrix.discardChanges}
               disabled={matrix.dirtyCount === 0 || matrix.saving}
-              className="btn-modal-ghost"
-            >
-              {t('matrix.action.discard')}
-            </button>
-            <button
-              type="button"
+              icon={<DiscardIcon />}
+            />
+            <ToolbarIconButton
+              variant="solid"
+              showLabel
+              label={matrix.saving ? t('matrix.action.saving') : t('matrix.action.save')}
               onClick={() => void handleSave()}
               disabled={matrix.dirtyCount === 0 || matrix.saving}
-              className="btn-modal-primary"
-            >
-              {matrix.saving ? t('matrix.action.saving') : t('matrix.action.save')}
-            </button>
+              icon={<SaveIcon />}
+            />
           </div>
         </div>
 
-        {/* Phạm vi của leader: chỉ sửa được thư mục được uỷ quyền */}
         {!data.actor.isFullAccess && (
-          <div className="shrink-0 rounded-[var(--radius-card)] border border-info/20 bg-info-light/50 px-4 py-3 text-sm text-text-secondary">
-            {t('matrix.scope.leader')}
+          <div className="flex shrink-0 items-start gap-2.5 rounded-[var(--radius-card)] border border-info/20 bg-info-light px-4 py-3 text-sm text-text-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-info">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span className="cell-wrap">{t('matrix.scope.leader')}</span>
           </div>
         )}
 
         <PermissionMatrixTable data={data} matrix={matrix} />
-      </div>
+      </>
     );
   }
 
   return (
     <>
       <Toast toast={toast} className="z-[60]" />
-      <div className="flex min-h-0 flex-1 flex-col gap-5 pb-3">
-        {header}
+
+      <div className="flex h-full flex-col gap-5">
+        <div className="flex shrink-0 flex-col gap-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <h1 className="heading-page">{t('matrix.title')}</h1>
+            {project && (
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-text-secondary/80">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
+                  <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
+                </svg>
+                {project.projectName}
+              </span>
+            )}
+          </div>
+        </div>
+
         {body}
       </div>
 

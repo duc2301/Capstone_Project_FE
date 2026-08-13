@@ -2453,8 +2453,6 @@ export const translations = {
   /* ── Ma trận phân quyền (RACI) ── */
   'projectDetail.nav.permissionMatrix': 'Ma trận phân quyền',
   'matrix.title': 'Ma trận phân quyền',
-  'matrix.subtitle':
-    'Gán quyền truy cập thư mục/tệp cho từng nhóm trên toàn dự án. W (Ghi) bao hàm R (Đọc); tệp có thể kế thừa quyền từ thư mục cha.',
   'matrix.back': 'Quay lại dự án',
   'matrix.retry': 'Thử lại',
   'matrix.forbidden': 'Bạn không có quyền xem ma trận phân quyền của dự án này.',
@@ -2469,6 +2467,7 @@ export const translations = {
   'matrix.level.noAccess': 'Không truy cập',
   'matrix.level.read': 'Đọc',
   'matrix.level.write': 'Ghi',
+  'matrix.legend.inherited': 'Kế thừa từ thư mục cha',
   'matrix.col.target': 'Thư mục / Tệp',
   'matrix.tree.expandAll': 'Mở tất cả',
   'matrix.tree.collapseAll': 'Thu tất cả',

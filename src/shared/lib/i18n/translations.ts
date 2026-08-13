@@ -478,7 +478,6 @@ export const translations = {
   'projects.assignPartner.currentPartner': 'Đối tác hiện tại',
   'projects.assignPartner.assignableSuffix': 'đối tác có thể thêm',
   'projects.assignPartner.replaceHint': 'Chọn đối tác khác sẽ thay thế đối tác này.',
-  'projects.group.memberSuffix': 'thành viên',
   'approvals.submitModal.required': 'Bắt buộc',
   'approvals.submitModal.noSigners': 'Chưa có nhóm hoặc thành viên để chọn.',
   'approvals.submitModal.groupTickHint': 'Tick vào tên nhóm để chọn hoặc bỏ chọn toàn bộ thành viên trong nhóm.',

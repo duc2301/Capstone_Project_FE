@@ -49,7 +49,7 @@ export function GroupPickerList({ groups, loading, selectedGroupId, onSelect }: 
                   )}
                 </span>
                 <span className="shrink-0 text-xs font-semibold text-text-muted">
-                  {group.members.length} {t('projects.group.memberSuffix')}
+                  {group.members.length} {t('projectDetail.teams.membersSuffix')}
                 </span>
               </button>
             );

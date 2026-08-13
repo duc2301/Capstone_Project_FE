@@ -168,7 +168,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
               {assignableGroups.map((g) => (
                 <option key={g.groupId} value={g.groupId}>
                   {g.organizationName ? `${g.groupName} — ${g.organizationName}` : g.groupName}
-                  {` (${g.memberCount} ${t('projects.group.memberSuffix')})`}
+                  {` (${g.memberCount} ${t('projectDetail.teams.membersSuffix')})`}
                 </option>
               ))}
             </select>

@@ -166,6 +166,8 @@ export function DocumentsTab({
   const handleContextMenu = (e: React.MouseEvent, node: FolderTreeNode) => {
     e.preventDefault();
     setSelectedId(node.id);
+    // Thư mục gốc (WIP/Shared/Published/Archived) không có menu thao tác.
+    if (node.parentFolderId === null) return;
     setMenu({ node, x: e.clientX, y: e.clientY });
   };
 
@@ -629,10 +631,11 @@ export function DocumentsTab({
       )}
 
       {/* Modal phân quyền tệp */}
-      {filePermissionFor && (
+      {filePermissionFor && selected && (
         <FilePermissionModal
           fileItemId={filePermissionFor.id}
           fileName={filePermissionFor.name}
+          area={selected.area}
           onClose={() => setFilePermissionFor(null)}
           onSaved={() => showToast(t('filePermission.toast.updated'))}
         />

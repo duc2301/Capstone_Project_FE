@@ -15,6 +15,8 @@ interface PermissionGroupsModalProps {
   /** Tên thư mục/tệp — hiện dưới tiêu đề modal */
   resourceName: string;
   title: string;
+  /** Ngoài WIP (Shared/Published/Archived) tài liệu là chỉ đọc -> chỉ hiện quyền Xem. */
+  canAssignEdit: boolean;
   load: PermissionGroupsLoader;
   save: PermissionGroupsSaver;
   onClose: () => void;
@@ -36,10 +38,12 @@ interface PermissionItem {
 }
 
 /* Các cột quyền ở panel phải (BE hiện chỉ hỗ trợ Xem/Sửa) */
-const PERMISSION_FLAGS: { key: PermissionFlagKey; label: () => string }[] = [
-  { key: 'canView', label: () => t('folderPermission.col.view') },
-  { key: 'canEdit', label: () => t('folderPermission.col.edit') },
-];
+const VIEW_FLAG: { key: PermissionFlagKey; label: () => string } = {
+  key: 'canView', label: () => t('folderPermission.col.view'),
+};
+const EDIT_FLAG: { key: PermissionFlagKey; label: () => string } = {
+  key: 'canEdit', label: () => t('folderPermission.col.edit'),
+};
 
 const EMPTY_FLAGS = {
   canView: false,
@@ -82,8 +86,10 @@ function buildInitialSelected(data: PermissionGroupUiData): PermissionItem[] {
     }));
 }
 
-/* Lưới 1 dòng panel phải: ô chọn + tên nhóm + 6 cột quyền thẳng hàng với header */
-const SELECTED_ROW_GRID = 'grid grid-cols-[1.5rem_minmax(0,1fr)_repeat(2,3.5rem)] items-center gap-x-1';
+/* Lưới 1 dòng panel phải: ô chọn + tên nhóm + các cột quyền thẳng hàng với header.
+ * Tailwind cần class tĩnh nên tách sẵn 2 biến thể theo số cột. */
+const SELECTED_ROW_GRID_VIEW_ONLY = 'grid grid-cols-[1.5rem_minmax(0,1fr)_3.5rem] items-center gap-x-1';
+const SELECTED_ROW_GRID_VIEW_EDIT = 'grid grid-cols-[1.5rem_minmax(0,1fr)_repeat(2,3.5rem)] items-center gap-x-1';
 
 /* Ô đánh dấu chọn nhóm (để di chuyển giữa 2 panel) */
 function SelectBox({ checked }: { checked: boolean }) {
@@ -176,13 +182,18 @@ function toggleInSet(set: Set<string>, id: string): Set<string> {
 interface PermissionEditorProps {
   resourceId: string;
   data: PermissionGroupUiData;
+  canAssignEdit: boolean;
   save: PermissionGroupsSaver;
   onClose: () => void;
   onSaved?: () => void;
 }
 
 /* Phần thân + footer của modal khi đã có dữ liệu — mount 1 lần nên khởi tạo state từ data. */
-function PermissionEditor({ resourceId, data, save, onClose, onSaved }: PermissionEditorProps) {
+function PermissionEditor({ resourceId, data, canAssignEdit, save, onClose, onSaved }: PermissionEditorProps) {
+  // Ngoài WIP tài liệu là chỉ đọc -> ẩn hẳn cột "Sửa" (giá trị cũ từ BE giữ nguyên khi lưu).
+  const permissionFlags = canAssignEdit ? [VIEW_FLAG, EDIT_FLAG] : [VIEW_FLAG];
+  const rowGrid = canAssignEdit ? SELECTED_ROW_GRID_VIEW_EDIT : SELECTED_ROW_GRID_VIEW_ONLY;
+
   const [available, setAvailable] = useState<PermissionItem[]>(() => buildInitialAvailable(data));
   const [selected, setSelected] = useState<PermissionItem[]>(() => buildInitialSelected(data));
   const [availableChecked, setAvailableChecked] = useState<Set<string>>(new Set());
@@ -245,7 +256,8 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
         groupsPermission: selected.map((it) => ({
           projectParticipantId: it.projectParticipantId,
           canView: it.canView,
-          canEdit: it.canEdit,
+          // Ngoài WIP là vùng chỉ đọc -> luôn gỡ quyền Sửa, kể cả bản ghi cũ từ BE.
+          canEdit: canAssignEdit && it.canEdit,
         })),
         removeParticipantIds: available
           .filter((it) => it.wasSelected)
@@ -255,7 +267,9 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
       // để lần "Cập nhật" kế tiếp không gửi lại removeParticipantIds cũ.
       // Nhóm bị gỡ quyền đã bị BE reset toàn bộ cờ về false, nên xoá cờ cũ
       // ở panel trái để khi thêm lại các ô quyền đều trống.
-      setSelected((prev) => prev.map((it) => ({ ...it, wasSelected: true })));
+      setSelected((prev) =>
+        prev.map((it) => ({ ...it, canEdit: canAssignEdit && it.canEdit, wasSelected: true })),
+      );
       setAvailable((prev) => prev.map((it) => ({ ...it, ...EMPTY_FLAGS, wasSelected: false })));
       onSaved?.();
     } catch {
@@ -356,10 +370,10 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
               ) : (
                 <>
                   {/* Hàng tiêu đề cột quyền */}
-                  <div className={`${SELECTED_ROW_GRID} border-b border-card-border pb-2`}>
+                  <div className={`${rowGrid} border-b border-card-border pb-2`}>
                     <span />
                     <span />
-                    {PERMISSION_FLAGS.map((f) => (
+                    {permissionFlags.map((f) => (
                       <PermissionColumnHeader
                         key={f.key}
                         label={f.label()}
@@ -372,7 +386,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
                   {filteredSelected.map((it) => {
                     const checked = selectedChecked.has(it.projectParticipantId);
                     return (
-                      <div key={it.projectParticipantId} className={`${SELECTED_ROW_GRID} border-b border-card-border/60 py-2.5`}>
+                      <div key={it.projectParticipantId} className={`${rowGrid} border-b border-card-border/60 py-2.5`}>
                         <button
                           type="button"
                           onClick={() => setSelectedChecked((prev) => toggleInSet(prev, it.projectParticipantId))}
@@ -381,7 +395,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
                           <SelectBox checked={checked} />
                         </button>
                         <p className="truncate pr-2 text-sm font-semibold text-text">{it.groupName}</p>
-                        {PERMISSION_FLAGS.map((f) => (
+                        {permissionFlags.map((f) => (
                           <PermissionTick
                             key={f.key}
                             granted={it[f.key]}
@@ -423,7 +437,7 @@ function PermissionEditor({ resourceId, data, save, onClose, onSaved }: Permissi
 
 /* Modal phân quyền nhóm dùng chung cho thư mục và tệp — chỉ khác API truyền vào. */
 export function PermissionGroupsModal({
-  resourceId, resourceName, title, load, save, onClose, onSaved,
+  resourceId, resourceName, title, canAssignEdit, load, save, onClose, onSaved,
 }: PermissionGroupsModalProps) {
   const { data, loading, error } = usePermissionGroupUi(resourceId, load);
 
@@ -460,7 +474,14 @@ export function PermissionGroupsModal({
             </div>
           </>
         ) : (
-          <PermissionEditor resourceId={resourceId} data={data} save={save} onClose={onClose} onSaved={onSaved} />
+          <PermissionEditor
+            resourceId={resourceId}
+            data={data}
+            canAssignEdit={canAssignEdit}
+            save={save}
+            onClose={onClose}
+            onSaved={onSaved}
+          />
         )}
       </div>
     </div>

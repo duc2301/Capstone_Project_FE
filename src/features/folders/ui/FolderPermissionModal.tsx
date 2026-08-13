@@ -1,5 +1,5 @@
 import type { FolderTreeNode } from '@/entities/folder';
-import { folderApi } from '@/entities/folder';
+import { CdeArea, folderApi } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
 import type { PermissionGroupsLoader, PermissionGroupsSaver } from '../model/permissionGroups.types';
@@ -29,6 +29,8 @@ export function FolderPermissionModal({ node, onClose, onSaved }: FolderPermissi
       resourceId={node.id}
       resourceName={node.name}
       title={t('folderPermission.title')}
+      // Shared/Published/Archived là vùng chỉ đọc -> chỉ phân quyền Xem.
+      canAssignEdit={node.area === CdeArea.Wip}
       load={loadFolderPermissions}
       save={saveFolderPermissions}
       onClose={onClose}

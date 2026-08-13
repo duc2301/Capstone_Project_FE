@@ -114,19 +114,21 @@ export function DocumentsTab({
   const { tree, loading, error, refetch } = useFolderTree(projectId);
   const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
   const { currentUser } = useSession();
-  const hasFullFolderAccess = isAccountAdmin(currentUser?.role) || isProjectManager;
+  const isAdmin = isAccountAdmin(currentUser?.role);
+  const hasFullFolderAccess = isAdmin || isProjectManager;
+
+  const isProjectLeader = signerGroups.some((g) =>
+    g.members.some(
+      (m) =>
+        m.accountId === currentUser?.accountId
+        && m.role === GroupMemberRole.Leader
+        && m.status === GroupMemberStatus.Active,
+    ));
 
   // Gate thô cho nút gán/kế thừa/tùy chỉnh naming: Admin hoặc Leader active của 1 group
   // trong project. BE check chính xác theo group phụ trách từng folder (403 nếu lách).
-  const canManageNaming =
-    isAccountAdmin(currentUser?.role)
-    || signerGroups.some((g) =>
-      g.members.some(
-        (m) =>
-          m.accountId === currentUser?.accountId
-          && m.role === GroupMemberRole.Leader
-          && m.status === GroupMemberStatus.Active,
-      ));
+  const canManageNaming = isAdmin || isProjectLeader;
+  const canOverseeProject = isAdmin || isProjectManager || isProjectLeader;
 
   // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
@@ -374,16 +376,31 @@ export function DocumentsTab({
         <h2 className="heading-tab shrink-0">{t('projectDetail.tab.documents')}</h2>
 
         <div className="flex flex-wrap items-center gap-3">
-          <ToolbarIconButton
-            showLabel
-            label={t('approvals.pending.title')}
-            onClick={() => setPendingApprovalsOpen(true)}
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-              </svg>
-            }
-          />
+          {canOverseeProject && (
+            <>
+              <ToolbarIconButton
+                showLabel
+                label={t('projectDetail.nav.permissionMatrix')}
+                onClick={() => navigate(`/projects/${projectId}/permission-matrix`)}
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
+                  </svg>
+                }
+              />
+              <ToolbarIconButton
+                showLabel
+                label={t('approvals.pending.title')}
+                onClick={() => setPendingApprovalsOpen(true)}
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                }
+              />
+            </>
+          )}
           <ToolbarIconButton
             showLabel
             label={t('approvals.history.title')}
@@ -647,7 +664,7 @@ export function DocumentsTab({
           fileItemId={versionsFor.id}
           fileName={versionsFor.name}
           currentVersionId={versionsFor.currentVersionId}
-          canRestore={selectedPermission.canEdit}
+          canRestore={selectedPermission.canEdit && selected?.area === CdeArea.Wip}
           onViewVersion={(versionStateId, isCurrent) => {
             const versionQuery = isCurrent ? '' : `&version=${versionStateId}`;
             navigate(`/projects/${projectId}/files/${versionsFor.id}/view?folder=${versionsFor.folderId}${versionQuery}`);

@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus, RelatedFileArea } from '@/entities/file-item';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { FileActivitySection } from '@/features/audit-logs';
@@ -186,6 +186,7 @@ export function FileViewPage() {
   const permissionFolderId = info?.folderId ?? fileListItem?.folderId ?? folderId ?? null;
   const { permission } = useFolderPermission(permissionFolderId, isAccountAdmin(currentUser?.role));
   const canManageVersions = Boolean(permission?.canEdit);
+  const canRestoreVersion = canManageVersions && info?.area === RelatedFileArea.Wip;
 
   const openVersion = useCallback((versionId: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -506,7 +507,7 @@ export function FileViewPage() {
                 >
                   {t('fileView.versionView.backToCurrent')}
                 </button>
-                {canManageVersions && (
+                {canRestoreVersion && (
                   <button
                     type="button"
                     onClick={() => setConfirmSetCurrent(true)}
@@ -715,7 +716,7 @@ export function FileViewPage() {
           fileItemId={fileId}
           fileName={fileTitle}
           currentVersionId={currentVersion?.id ?? null}
-          canRestore={canManageVersions}
+          canRestore={canRestoreVersion}
           onViewVersion={(versionStateId, isCurrent) => {
             setVersionsOpen(false);
             openVersion(isCurrent ? null : versionStateId);

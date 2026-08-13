@@ -10,6 +10,7 @@ import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
 import { ProjectIssuesTab } from '@/features/issues';
+import { ProjectLoiRuleSetPanel } from '@/features/loi-rules';
 import { FolderNamingInfoModal, NamingConventionSettings } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
 import { packageStatusMeta, PackageFormModal, usePackages } from '@/features/packages';
@@ -839,7 +840,10 @@ export function ProjectDetailPage() {
 
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
       {tab === 'settings' && (isAdmin || isManager || isProjectLeader) && (
-        <NamingConventionSettings projectId={project.id} canConfigure={isAdmin || isManager} />
+        <div className="space-y-10">
+          <NamingConventionSettings projectId={project.id} canConfigure={isAdmin || isManager} />
+          <ProjectLoiRuleSetPanel projectId={project.id} canConfigure={isAdmin || isManager} />
+        </div>
       )}
 
       {/* ── Tab: Packages ───────────── */}

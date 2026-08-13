@@ -15,7 +15,8 @@ interface NamingConventionSettingsProps {
   canConfigure: boolean;
 }
 
-const cardClass = 'rounded-[24px] border border-card-border/60 bg-card/70 p-8 shadow-card backdrop-blur-sm';
+const cardClass =
+  'rounded-[var(--radius-card-lg)] border border-card-border/60 bg-card/70 p-6 shadow-card backdrop-blur-sm';
 
 /* Tab "Cài đặt" của dự án — quản lý các bộ quy tắc đặt tên tệp (kiểu Autodesk Docs):
  * danh sách → chi tiết (fields/values/khóa/gán thư mục), tạo mới bằng import xlsx hoặc tay. */
@@ -56,12 +57,7 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
         <>
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="heading-tab">{t('naming.title')}</h2>
-              <p className="mt-1 text-sm text-text-muted">
-                {canConfigure ? t('naming.subtitle') : t('naming.leader.subtitle')}
-              </p>
-            </div>
+            <h2 className="heading-tab">{t('naming.title')}</h2>
             {canConfigure && (
               <div className="flex flex-wrap items-center gap-3">
                 <ToolbarIconButton
@@ -90,35 +86,23 @@ export function NamingConventionSettings({ projectId, canConfigure }: NamingConv
 
           {/* Danh sách */}
           {loading ? (
-            <div className="flex items-center justify-center rounded-[24px] border border-card-border/60 bg-card/70 py-20 shadow-card">
+            <div className="flex items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border/60 bg-card/70 py-14 shadow-card">
               <p className="text-sm text-text-muted">{t('common.loading')}</p>
             </div>
           ) : error ? (
-            <div className="rounded-[24px] border border-danger/20 bg-danger-light p-6 text-center">
+            <div className="rounded-[var(--radius-card-lg)] border border-danger/20 bg-danger-light p-6 text-center">
               <p className="text-sm font-medium text-danger">{error}</p>
             </div>
           ) : conventions.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-card-border bg-card/70 p-16 text-center shadow-card">
-              <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <div className="rounded-[var(--radius-card-lg)] border border-dashed border-card-border bg-card/70 px-6 py-10 text-center shadow-card">
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                   <line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" />
                 </svg>
               </span>
-              <p className="font-display text-lg font-semibold text-text">{t('naming.empty.title')}</p>
+              <p className="font-display text-base font-semibold text-text">{t('naming.empty.title')}</p>
               <p className="mx-auto mt-1 max-w-md text-sm text-text-muted">{t('naming.empty.desc')}</p>
-              {canConfigure && (
-                <button
-                  type="button"
-                  onClick={() => setCreateOpen(true)}
-                  className="mx-auto mt-5 flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  {t('naming.create')}
-                </button>
-              )}
             </div>
           ) : (
             <div className={`${cardClass} overflow-x-auto`}>

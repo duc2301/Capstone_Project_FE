@@ -6,9 +6,11 @@ import type {
   LoiUnmappedParam, LoiVerdict,
 } from '@/entities/loi-check';
 import {
+  LOI_DISCIPLINE_LABEL_KEY,
   LOI_STAGE_OPTIONS,
   LoiParamGroup as Group,
   LoiCheckStatus,
+  LoiDiscipline,
   LoiStage,
   LoiVerdict as Verdict,
 } from '@/entities/loi-check';
@@ -36,6 +38,11 @@ function groupLabel(g: LoiParamGroup): string {
     case Group.VatLieu: return t('loi.group.vatLieu');
     default: return '';
   }
+}
+
+function disciplineLabel(discipline: number): string {
+  const key = LOI_DISCIPLINE_LABEL_KEY[discipline as LoiDiscipline];
+  return key ? t(key) : '';
 }
 
 const STAGE_LABEL_KEY: Record<LoiStage, TranslationKey> = {
@@ -252,14 +259,21 @@ interface ResultBodyProps {
 function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) {
   const meta = verdictMeta(result.verdict);
   const notEvaluated = isNotEvaluated(result);
-  const grouped = useMemo(() => {
-    const map = new Map<LoiParamGroup, LoiMissingField[]>();
+  const byDiscipline = useMemo(() => {
+    const map = new Map<number, Map<LoiParamGroup, LoiMissingField[]>>();
     for (const m of result.missing) {
-      const arr = map.get(m.group) ?? [];
+      const groups = map.get(m.discipline) ?? new Map<LoiParamGroup, LoiMissingField[]>();
+      const arr = groups.get(m.group) ?? [];
       arr.push(m);
-      map.set(m.group, arr);
+      groups.set(m.group, arr);
+      map.set(m.discipline, groups);
     }
-    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+    return [...map.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([discipline, groups]) => ({
+        discipline,
+        groups: [...groups.entries()].sort((a, b) => a[0] - b[0]),
+      }));
   }, [result.missing]);
 
   return (
@@ -303,33 +317,46 @@ function ResultBody({ result, controls, mapping, reportHref }: ResultBodyProps) 
 
       <div className="mt-6 border-t border-card-border/70 pt-5">
         <h3 className="heading-label">{t('loi.missing.title')}</h3>
-        {grouped.length === 0 ? (
+        {byDiscipline.length === 0 ? (
           <p className={`mt-3 text-sm ${notEvaluated ? 'text-text-muted' : 'text-success'}`}>
             {notEvaluated ? t('loi.missing.notEvaluated') : t('loi.missing.none')}
           </p>
         ) : (
-          <div className="mt-3 space-y-4">
-            {grouped.map(([group, items]) => (
-              <div key={group}>
-                <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{groupLabel(group)}</p>
-                <ul className="mt-1.5 space-y-1.5">
-                  {items.map((m) => (
-                    <li
-                      key={`${m.variant ?? ''}|${m.fieldName}`}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-card-border/70 bg-white/60 px-3 py-2"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-text">{m.fieldName}</span>
-                        {m.variant && (
-                          <span className="block truncate text-xs text-text-muted">{m.variant}</span>
-                        )}
-                      </span>
-                      <span className="shrink-0 rounded-full bg-danger-light px-2 py-0.5 text-xs font-bold text-danger">
-                        {m.missingCount} {t('loi.missing.elementsSuffix')}
-                      </span>
-                    </li>
+          <div className="mt-3 space-y-5">
+            {byDiscipline.map(({ discipline, groups }) => (
+              <div key={discipline}>
+                {byDiscipline.length > 1 && (
+                  <p className="mb-2 inline-flex rounded-[var(--radius-badge)] bg-primary-tint px-2.5 py-0.5 text-xs font-bold text-primary-deep">
+                    {disciplineLabel(discipline)}
+                  </p>
+                )}
+                <div className="space-y-4">
+                  {groups.map(([group, items]) => (
+                    <div key={group}>
+                      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{groupLabel(group)}</p>
+                      <ul className="mt-1.5 space-y-1.5">
+                        {items.map((m) => (
+                          <li
+                            key={`${m.componentCode}|${m.variant ?? ''}|${m.fieldName}`}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-card-border/70 bg-white/60 px-3 py-2"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium text-text">{m.fieldName}</span>
+                              <span className="block truncate text-xs text-text-muted">
+                                {m.componentName}
+                                {m.variant ? ` · ${m.variant}` : ''}
+                                {m.componentCode ? ` · ${m.componentCode}` : ''}
+                              </span>
+                            </span>
+                            <span className="shrink-0 rounded-full bg-danger-light px-2 py-0.5 text-xs font-bold text-danger">
+                              {m.missingCount} {t('loi.missing.elementsSuffix')}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             ))}
           </div>

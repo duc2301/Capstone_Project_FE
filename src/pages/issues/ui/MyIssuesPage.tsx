@@ -13,7 +13,7 @@ import type { ListTableColumn } from '@/shared/components';
 import { ListErrorCard, ListLoadingCard, ListTable, PaginationBar, SearchField } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
-const STATUS_FILTERS: (IssueStatus | 'all')[] = ['all', 'Open', 'InProgress', 'Answered', 'Closed'];
+const STATUS_FILTERS: (IssueStatus | 'all')[] = ['all', 'Open', 'InProgress', 'Closed'];
 const PRIORITY_FILTERS: (IssuePriority | 'all')[] = ['all', 'Low', 'Medium', 'High', 'Critical'];
 const PAGE_SIZE = 20;
 

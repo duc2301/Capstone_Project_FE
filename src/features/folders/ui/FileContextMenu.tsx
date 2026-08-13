@@ -19,6 +19,8 @@ interface FileContextMenuProps {
   onReturnToWip: () => void;
   canArchive: boolean;
   onArchive: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
 }
 
 interface Item {
@@ -26,6 +28,7 @@ interface Item {
   label: string;
   onClick: () => void;
   icon: React.ReactNode;
+  danger?: boolean;
 }
 
 export function FileContextMenu({
@@ -45,6 +48,8 @@ export function FileContextMenu({
   onReturnToWip,
   canArchive,
   onArchive,
+  canDelete,
+  onDelete,
 }: FileContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -88,6 +93,10 @@ export function FileContextMenu({
       key: 'permission', label: t('documents.fileMenu.permission'), onClick: onPermission,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
     },
+    ...(canDelete ? [{
+      key: 'delete', label: t('documents.fileMenu.delete'), onClick: onDelete, danger: true,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>,
+    }] : []),
   ];
 
   return (
@@ -99,7 +108,7 @@ export function FileContextMenu({
             key={it.key}
             type="button"
             onClick={() => { it.onClick(); onClose(); }}
-            className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-content-bg hover:text-text"
+            className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors ${it.danger ? 'text-danger hover:bg-danger-light' : 'text-text-secondary hover:bg-content-bg hover:text-text'}`}
           >
             {it.icon}
             <span className="flex-1">{it.label}</span>

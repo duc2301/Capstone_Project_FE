@@ -6,7 +6,7 @@ import { toDateKey } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { useAssignableMembers } from '../model/useAssignableMembers';
-import { useAssignableOrganizations } from '../model/useAssignableOrganizations';
+import { useAssignableGroups } from '../model/useAssignableGroups';
 
 interface CreateIssueModalProps {
   projectId: string;
@@ -22,13 +22,13 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
   const [type, setType] = useState<IssueType>('Issue');
   const [priority, setPriority] = useState<IssuePriority>('Medium');
   const [assigneeId, setAssigneeId] = useState('');
-  const [assigneeOrgId, setAssigneeOrgId] = useState('');
+  const [assigneeGroupId, setAssigneeGroupId] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(fileItemId);
-  const { organizations: assignableOrganizations } = useAssignableOrganizations(fileItemId);
+  const { groups: assignableGroups } = useAssignableGroups(fileItemId);
 
   useEffect(() => {
     if (membersError) onToast(membersError, 'error');
@@ -57,7 +57,7 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
         priority,
         dueDate: dueDate || undefined,
         assignedToAccountId: assigneeId || undefined,
-        assignedToOrganizationId: assigneeId ? undefined : assigneeOrgId || undefined,
+        assignedToGroupId: assigneeId ? undefined : assigneeGroupId || undefined,
       });
 
       onToast(t('issues.toast.created'));
@@ -157,24 +157,23 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="field-label">{t('issues.create.assigneeOrgLabel')}</span>
+            <span className="field-label">{t('issues.create.assigneeGroupLabel')}</span>
             <select
-              value={assigneeOrgId}
-              onChange={(e) => setAssigneeOrgId(e.target.value)}
+              value={assigneeGroupId}
+              onChange={(e) => setAssigneeGroupId(e.target.value)}
               disabled={busy || !!assigneeId}
               className="field-select"
             >
-              <option value="">{t('issues.create.assigneeOrgPlaceholder')}</option>
-              {assignableOrganizations.map((o) => (
-                <option key={o.organizationId} value={o.organizationId}>
-                  {o.groupNames.length > 0
-                    ? `${o.organizationName} — ${o.groupNames.join(', ')}`
-                    : o.organizationName}
+              <option value="">{t('issues.create.assigneeGroupPlaceholder')}</option>
+              {assignableGroups.map((g) => (
+                <option key={g.groupId} value={g.groupId}>
+                  {g.organizationName ? `${g.groupName} — ${g.organizationName}` : g.groupName}
+                  {` (${g.memberCount} ${t('projects.group.memberSuffix')})`}
                 </option>
               ))}
             </select>
             <span className="field-hint">
-              {assigneeId ? t('issues.create.assigneeOrgDisabled') : t('issues.create.assigneeOrgHint')}
+              {assigneeId ? t('issues.create.assigneeGroupDisabled') : t('issues.create.assigneeGroupHint')}
             </span>
           </label>
 

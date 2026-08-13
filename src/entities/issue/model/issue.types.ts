@@ -1,6 +1,6 @@
 /* BE khong dung JsonStringEnumConverter -> enum serialize ra so, FE map sang string cho de doc */
 export type IssueType = 'Issue' | 'Rfi';
-export type IssueStatus = 'Open' | 'InProgress' | 'Answered' | 'Closed';
+export type IssueStatus = 'Open' | 'InProgress' | 'Closed';
 export type IssuePriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
 export interface IssueParticipant {
@@ -27,6 +27,9 @@ export interface IssueItem {
   assignedToAccountId: string | null;
   assignedToName: string | null;
   assignedToOrganizationId: string | null;
+  assignedToOrganizationName: string | null;
+  assignedToGroupId: string | null;
+  assignedToGroupName: string | null;
   dueDate: string | null;
   linkedFolderId: string | null;
   linkedFileItemId: string | null;
@@ -52,6 +55,8 @@ export interface ProjectIssueListItem {
   raisedByName: string | null;
   assignedToAccountId: string | null;
   assignedToName: string | null;
+  assignedToGroupId: string | null;
+  assignedToGroupName: string | null;
   dueDate: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -71,10 +76,11 @@ export interface AssignableMember {
   groupName: string;
 }
 
-export interface AssignableOrganization {
-  organizationId: string;
-  organizationName: string;
-  groupNames: string[];
+export interface AssignableGroup {
+  groupId: string;
+  groupName: string;
+  organizationName: string | null;
+  memberCount: number;
 }
 
 export interface CreateIssuePayload {
@@ -87,7 +93,7 @@ export interface CreateIssuePayload {
   linkedFileItemId?: string;
   linkedFolderId?: string;
   assignedToAccountId?: string;
-  assignedToOrganizationId?: string;
+  assignedToGroupId?: string;
 }
 
 export const ISSUE_TITLE_MIN = 8;

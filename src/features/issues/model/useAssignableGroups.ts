@@ -1,26 +1,13 @@
-import { useEffect, useState } from 'react';
-
-import type { AssignableOrganization } from '@/entities/issue';
+import type { AssignableGroup } from '@/entities/issue';
 import { issueApi } from '@/entities/issue';
+import { useAsyncData } from '@/shared/lib/async';
 
-export function useAssignableOrganizations(fileItemId: string | null | undefined) {
-  const [organizations, setOrganizations] = useState<AssignableOrganization[]>([]);
+export function useAssignableGroups(fileItemId: string | null | undefined) {
+  const { data: groups } = useAsyncData<AssignableGroup[]>(
+    `assignable-groups:${fileItemId ?? ''}`,
+    () => issueApi.getAssignableGroups(fileItemId!),
+    { fallback: [], enabled: Boolean(fileItemId) },
+  );
 
-  useEffect(() => {
-    if (!fileItemId) return;
-    let stopped = false;
-
-    void (async () => {
-      try {
-        const data = await issueApi.getAssignableOrganizations(fileItemId);
-        if (!stopped) setOrganizations(data);
-      } catch {
-        if (!stopped) setOrganizations([]);
-      }
-    })();
-
-    return () => { stopped = true; };
-  }, [fileItemId]);
-
-  return { organizations };
+  return { groups };
 }

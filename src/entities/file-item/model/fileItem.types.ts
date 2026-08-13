@@ -39,6 +39,13 @@ export const FileReturnRequestStatus = {
 export type FileReturnRequestStatus = (typeof FileReturnRequestStatus)[keyof typeof FileReturnRequestStatus];
 
 /* 1 dòng file trong danh sách folder */
+export interface DeleteFileResult {
+  fileItemId: string;
+  fileRemoved: boolean;
+  deletedVersion: string;
+  currentVersion: string | null;
+}
+
 export interface FileListItem {
   id: string;
   folderId: string;
@@ -54,6 +61,7 @@ export interface FileListItem {
   sizeBytes: number;
   format: string | null;
   createdByAccountId: string | null;
+  currentVersionUploadedByAccountId?: string | null;
   authorName: string | null;
   requiresSignature?: boolean;
   isSigned?: boolean;

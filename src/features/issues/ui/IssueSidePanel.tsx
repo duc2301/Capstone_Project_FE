@@ -67,12 +67,6 @@ export function IssueSidePanel({
   const handleResolve = () =>
     runIssueAction(() => issueApi.resolve(issueId).then(() => undefined), 'issues.error.resolve', t('issues.toast.resolved'));
 
-  const handleStart = () =>
-    runIssueAction(() => issueApi.start(issueId).then(() => undefined), 'issues.error.start', t('issues.toast.started'));
-
-  const handleAnswer = () =>
-    runIssueAction(() => issueApi.answer(issueId).then(() => undefined), 'issues.error.answer', t('issues.toast.answered'));
-
   const handleAddParticipant = (accountId: string) => {
     setShowParticipantPicker(false);
     setParticipantQuery('');
@@ -110,16 +104,6 @@ export function IssueSidePanel({
       || issue.participants.some((p) => p.accountId === currentUser.accountId)),
   );
   const isCreator = Boolean(issue && currentUser && issue.raisedByAccountId === currentUser.accountId);
-  const isHandler = Boolean(
-    issue
-    && currentUser
-    && (issue.assignedToAccountId
-      ? issue.assignedToAccountId === currentUser.accountId
-      : issue.participants.some((p) => p.accountId === currentUser.accountId)
-        || issue.raisedByAccountId === currentUser.accountId),
-  );
-  const canStart = !isResolved && isHandler && (issue?.status === 'Open' || issue?.status === 'Answered');
-  const canAnswer = !isResolved && isHandler && (issue?.status === 'Open' || issue?.status === 'InProgress');
 
   const participantCandidates = useMemo(() => {
     const existingIds = new Set((issue?.participants ?? []).map((p) => p.accountId));
@@ -196,6 +180,10 @@ export function IssueSidePanel({
             <InfoField label={t('issues.detail.assignee')}>
               {issue.assignedToAccountId ? (
                 <PersonLine name={issue.assignedToName ?? t('issues.unknownUser')} />
+              ) : issue.assignedToGroupId || issue.assignedToOrganizationId ? (
+                <p className="text-sm font-medium text-text">
+                  {issue.assignedToGroupName ?? issue.assignedToOrganizationName ?? t('issues.unknownGroup')}
+                </p>
               ) : (
                 <p className="text-sm italic text-text-placeholder">{t('issues.detail.noAssignee')}</p>
               )}
@@ -208,7 +196,7 @@ export function IssueSidePanel({
           </div>
         </section>
 
-        {(canStart || canAnswer || (!isResolved && isCreator)) && (
+        {!isResolved && isCreator && (
           <section className="grid grid-cols-2 gap-2 border-t border-card-border/70 pt-4">
             {!isResolved && isCreator && (
               <button
@@ -234,26 +222,6 @@ export function IssueSidePanel({
                   <path d="M9 14 4 9l5-5" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" />
                 </svg>
                 {t('issues.detail.requestReturnToWip')}
-              </button>
-            )}
-            {canStart && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={handleStart}
-                className="btn-modal-ghost flex min-h-11 items-center justify-center px-3 text-center leading-snug"
-              >
-                {t('issues.action.start')}
-              </button>
-            )}
-            {canAnswer && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={handleAnswer}
-                className="btn-modal-ghost flex min-h-11 items-center justify-center px-3 text-center leading-snug"
-              >
-                {t('issues.action.answer')}
               </button>
             )}
           </section>

@@ -94,22 +94,21 @@ export function LoiRulesPage() {
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <div className="flex shrink-0 flex-wrap items-center gap-3">
-        <h1 className="heading-page shrink-0">{t('loiRule.title')}</h1>
-        {!loading && !error && (
-          <LoiRuleSetToolbar
-            ruleSets={ruleSets}
-            selected={selected}
-            busy={busy}
-            onSelect={selectRuleSet}
-            onCreate={() => setFormTarget(null)}
-            onEdit={() => setFormTarget(selected)}
-            onSetDefault={() => setDefaultOpen(true)}
-            onDelete={() => setDeleteOpen(true)}
-            onImport={() => setImportOpen(true)}
-          />
-        )}
-      </div>
+      <h1 className="heading-page shrink-0">{t('loiRule.title')}</h1>
+
+      {!loading && !error && (
+        <LoiRuleSetToolbar
+          ruleSets={ruleSets}
+          selected={selected}
+          busy={busy}
+          onSelect={selectRuleSet}
+          onCreate={() => setFormTarget(null)}
+          onEdit={() => setFormTarget(selected)}
+          onSetDefault={() => setDefaultOpen(true)}
+          onDelete={() => setDeleteOpen(true)}
+          onImport={() => setImportOpen(true)}
+        />
+      )}
 
       {loading && <ListLoadingCard />}
       {!loading && error && <ListErrorCard message={error} />}

@@ -11,6 +11,7 @@ export interface IssueRowItem {
   priority: IssuePriority;
   status: IssueStatus;
   assignedToName?: string | null;
+  assignedToGroupName?: string | null;
   createdAt: string | null;
 }
 
@@ -53,7 +54,8 @@ export function IssueTableRow({ issue, projectName, clickable, onOpen }: IssueTa
         </span>
       </td>
       <td className="cell-wrap px-5 py-4 align-top text-text-secondary">
-        {issue.assignedToName ?? <span className="italic text-text-placeholder">{t('projectIssues.unassigned')}</span>}
+        {issue.assignedToName ?? issue.assignedToGroupName
+          ?? <span className="italic text-text-placeholder">{t('projectIssues.unassigned')}</span>}
       </td>
       <td className="px-5 py-4 align-top text-text-muted">
         {formatIssueDateTime(issue.createdAt)}

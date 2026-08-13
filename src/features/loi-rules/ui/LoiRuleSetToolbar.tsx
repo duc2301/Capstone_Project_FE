@@ -64,7 +64,7 @@ export function LoiRuleSetToolbar({
     selected !== null && !selected.isSystem && !selected.isDefault && selected.projectCount === 0;
 
   return (
-    <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+    <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
       <select
         value={selected?.id ?? ''}
         onChange={(e) => onSelect(e.target.value)}

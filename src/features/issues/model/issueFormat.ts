@@ -5,8 +5,6 @@ export function issueStatusBadge(status: IssueStatus): { label: string; classNam
   switch (status) {
     case 'Closed':
       return { label: t('issues.status.closed'), className: 'bg-success-light text-success' };
-    case 'Answered':
-      return { label: t('issues.status.answered'), className: 'bg-primary/10 text-primary' };
     case 'InProgress':
       return { label: t('issues.status.inProgress'), className: 'bg-warning-light text-warning' };
     default:

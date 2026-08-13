@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 
 import type { Account } from '@/entities/account';
 import type { Group } from '@/entities/group';
+import { SearchField } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import type { InviteManyInput, InviteManyResult } from '../model/useProjectInvite';
+import { GroupPickerList } from './GroupPickerList';
 
 interface Props {
   projectId: string;
@@ -111,37 +113,14 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
     <form onSubmit={handleSubmit} className="space-y-5">
       <p className="text-sm text-text-muted">{t('projects.manage.invite.desc')}</p>
 
-      {/* ── Chọn nhóm (pills) ───────────────────────── */}
+      {/* ── Chọn nhóm ───────────────────────────────── */}
       {!lockedGroupId && (
-      <div className="space-y-2">
-        <span className="field-label">{t('projects.invite.group')}</span>
-        {loadingGroups ? (
-          <p className="text-sm text-text-muted">{t('common.loading')}</p>
-        ) : groups.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-card-border bg-input-bg px-4 py-3 text-sm text-text-muted">
-            {t('projects.invite.noGroups')}
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {groups.map((g) => {
-              const active = g.id === groupId;
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => selectGroup(g.id)}
-                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${active ? 'border-primary bg-primary text-white' : 'border-card-border bg-card text-text-secondary hover:border-primary hover:text-primary'}`}
-                >
-                  {g.name}
-                  <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold ${active ? 'bg-white/25 text-white' : 'bg-content-bg text-text-muted'}`}>
-                    {g.members.length}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        <GroupPickerList
+          groups={groups}
+          loading={loadingGroups}
+          selectedGroupId={groupId}
+          onSelect={selectGroup}
+        />
       )}
 
       {/* ── Chưa chọn nhóm ──────────────────────────── */}
@@ -165,19 +144,12 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <div className="flex flex-1 items-center gap-2 rounded-[var(--radius-input)] border border-input-border bg-input-bg px-3 py-2.5">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-muted">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('projects.invite.searchUser')}
-                className="w-full bg-transparent text-sm text-text outline-none placeholder:text-text-placeholder"
-              />
-            </div>
+            <SearchField
+              value={query}
+              onChange={setQuery}
+              placeholder={t('projects.invite.searchUser')}
+              className="flex-1"
+            />
 
             {/* Lọc theo doanh nghiệp: nhóm nào do công ty nào đảm nhiệm thì chọn công ty đó */}
             {organizationOptions.length > 0 && (

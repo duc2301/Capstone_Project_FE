@@ -644,13 +644,14 @@ export function FileViewPage() {
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
             {activePanelTab === 'properties' ? (
               <>
-                {/* Tóm tắt + cảnh báo AI theo ĐÚNG phiên bản đang xem: lấy từ `info` (version-aware)
-                    thay vì `fileListItem` (luôn là bản hiện hành) -> xem bản cũ hiện đúng của bản cũ. */}
-                {info?.warnning && info.warnningMessage && (
-                  <AiCheckerWarningCard message={info.warnningMessage} />
+                {info?.warnning === true && (
+                  <AiCheckerWarningCard message={info.warnningMessage || t('fileWarn.tooltip')} />
                 )}
                 {info?.description && (
                   <AiSummaryCard summary={info.description} />
+                )}
+                {info != null && info.warnning == null && !info.description && (
+                  <AiSummaryPendingCard />
                 )}
                 <FilePropertiesPanel
                   info={info}
@@ -780,6 +781,29 @@ function AiSummaryCard({ summary }: { summary: string }) {
         </div>
       </div>
       <p className="mt-2.5 whitespace-pre-line text-sm leading-relaxed text-text">{summary}</p>
+    </div>
+  );
+}
+
+/* Trạng thái thứ ba của phân tích AI: chưa đọc được nội dung. Tách khỏi AiSummaryCard vì
+   "không có tóm tắt" và "tóm tắt nói nội dung ổn" là hai kết luận khác hẳn nhau. */
+function AiSummaryPendingCard() {
+  return (
+    <div className="mb-4 rounded-xl border border-card-border bg-surface-sand-light p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-text-muted/15 text-text-muted">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-bold text-text">{t('fileSummary.pendingTitle')}</p>
+          <p className="text-xs text-text-muted">{t('fileSummary.sender')}</p>
+        </div>
+      </div>
+      <p className="mt-2.5 text-sm leading-relaxed text-text-muted">{t('fileSummary.pendingBody')}</p>
     </div>
   );
 }

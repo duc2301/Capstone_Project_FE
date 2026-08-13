@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { FileNote, MarkupSet } from '@/entities/file-note';
 import {
@@ -8,10 +8,18 @@ import {
   MarkupType,
   useFileNoteRealtime,
 } from '@/entities/file-note';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { captureMarkupSvg, captureThumbnail, captureViewpoint, endDraw } from './apsMarkup';
 
 type Viewer = Autodesk.Viewing.GuiViewer3D;
+
+interface MarkupData {
+  set: MarkupSet | null;
+  notes: FileNote[];
+}
+
+const EMPTY_MARKUP_DATA: MarkupData = { set: null, notes: [] };
 
 export interface UseModelMarkupReturn {
   notes: FileNote[];
@@ -28,75 +36,72 @@ export function useModelMarkup(
   fileVersionId: string | null,
   issueId?: string | null,
 ): UseModelMarkupReturn {
-  const [set, setSet] = useState<MarkupSet | null>(null);
-  const [notes, setNotes] = useState<FileNote[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const { data, loading, error: loadError, setData } = useAsyncData<MarkupData>(
+    `${fileItemId}|${issueId ?? ''}`,
+    async () => {
+      const { data: listData } = issueId
+        ? await markupApi.getSetsByIssue(issueId)
+        : await markupApi.getSetsByFile(fileItemId);
+      const sets = listData.isSuccess && listData.result ? listData.result : [];
+      const active = sets.find((s) => s.status === MarkupSetStatus.Open) ?? sets[0] ?? null;
+      if (!active) return EMPTY_MARKUP_DATA;
 
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = issueId
-          ? await markupApi.getSetsByIssue(issueId)
-          : await markupApi.getSetsByFile(fileItemId);
-        const sets = data.isSuccess && data.result ? data.result : [];
-        const active = sets.find((s) => s.status === MarkupSetStatus.Open) ?? sets[0] ?? null;
-        if (!active) {
-          if (!cancelled) {
-            setSet(null);
-            setNotes([]);
-          }
-          return;
-        }
-        const detail = await markupApi.getSetDetail(active.id);
-        if (!cancelled && detail.data.isSuccess && detail.data.result) {
-          setSet(detail.data.result);
-          setNotes((detail.data.result.notes ?? []).filter((n) => n.markupType === MarkupType.Viewpoint));
-        }
-      } catch {
-        if (!cancelled) setError(t('markup.error.load'));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+      const detail = await markupApi.getSetDetail(active.id);
+      if (!detail.data.isSuccess || !detail.data.result) return EMPTY_MARKUP_DATA;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [fileItemId, issueId]);
+      const found = detail.data.result;
+      return {
+        set: found,
+        notes: (found.notes ?? []).filter((n) => n.markupType === MarkupType.Viewpoint),
+      };
+    },
+    { fallback: EMPTY_MARKUP_DATA, toErrorMessage: () => t('markup.error.load') },
+  );
+
+  const { set, notes } = data;
+
+  const updateNotes = useCallback(
+    (updater: (current: FileNote[]) => FileNote[]) =>
+      setData((current) => ({ ...current, notes: updater(current.notes) })),
+    [setData],
+  );
 
   const ensureSet = useCallback(async (): Promise<MarkupSet> => {
     if (set) return set;
-    const { data } = await markupApi.createSet({ fileItemId, fileVersionId, issueId });
-    if (!data.isSuccess || !data.result) throw new Error(t('markup.error.save'));
-    setSet(data.result);
-    return data.result;
-  }, [set, fileItemId, fileVersionId, issueId]);
+    const { data: created } = await markupApi.createSet({ fileItemId, fileVersionId, issueId });
+    if (!created.isSuccess || !created.result) throw new Error(t('markup.error.save'));
+    const createdSet = created.result;
+    setData((current) => ({ ...current, set: createdSet }));
+    return createdSet;
+  }, [set, fileItemId, fileVersionId, issueId, setData]);
 
   useFileNoteRealtime(fileItemId, {
     onNoteAdded: (note) =>
-      setNotes((prev) =>
+      updateNotes((prev) =>
         note.markupType !== MarkupType.Viewpoint || prev.some((n) => n.id === note.id) ? prev : [...prev, note],
       ),
-    onNoteUpdated: (note) => setNotes((prev) => prev.map((n) => (n.id === note.id ? note : n))),
-    onNoteDeleted: (noteId) => setNotes((prev) => prev.filter((n) => n.id !== noteId)),
+    onNoteUpdated: (note) => updateNotes((prev) => prev.map((n) => (n.id === note.id ? note : n))),
+    onNoteDeleted: (noteId) => updateNotes((prev) => prev.filter((n) => n.id !== noteId)),
   });
 
   const addViewpointNote = useCallback(
     async (viewer: Viewer, content: string): Promise<FileNote | null> => {
       setSaving(true);
+      setActionError(null);
       try {
         const viewpointStateJson = captureViewpoint(viewer);
         const markupSvg = captureMarkupSvg(viewer);
+        if (viewpointStateJson === null || markupSvg === null) {
+          setActionError(t('markup.error.capture'));
+          return null;
+        }
         const thumbnailDataUrl = await captureThumbnail(viewer);
 
         const target = await ensureSet();
-        const { data } = await markupApi.addNote(target.id, {
+        const { data: added } = await markupApi.addNote(target.id, {
           markupType: MarkupType.Viewpoint,
           content: content.trim() || null,
           viewpointStateJson,
@@ -106,44 +111,46 @@ export function useModelMarkup(
 
         endDraw(viewer);
 
-        if (data.isSuccess && data.result) {
-          const created = data.result;
-          setNotes((prev) => (prev.some((n) => n.id === created.id) ? prev : [...prev, created]));
+        if (added.isSuccess && added.result) {
+          const created = added.result;
+          updateNotes((prev) => (prev.some((n) => n.id === created.id) ? prev : [...prev, created]));
           return created;
         }
         return null;
       } catch {
-        setError(t('markup.error.save'));
+        setActionError(t('markup.error.save'));
         return null;
       } finally {
         setSaving(false);
       }
     },
-    [ensureSet],
+    [ensureSet, updateNotes],
   );
 
   const deleteNote = useCallback(async (noteId: string): Promise<void> => {
     const snapshot = notes;
-    setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    setActionError(null);
+    updateNotes((prev) => prev.filter((n) => n.id !== noteId));
     try {
       await markupApi.deleteNote(noteId);
     } catch {
-      setNotes(snapshot);
-      setError(t('markup.error.save'));
+      updateNotes(() => snapshot);
+      setActionError(t('markup.error.save'));
     }
-  }, [notes]);
+  }, [notes, updateNotes]);
 
   const resolveNote = useCallback(async (noteId: string, status: FileNoteStatus): Promise<void> => {
+    setActionError(null);
     try {
-      const { data } = await markupApi.updateNote(noteId, { status });
-      if (data.isSuccess && data.result) {
-        const updated = data.result;
-        setNotes((prev) => prev.map((n) => (n.id === noteId ? updated : n)));
+      const { data: updated } = await markupApi.updateNote(noteId, { status });
+      if (updated.isSuccess && updated.result) {
+        const next = updated.result;
+        updateNotes((prev) => prev.map((n) => (n.id === noteId ? next : n)));
       }
     } catch {
-      setError(t('markup.error.save'));
+      setActionError(t('markup.error.save'));
     }
-  }, []);
+  }, [updateNotes]);
 
-  return { notes, loading, saving, error, addViewpointNote, deleteNote, resolveNote };
+  return { notes, loading, saving, error: actionError ?? loadError, addViewpointNote, deleteNote, resolveNote };
 }

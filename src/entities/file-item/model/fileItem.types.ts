@@ -107,6 +107,7 @@ export interface FileViewInfo {
   viewerStatus: ModelViewerStatus | null;
   /* % tiến độ dịch (vd "75% complete") khi đang Processing. */
   viewerProgress: string | null;
+  viewerError: string | null;
   url: string | null;
   contentType: string | null;
   fileName: string;

@@ -28,7 +28,6 @@ const PermissionMatrixPage = lazy(() => import('@/pages/permission-matrix').then
 const PackageDetailPage = lazy(() => import('@/pages/package-detail').then((m) => ({ default: m.PackageDetailPage })));
 const ReturnRequestManagementPage = lazy(() => import('@/pages/return-request-management').then((m) => ({ default: m.ReturnRequestManagementPage })));
 const NotificationsPage = lazy(() => import('@/pages/notifications').then((m) => ({ default: m.NotificationsPage })));
-const ViewerPage = lazy(() => import('@/pages/viewer').then((m) => ({ default: m.ViewerPage })));
 const FileViewPage = lazy(() => import('@/pages/file-view').then((m) => ({ default: m.FileViewPage })));
 const LoiReportPage = lazy(() => import('@/pages/loi-report').then((m) => ({ default: m.LoiReportPage })));
 const IssueDetailPage = lazy(() => import('@/pages/issue-detail').then((m) => ({ default: m.IssueDetailPage })));
@@ -37,8 +36,6 @@ const ContractPackagesPage = lazy(() => import('@/pages/contract-packages').then
 const AuditLogsPage = lazy(() => import('@/pages/audit-logs').then((m) => ({ default: m.AuditLogsPage })));
 const LoiRulesPage = lazy(() => import('@/pages/loi-rules').then((m) => ({ default: m.LoiRulesPage })));
 
-/* Fallback toàn màn hình cho các trang KHÔNG bọc AdminLayout (login/home/viewer). Trang trong
- * AdminLayout có Suspense riêng ở vùng nội dung (shell không nhấp nháy). */
 function FullPageFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-content-bg">
@@ -218,14 +215,6 @@ export const AppRoutes = () => {
               <AdminLayout>
                 <NotificationsPage />
               </AdminLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/viewer"
-          element={
-            <RequireAuth>
-              <ViewerPage />
             </RequireAuth>
           }
         />

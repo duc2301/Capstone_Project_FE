@@ -2445,6 +2445,10 @@ export const translations = {
   'fileSummary.sender': 'AI tạo tự động sau khi tải lên — chỉ mang tính tham khảo',
   'fileSummary.more': 'Xem thêm',
   'fileSummary.less': 'Thu gọn',
+  /* Trạng thái thứ ba: AI chưa soi được tệp. Không được để trông giống "đã kiểm, sạch". */
+  'fileSummary.pendingTitle': 'Chưa phân tích được nội dung',
+  'fileSummary.pendingBody': 'AI chưa đọc được nội dung tệp này (đang xử lý, tệp là bản scan, hoặc nội dung không trích xuất được như file hình ảnh) - cần người kiểm tra.',
+
 
   /* ── Ma trận phân quyền (RACI) ── */
   'projectDetail.nav.permissionMatrix': 'Ma trận phân quyền',

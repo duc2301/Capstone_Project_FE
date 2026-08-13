@@ -610,26 +610,11 @@ export const translations = {
   'profile.password.mismatch': 'Mật khẩu xác nhận không khớp.',
 
   // Viewer (xem model 3D/2D trên web qua APS Viewer)
-  'viewer.title': 'Trình xem mô hình 3D/2D',
-  'viewer.dropzone.title': 'Kéo & thả tệp mô hình vào đây',
-  'viewer.dropzone.hint': 'hoặc bấm để chọn tệp từ máy tính',
-  'viewer.dropzone.button': 'Chọn tệp',
-  'viewer.dropzone.formats': 'Định dạng hỗ trợ',
-  'viewer.upload.uploading': 'Đang tải tệp lên...',
-  'viewer.upload.translating': 'Đang dịch mô hình sang định dạng web...',
-  'viewer.upload.translatingHint':
-    'Quá trình này có thể mất vài phút với tệp lớn (.rvt, .nwd).',
   'viewer.status.loading': 'Đang khởi tạo trình xem...',
-  'viewer.back': 'Tải tệp khác',
-  'viewer.error.unsupported': 'Định dạng tệp không được hỗ trợ.',
-  'viewer.error.upload': 'Tải tệp lên thất bại. Vui lòng thử lại.',
-  'viewer.error.status': 'Không lấy được trạng thái dịch mô hình.',
-  'viewer.error.translateFailed':
-    'Dịch mô hình thất bại. Định dạng có thể không được APS hỗ trợ (ví dụ .pln, .doc, .xls).',
   'viewer.error.token': 'Không lấy được token trình xem từ máy chủ.',
   'viewer.error.init': 'Khởi tạo trình xem thất bại.',
   'viewer.error.load': 'Tải mô hình thất bại.',
-  'viewer.error.retry': 'Thử lại',
+  'viewer.error.detail': 'Chi tiết kỹ thuật (Autodesk APS)',
 
   // Notification (chuông + popup realtime)
   'notification.title': 'Thông báo',
@@ -1791,6 +1776,7 @@ export const translations = {
   'markup.error.load': 'Không tải được ghi chú markup.',
   'markup.error.pdfLoad': 'Không mở được tệp PDF. Kiểm tra kết nối tới máy chủ rồi tải lại trang.',
   'markup.error.save': 'Không lưu được ghi chú. Vui lòng thử lại.',
+  'markup.error.capture': 'Không ghi lại được góc nhìn hiện tại nên chưa lưu ghi chú. Tải lại trình xem rồi thử lại.',
   // Bộ lọc ghi chú markup (theo người tạo / trạng thái)
   'markup.filter.author': 'Người tạo',
   'markup.filter.allAuthors': 'Tất cả người tạo',

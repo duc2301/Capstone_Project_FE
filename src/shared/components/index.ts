@@ -30,3 +30,5 @@ export { ActionIconButton, ActionPillButton, DeleteIcon, EditIcon, ListErrorCard
 export type { ActionIconSize, ActionIconTone, ActionPillTone, ListTableColumn } from './table';
 export { Toast, useToast } from './toast';
 export type { ToastMessage, ToastType } from './toast';
+export { EmptyViewerState } from './viewer-state';
+export type { EmptyViewerStateProps } from './viewer-state';

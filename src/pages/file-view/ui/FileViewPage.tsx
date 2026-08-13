@@ -13,7 +13,7 @@ import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, FileTypeIcon, Toast, ToolbarIconButton, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, EmptyViewerState, FileTypeIcon, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
@@ -558,6 +558,7 @@ export function FileViewPage() {
                   format={format}
                   title={t('fileView.model.failed.title')}
                   desc={t('fileView.model.failed.desc')}
+                  detail={isAccountAdmin(currentUser?.role) ? info?.viewerError : null}
                   primaryLabel={
                     isVersionView
                       ? t('fileView.download.button')
@@ -1405,68 +1406,6 @@ function SignatureTimelineItem({ title, body, muted = false }: { title: string; 
       <div className="flex-1 rounded-[var(--radius-card)] border border-card-border bg-white/80 p-4 shadow-sm">
         <h3 className="heading-label">{title}</h3>
         <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
-      </div>
-    </div>
-  );
-}
-
-interface EmptyViewerStateProps {
-  title: string;
-  desc: string;
-  primaryLabel: string;
-  onPrimary: () => void;
-  secondaryLabel?: string;
-  onSecondary?: () => void;
-  danger?: boolean;
-  disabled?: boolean;
-  fileName: string;
-  format?: string | null;
-}
-
-function EmptyViewerState({
-  title,
-  desc,
-  primaryLabel,
-  onPrimary,
-  secondaryLabel,
-  onSecondary,
-  danger = false,
-  disabled = false,
-  fileName,
-  format,
-}: EmptyViewerStateProps) {
-  return (
-    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[var(--radius-card)] bg-card/90 p-8 text-center shadow-card">
-      {danger ? (
-        <span className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-card)] bg-danger-light text-danger">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-        </span>
-      ) : (
-        <FileTypeIcon fileName={fileName} format={format} size="lg" />
-      )}
-      <h3 className="heading-card text-text">{title}</h3>
-      <p className="text-sm text-text-muted">{desc}</p>
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={onPrimary}
-          disabled={disabled}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
-        >
-          {primaryLabel}
-        </button>
-        {secondaryLabel && onSecondary && (
-          <button
-            type="button"
-            onClick={onSecondary}
-            className="rounded-[var(--radius-button)] border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-          >
-            {secondaryLabel}
-          </button>
-        )}
       </div>
     </div>
   );

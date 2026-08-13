@@ -15,51 +15,27 @@ interface UseApsViewerReturn {
   viewer: Autodesk.Viewing.GuiViewer3D | null;
 }
 
-const POLL_INTERVAL_MS = 3000;
+interface ViewerSnapshot {
+  key: string;
+  status: ViewerStatus;
+  error: string | null;
+  viewer: Autodesk.Viewing.GuiViewer3D | null;
+}
 
-const delay = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
 export function useApsViewer(urn: string): UseApsViewerReturn {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<Autodesk.Viewing.GuiViewer3D | null>(null);
-  const [status, setStatus] = useState<ViewerStatus>('loading');
-  const [error, setError] = useState<string | null>(null);
-  const [viewer, setViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
+  const [snapshot, setSnapshot] = useState<ViewerSnapshot | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!urn || !container) return;
 
     let cancelled = false;
-    setStatus('loading');
-    setError(null);
 
     const fail = (message: string) => {
       if (cancelled) return;
-      setStatus('error');
-      setError(message);
-    };
-
-    const waitForTranslation = async (): Promise<boolean> => {
-      while (!cancelled) {
-        const { data } = await viewerApi.getStatus(urn);
-        if (cancelled) return false;
-
-        if (!data.isSuccess || !data.result) {
-          fail(data.message || t('viewer.error.status'));
-          return false;
-        }
-
-        const { status: translationStatus } = data.result;
-        if (translationStatus === 'success') return true;
-        if (translationStatus === 'failed' || translationStatus === 'timeout') {
-          fail(t('viewer.error.translateFailed'));
-          return false;
-        }
-
-        await delay(POLL_INTERVAL_MS);
-      }
-      return false;
+      setSnapshot({ key: urn, status: 'error', error: message, viewer: null });
     };
 
     const getAccessToken = (onTokenReady: Autodesk.Viewing.TokenCallback) => {
@@ -99,9 +75,6 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
         }
         viewerRef.current = viewer;
 
-        const translated = await waitForTranslation();
-        if (cancelled || !translated) return;
-
         Autodesk.Viewing.Document.load(
           `urn:${urn}`,
           (doc) => {
@@ -111,13 +84,15 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
               .loadDocumentNode(doc, defaultModel)
               .then(() => {
                 if (!cancelled) {
-                  setStatus('ready');
-                  setViewer(viewer);
+                  setSnapshot({ key: urn, status: 'ready', error: null, viewer });
                 }
               })
               .catch(() => fail(t('viewer.error.load')));
           },
-          (_code, message) => fail(message || t('viewer.error.load')),
+          (code, message) => {
+            console.error('[ApsViewer] Document.load failed', code, message);
+            fail(t('viewer.error.load'));
+          },
         );
       } catch {
         fail(t('viewer.error.init'));
@@ -128,7 +103,7 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
 
     return () => {
       cancelled = true;
-      setViewer(null);
+      setSnapshot(null);
       if (viewerRef.current) {
         viewerRef.current.finish();
         viewerRef.current = null;
@@ -137,5 +112,12 @@ export function useApsViewer(urn: string): UseApsViewerReturn {
     };
   }, [urn]);
 
-  return { containerRef, status, error, viewer };
+  const current = snapshot?.key === urn ? snapshot : null;
+
+  return {
+    containerRef,
+    status: current?.status ?? 'loading',
+    error: current?.error ?? null,
+    viewer: current?.viewer ?? null,
+  };
 }

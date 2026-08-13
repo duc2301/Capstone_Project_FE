@@ -8,7 +8,7 @@ function bestEffort(label: string, action: () => void): void {
   try {
     action();
   } catch (err) {
-    console.debug(`[apsMarkup] ${label} bỏ qua`, err);
+    console.warn(`[apsMarkup] ${label} failed`, err);
   }
 }
 
@@ -16,7 +16,7 @@ async function bestEffortAsync(label: string, action: () => Promise<void>): Prom
   try {
     await action();
   } catch (err) {
-    console.debug(`[apsMarkup] ${label} bỏ qua`, err);
+    console.warn(`[apsMarkup] ${label} failed`, err);
   }
 }
 
@@ -76,7 +76,8 @@ function getModel(viewer: Viewer): ModelLike | null {
 function getCurrentViewableGuid(viewer: Viewer): string | null {
   try {
     return getModel(viewer)?.getDocumentNode?.()?.data?.guid ?? null;
-  } catch {
+  } catch (err) {
+    console.warn('[apsMarkup] getCurrentViewableGuid failed', err);
     return null;
   }
 }
@@ -99,22 +100,24 @@ async function switchViewableIfNeeded(viewer: Viewer, targetGuid: string | null)
   });
 }
 
-export function captureViewpoint(viewer: Viewer): string {
+export function captureViewpoint(viewer: Viewer): string | null {
   try {
     return JSON.stringify({ viewableGuid: getCurrentViewableGuid(viewer), camera: viewer.getState() });
-  } catch {
-    return '{}';
+  } catch (err) {
+    console.error('[apsMarkup] captureViewpoint failed', err);
+    return null;
   }
 }
 
-export function captureMarkupSvg(viewer: Viewer): string {
+export function captureMarkupSvg(viewer: Viewer): string | null {
   const ext = getMarkupExt(viewer);
   if (!ext) return '';
   bestEffort('captureMarkupSvg.leaveEditMode', () => ext.leaveEditMode());
   try {
     return ext.generateData() ?? '';
-  } catch {
-    return '';
+  } catch (err) {
+    console.error('[apsMarkup] captureMarkupSvg failed', err);
+    return null;
   }
 }
 
@@ -170,7 +173,8 @@ export function captureThumbnail(viewer: Viewer): Promise<string> {
         }
         img.src = src;
       });
-    } catch {
+    } catch (err) {
+      console.warn('[apsMarkup] captureThumbnail failed', err);
       resolve('');
     }
   });
@@ -192,7 +196,8 @@ function waitRestoreState(viewer: Viewer, state: Record<string, unknown>): Promi
     viewer.addEventListener(Autodesk.Viewing.FINAL_FRAME_RENDERED_CHANGED_EVENT, listener);
     try {
       viewer.restoreState(state);
-    } catch {
+    } catch (err) {
+      console.warn('[apsMarkup] restoreState failed', err);
       finish();
       return;
     }
@@ -216,7 +221,8 @@ export async function restoreNote(viewer: Viewer, viewpointJson: string | null, 
       } else {
         camera = parsed;
       }
-    } catch {
+    } catch (err) {
+      console.warn('[apsMarkup] restoreNote parse viewpoint failed', err);
       camera = null;
     }
   }

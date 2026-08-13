@@ -3,10 +3,11 @@ import { useParams } from 'react-router-dom';
 
 import type { FileVersion, FileViewInfo } from '@/entities/file-item';
 import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
+import { isAccountAdmin, useSession } from '@/entities/session';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { IssueSidePanel, useIssueDetail } from '@/features/issues';
 import { ModelCommentsPanel } from '@/features/model-markup';
-import { Toast, useToast } from '@/shared/components';
+import { EmptyViewerState, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 import { ModelViewer } from '@/widgets/ModelViewer';
@@ -37,6 +38,7 @@ export function IssueDetailPage() {
   const loading = Boolean(fileId) && loadedFileId !== fileId;
   const [viewer, setViewer] = useState<Autodesk.Viewing.GuiViewer3D | null>(null);
 
+  const { currentUser } = useSession();
   const { toast, showToast } = useToast();
 
   const { data: issue, loading: issueLoading, error: issueError, reload: reloadIssue } = useIssueDetail(issueId);
@@ -127,8 +129,14 @@ export function IssueDetailPage() {
     );
   } else if (isModelFailed) {
     viewerContent = (
-      <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-        <p className="text-sm font-medium text-danger">{t('fileView.model.failed.desc')}</p>
+      <div className="absolute inset-0 flex items-center justify-center px-6">
+        <EmptyViewerState
+          danger
+          fileName={fileName}
+          title={t('fileView.model.failed.title')}
+          desc={t('fileView.model.failed.desc')}
+          detail={isAccountAdmin(currentUser?.role) ? info?.viewerError : null}
+        />
       </div>
     );
   } else if (canMarkupInline) {

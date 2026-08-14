@@ -28,6 +28,7 @@ export function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<ProjectFilter>('all');
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const bepInputRef = useRef<HTMLInputElement>(null);
   const bepTask = useBepTask();
@@ -58,10 +59,15 @@ export function ProjectsPage() {
     window.location.href = `/projects/${projectId}`;
   };
 
-  const filtered = useMemo(
-    () => projects.filter((p) => matchesFilter(p, filter)),
-    [projects, filter],
-  );
+  const filtered = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return projects.filter((p) => {
+      if (!matchesFilter(p, filter)) return false;
+      if (!query) return true;
+      const haystack = [p.projectName, p.projectCode].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [projects, filter, searchQuery]);
 
   const changeFilter = (next: ProjectFilter) => {
     setFilter(next);
@@ -129,22 +135,41 @@ export function ProjectsPage() {
       </div>
 
       {!loading && !error && (
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
-          {PROJECT_FILTERS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => changeFilter(item)}
-              aria-pressed={filter === item}
-              className={`rounded-[var(--radius-button)] px-6 py-2 text-sm font-semibold transition-colors ${
-                filter === item
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'border border-card-border bg-card text-text-secondary hover:bg-content-bg'
-              }`}
-            >
-              {filterLabel(item)}
-            </button>
-          ))}
+        <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center gap-3">
+            {PROJECT_FILTERS.filter((item) => item === 'all').map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => changeFilter(item)}
+                aria-pressed={filter === item}
+                className={`rounded-[var(--radius-button)] px-6 py-2 text-sm font-semibold transition-colors ${
+                  filter === item
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'border border-card-border bg-card text-text-secondary hover:bg-content-bg'
+                }`}
+              >
+                {filterLabel(item)}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full max-w-sm">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              placeholder={t('projects.search')}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              className="w-full rounded-[var(--radius-input)] border border-card-border bg-card py-2.5 pl-10 pr-4 text-sm text-text shadow-card outline-none transition-colors focus:border-primary"
+            />
+          </div>
         </div>
       )}
 
@@ -165,7 +190,7 @@ export function ProjectsPage() {
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto pb-1 pr-1">
             {pageItems.length === 0 ? (
               <div className="flex h-full min-h-[240px] items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card">
-                <p className="text-sm text-text-muted">{t('projects.empty')}</p>
+                <p className="text-sm text-text-muted">{searchQuery ? t('projects.noResults') : t('projects.empty')}</p>
               </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">

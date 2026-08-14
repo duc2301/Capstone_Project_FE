@@ -14,6 +14,8 @@ interface FolderContextMenuProps {
   onMove: () => void;
   onDelete: () => void;
   onPermission: () => void;
+  /** Được phép hiển thị mục "Phân quyền" — Leader ở Published/Archived và Member đều bị ẩn. */
+  canPermission: boolean;
   onNaming: () => void;
   onClose: () => void;
 }
@@ -27,7 +29,7 @@ interface Item {
 }
 
 export function FolderContextMenu({
-  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onPermission, onNaming, onClose,
+  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onPermission, canPermission, onNaming, onClose,
 }: FolderContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -49,7 +51,8 @@ export function FolderContextMenu({
   const items: Item[] = [];
 
   // Phân quyền: chỉ trên thư mục con — thư mục gốc (WIP/Shared/Published/Archived) không phân quyền.
-  if (!isRoot) {
+  // Ẩn thêm với Leader ở vùng Published/Archived và với Member (canPermission do trang cha quyết).
+  if (!isRoot && canPermission) {
     items.push({
       key: 'permission',
       label: t('documents.menu.permission'),

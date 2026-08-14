@@ -130,6 +130,16 @@ export function DocumentsTab({
   const canManageNaming = isAdmin || isProjectLeader;
   const canOverseeProject = isAdmin || isProjectManager || isProjectLeader;
 
+  // Ai được thấy mục "Phân quyền" trong menu chuột phải (thư mục/tệp):
+  // - Admin/PM: giữ nguyên, luôn thấy.
+  // - Leader: ẩn ở vùng Published/Archived (chỉ còn WIP/Shared).
+  // - Member (không phải Admin/PM/Leader): ẩn hoàn toàn ở mọi vùng.
+  const canShowPermissionMenu = (area: CdeArea): boolean => {
+    if (hasFullFolderAccess) return true;
+    if (isProjectLeader) return area !== CdeArea.Published && area !== CdeArea.Archived;
+    return false;
+  };
+
   // Khôi phục thư mục đang chọn khi quay lại từ trang "Xem chi tiết" (?folder=...).
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('folder'));
   const [menu, setMenu] = useState<MenuState | null>(null);
@@ -565,6 +575,7 @@ export function DocumentsTab({
           onMove={() => setModal({ action: 'move', node: menu.node })}
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
           onPermission={() => setPermissionFor(menu.node)}
+          canPermission={canShowPermissionMenu(menu.node.area)}
           onNaming={() => setNamingFor(menu.node)}
         />
       )}
@@ -612,6 +623,7 @@ export function DocumentsTab({
           canManageVersions={selectedPermission.canEdit}
           onVersions={() => setVersionsFor(fileMenu.file)}
           onPermission={() => setFilePermissionFor(fileMenu.file)}
+          canPermission={!!selected && canShowPermissionMenu(selected.area)}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
           onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
           canTransferZone={canTransferZone(fileMenu.file)}

@@ -2,14 +2,7 @@ export { BepTaskProvider } from './model/BepTaskProvider';
 export type { BepTaskStatus } from './model/bepTaskContext';
 export { useBepTask } from './model/useBepTask';
 export { BepTaskToast } from './ui/BepTaskToast';
-export {
-  filterLabel,
-  matchesFilter,
-  PROJECT_FILTERS,
-  projectAddress,
-  statusMeta,
-} from './model/projectFormat';
-export type { ProjectFilter } from './model/projectFormat';
+export { projectAddress } from './model/projectFormat';
 export { useProjectDetail } from './model/useProjectDetail';
 export { useProjectGroups } from './model/useProjectGroups';
 export type { AddGroupInput } from './model/useProjectGroups';

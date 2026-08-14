@@ -30,3 +30,13 @@ export function ViewIcon({ size = 16 }: ActionIconProps) {
     </svg>
   );
 }
+
+export function MoreIcon({ size = 18 }: ActionIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+    </svg>
+  );
+}

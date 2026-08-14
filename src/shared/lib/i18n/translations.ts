@@ -663,9 +663,6 @@ export const translations = {
   'projects.empty': 'Chưa có dự án nào',
   'projects.noResults': 'Không tìm thấy dự án phù hợp',
   'projects.search': 'Tìm theo tên hoặc mã dự án...',
-  'projects.filter.all': 'Tất cả',
-  'projects.filter.active': 'Đang hoạt động',
-  'projects.filter.completed': 'Hoàn thành',
   'projects.card.code': 'Mã dự án',
   'projects.card.noCode': 'Chưa có mã',
   'projects.card.noAddress': 'Chưa cập nhật địa điểm',
@@ -925,8 +922,6 @@ export const translations = {
   'projects.invite.placeholder.group': '— Chọn nhóm —',
   'projects.role.member': 'Thành viên',
   'projects.role.leader': 'Trưởng nhóm',
-  'projects.status.active': 'Đang hoạt động',
-  'projects.status.completed': 'Hoàn thành',
   'projects.phase.concept': 'Ý tưởng',
   'projects.phase.design': 'Thiết kế',
   'projects.phase.construction': 'Thi công',
@@ -1247,7 +1242,7 @@ export const translations = {
   'documents.tree.collapse': 'Thu gọn',
   'documents.tree.workingZone': 'Vùng làm việc',
   'documents.tree.archiveZone': 'Vùng lưu trữ',
-  
+
   // Thao tác thư mục (context menu + modal)
   'documents.menu.createSub': 'Tạo thư mục con',
   'documents.menu.rename': 'Đổi tên',
@@ -1315,6 +1310,7 @@ export const translations = {
   'documents.files.colSize': 'DUNG LƯỢNG',
   'documents.files.colStatus': 'TRẠNG THÁI',
   'documents.files.colModified': 'NGÀY CHỈNH SỬA',
+  'documents.files.rowMenu': 'Mở menu thao tác',
   'documents.status.draft': 'Nháp',
   'documents.status.pending': 'Đang chờ',
   'documents.status.approved': 'Đã phê duyệt',
@@ -1610,7 +1606,7 @@ export const translations = {
   'documents.versions.current': 'Hiện hành',
   'documents.versions.download': 'Tải về',
   'documents.versions.downloading': 'Đang tải...',
-  'documents.versions.setCurrent':'Đặt làm hiện hành',
+  'documents.versions.setCurrent': 'Đặt làm hiện hành',
   'documents.versions.restoring': 'Đang khôi phục…',
   'documents.versions.cancel': 'Hủy',
   'documents.versions.confirmTitle': 'Đặt phiên bản này làm hiện hành?',
@@ -2292,6 +2288,8 @@ export const translations = {
   'projectIssues.empty': 'Chưa có vấn đề nào trong phạm vi bạn được xem.',
 
   'documents.uploadWipOnly': 'Chỉ được tải tệp lên khu vực WIP. Tệp sang Shared/Published qua luồng phê duyệt.',
+  'documents.upload.blockedRoot': 'Không tải tệp trực tiếp vào thư mục gốc của khu vực. Hãy chọn một thư mục con.',
+  'documents.upload.blockedPermission': 'Bạn chỉ có quyền xem thư mục này nên không tải tệp lên được.',
   'documents.createWipOnly': 'Chỉ được tạo thư mục con trong khu vực WIP.',
   'issues.unknownUser': 'Không rõ',
   'issues.unknownGroup': 'Nhóm không rõ',

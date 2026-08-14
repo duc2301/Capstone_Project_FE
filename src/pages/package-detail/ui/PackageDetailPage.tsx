@@ -10,6 +10,7 @@ import type { FolderContentsFileDto } from '@/entities/folder';
 import { downloadBlob } from '@/shared/lib/download';
 import { Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
+import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
 
 interface PackageDetailData {
@@ -29,7 +30,7 @@ function fmtCurrency(val: number | undefined, cur = 'VND') {
 
 function fmtDate(d?: string) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('vi-VN');
+  return formatDate(d);
 }
 
 function computeElapsedPercent(startDate: string | undefined, endDate: string | undefined, now: number): number {

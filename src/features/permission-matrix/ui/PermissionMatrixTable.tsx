@@ -50,9 +50,7 @@ function Legend() {
       <LegendItem
         label={t('matrix.legend.inherited')}
         swatch={
-          <span className={`${LEGEND_SWATCH} border-2 border-dashed ${levelSwatchClass(PermissionLevel.Read)}`}>
-            {levelLetter(PermissionLevel.Read)}
-          </span>
+          <span className={`${LEGEND_SWATCH} border-2 border-dashed ${levelSwatchClass(PermissionLevel.Read)}`} />
         }
       />
     </div>

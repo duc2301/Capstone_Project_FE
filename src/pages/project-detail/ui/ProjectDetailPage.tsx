@@ -846,15 +846,15 @@ export function ProjectDetailPage() {
           </div>
 
           <div className={`${cardClass} overflow-x-auto`}>
-            <table className="table-list min-w-[960px] text-left">
+            <table className="table-list min-w-[1040px] text-left">
               <colgroup>
-                <col className="w-[22%]" />
-                <col className="w-[12%]" />
+                <col />
+                <col className="w-[150px]" />
                 <col className="w-[20%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[13%]" />
-                <col className="w-[9%]" />
+                <col className="w-[124px]" />
+                <col className="w-[124px]" />
+                <col className="w-[130px]" />
+                <col className="w-[90px]" />
               </colgroup>
               <thead>
                 <tr className="table-head">
@@ -889,8 +889,8 @@ export function ProjectDetailPage() {
                       </td>
                       <td className="cell-wrap py-4 pr-4 align-top font-bold text-primary">{p.code}</td>
                       <td className="cell-wrap py-4 pr-4 align-top text-text-muted">{partnerName}</td>
-                      <td className="py-4 text-center align-top">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="py-4 text-center align-top">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 text-center align-top">{p.startDate ? formatDate(p.startDate) : '—'}</td>
+                      <td className="py-4 text-center align-top">{p.endDate ? formatDate(p.endDate) : '—'}</td>
                       <td className="py-4 align-top">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pkgStatus.badgeClass}`}>
                           {pkgStatus.label}

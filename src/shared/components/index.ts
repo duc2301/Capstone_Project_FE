@@ -26,7 +26,7 @@ export type { ModalProps } from './modal';
 export { Pagination, PaginationBar } from './pagination';
 export type { PaginationBarProps, PaginationProps } from './pagination';
 export { SearchField } from './search';
-export { ActionIconButton, ActionPillButton, DeleteIcon, EditIcon, ListErrorCard, ListLoadingCard, ListTable, RowActions, ViewIcon } from './table';
+export { ActionIconButton, ActionPillButton, DeleteIcon, EditIcon, ListErrorCard, ListLoadingCard, ListTable, MoreIcon, RowActions, ViewIcon } from './table';
 export type { ActionIconSize, ActionIconTone, ActionPillTone, ListTableColumn } from './table';
 export { Toast, useToast } from './toast';
 export type { ToastMessage, ToastType } from './toast';

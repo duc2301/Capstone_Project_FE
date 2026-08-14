@@ -81,13 +81,13 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
 
   return (
     <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-      <table className="table-list min-w-[560px]">
+      <table className="table-list min-w-[720px]">
         <colgroup>
-          <col />
-          <col className="w-[92px]" />
-          <col className="w-[92px]" />
-          <col className="w-[124px]" />
-          <col className="w-[124px]" />
+          <col className="w-[46%]" />
+          <col className="w-[11%]" />
+          <col className="w-[11%]" />
+          <col className="w-[16%]" />
+          <col className="w-[16%]" />
         </colgroup>
         <thead className="sticky top-0 z-10 bg-card">
           <tr className="table-head">
@@ -108,10 +108,10 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               title={t('documents.files.folderOpenHint')}
               className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
-              <td className="py-3 pr-3">
-                <div className="flex items-center gap-3">
+              <td className="overflow-hidden py-3 pr-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <FolderGlyph size={26} className="text-primary" />
-                  <p className="truncate font-medium text-text">{folder.name}</p>
+                  <p className="min-w-0 flex-1 truncate font-medium text-text">{folder.name}</p>
                 </div>
               </td>
               <td className="px-3 py-3 text-text-muted">—</td>
@@ -128,12 +128,12 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               title={t('documents.files.openHint')}
               className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
             >
-              <td className="py-3 pr-3">
-                <div className="flex items-start gap-3">
+              <td className="overflow-hidden py-3 pr-3">
+                <div className="flex min-w-0 items-start gap-3">
                   <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
-                      <span className="cell-wrap">{f.name}</span>
+                      <span className="cell-wrap min-w-0 break-all">{f.name}</span>
                       {/* Truyền warnningMessage vào WarningIcon */}
                       {f.warnning && <WarningIcon message={f.warnningMessage} />}
                     </p>

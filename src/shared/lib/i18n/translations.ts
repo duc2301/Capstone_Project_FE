@@ -2292,6 +2292,7 @@ export const translations = {
   'projectIssues.empty': 'Chưa có vấn đề nào trong phạm vi bạn được xem.',
 
   'documents.uploadWipOnly': 'Chỉ được tải tệp lên khu vực WIP. Tệp sang Shared/Published qua luồng phê duyệt.',
+  'documents.createWipOnly': 'Chỉ được tạo thư mục con trong khu vực WIP.',
   'issues.unknownUser': 'Không rõ',
   'issues.unknownGroup': 'Nhóm không rõ',
   'issues.tab.info': 'Thông tin',

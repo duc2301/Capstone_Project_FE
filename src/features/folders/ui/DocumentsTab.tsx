@@ -197,11 +197,17 @@ export function DocumentsTab({
     setMenu({ node, x: e.clientX, y: e.clientY });
   };
 
+  // Chỉ được tạo thư mục con trong khu vực WIP — Shared/Published/Archived (kể cả gốc) bị cấm.
+  const canCreateSubIn = (node: FolderTreeNode, canEdit: boolean) =>
+    canEdit && node.area === CdeArea.Wip;
+
   const handleNewFolderClick = () => {
-    if (selected && selectedPermission.canEdit) {
-      setModal({ action: 'create', node: selected });
-    } else {
+    if (!selected || !selectedPermission.canEdit) {
       showToast(t('documents.selectFolderToCreate'), 'error');
+    } else if (selected.area !== CdeArea.Wip) {
+      showToast(t('documents.createWipOnly'), 'error');
+    } else {
+      setModal({ action: 'create', node: selected });
     }
   };
 
@@ -511,17 +517,19 @@ export function DocumentsTab({
                   {/* Nút thao tác nhanh trên thư mục đang chọn */}
                   {selectedPermission.canEdit && (
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <button
-                        type="button"
-                        title={t('documents.menu.createSub')}
-                        onClick={() => setModal({ action: 'create', node: selected })}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-content-bg hover:text-primary"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                          <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
-                        </svg>
-                      </button>
+                      {canCreateSubIn(selected, selectedPermission.canEdit) && (
+                        <button
+                          type="button"
+                          title={t('documents.menu.createSub')}
+                          onClick={() => setModal({ action: 'create', node: selected })}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-content-bg hover:text-primary"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                            <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                          </svg>
+                        </button>
+                      )}
                       {selectedCanManage && (
                         <>
                           <button

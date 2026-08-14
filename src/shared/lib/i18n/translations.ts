@@ -2290,6 +2290,7 @@ export const translations = {
   'documents.uploadWipOnly': 'Chỉ được tải tệp lên khu vực WIP. Tệp sang Shared/Published qua luồng phê duyệt.',
   'documents.upload.blockedRoot': 'Không tải tệp trực tiếp vào thư mục gốc của khu vực. Hãy chọn một thư mục con.',
   'documents.upload.blockedPermission': 'Bạn chỉ có quyền xem thư mục này nên không tải tệp lên được.',
+  'documents.createWipOnly': 'Chỉ được tạo thư mục con trong khu vực WIP.',
   'issues.unknownUser': 'Không rõ',
   'issues.unknownGroup': 'Nhóm không rõ',
   'issues.tab.info': 'Thông tin',

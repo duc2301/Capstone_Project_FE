@@ -22,7 +22,6 @@ import {
   GroupDetailPanel,
   ManageProjectPanel,
   ProjectPartnersTab,
-  statusMeta,
   useProjectDetail,
   useProjectGroups,
   useProjectInvite,
@@ -617,10 +616,6 @@ export function ProjectDetailPage() {
                 <h3 className="heading-eyebrow">
                   {t('projectDetail.sidebar.details')}
                 </h3>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusMeta(project.status).badgeClass}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${statusMeta(project.status).dotClass}`} />
-                  {statusMeta(project.status).label}
-                </span>
               </div>
 
               <div className="mt-6 space-y-3">
@@ -851,23 +846,23 @@ export function ProjectDetailPage() {
           </div>
 
           <div className={`${cardClass} overflow-x-auto`}>
-            <table className="table-list min-w-[900px] text-left">
+            <table className="table-list min-w-[960px] text-left">
               <colgroup>
-                <col />
-                <col className="w-[150px]" />
+                <col className="w-[22%]" />
+                <col className="w-[12%]" />
                 <col className="w-[20%]" />
-                <col className="w-[110px]" />
-                <col className="w-[110px]" />
-                <col className="w-[130px]" />
-                <col className="w-[90px]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[13%]" />
+                <col className="w-[9%]" />
               </colgroup>
               <thead>
                 <tr className="table-head">
                   <th className="pb-3">{t('packages.col.name')}</th>
                   <th className="pb-3">{t('packages.col.code')}</th>
                   <th className="pb-3">{t('packages.col.contractor')}</th>
-                  <th className="pb-3">{t('packages.col.startDate')}</th>
-                  <th className="pb-3">{t('packages.col.endDate')}</th>
+                  <th className="pb-3 text-center">{t('packages.col.startDate')}</th>
+                  <th className="pb-3 text-center">{t('packages.col.endDate')}</th>
                   <th className="pb-3">{t('packages.col.status')}</th>
                   <th className="pb-3 text-right">{t('common.col.actions')}</th>
                 </tr>
@@ -894,8 +889,8 @@ export function ProjectDetailPage() {
                       </td>
                       <td className="cell-wrap py-4 pr-4 align-top font-bold text-primary">{p.code}</td>
                       <td className="cell-wrap py-4 pr-4 align-top text-text-muted">{partnerName}</td>
-                      <td className="py-4 align-top">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="py-4 align-top">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 text-center align-top">{p.startDate ? new Date(p.startDate).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="py-4 text-center align-top">{p.endDate ? new Date(p.endDate).toLocaleDateString('vi-VN') : '—'}</td>
                       <td className="py-4 align-top">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pkgStatus.badgeClass}`}>
                           {pkgStatus.label}

@@ -1,7 +1,7 @@
 import type { Project } from '@/entities/project';
 import { t } from '@/shared/lib/i18n';
 
-import { projectAddress, statusMeta } from '../model/projectFormat';
+import { projectAddress } from '../model/projectFormat';
 
 interface ProjectCardProps {
   project: Project;
@@ -10,7 +10,6 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onOpen, meta }: ProjectCardProps) {
-  const status = statusMeta(project.status);
   const address = projectAddress(project);
 
   return (
@@ -32,13 +31,6 @@ export function ProjectCard({ project, onOpen, meta }: ProjectCardProps) {
             </span>
           </div>
         )}
-
-        <span
-          className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[var(--radius-badge)] border px-2.5 py-1 text-xs font-semibold shadow-sm ${status.badgeClass}`}
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
-          {status.label}
-        </span>
       </div>
 
       <div className="flex flex-1 flex-col p-6">

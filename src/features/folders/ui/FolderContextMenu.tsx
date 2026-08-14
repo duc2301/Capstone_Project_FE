@@ -94,7 +94,8 @@ export function FolderContextMenu({
     });
   }
 
-  if (canEdit) {
+  // Tạo thư mục con chỉ ở khu vực WIP — Shared/Published/Archived bị cấm.
+  if (canEdit && node.area === CdeArea.Wip) {
     items.push({
       key: 'create',
       label: t('documents.menu.createSub'),

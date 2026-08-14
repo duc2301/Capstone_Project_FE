@@ -77,6 +77,9 @@ export const contractPackageApi = {
   getAll: () =>
     axiosInstance.get<ApiResponse<ContractPackage[]>>('/contract-packages'),
 
+  getMine: () =>
+    axiosInstance.get<ApiResponse<ContractPackage[]>>('/contract-packages/mine'),
+
   getByProjectId: (projectId: string) =>
     axiosInstance.get<ApiResponse<ContractPackage[]>>(`/contract-packages/project/${projectId}`),
 

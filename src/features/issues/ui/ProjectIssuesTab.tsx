@@ -18,11 +18,11 @@ const PAGE_SIZE = 20;
 const SELECT_CLASS = 'field-select w-auto border-card-border bg-card shadow-card';
 
 const ISSUE_COLUMNS: ListTableColumn[] = [
-  { key: 'title', label: t('projectIssues.col.title'), width: 'w-[36%]' },
-  { key: 'priority', label: t('projectIssues.col.priority'), width: 'w-[13%]' },
-  { key: 'status', label: t('projectIssues.col.status'), width: 'w-[14%]' },
-  { key: 'assignee', label: t('projectIssues.col.assignee'), width: 'w-[20%]' },
-  { key: 'created', label: t('projectIssues.col.created'), width: 'w-[17%]' },
+  { key: 'title', label: t('projectIssues.col.title') },
+  { key: 'priority', label: t('projectIssues.col.priority'), width: 'w-[120px]' },
+  { key: 'status', label: t('projectIssues.col.status'), width: 'w-[130px]' },
+  { key: 'assignee', label: t('projectIssues.col.assignee'), width: 'w-[160px]' },
+  { key: 'created', label: t('projectIssues.col.created'), width: 'w-[150px]' },
 ];
 
 interface Props {

@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus, RelatedFileArea } from '@/entities/file-item';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { FileActivitySection } from '@/features/audit-logs';
@@ -13,7 +13,7 @@ import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
-import { ActionIconButton, ConfirmDialog, FileTypeIcon, Toast, ToolbarIconButton, useToast } from '@/shared/components';
+import { ActionIconButton, ConfirmDialog, EmptyViewerState, FileTypeIcon, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
@@ -186,6 +186,7 @@ export function FileViewPage() {
   const permissionFolderId = info?.folderId ?? fileListItem?.folderId ?? folderId ?? null;
   const { permission } = useFolderPermission(permissionFolderId, isAccountAdmin(currentUser?.role));
   const canManageVersions = Boolean(permission?.canEdit);
+  const canRestoreVersion = canManageVersions && info?.area === RelatedFileArea.Wip;
 
   const openVersion = useCallback((versionId: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -506,7 +507,7 @@ export function FileViewPage() {
                 >
                   {t('fileView.versionView.backToCurrent')}
                 </button>
-                {canManageVersions && (
+                {canRestoreVersion && (
                   <button
                     type="button"
                     onClick={() => setConfirmSetCurrent(true)}
@@ -558,6 +559,7 @@ export function FileViewPage() {
                   format={format}
                   title={t('fileView.model.failed.title')}
                   desc={t('fileView.model.failed.desc')}
+                  detail={isAccountAdmin(currentUser?.role) ? info?.viewerError : null}
                   primaryLabel={
                     isVersionView
                       ? t('fileView.download.button')
@@ -644,13 +646,14 @@ export function FileViewPage() {
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
             {activePanelTab === 'properties' ? (
               <>
-                {/* Tóm tắt + cảnh báo AI theo ĐÚNG phiên bản đang xem: lấy từ `info` (version-aware)
-                    thay vì `fileListItem` (luôn là bản hiện hành) -> xem bản cũ hiện đúng của bản cũ. */}
-                {info?.warnning && info.warnningMessage && (
-                  <AiCheckerWarningCard message={info.warnningMessage} />
+                {info?.warnning === true && (
+                  <AiCheckerWarningCard message={info.warnningMessage || t('fileWarn.tooltip')} />
                 )}
                 {info?.description && (
                   <AiSummaryCard summary={info.description} />
+                )}
+                {info != null && info.warnning == null && !info.description && (
+                  <AiSummaryPendingCard />
                 )}
                 <FilePropertiesPanel
                   info={info}
@@ -714,7 +717,7 @@ export function FileViewPage() {
           fileItemId={fileId}
           fileName={fileTitle}
           currentVersionId={currentVersion?.id ?? null}
-          canRestore={canManageVersions}
+          canRestore={canRestoreVersion}
           onViewVersion={(versionStateId, isCurrent) => {
             setVersionsOpen(false);
             openVersion(isCurrent ? null : versionStateId);
@@ -780,6 +783,29 @@ function AiSummaryCard({ summary }: { summary: string }) {
         </div>
       </div>
       <p className="mt-2.5 whitespace-pre-line text-sm leading-relaxed text-text">{summary}</p>
+    </div>
+  );
+}
+
+/* Trạng thái thứ ba của phân tích AI: chưa đọc được nội dung. Tách khỏi AiSummaryCard vì
+   "không có tóm tắt" và "tóm tắt nói nội dung ổn" là hai kết luận khác hẳn nhau. */
+function AiSummaryPendingCard() {
+  return (
+    <div className="mb-4 rounded-xl border border-card-border bg-surface-sand-light p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-text-muted/15 text-text-muted">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-bold text-text">{t('fileSummary.pendingTitle')}</p>
+          <p className="text-xs text-text-muted">{t('fileSummary.sender')}</p>
+        </div>
+      </div>
+      <p className="mt-2.5 text-sm leading-relaxed text-text-muted">{t('fileSummary.pendingBody')}</p>
     </div>
   );
 }
@@ -1405,68 +1431,6 @@ function SignatureTimelineItem({ title, body, muted = false }: { title: string; 
       <div className="flex-1 rounded-[var(--radius-card)] border border-card-border bg-white/80 p-4 shadow-sm">
         <h3 className="heading-label">{title}</h3>
         <p className="mt-2 text-xs font-medium text-text-secondary">{body}</p>
-      </div>
-    </div>
-  );
-}
-
-interface EmptyViewerStateProps {
-  title: string;
-  desc: string;
-  primaryLabel: string;
-  onPrimary: () => void;
-  secondaryLabel?: string;
-  onSecondary?: () => void;
-  danger?: boolean;
-  disabled?: boolean;
-  fileName: string;
-  format?: string | null;
-}
-
-function EmptyViewerState({
-  title,
-  desc,
-  primaryLabel,
-  onPrimary,
-  secondaryLabel,
-  onSecondary,
-  danger = false,
-  disabled = false,
-  fileName,
-  format,
-}: EmptyViewerStateProps) {
-  return (
-    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[var(--radius-card)] bg-card/90 p-8 text-center shadow-card">
-      {danger ? (
-        <span className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-card)] bg-danger-light text-danger">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-        </span>
-      ) : (
-        <FileTypeIcon fileName={fileName} format={format} size="lg" />
-      )}
-      <h3 className="heading-card text-text">{title}</h3>
-      <p className="text-sm text-text-muted">{desc}</p>
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={onPrimary}
-          disabled={disabled}
-          className="rounded-[var(--radius-button)] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
-        >
-          {primaryLabel}
-        </button>
-        {secondaryLabel && onSecondary && (
-          <button
-            type="button"
-            onClick={onSecondary}
-            className="rounded-[var(--radius-button)] border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost"
-          >
-            {secondaryLabel}
-          </button>
-        )}
       </div>
     </div>
   );

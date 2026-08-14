@@ -24,10 +24,10 @@ export function PermissionCell({ row, cell, value, dirty, onChange }: Permission
   const disabled = !cell.editable;
 
   const className = [
-    'w-full min-w-[52px] cursor-pointer appearance-none rounded border px-1.5 py-1 text-center',
+    'h-9 w-full cursor-pointer appearance-none rounded-[var(--radius-input)] px-2 text-center',
     'text-sm font-bold outline-none transition-colors focus:ring-2 focus:ring-primary/30',
     levelSwatchClass(inheritPending ? Level.Inherit : value),
-    showInherited || inheritPending ? 'italic opacity-70' : '',
+    showInherited || inheritPending ? 'border-2 border-dashed' : 'border',
     dirty ? 'ring-2 ring-primary ring-offset-1 ring-offset-content-bg' : '',
     disabled ? 'cursor-not-allowed opacity-60' : '',
   ].join(' ');

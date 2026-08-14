@@ -610,26 +610,11 @@ export const translations = {
   'profile.password.mismatch': 'Mật khẩu xác nhận không khớp.',
 
   // Viewer (xem model 3D/2D trên web qua APS Viewer)
-  'viewer.title': 'Trình xem mô hình 3D/2D',
-  'viewer.dropzone.title': 'Kéo & thả tệp mô hình vào đây',
-  'viewer.dropzone.hint': 'hoặc bấm để chọn tệp từ máy tính',
-  'viewer.dropzone.button': 'Chọn tệp',
-  'viewer.dropzone.formats': 'Định dạng hỗ trợ',
-  'viewer.upload.uploading': 'Đang tải tệp lên...',
-  'viewer.upload.translating': 'Đang dịch mô hình sang định dạng web...',
-  'viewer.upload.translatingHint':
-    'Quá trình này có thể mất vài phút với tệp lớn (.rvt, .nwd).',
   'viewer.status.loading': 'Đang khởi tạo trình xem...',
-  'viewer.back': 'Tải tệp khác',
-  'viewer.error.unsupported': 'Định dạng tệp không được hỗ trợ.',
-  'viewer.error.upload': 'Tải tệp lên thất bại. Vui lòng thử lại.',
-  'viewer.error.status': 'Không lấy được trạng thái dịch mô hình.',
-  'viewer.error.translateFailed':
-    'Dịch mô hình thất bại. Định dạng có thể không được APS hỗ trợ (ví dụ .pln, .doc, .xls).',
   'viewer.error.token': 'Không lấy được token trình xem từ máy chủ.',
   'viewer.error.init': 'Khởi tạo trình xem thất bại.',
   'viewer.error.load': 'Tải mô hình thất bại.',
-  'viewer.error.retry': 'Thử lại',
+  'viewer.error.detail': 'Chi tiết kỹ thuật (Autodesk APS)',
 
   // Notification (chuông + popup realtime)
   'notification.title': 'Thông báo',
@@ -1791,6 +1776,7 @@ export const translations = {
   'markup.error.load': 'Không tải được ghi chú markup.',
   'markup.error.pdfLoad': 'Không mở được tệp PDF. Kiểm tra kết nối tới máy chủ rồi tải lại trang.',
   'markup.error.save': 'Không lưu được ghi chú. Vui lòng thử lại.',
+  'markup.error.capture': 'Không ghi lại được góc nhìn hiện tại nên chưa lưu ghi chú. Tải lại trình xem rồi thử lại.',
   // Bộ lọc ghi chú markup (theo người tạo / trạng thái)
   'markup.filter.author': 'Người tạo',
   'markup.filter.allAuthors': 'Tất cả người tạo',
@@ -2459,12 +2445,14 @@ export const translations = {
   'fileSummary.sender': 'AI tạo tự động sau khi tải lên — chỉ mang tính tham khảo',
   'fileSummary.more': 'Xem thêm',
   'fileSummary.less': 'Thu gọn',
+  /* Trạng thái thứ ba: AI chưa soi được tệp. Không được để trông giống "đã kiểm, sạch". */
+  'fileSummary.pendingTitle': 'Chưa phân tích được nội dung',
+  'fileSummary.pendingBody': 'AI chưa đọc được nội dung tệp này (đang xử lý, tệp là bản scan, hoặc nội dung không trích xuất được như file hình ảnh) - cần người kiểm tra.',
+
 
   /* ── Ma trận phân quyền (RACI) ── */
   'projectDetail.nav.permissionMatrix': 'Ma trận phân quyền',
   'matrix.title': 'Ma trận phân quyền',
-  'matrix.subtitle':
-    'Gán quyền truy cập thư mục/tệp cho từng nhóm trên toàn dự án. W (Ghi) bao hàm R (Đọc); tệp có thể kế thừa quyền từ thư mục cha.',
   'matrix.back': 'Quay lại dự án',
   'matrix.retry': 'Thử lại',
   'matrix.forbidden': 'Bạn không có quyền xem ma trận phân quyền của dự án này.',
@@ -2479,6 +2467,7 @@ export const translations = {
   'matrix.level.noAccess': 'Không truy cập',
   'matrix.level.read': 'Đọc',
   'matrix.level.write': 'Ghi',
+  'matrix.legend.inherited': 'Kế thừa từ thư mục cha',
   'matrix.col.target': 'Thư mục / Tệp',
   'matrix.tree.expandAll': 'Mở tất cả',
   'matrix.tree.collapseAll': 'Thu tất cả',

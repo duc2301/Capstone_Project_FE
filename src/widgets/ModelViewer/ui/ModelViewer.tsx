@@ -51,7 +51,7 @@ export function ModelViewer({ urn, className, onViewerReady }: Props) {
 
       {status === 'error' && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-viewer-shell px-6 text-center">
-          <p className="text-sm font-medium text-red-300">
+          <p className="text-sm font-medium text-danger-light">
             {error ?? t('viewer.error.load')}
           </p>
         </div>

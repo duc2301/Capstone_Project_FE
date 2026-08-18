@@ -8,8 +8,10 @@ export type MyIssueItem = ProjectIssueListItem;
 
 const EMPTY_ISSUES: MyIssueItem[] = [];
 
+const FETCH_ALL_PAGE_SIZE = 500;
+
 async function fetchMyIssues(): Promise<MyIssueItem[]> {
-  const issues = await issueApi.getForMyProjects();
+  const issues = await issueApi.getForMyProjects(1, FETCH_ALL_PAGE_SIZE);
   return sortByNewest(issues, (issue) => issue.createdAt);
 }
 

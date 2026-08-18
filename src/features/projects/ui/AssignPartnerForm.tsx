@@ -30,7 +30,7 @@ export function AssignPartnerForm({ groups, loadingGroups, onSubmit }: AssignPar
       try {
         const { data } = await organizationApi.getAll();
         if (!cancelled) {
-          setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
+          setOrganizations(sortByNewest(data.result?.items ?? [], (o) => o.createdAt));
         }
       } catch (err) {
         if (!cancelled) {

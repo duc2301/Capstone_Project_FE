@@ -23,7 +23,7 @@ export function useOrganizationList(): UseOrganizationListReturn {
     setError(null);
     try {
       const { data } = await organizationApi.getAll();
-      setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
+      setOrganizations(sortByNewest(data.result?.items ?? [], (o) => o.createdAt));
     } catch {
       setError(t('common.error'));
     } finally {
@@ -36,7 +36,7 @@ export function useOrganizationList(): UseOrganizationListReturn {
     (async () => {
       try {
         const { data } = await organizationApi.getAll();
-        if (!cancelled) setOrganizations(sortByNewest(data.result ?? [], (o) => o.createdAt));
+        if (!cancelled) setOrganizations(sortByNewest(data.result?.items ?? [], (o) => o.createdAt));
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {

@@ -47,7 +47,11 @@ export function ContractPackagesPage() {
   const { data: packages, loading, error } = useAsyncData<ContractPackage[]>(
     isAdmin ? 'packages:all' : 'packages:mine',
     async () => {
-      const { data } = isAdmin ? await contractPackageApi.getAll() : await contractPackageApi.getMine();
+      if (isAdmin) {
+        const { data } = await contractPackageApi.getAll();
+        return sortByNewest(data.result?.items ?? [], (p) => p.createdAt);
+      }
+      const { data } = await contractPackageApi.getMine();
       return sortByNewest(data.result ?? [], (p) => p.createdAt);
     },
     { fallback: [], toErrorMessage: () => t('common.error') },

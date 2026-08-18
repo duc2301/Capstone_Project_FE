@@ -37,7 +37,7 @@ export function useOrganizationOptions(): UseOrganizationOptionsReturn {
           setError(t('common.error'));
           return;
         }
-        setOptions(sortByNewest(data.result ?? [], (o) => o.createdAt).map(toOption));
+        setOptions(sortByNewest(data.result?.items ?? [], (o) => o.createdAt).map(toOption));
       } catch {
         if (!cancelled) setError(t('common.error'));
       } finally {

@@ -242,7 +242,7 @@ export function useDashboard() {
 
   const assignedIssues = useAsyncData(
     'dashboard-assigned-issues',
-    () => issueApi.getAssignedToMe(),
+    () => issueApi.getAssignedToMe(1, 500),
     { fallback: EMPTY_ISSUES, toErrorMessage: loadErrorMessage },
   );
 

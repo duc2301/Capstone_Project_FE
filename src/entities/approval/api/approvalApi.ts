@@ -48,8 +48,8 @@ interface RawApprovalItem {
 
 interface RawApprovalPage {
   items: RawApprovalItem[];
-  total: number;
-  page: number;
+  totalCount: number;
+  pageNumber: number;
   pageSize: number;
 }
 
@@ -150,8 +150,8 @@ export const approvalApi = {
     const result = unwrapResult(data);
     return {
       items: (result?.items ?? []).map(mapApprovalItem),
-      total: result?.total ?? 0,
-      page: result?.page ?? page,
+      total: result?.totalCount ?? 0,
+      page: result?.pageNumber ?? page,
       pageSize: result?.pageSize ?? pageSize,
     };
   },

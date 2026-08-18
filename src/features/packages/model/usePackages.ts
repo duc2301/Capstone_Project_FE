@@ -10,10 +10,12 @@ const EMPTY_PACKAGES: ContractPackage[] = [];
 
 export function usePackages(projectId?: string) {
   const fetchPackages = useCallback(async () => {
-    const response = projectId
-      ? await contractPackageApi.getByProjectId(projectId)
-      : await contractPackageApi.getAll();
-    return sortByNewest(response.data?.result || [], (p) => p.createdAt);
+    if (projectId) {
+      const response = await contractPackageApi.getByProjectId(projectId);
+      return sortByNewest(response.data?.result ?? [], (p) => p.createdAt);
+    }
+    const response = await contractPackageApi.getAll();
+    return sortByNewest(response.data?.result?.items ?? [], (p) => p.createdAt);
   }, [projectId]);
 
   const { data: packages, loading, error, reload } = useAsyncData(

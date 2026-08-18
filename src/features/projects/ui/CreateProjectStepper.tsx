@@ -355,7 +355,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
       projectApi.getAll()
     ])
       .then(([orgRes, accRes, projectRes]) => {
-        setOrganizations(sortByNewest(orgRes.data.result ?? [], (o) => o.createdAt));
+        setOrganizations(sortByNewest(orgRes.data.result?.items ?? [], (o) => o.createdAt));
         setAccounts(sortByNewest(accRes.data.result ?? [], (a) => a.createdAt));
         setExistingProjects(projectRes.data.result ?? []);
       })

@@ -73,9 +73,16 @@ export interface CreateContractPackagePayload {
 
 export type UpdateContractPackagePayload = Partial<CreateContractPackagePayload>;
 
+export interface ContractPackagePage {
+  items: ContractPackage[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export const contractPackageApi = {
-  getAll: () =>
-    axiosInstance.get<ApiResponse<ContractPackage[]>>('/contract-packages'),
+  getAll: (page = 1, pageSize = 500) =>
+    axiosInstance.get<ApiResponse<ContractPackagePage>>('/contract-packages', { params: { page, pageSize } }),
 
   getMine: () =>
     axiosInstance.get<ApiResponse<ContractPackage[]>>('/contract-packages/mine'),

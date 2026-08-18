@@ -6,9 +6,16 @@ import type {
   UpdateOrganizationPayload,
 } from '../model/organization.types';
 
+export interface OrganizationPage {
+  items: Organization[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export const organizationApi = {
-  getAll: () =>
-    axiosInstance.get<ApiResponse<Organization[]>>('/organizations'),
+  getAll: (page = 1, pageSize = 500) =>
+    axiosInstance.get<ApiResponse<OrganizationPage>>('/organizations', { params: { page, pageSize } }),
 
   getById: (id: string) =>
     axiosInstance.get<ApiResponse<Organization>>(`/organizations/${id}`),

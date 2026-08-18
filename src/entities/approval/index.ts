@@ -2,6 +2,7 @@ export { approvalApi, approvalErrorMessage, isTeamPermissionError } from './api/
 export type {
   ApprovalDetail,
   ApprovalListItem,
+  ApprovalListPage,
   ApprovalSigner,
   ApprovalSignerStatus,
   ApprovalStatus,

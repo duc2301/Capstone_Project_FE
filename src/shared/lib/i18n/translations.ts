@@ -1383,6 +1383,7 @@ export const translations = {
   'approvals.pending.needsApproval': 'Quản lý phê duyệt',
   'approvals.pending.myRequests': 'Các phê duyệt đã gửi',
   'approvals.pending.empty': 'Không có tài liệu chờ duyệt.',
+  'approvals.pending.paginationUnit': 'yêu cầu',
   'approvals.pending.colName': 'Tên tài liệu',
   'approvals.pending.colSender': 'Người gửi',
   'approvals.pending.colRecipient': 'Người nhận',
@@ -1441,6 +1442,7 @@ export const translations = {
   'approvals.history.colApprover': 'Người phê duyệt',
   'approvals.history.colApprovedAt': 'Ngày phê duyệt',
   'approvals.history.colRejectReason': 'Lý do từ chối',
+  'approvals.history.paginationUnit': 'yêu cầu',
 
   'smartca.action.sign': 'Ký số',
   'smartca.signModal.title': 'Ký số phê duyệt tài liệu',

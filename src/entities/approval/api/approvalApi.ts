@@ -3,7 +3,7 @@ import { axiosInstance, getApiErrorMessage } from '@/shared/api';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
 
-import type { ApprovalDetail, ApprovalListItem, ApprovalSigner, ApprovalSignerStatus, ApprovalStatus, SubmitApprovalPayload } from '../model/approval.types';
+import type { ApprovalDetail, ApprovalListItem, ApprovalListPage, ApprovalSigner, ApprovalSignerStatus, ApprovalStatus, SubmitApprovalPayload } from '../model/approval.types';
 
 interface RawApprovalSigner {
   id: string;
@@ -44,6 +44,13 @@ interface RawApprovalItem {
   signers?: RawApprovalSigner[] | null;
   pendingApproverNames?: string[] | null;
   pendingApproverAccountIds?: string[] | null;
+}
+
+interface RawApprovalPage {
+  items: RawApprovalItem[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 function unwrapResult<T>(data: ApiResponse<T>): T {
@@ -117,9 +124,11 @@ export const approvalApi = {
     return unwrapResult(data);
   },
 
-  getPendingApprovals: async (): Promise<ApprovalListItem[]> => {
-    const { data } = await axiosInstance.get<ApiResponse<RawApprovalItem[]>>('/approvals/pending');
-    return (unwrapResult(data) ?? []).map(mapApprovalItem);
+  getPendingApprovals: async (page = 1, pageSize = 100): Promise<ApprovalListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawApprovalPage>>('/approvals/pending', {
+      params: { page, pageSize },
+    });
+    return (unwrapResult(data)?.items ?? []).map(mapApprovalItem);
   },
 
   getApprovalDetail: async (approvalId: string): Promise<ApprovalDetail> => {
@@ -127,9 +136,24 @@ export const approvalApi = {
     return mapApprovalItem(unwrapResult(data));
   },
 
-  getApprovals: async (): Promise<ApprovalListItem[]> => {
-    const { data } = await axiosInstance.get<ApiResponse<RawApprovalItem[]>>('/approvals');
-    return (unwrapResult(data) ?? []).map(mapApprovalItem);
+  getApprovals: async (page = 1, pageSize = 100): Promise<ApprovalListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawApprovalPage>>('/approvals', {
+      params: { page, pageSize },
+    });
+    return (unwrapResult(data)?.items ?? []).map(mapApprovalItem);
+  },
+
+  getApprovalsPage: async (page = 1, pageSize = 20): Promise<ApprovalListPage> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawApprovalPage>>('/approvals', {
+      params: { page, pageSize },
+    });
+    const result = unwrapResult(data);
+    return {
+      items: (result?.items ?? []).map(mapApprovalItem),
+      total: result?.total ?? 0,
+      page: result?.page ?? page,
+      pageSize: result?.pageSize ?? pageSize,
+    };
   },
 
   approveApproval: async (approvalId: string): Promise<unknown> => {

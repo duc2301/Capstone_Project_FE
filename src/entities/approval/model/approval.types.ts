@@ -49,6 +49,14 @@ export interface ApprovalListItem {
 /* Chi tiết 1 yêu cầu phê duyệt — cùng hình dạng với danh sách */
 export type ApprovalDetail = ApprovalListItem;
 
+/* 1 trang kết quả phân trang từ BE (GET /approvals, /approvals/pending) */
+export interface ApprovalListPage {
+  items: ApprovalListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type ApprovalTargetZone = 'Shared' | 'Published' | 'Archived';
 
 export interface SubmitApprovalPayload {

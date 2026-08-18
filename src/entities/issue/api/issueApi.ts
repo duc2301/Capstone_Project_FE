@@ -168,6 +168,13 @@ interface RawProjectIssueListItem {
   linkedFolderName?: string | null;
 }
 
+interface RawProjectIssuePage {
+  items: RawProjectIssueListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 function mapProjectIssueListItem(item: RawProjectIssueListItem): ProjectIssueListItem {
   return {
     id: item.id,
@@ -203,25 +210,28 @@ export const issueApi = {
   },
 
   /** Issue toan du an; BE da loc theo quyen View thu muc cua nguoi goi. */
-  getByProject: async (projectId: string): Promise<ProjectIssueListItem[]> => {
-    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
+  getByProject: async (projectId: string, page = 1, pageSize = 100): Promise<ProjectIssueListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssuePage>>(
       `/issues/by-project/${projectId}`,
+      { params: { page, pageSize } },
     );
-    return (unwrap(data) ?? []).map(mapProjectIssueListItem);
+    return (unwrap(data)?.items ?? []).map(mapProjectIssueListItem);
   },
 
-  getForMyProjects: async (): Promise<ProjectIssueListItem[]> => {
-    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
+  getForMyProjects: async (page = 1, pageSize = 100): Promise<ProjectIssueListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssuePage>>(
       '/issues/my-projects',
+      { params: { page, pageSize } },
     );
-    return (unwrap(data) ?? []).map(mapProjectIssueListItem);
+    return (unwrap(data)?.items ?? []).map(mapProjectIssueListItem);
   },
 
-  getAssignedToMe: async (): Promise<ProjectIssueListItem[]> => {
-    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssueListItem[]>>(
+  getAssignedToMe: async (page = 1, pageSize = 100): Promise<ProjectIssueListItem[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawProjectIssuePage>>(
       '/issues/assigned-to-me',
+      { params: { page, pageSize } },
     );
-    return (unwrap(data) ?? []).map(mapProjectIssueListItem);
+    return (unwrap(data)?.items ?? []).map(mapProjectIssueListItem);
   },
 
   getById: async (issueId: string): Promise<IssueItem> => {

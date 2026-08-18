@@ -12,6 +12,7 @@ import { useOrganizationTypes, useOrganizations, UpdateOrganizationForm } from '
 import { ProjectCard } from '@/features/projects';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, ConfirmDialog, DeleteIcon, Modal, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
+import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
 import { useUrlTab } from '@/shared/lib/url';
 
@@ -487,7 +488,7 @@ function MembersTab({ members, onOpenAddMember, onRemoveMember }: { members: Acc
                       </div>
                     </td>
                     <td className="px-6 py-4 text-text-muted">
-                      {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString('vi-VN') : t('orgDetail.members.recently')}
+                      {m.updatedAt ? formatDate(m.updatedAt) : t('orgDetail.members.recently')}
                     </td>
                     <td className="px-6 py-4 text-right text-text-placeholder">
                       <RowActions>

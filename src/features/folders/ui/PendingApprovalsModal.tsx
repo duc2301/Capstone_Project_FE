@@ -7,7 +7,7 @@ import type { Group } from '@/entities/group';
 import type { ZoneReturnRequestItem } from '@/entities/zone-transfer';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 import type { ListTableColumn } from '@/shared/components';
-import { ActionPillButton, ConfirmDialog, ListTable, RowActions, Toast, useToast } from '@/shared/components';
+import { ActionPillButton, ConfirmDialog, ListTable, PaginationBar, RowActions, Toast, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner, recipientNames } from '../model/approvalFormat';
@@ -96,6 +96,8 @@ export function PendingApprovalsModal({
   const myOwnItems = items.filter((it) => it.requestedByAccountId === currentAccountId);
 
   const returnRequests = allReturnRequests;
+  const [needsApprovalPage, setNeedsApprovalPage] = useState(1);
+  const [myRequestsPage, setMyRequestsPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<ApprovalListItem | null>(null);
   const [rejectFor, setRejectFor] = useState<ApprovalListItem | null>(null);
@@ -208,6 +210,8 @@ export function PendingApprovalsModal({
                 <ApprovalItemsTable
                   title={t('approvals.pending.needsApproval')}
                   items={needsMyApprovalItems}
+                  page={needsApprovalPage}
+                  onPageChange={setNeedsApprovalPage}
                   currentAccountId={currentAccountId}
                   projectGroups={projectGroups}
                   actionBusyId={actionBusyId}
@@ -222,6 +226,8 @@ export function PendingApprovalsModal({
                 <ApprovalItemsTable
                   title={t('approvals.pending.myRequests')}
                   items={myOwnItems}
+                  page={myRequestsPage}
+                  onPageChange={setMyRequestsPage}
                   currentAccountId={currentAccountId}
                   projectGroups={projectGroups}
                   actionBusyId={actionBusyId}
@@ -345,9 +351,13 @@ export function PendingApprovalsModal({
   );
 }
 
+const PENDING_TABLE_PAGE_SIZE = 5;
+
 function ApprovalItemsTable({
   title,
-  items,
+  items: allItems,
+  page,
+  onPageChange,
   currentAccountId,
   projectGroups,
   actionBusyId,
@@ -359,6 +369,8 @@ function ApprovalItemsTable({
 }: {
   title: string;
   items: ApprovalListItem[];
+  page: number;
+  onPageChange: (page: number) => void;
   currentAccountId?: string;
   projectGroups: Group[];
   actionBusyId: string | null;
@@ -370,6 +382,11 @@ function ApprovalItemsTable({
    * không thấy nút Duyệt lặp lại ở đây, chỉ thao tác thống nhất từ khối "Quản lý phê duyệt". */
   hideDecisionActions?: boolean;
 }) {
+  const total = allItems.length;
+  const pageCount = Math.max(1, Math.ceil(total / PENDING_TABLE_PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const items = allItems.slice((safePage - 1) * PENDING_TABLE_PAGE_SIZE, safePage * PENDING_TABLE_PAGE_SIZE);
+
   return (
     <section className="space-y-3">
       <h3 className="heading-label">{title}</h3>
@@ -444,6 +461,17 @@ function ApprovalItemsTable({
           </tbody>
         </ListTable>
       </div>
+      {total > PENDING_TABLE_PAGE_SIZE && (
+        <PaginationBar
+          page={safePage}
+          pageCount={pageCount}
+          pageSize={PENDING_TABLE_PAGE_SIZE}
+          total={total}
+          unit={t('approvals.pending.paginationUnit')}
+          variant="inline"
+          onChange={onPageChange}
+        />
+      )}
     </section>
   );
 }

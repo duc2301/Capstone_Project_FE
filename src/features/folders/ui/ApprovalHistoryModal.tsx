@@ -1,3 +1,4 @@
+import { PaginationBar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime } from '../model/approvalFormat';
@@ -8,7 +9,7 @@ interface ApprovalHistoryModalProps {
 }
 
 export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
-  const { items, loading, error } = useApprovalHistory();
+  const { items, total, page, pageSize, totalPages, goToPage, loading, pageLoading, error } = useApprovalHistory();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -31,7 +32,7 @@ export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
           ) : items.length === 0 ? (
             <p className="py-12 text-center text-sm text-text-muted">{t('approvals.history.empty')}</p>
           ) : (
-            <div className="admin-scrollbar overflow-x-auto">
+            <div className={`admin-scrollbar overflow-x-auto transition-opacity ${pageLoading ? 'opacity-60' : ''}`}>
               <table className="table-list min-w-[900px]">
                 <colgroup>
                   <col className="w-[24%]" />
@@ -72,6 +73,18 @@ export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
             </div>
           )}
         </div>
+
+        {!loading && !error && (
+          <PaginationBar
+            page={page}
+            pageCount={totalPages}
+            pageSize={pageSize}
+            total={total}
+            unit={t('approvals.history.paginationUnit')}
+            variant="inline"
+            onChange={goToPage}
+          />
+        )}
       </div>
     </div>
   );

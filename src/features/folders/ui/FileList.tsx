@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import type { FileListItem } from '@/entities/file-item';
 import type { FolderTreeNode } from '@/entities/folder';
-import { FileTypeIcon, FolderGlyph } from '@/shared/components';
+import { ActionIconButton, FileTypeIcon, FolderGlyph, MoreIcon, RowActions } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { fileStatusBadge, formatDate, formatSize } from '../model/fileFormat';
@@ -81,13 +81,14 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
 
   return (
     <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-      <table className="table-list min-w-[720px]">
+      <table className="table-list min-w-[776px]">
         <colgroup>
-          <col className="w-[46%]" />
-          <col className="w-[11%]" />
-          <col className="w-[11%]" />
-          <col className="w-[16%]" />
-          <col className="w-[16%]" />
+          <col />
+          <col className="w-[92px]" />
+          <col className="w-[92px]" />
+          <col className="w-[124px]" />
+          <col className="w-[124px]" />
+          <col className="w-[56px]" />
         </colgroup>
         <thead className="sticky top-0 z-10 bg-card">
           <tr className="table-head">
@@ -96,6 +97,7 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
             <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colSize')}</th>
             <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colModified')}</th>
             <th className="whitespace-nowrap px-3 py-2.5">{t('documents.files.colStatus')}</th>
+            <th className="py-2.5"><span className="sr-only">{t('common.col.actions')}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -118,6 +120,17 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
               <td className="px-3 py-3 text-text-muted">—</td>
+              <td className="py-3 pr-2">
+                {onFolderMenu && (
+                  <RowActions>
+                    <ActionIconButton
+                      label={t('documents.files.rowMenu')}
+                      icon={<MoreIcon />}
+                      onClick={(e) => { e.stopPropagation(); onFolderMenu(e, folder); }}
+                    />
+                  </RowActions>
+                )}
+              </td>
             </tr>
           ))}
           {files.map((f) => (
@@ -133,7 +146,7 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                   <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
-                      <span className="cell-wrap min-w-0 break-all">{f.name}</span>
+                      <span className="cell-wrap min-w-0">{f.name}</span>
                       {/* Truyền warnningMessage vào WarningIcon */}
                       {f.warnning && <WarningIcon message={f.warnningMessage} />}
                     </p>
@@ -157,6 +170,15 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
                     </span>
                   );
                 })()}
+              </td>
+              <td className="py-3 pr-2 align-top">
+                <RowActions>
+                  <ActionIconButton
+                    label={t('documents.files.rowMenu')}
+                    icon={<MoreIcon />}
+                    onClick={(e) => { e.stopPropagation(); onFileMenu(e, f); }}
+                  />
+                </RowActions>
               </td>
             </tr>
           ))}

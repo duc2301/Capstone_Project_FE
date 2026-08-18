@@ -64,6 +64,14 @@ const PERMISSION_FLAGS: { key: keyof EffectivePermission; label: () => string }[
 const PACKAGES_FOLDER_NAME = 'Các gói thầu';
 const LEGAL_FOLDER_NAME = 'Hồ sơ pháp lý';
 
+const UPLOAD_BLOCK_MESSAGE = {
+  root: 'documents.upload.blockedRoot',
+  permission: 'documents.upload.blockedPermission',
+  zone: 'documents.uploadWipOnly',
+} as const;
+
+type UploadBlock = keyof typeof UPLOAD_BLOCK_MESSAGE;
+
 function subtreeIds(node: FolderTreeNode): string[] {
   return [node.id, ...node.children.flatMap(subtreeIds)];
 }
@@ -205,18 +213,22 @@ export function DocumentsTab({
 
   // Mở modal upload cho 1 folder (chỉ ô con WIP/Shared có quyền ghi).
   // Chặn sớm cho khớp BE: chỉ WIP mới nhận file, trừ 2 thư mục hồ sơ hệ thống ở Published.
-  const canUploadTo = (node: FolderTreeNode, canEdit: boolean) => {
-    if (node.parentFolderId === null) return false;
-    if (!canEdit) return false;
-    if (node.area === CdeArea.Wip) return true;
-    if (node.area !== CdeArea.Published) return false;
-    if (node.name === LEGAL_FOLDER_NAME) return true;
-    return findNode(tree, node.parentFolderId)?.name === PACKAGES_FOLDER_NAME;
+  const uploadBlockOf = (node: FolderTreeNode, canEdit: boolean): UploadBlock | null => {
+    if (node.parentFolderId === null) return 'root';
+    if (!canEdit) return 'permission';
+    if (node.area === CdeArea.Wip) return null;
+    if (node.area === CdeArea.Published) {
+      if (node.name === LEGAL_FOLDER_NAME) return null;
+      if (findNode(tree, node.parentFolderId)?.name === PACKAGES_FOLDER_NAME) return null;
+    }
+    return 'zone';
   };
 
   const openUpload = (node: FolderTreeNode) => {
-    if (canUploadTo(node, node.id === selectedId ? selectedPermission.canEdit : menuPermission.canEdit)) setUploadFolder(node);
-    else showToast(t('documents.uploadWipOnly'), 'error');
+    const canEdit = node.id === selectedId ? selectedPermission.canEdit : menuPermission.canEdit;
+    const blocked = uploadBlockOf(node, canEdit);
+    if (blocked) showToast(t(UPLOAD_BLOCK_MESSAGE[blocked]), 'error');
+    else setUploadFolder(node);
   };
 
   const handleFileMenu = (e: React.MouseEvent, file: FileListItem) => {

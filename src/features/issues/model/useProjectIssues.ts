@@ -22,7 +22,7 @@ export function useProjectIssues(projectId: string): UseProjectIssuesReturn {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const items = await issueApi.getByProject(projectId);
+    const items = await issueApi.getByProject(projectId, 1, 500);
     return sortByNewest(items, (i) => i.createdAt);
   }, [projectId]);
 

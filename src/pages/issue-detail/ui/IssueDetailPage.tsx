@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import type { FileVersion, FileViewInfo } from '@/entities/file-item';
-import { fileItemApi, ModelViewerStatus } from '@/entities/file-item';
+import { fileItemApi, InlineFileView, ModelViewerStatus } from '@/entities/file-item';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { InlineCommentsPanel, InlineMarkupProvider, InlineMarkupStage } from '@/features/inline-markup';
 import { IssueSidePanel, useIssueDetail } from '@/features/issues';
@@ -142,12 +142,10 @@ export function IssueDetailPage() {
   } else if (canMarkupInline) {
     viewerContent = <InlineMarkupStage />;
   } else if (info?.kind === 'inline' && info.url) {
-    viewerContent = info.contentType?.startsWith('image/') ? (
-      <div className="absolute inset-0 flex items-center justify-center overflow-auto bg-viewer-canvas p-6">
-        <img src={info.url} alt={fileName} className="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
+    viewerContent = (
+      <div className="absolute inset-0">
+        <InlineFileView url={info.url} contentType={info.contentType} fileName={fileName} />
       </div>
-    ) : (
-      <iframe src={info.url} title={fileName} className="absolute inset-0 h-full w-full border-0 bg-white" />
     );
   } else {
     viewerContent = (

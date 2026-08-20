@@ -1529,6 +1529,7 @@ export const translations = {
 
   // Trang "Xem chi tiết" file (model 3D/2D, PDF/ảnh/Office xem trực tiếp, hoặc tải về)
   'fileView.error': 'Không mở được tài liệu. Vui lòng thử lại.',
+  'fileView.noAccess': 'Bạn không có quyền xem tài liệu này.',
   'fileView.switching': 'Đang mở tài liệu…',
   'fileView.download.title': 'Không xem trực tiếp được định dạng này',
   'fileView.download.desc': 'Tải tệp về máy để mở bằng phần mềm phù hợp.',

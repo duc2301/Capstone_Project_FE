@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import type { ApprovalListItem, ApprovalStatus } from '@/entities/approval';
 import { approvalApi } from '@/entities/approval';
 import type { FileListItem, FileVersion, FileViewInfo } from '@/entities/file-item';
-import { fileItemApi, FileItemStatus, FileType, ModelViewerStatus, RelatedFileArea } from '@/entities/file-item';
+import { fileItemApi, FileItemStatus, FileType, InlineFileView, ModelViewerStatus, RelatedFileArea, useInlineFileContent } from '@/entities/file-item';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { FileActivitySection } from '@/features/audit-logs';
@@ -61,26 +61,6 @@ function Spinner() {
       <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z" />
     </svg>
-  );
-}
-
-function InlineContent({ info }: { info: FileViewInfo }) {
-  if (!info.url) return null;
-
-  if (info.contentType?.startsWith('image/')) {
-    return (
-      <div className="flex h-full items-center justify-center overflow-auto bg-viewer-canvas p-8">
-        <img src={info.url} alt={info.fileName} className="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
-      </div>
-    );
-  }
-
-  return (
-    <iframe
-      src={info.url}
-      title={info.fileName}
-      className="h-full w-full border-0 bg-white"
-    />
   );
 }
 
@@ -574,7 +554,7 @@ export function FileViewPage() {
             ) : info && info.kind === 'inline' && info.url ? (
               <div className="absolute inset-0 p-5">
                 <div className="h-full overflow-hidden rounded-[var(--radius-card)] bg-white shadow-sm">
-                  <InlineContent info={info} />
+                  <InlineFileView url={info.url} contentType={info.contentType} fileName={info.fileName} />
                 </div>
               </div>
             ) : (
@@ -1193,6 +1173,9 @@ function SignaturePlacementOverlay({
   onConfirm: (value: SignaturePlacementValue) => void;
   onClose: () => void;
 }) {
+  // Bản PDF nền để đặt chữ ký có thể là previewUrl (link tuyệt đối) hoặc info.url (view-content tương
+  // đối) — cả hai đều đi qua hook: link tuyệt đối dùng thẳng, view-content fetch KÈM token -> Object URL.
+  const { src: resolvedPdfUrl, status: pdfStatus } = useInlineFileContent(pdfUrl, 'application/pdf');
   const pageRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
@@ -1348,16 +1331,16 @@ function SignaturePlacementOverlay({
             </span>
           </div>
 
-          {pdfUrl ? (
+          {resolvedPdfUrl ? (
             <iframe
               key={value.pageNumber}
-              src={`${pdfUrl}#toolbar=0&navpanes=0&page=${value.pageNumber}&view=FitH`}
+              src={`${resolvedPdfUrl}#toolbar=0&navpanes=0&page=${value.pageNumber}&view=FitH`}
               title={fileName}
               className="absolute inset-0 h-full w-full border-0 bg-white"
             />
           ) : (
             <div className="absolute inset-10 flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-page-cream-alt text-sm font-semibold text-text-muted">
-              {t('smartca.placement.noPreview')}
+              {pdfStatus === 'loading' ? t('common.loading') : t('smartca.placement.noPreview')}
             </div>
           )}
 

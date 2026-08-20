@@ -138,7 +138,7 @@ export function InlineMarkupStage({ onExitMarkup }: InlineMarkupStageProps) {
         ) : !c.url ? (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-text-muted">{t('common.loading')}</div>
         ) : c.isImage ? (
-          <ImageStage url={c.url} alt={c.fileName} zoom={c.zoom} binding={c.binding} />
+          <ImageStage url={c.url} contentType={c.contentType} alt={c.fileName} zoom={c.zoom} binding={c.binding} />
         ) : (
           <PdfStage
             fileItemId={c.fileItemId}

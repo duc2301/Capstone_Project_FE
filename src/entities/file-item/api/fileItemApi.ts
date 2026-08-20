@@ -53,6 +53,16 @@ export const fileItemApi = {
   getView: (fileItemId: string) =>
     axiosInstance.get<ApiResponse<FileViewInfo>>(`/file-items/${fileItemId}/view`),
 
+  /** Tải nội dung file xem-trực-tiếp (view-content) về dạng blob — KÈM Bearer token qua axiosInstance.
+   *  `url` là đường dẫn tương đối BE trả trong /view, vd "/api/file-items/{id}/view-content?versionStateId=..".
+   *  <iframe src>/<img src> KHÔNG gửi header Authorization nên phải fetch có token rồi dựng Object URL.
+   *  axiosInstance đã có baseURL "{origin}/api" nên cắt tiền tố "/api" thừa để URL không thành "/api/api/..". */
+  getInlineContent: (url: string) =>
+    axiosInstance.get<Blob>(url.replace(/^\/api(?=\/)/, ''), {
+      responseType: 'blob',
+      timeout: 60_000,
+    }),
+
   /** Kêu server dịch lại cái file 3D */
   retranslate: (fileItemId: string) =>
     axiosInstance.post<ApiResponse<unknown>>(`/file-items/${fileItemId}/retranslate`),

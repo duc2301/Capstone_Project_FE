@@ -34,6 +34,9 @@ const ACTION_META: Record<number, { key: TranslationKey; severity: ActionSeverit
   [AuditAction.Assign]: { key: 'audit.action.assign', severity: 'routine' },
   [AuditAction.StatusChange]: { key: 'audit.action.statusChange', severity: 'lifecycle' },
   [AuditAction.Archive]: { key: 'audit.action.archive', severity: 'lifecycle' },
+  [AuditAction.View]: { key: 'audit.action.view', severity: 'readonly' },
+  [AuditAction.Share]: { key: 'audit.action.share', severity: 'critical' },
+  [AuditAction.RevokeShare]: { key: 'audit.action.revokeShare', severity: 'critical' },
 };
 
 export function actionBadge(action: number) {

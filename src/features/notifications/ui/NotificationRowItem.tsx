@@ -9,10 +9,13 @@ interface Props {
   hasUnread: boolean;
   navigable: boolean;
   isPendingInvite: boolean;
+  isPendingAssignment: boolean;
   processingAction: InvitationAction | null;
   onOpen: () => void;
   onAccept: () => void;
   onReject: () => void;
+  onAcceptAssignment: () => void;
+  onRejectAssignment: () => void;
 }
 
 const CATEGORY_KEY: Record<string, Parameters<typeof t>[0]> = {
@@ -43,10 +46,13 @@ export function NotificationRowItem({
   hasUnread,
   navigable,
   isPendingInvite,
+  isPendingAssignment,
   processingAction,
   onOpen,
   onAccept,
   onReject,
+  onAcceptAssignment,
+  onRejectAssignment,
 }: Props) {
   const { message, senderName, sendAt, linkType } = notification;
   const processing = processingAction !== null;
@@ -91,6 +97,27 @@ export function NotificationRowItem({
         <p className="mt-0.5 text-xs text-text-muted">{formatRelativeTime(sendAt)}</p>
       </div>
 
+      {isPendingAssignment && (
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAcceptAssignment(); }}
+            disabled={processing}
+            className="rounded-[var(--radius-button)] bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+          >
+            {processingAction === 'accept' ? t('common.loading') : t('issues.assignment.accept')}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onRejectAssignment(); }}
+            disabled={processing}
+            className="rounded-[var(--radius-button)] border border-danger/40 bg-danger-light px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+          >
+            {processingAction === 'reject' ? t('common.loading') : t('issues.assignment.reject')}
+          </button>
+        </div>
+      )}
+
       {isPendingInvite && (
         <div className="flex shrink-0 items-center gap-2">
           <button
@@ -112,7 +139,7 @@ export function NotificationRowItem({
         </div>
       )}
 
-      {navigable && !isPendingInvite && (
+      {navigable && !isPendingInvite && !isPendingAssignment && (
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           strokeLinecap="round" strokeLinejoin="round"

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import type { IssueItem } from '@/entities/issue';
+import type { AssignIssuePayload, IssueItem } from '@/entities/issue';
 import { issueApi, issueErrorMessage } from '@/entities/issue';
 import { useSession } from '@/entities/session';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
@@ -9,7 +9,9 @@ import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
 
 import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
+import { useAssignableGroups } from '../model/useAssignableGroups';
 import { useAssignableMembers } from '../model/useAssignableMembers';
+import { IssueAssignmentSection } from './IssueAssignmentSection';
 import { IssueDiscussionPanel } from './IssueDiscussionPanel';
 
 type SideTab = 'info' | 'discussion' | 'markup';
@@ -40,6 +42,7 @@ export function IssueSidePanel({
   const loadIssue = useCallback(async () => reload(), [reload]);
 
   const { members: assignableMembers, loading: membersLoading, error: membersError } = useAssignableMembers(issue?.linkedFileItemId);
+  const { groups: assignableGroups } = useAssignableGroups(issue?.linkedFileItemId);
   const { currentUser } = useSession();
 
   useEffect(() => {
@@ -66,6 +69,27 @@ export function IssueSidePanel({
 
   const handleResolve = () =>
     runIssueAction(() => issueApi.resolve(issueId).then(() => undefined), 'issues.error.resolve', t('issues.toast.resolved'));
+
+  const handleAcceptAssignment = () =>
+    runIssueAction(
+      () => issueApi.acceptAssignment(issueId).then(() => undefined),
+      'issues.error.acceptAssignment',
+      t('issues.toast.assignmentAccepted'),
+    );
+
+  const handleRejectAssignment = (reason: string) =>
+    runIssueAction(
+      () => issueApi.rejectAssignment(issueId, reason).then(() => undefined),
+      'issues.error.rejectAssignment',
+      t('issues.toast.assignmentRejected'),
+    );
+
+  const handleAssign = (payload: AssignIssuePayload) =>
+    runIssueAction(
+      () => issueApi.assign(issueId, payload).then(() => undefined),
+      'issues.error.assign',
+      t('issues.toast.assigned'),
+    );
 
   const handleAddParticipant = (accountId: string) => {
     setShowParticipantPicker(false);
@@ -195,6 +219,17 @@ export function IssueSidePanel({
             )}
           </div>
         </section>
+
+        <IssueAssignmentSection
+          issue={issue}
+          isCreator={isCreator}
+          busy={busy}
+          members={assignableMembers}
+          groups={assignableGroups}
+          onAccept={handleAcceptAssignment}
+          onReject={handleRejectAssignment}
+          onAssign={handleAssign}
+        />
 
         {!isResolved && isCreator && (
           <section className="grid grid-cols-2 gap-2 border-t border-card-border/70 pt-4">

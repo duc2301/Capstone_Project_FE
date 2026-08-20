@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus } from '@/entities/issue';
+import type { IssueAssignmentStatus, IssuePriority, IssueStatus } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
 export function issueStatusBadge(status: IssueStatus): { label: string; className: string } {
@@ -9,6 +9,19 @@ export function issueStatusBadge(status: IssueStatus): { label: string; classNam
       return { label: t('issues.status.inProgress'), className: 'bg-warning-light text-warning' };
     default:
       return { label: t('issues.status.open'), className: 'bg-danger-light text-danger' };
+  }
+}
+
+export function issueAssignmentBadge(status: IssueAssignmentStatus): { label: string; className: string } {
+  switch (status) {
+    case 'Pending':
+      return { label: t('issues.assignment.pending'), className: 'bg-warning-light text-warning' };
+    case 'Accepted':
+      return { label: t('issues.assignment.accepted'), className: 'bg-success-light text-success' };
+    case 'Rejected':
+      return { label: t('issues.assignment.rejected'), className: 'bg-danger-light text-danger' };
+    default:
+      return { label: t('issues.assignment.unassigned'), className: 'bg-content-bg text-text-secondary' };
   }
 }
 

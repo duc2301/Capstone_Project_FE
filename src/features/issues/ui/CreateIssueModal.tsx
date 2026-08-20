@@ -166,15 +166,17 @@ export function CreateIssueModal({ projectId, fileItemId, onClose, onCreated, on
             >
               <option value="">{t('issues.create.assigneeGroupPlaceholder')}</option>
               {assignableGroups.map((g) => (
-                <option key={g.groupId} value={g.groupId}>
+                <option key={g.groupId} value={g.groupId} disabled={!g.hasActiveLeader}>
                   {g.organizationName ? `${g.groupName} — ${g.organizationName}` : g.groupName}
                   {` (${g.memberCount} ${t('projectDetail.teams.membersSuffix')})`}
+                  {g.hasActiveLeader ? '' : ` — ${t('issues.assignment.groupNoLeader')}`}
                 </option>
               ))}
             </select>
             <span className="field-hint">
               {assigneeId ? t('issues.create.assigneeGroupDisabled') : t('issues.create.assigneeGroupHint')}
             </span>
+            <span className="field-hint">{t('issues.assignment.groupNoLeaderHint')}</span>
           </label>
 
           <label className="flex flex-col gap-1.5">

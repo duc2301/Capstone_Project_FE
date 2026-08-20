@@ -25,7 +25,7 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   };
 
   return (
-    <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border-sage bg-page-cream px-8 backdrop-blur-[6px]">
+    <header className="relative z-30 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border-sage bg-page-cream px-8 backdrop-blur-[6px]">
       <div className="flex items-center gap-4">
         {/* Mobile hamburger */}
         <button

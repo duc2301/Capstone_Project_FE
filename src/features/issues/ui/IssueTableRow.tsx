@@ -1,7 +1,7 @@
-import type { IssuePriority, IssueStatus } from '@/entities/issue';
+import type { IssueAssignmentStatus, IssuePriority, IssueStatus } from '@/entities/issue';
 import { t } from '@/shared/lib/i18n';
 
-import { formatIssueDateTime, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
+import { formatIssueDateTime, issueAssignmentBadge, issuePriorityBadge, issueStatusBadge } from '../model/issueFormat';
 
 export interface IssueRowItem {
   id: string;
@@ -12,6 +12,7 @@ export interface IssueRowItem {
   status: IssueStatus;
   assignedToName?: string | null;
   assignedToGroupName?: string | null;
+  assignmentStatus?: IssueAssignmentStatus;
   createdAt: string | null;
 }
 
@@ -56,6 +57,11 @@ export function IssueTableRow({ issue, projectName, clickable, onOpen }: IssueTa
       <td className="cell-wrap px-5 py-4 align-top text-text-secondary">
         {issue.assignedToName ?? issue.assignedToGroupName
           ?? <span className="italic text-text-placeholder">{t('projectIssues.unassigned')}</span>}
+        {issue.assignmentStatus && issue.assignmentStatus !== 'Unassigned' && (
+          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-2xs font-semibold ${issueAssignmentBadge(issue.assignmentStatus).className}`}>
+            {issueAssignmentBadge(issue.assignmentStatus).label}
+          </span>
+        )}
       </td>
       <td className="px-5 py-4 align-top text-text-muted">
         {formatIssueDateTime(issue.createdAt)}

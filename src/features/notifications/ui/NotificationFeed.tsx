@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { NotificationItem } from '@/entities/notification';
@@ -7,18 +7,24 @@ import { PaginationBar } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { isNavigable, resolveNotificationTarget } from '../model/notificationTarget';
 import { useInvitationActions } from '../model/useInvitationActions';
+import { useIssueAssignmentActions } from '../model/useIssueAssignmentActions';
 import { NOTIFICATION_PAGE_SIZE, useNotificationList } from '../model/useNotificationList';
 import { usePendingInvitations } from '../model/usePendingInvitations';
+import { usePendingIssueAssignments } from '../model/usePendingIssueAssignments';
+import { IssueRejectReasonModal } from './IssueRejectReasonModal';
 import { NotificationFeedToolbar } from './NotificationFeedToolbar';
 import { NotificationRowItem } from './NotificationRowItem';
 
 const INVITATION_LINK_TYPE = 'ProjectInvitation';
+const ISSUE_LINK_TYPE = 'Issue';
 
 export function NotificationFeed() {
   const navigate = useNavigate();
   const { unreadCount, markRead, markAllRead, refresh: refreshBell } = useNotifications();
   const { pendingIds, refreshPending } = usePendingInvitations();
+  const { pendingById, refreshPendingIssues } = usePendingIssueAssignments();
   const list = useNotificationList();
+  const [rejectTarget, setRejectTarget] = useState<NotificationItem | null>(null);
 
   const handleResponded = useCallback(() => {
     void list.reload();
@@ -26,12 +32,34 @@ export function NotificationFeed() {
     void refreshPending();
   }, [list, refreshBell, refreshPending]);
 
+  const handleAssignmentResponded = useCallback(() => {
+    void list.reload();
+    void refreshBell();
+    void refreshPendingIssues();
+  }, [list, refreshBell, refreshPendingIssues]);
+
   const { processingId, processingAction, respond } = useInvitationActions(handleResponded);
+  const assignment = useIssueAssignmentActions(handleAssignmentResponded);
 
   const isPendingInvite = useCallback(
     (n: NotificationItem): boolean =>
       n.linkType === INVITATION_LINK_TYPE && !!n.linkId && pendingIds.has(n.linkId),
     [pendingIds],
+  );
+
+  const isPendingAssignment = useCallback(
+    (n: NotificationItem): boolean =>
+      n.linkType === ISSUE_LINK_TYPE && !!n.linkId && pendingById.has(n.linkId),
+    [pendingById],
+  );
+
+  const actionOf = useCallback(
+    (n: NotificationItem) => {
+      if (processingId === n.linkId) return processingAction;
+      if (assignment.processingId === n.linkId) return assignment.processingAction;
+      return null;
+    },
+    [processingId, processingAction, assignment.processingId, assignment.processingAction],
   );
 
   const handleOpen = useCallback(async (ids: string[], head: NotificationItem) => {
@@ -88,15 +116,31 @@ export function NotificationFeed() {
                     hasUnread={group.hasUnread}
                     navigable={isNavigable(group.head)}
                     isPendingInvite={isPendingInvite(group.head)}
-                    processingAction={processingId === group.head.linkId ? processingAction : null}
+                    isPendingAssignment={isPendingAssignment(group.head)}
+                    processingAction={actionOf(group.head)}
                     onOpen={() => void handleOpen(group.ids, group.head)}
                     onAccept={() => group.head.linkId && respond(group.head.linkId, 'accept')}
                     onReject={() => group.head.linkId && respond(group.head.linkId, 'reject')}
+                    onAcceptAssignment={() => group.head.linkId && void assignment.accept(group.head.linkId)}
+                    onRejectAssignment={() => setRejectTarget(group.head)}
                   />
                 ))}
               </div>
             )}
           </div>
+
+          {rejectTarget?.linkId && (
+            <IssueRejectReasonModal
+              issueTitle={pendingById.get(rejectTarget.linkId)?.title ?? rejectTarget.message}
+              busy={assignment.processingAction === 'reject'}
+              onClose={() => setRejectTarget(null)}
+              onSubmit={(reason) => {
+                const issueId = rejectTarget.linkId!;
+                setRejectTarget(null);
+                void assignment.reject(issueId, reason);
+              }}
+            />
+          )}
 
           <PaginationBar
             page={list.page}

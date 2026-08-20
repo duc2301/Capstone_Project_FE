@@ -2,6 +2,7 @@
 export type IssueType = 'Issue' | 'Rfi';
 export type IssueStatus = 'Open' | 'InProgress' | 'Closed';
 export type IssuePriority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type IssueAssignmentStatus = 'Unassigned' | 'Pending' | 'Accepted' | 'Rejected';
 
 export interface IssueParticipant {
   accountId: string;
@@ -31,6 +32,13 @@ export interface IssueItem {
   assignedToGroupId: string | null;
   assignedToGroupName: string | null;
   dueDate: string | null;
+  assignmentStatus: IssueAssignmentStatus;
+  assignmentRespondedByAccountId: string | null;
+  assignmentRespondedByName: string | null;
+  assignedAt: string | null;
+  assignmentRespondedAt: string | null;
+  assignmentRejectReason: string | null;
+  canRespondToAssignment: boolean;
   linkedFolderId: string | null;
   linkedFileItemId: string | null;
   createdAt: string | null;
@@ -58,6 +66,7 @@ export interface ProjectIssueListItem {
   assignedToGroupId: string | null;
   assignedToGroupName: string | null;
   dueDate: string | null;
+  assignmentStatus: IssueAssignmentStatus;
   createdAt: string | null;
   updatedAt: string | null;
   linkedFileItemId: string | null;
@@ -81,6 +90,21 @@ export interface AssignableGroup {
   groupName: string;
   organizationName: string | null;
   memberCount: number;
+  hasActiveLeader: boolean;
+}
+
+export interface PendingIssueAssignment {
+  issueId: string;
+  title: string;
+  projectId: string;
+  linkedFileItemId: string | null;
+  assignedToGroupName: string | null;
+  dueDate: string | null;
+}
+
+export interface AssignIssuePayload {
+  assignedToAccountId?: string;
+  assignedToGroupId?: string;
 }
 
 export interface CreateIssuePayload {

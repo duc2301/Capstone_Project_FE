@@ -5,7 +5,10 @@ import type { NotificationItem } from '@/entities/notification';
 import { useNotifications } from '@/entities/notification';
 import { t } from '@/shared/lib/i18n';
 import { useInvitationActions } from '../model/useInvitationActions';
+import { useIssueAssignmentActions } from '../model/useIssueAssignmentActions';
 import { usePendingInvitations } from '../model/usePendingInvitations';
+import { usePendingIssueAssignments } from '../model/usePendingIssueAssignments';
+import { IssueRejectReasonModal } from './IssueRejectReasonModal';
 import { NotificationRow } from './NotificationRow';
 
 interface Props {
@@ -13,19 +16,35 @@ interface Props {
 }
 
 const INVITATION_LINK_TYPE = 'ProjectInvitation';
+const ISSUE_LINK_TYPE = 'Issue';
 const DROPDOWN_PREVIEW_COUNT = 5;
 
 export function NotificationPanel({ variant = 'dropdown' }: Props) {
   const { notifications, unreadCount, loading, markRead, refresh } = useNotifications();
   const { pendingIds, refreshPending } = usePendingInvitations();
+  const { pendingById, refreshPendingIssues } = usePendingIssueAssignments();
   const { processingId, processingAction, respond } = useInvitationActions(() => {
     void refresh();
     void refreshPending();
   });
+  const assignment = useIssueAssignmentActions(() => {
+    void refresh();
+    void refreshPendingIssues();
+  });
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<NotificationItem | null>(null);
 
   const isPendingInvite = (n: NotificationItem): boolean =>
     n.linkType === INVITATION_LINK_TYPE && !!n.linkId && pendingIds.has(n.linkId);
+
+  const isPendingAssignment = (n: NotificationItem): boolean =>
+    n.linkType === ISSUE_LINK_TYPE && !!n.linkId && pendingById.has(n.linkId);
+
+  const actionOf = (n: NotificationItem) => {
+    if (processingId === n.linkId) return processingAction;
+    if (assignment.processingId === n.linkId) return assignment.processingAction;
+    return null;
+  };
 
   const handleToggle = (n: NotificationItem) => {
     if (!n.isRead) void markRead(n.id);
@@ -60,13 +79,29 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
               notification={n}
               expanded={expandedId === n.id}
               isPendingInvite={isPendingInvite(n)}
-              processingAction={processingId === n.linkId ? processingAction : null}
+              isPendingAssignment={isPendingAssignment(n)}
+              processingAction={actionOf(n)}
               onToggle={() => handleToggle(n)}
               onAccept={() => n.linkId && respond(n.linkId, 'accept')}
               onReject={() => n.linkId && respond(n.linkId, 'reject')}
+              onAcceptAssignment={() => n.linkId && void assignment.accept(n.linkId)}
+              onRejectAssignment={() => setRejectTarget(n)}
             />
           ))}
         </ul>
+      )}
+
+      {rejectTarget?.linkId && (
+        <IssueRejectReasonModal
+          issueTitle={pendingById.get(rejectTarget.linkId)?.title ?? rejectTarget.message}
+          busy={assignment.processingAction === 'reject'}
+          onClose={() => setRejectTarget(null)}
+          onSubmit={(reason) => {
+            const issueId = rejectTarget.linkId!;
+            setRejectTarget(null);
+            void assignment.reject(issueId, reason);
+          }}
+        />
       )}
 
       {variant === 'dropdown' && (

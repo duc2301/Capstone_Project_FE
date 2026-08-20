@@ -1625,6 +1625,17 @@ export const translations = {
   'documents.uploadModal.list': 'Danh sách tệp đang chuẩn bị',
   'documents.uploadModal.empty': 'Chưa chọn tệp nào.',
   'documents.uploadModal.done': 'Hoàn tất',
+  'documents.uploadModal.savedAsVersion': 'Đã lưu thành phiên bản',
+  'documents.uploadModal.conflictTitle': 'Tệp trùng tên đã có trong thư mục',
+  'documents.uploadModal.conflictBody':
+    'Thư mục này đã có tài liệu tên {name} (phiên bản {version}). Tải lên sẽ tạo phiên bản mới của chính tài liệu đó, không tạo tài liệu riêng.',
+  'documents.uploadModal.conflictBodyNoVersion':
+    'Thư mục này đã có tài liệu tên {name}. Tải lên sẽ tạo phiên bản mới của chính tài liệu đó, không tạo tài liệu riêng.',
+  'documents.uploadModal.conflictHintNewDoc':
+    'Nếu đây là một tài liệu khác, hãy đổi giá trị các trường đặt tên để sinh ra tên khác, rồi tải lên lại.',
+  'documents.uploadModal.conflictConfirm': 'Tạo phiên bản mới',
+  'documents.uploadModal.conflictCancel': 'Để tôi xem lại',
+  'documents.uploadModal.conflictBadge': 'Trùng tên',
   'documents.uploadModal.failed': 'Lỗi',
   'documents.uploadModal.cancel': 'Hủy',
   'documents.uploadModal.submit': 'Tải lên',
@@ -1638,7 +1649,8 @@ export const translations = {
   'docSearch.submit': 'Tìm kiếm',
   'docSearch.searching': 'Đang tìm…',
   'docSearch.clear': 'Xoá',
-  'docSearch.empty': 'Không tìm thấy tài liệu nào khớp. Thử diễn đạt theo cách khác.',
+  'docSearch.empty':
+    'Không tìm thấy tài liệu nào khớp. Thử diễn đạt theo cách khác — hoặc tài liệu bạn cần đang được chỉnh sửa ở vùng làm việc nên chưa tra cứu được.',
   'docSearch.error': 'Không tìm kiếm được. Vui lòng thử lại.',
   'docSearch.resultCount': 'tài liệu khớp',
   'docSearch.match': 'khớp',
@@ -1702,6 +1714,9 @@ export const translations = {
   'audit.action.assign': 'Chỉ định',
   'audit.action.statusChange': 'Đổi trạng thái',
   'audit.action.archive': 'Niêm phong lưu trữ',
+  'audit.action.view': 'Xem tài liệu',
+  'audit.action.share': 'Chia sẻ quyền xem',
+  'audit.action.revokeShare': 'Thu hồi quyền xem',
   'audit.export': 'Xuất báo cáo',
   'audit.exporting': 'Đang xuất...',
   'audit.exportError': 'Không xuất được báo cáo. Vui lòng thử lại.',

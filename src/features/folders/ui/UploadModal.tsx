@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
+import type { FileListItem } from '@/entities/file-item';
 import type { FolderTreeNode } from '@/entities/folder';
 import type { FolderNamingConvention, NamingSelection, UploadNamingField } from '@/entities/naming-convention';
 import { namingConventionApi } from '@/entities/naming-convention';
@@ -21,20 +22,30 @@ interface UFile {
   // "Tệp liên quan" chọn riêng cho TỪNG file trong lô (không dùng chung cả lô).
   relatedFileItemIds: string[];
   errorMsg?: string;
+  // Nhãn phiên bản BE vừa tạo (vd "P03.02"). Trùng tên với tệp đã có thì hệ thống lên phiên bản
+  // chứ không tạo tài liệu mới — phải cho người dùng thấy, nếu không họ tưởng vừa thêm tệp mới.
+  resultVersion?: string;
 }
 
 interface UploadModalProps {
   targetFolder: FolderTreeNode;
+  // Tệp đã có trong folder đích — dùng để cảnh báo trùng tên TRƯỚC khi tải lên.
+  // Rỗng nghĩa là không có dữ liệu để so (mở upload cho folder không phải folder đang chọn),
+  // khi đó bỏ qua cảnh báo và để BE làm chốt chặn cuối.
+  existingFiles?: FileListItem[];
   onClose: () => void;
   onUploaded: () => void;
 }
 
-export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalProps) {
+export function UploadModal({ targetFolder, existingFiles = [], onClose, onUploaded }: UploadModalProps) {
   const { uploadToFolder } = useFileUpload();
   const [items, setItems] = useState<UFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  // Người dùng đã xem cảnh báo trùng tên và đồng ý tạo phiên bản mới.
+  const [conflictAck, setConflictAck] = useState(false);
+  const [showConflict, setShowConflict] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Quy tắc đặt tên của folder đích (nếu có): render dropdown thay vì đặt tên tự do.
@@ -77,6 +88,25 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
     .filter((code): code is string => !!code)
     .join(delimiter);
   const previewExt = items[0] ? `.${items[0].file.name.split('.').pop() ?? ''}` : '';
+
+  /* Trùng tên trong CÙNG folder = hệ thống lên phiên bản của tài liệu đã có, không tạo tài liệu
+   * riêng (FileUploadService + GetNextUploadVersionAsync). Trước đây việc này diễn ra im lặng nên
+   * người dùng không biết. Cảnh báo ở đây, còn quyết định cuối vẫn là của họ.
+   * BE lưu Name KHÔNG kèm đuôi -> so cũng phải bỏ đuôi. */
+  const baseNameOf = (it: UFile) =>
+    namingEnforced && previewBase ? previewBase : it.file.name.replace(/\.[^.]+$/, '');
+
+  const conflictOf = (it: UFile): FileListItem | null => {
+    if (existingFiles.length === 0) return null;
+    const target = baseNameOf(it).trim().toLowerCase();
+    if (!target) return null;
+    return existingFiles.find((f) => (f.name ?? '').trim().toLowerCase() === target) ?? null;
+  };
+
+  const pendingConflicts = items
+    .filter((i) => i.status === 'pending' || i.status === 'error')
+    .map((i) => ({ item: i, existing: conflictOf(i) }))
+    .filter((x): x is { item: UFile; existing: FileListItem } => x.existing !== null);
 
   /* Autofill từ tên file gốc (tiện cho re-upload file đã đặt tên chuẩn: tải về sửa rồi up lại):
    * tách tên theo delimiter, khớp mã với value của từng field theo thứ tự.
@@ -133,10 +163,18 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
 
   const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
 
-  const handleUpload = async () => {
+  // skipConflictCheck: gọi lại ngay sau khi người dùng bấm đồng ý trong hộp xác nhận — lúc đó
+  // setConflictAck(true) chưa kịp phản ánh vào closure này nên phải bỏ qua tường minh.
+  const handleUpload = async (skipConflictCheck = false) => {
     const pending = items.filter((i) => i.status === 'pending' || i.status === 'error');
     if (pending.length === 0) return;
     if (namingEnforced && missingRequired.length > 0) return;
+
+    // Hỏi trước khi ghi đè thành phiên bản mới. Chỉ hỏi một lần cho cả lô.
+    if (!skipConflictCheck && !conflictAck && pendingConflicts.length > 0) {
+      setShowConflict(true);
+      return;
+    }
 
     // Field khóa KHÔNG gửi lên — BE tự chèn giá trị khóa.
     const namingSelections: NamingSelection[] = sortedFields
@@ -148,7 +186,7 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
     for (const it of pending) {
       update(it.id, { status: 'uploading', progress: 0, errorMsg: undefined });
       try {
-        await uploadToFolder(
+        const res = await uploadToFolder(
           targetFolder.id,
           it.file,
           (p) => update(it.id, { progress: p }),
@@ -156,7 +194,11 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
           hasConvention && bypass,
           it.relatedFileItemIds,
         );
-        update(it.id, { status: 'done', progress: 100 });
+        update(it.id, {
+          status: 'done',
+          progress: 100,
+          resultVersion: res.data?.data?.version?.displayVersion,
+        });
         anyOk = true;
       } catch (err) {
         update(it.id, { status: 'error', errorMsg: getApiErrorMessage(err, t('common.error')) });
@@ -170,10 +212,54 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
   const hasPending = items.some((i) => i.status === 'pending' || i.status === 'error');
   const blockedByNaming = namingEnforced && missingRequired.length > 0;
 
+  // Hộp xác nhận trùng tên: nằm đè lên chính modal tải lên, chặn thao tác cho tới khi người dùng chọn.
+  const conflictDialog = showConflict && pendingConflicts.length > 0 && (
+    <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[var(--radius-card-lg)] bg-black/45 p-6">
+      <div className="w-full max-w-md rounded-[var(--radius-card)] border border-card-border bg-card p-5 shadow-modal">
+        <h3 className="heading-entity mb-2">{t('documents.uploadModal.conflictTitle')}</h3>
+        <ul className="mb-3 space-y-2">
+          {pendingConflicts.map(({ item, existing }) => (
+            <li key={item.id} className="text-sm leading-relaxed text-text-secondary">
+              {(existing.displayVersion
+                ? t('documents.uploadModal.conflictBody')
+                    .replace('{name}', existing.name)
+                    .replace('{version}', existing.displayVersion)
+                : t('documents.uploadModal.conflictBodyNoVersion').replace('{name}', existing.name))}
+            </li>
+          ))}
+        </ul>
+        <p className="mb-4 text-xs leading-relaxed text-text-muted">
+          {t('documents.uploadModal.conflictHintNewDoc')}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setShowConflict(false)}
+            className="rounded-[var(--radius-button)] border border-card-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-content-bg"
+          >
+            {t('documents.uploadModal.conflictCancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConflictAck(true);
+              setShowConflict(false);
+              void handleUpload(true);
+            }}
+            className="rounded-[var(--radius-button)] bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            {t('documents.uploadModal.conflictConfirm')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
       <div className="relative z-10 flex max-h-[88vh] w-full max-w-xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+        {conflictDialog}
         {/* Header */}
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <h2 className="heading-entity">{t('documents.uploadModal.title')}</h2>
@@ -368,7 +454,17 @@ export function UploadModal({ targetFolder, onClose, onUploaded }: UploadModalPr
                       {it.status === 'error' && it.errorMsg && (
                         <p className="mt-0.5 text-xs font-medium text-danger">{it.errorMsg}</p>
                       )}
+                      {it.status === 'done' && it.resultVersion && (
+                        <p className="mt-0.5 text-xs font-medium text-text-secondary">
+                          {t('documents.uploadModal.savedAsVersion')} <span className="font-semibold text-text">{it.resultVersion}</span>
+                        </p>
+                      )}
                     </div>
+                    {(it.status === 'pending' || it.status === 'error') && conflictOf(it) && (
+                      <span className="shrink-0 rounded-full bg-warning-light px-2 py-0.5 text-xs font-semibold text-warning">
+                        {t('documents.uploadModal.conflictBadge')}
+                      </span>
+                    )}
                     {it.status === 'uploading' && <span className="shrink-0 text-xs font-semibold text-primary">{it.progress}%</span>}
                     {it.status === 'done' && <span className="shrink-0 rounded-full bg-success-light px-2 py-0.5 text-xs font-semibold text-success">{t('documents.uploadModal.done')}</span>}
                     {it.status === 'error' && <span className="shrink-0 rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger">{t('documents.uploadModal.failed')}</span>}

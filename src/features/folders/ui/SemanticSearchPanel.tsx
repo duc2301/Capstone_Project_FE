@@ -107,19 +107,22 @@ export function SemanticSearchResults({ search, onOpenFile }: ResultsProps) {
             >
               <div className="flex items-start justify-between gap-3">
                 <p className="min-w-0 flex-1 cell-wrap text-sm font-semibold text-text">{r.fileName}</p>
+                {/* Tra cứu quét TOÀN dự án, không theo vùng đang mở -> mọi kết quả đều phải nói rõ nó
+                    nằm ở vùng nào. Trước đây chỉ Archived mới có nhãn, nên khi người dùng đứng ở
+                    Archived thì tệp Published hiện ra trần trụi, dễ tưởng nằm trong kho lưu trữ. */}
                 {r.isUnderRevision ? (
                   <span className="flex shrink-0 items-center gap-1 rounded-full bg-warning-light px-2.5 py-0.5 text-xs font-bold text-warning">
                     <WarningIcon />
                     {t('docSearch.underRevision')}
                   </span>
-                ) : r.area === 'Archived' ? (
+                ) : (
                   <span
-                    title={t('docSearch.archivedHint')}
+                    title={r.area === 'Archived' ? t('docSearch.archivedHint') : undefined}
                     className="shrink-0 rounded-full bg-content-bg px-2.5 py-0.5 text-xs font-bold text-text-secondary"
                   >
                     {zoneLabel(r.area)}
                   </span>
-                ) : null}
+                )}
                 <span className="shrink-0 rounded-full bg-success-light px-2.5 py-0.5 text-xs font-bold text-success">
                   {Math.round(r.similarity * 100)}% {t('docSearch.match')}
                 </span>

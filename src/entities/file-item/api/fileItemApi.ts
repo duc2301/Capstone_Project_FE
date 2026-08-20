@@ -1,11 +1,11 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
+import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileUploadResult, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
   upload: (formData: FormData, onProgress?: (pct: number) => void) =>
-    axiosInstance.post<ApiResponse<unknown>>('/file-items/upload', formData, {
+    axiosInstance.post<ApiResponse<FileUploadResult>>('/file-items/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 0, // Kệ nó cho upload tẹt ga, không set timeout vì file nặng lắm
       onUploadProgress: onProgress

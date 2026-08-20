@@ -32,6 +32,9 @@ export const AuditAction = {
   Assign: 18,
   StatusChange: 19,
   Archive: 20,
+  View: 21,
+  Share: 22,
+  RevokeShare: 23,
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 

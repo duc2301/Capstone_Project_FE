@@ -5,21 +5,21 @@ import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 interface LoiRuleSetFormModalProps {
-  ruleSet: LoiRuleSet | null;
+  ruleSet: LoiRuleSet;
   busy: boolean;
   onSubmit: (values: { name: string; description: string | null }) => void;
   onClose: () => void;
 }
 
 export function LoiRuleSetFormModal({ ruleSet, busy, onSubmit, onClose }: LoiRuleSetFormModalProps) {
-  const [name, setName] = useState(ruleSet?.name ?? '');
-  const [description, setDescription] = useState(ruleSet?.description ?? '');
+  const [name, setName] = useState(ruleSet.name);
+  const [description, setDescription] = useState(ruleSet.description ?? '');
 
   const canSubmit = name.trim().length > 0 && !busy;
 
   return (
     <Modal
-      title={ruleSet ? t('loiRule.ruleSet.editTitle') : t('loiRule.ruleSet.addTitle')}
+      title={t('loiRule.ruleSet.editTitle')}
       onClose={onClose}
       maxWidth="max-w-lg"
     >
@@ -52,8 +52,6 @@ export function LoiRuleSetFormModal({ ruleSet, busy, onSubmit, onClose }: LoiRul
             className="field-input w-full resize-none"
           />
         </div>
-
-        {!ruleSet && <p className="field-hint">{t('loiRule.ruleSet.addHint')}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
           <button type="button" onClick={onClose} className="btn-modal-ghost">

@@ -1,28 +1,26 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import type { CreateSystemLoiAliasPayload, LoiAlias } from '@/entities/loi-check';
-import { loiRuleApi } from '@/entities/loi-check';
+import type { CreateLoiAliasPayload, LoiAlias } from '@/entities/loi-check';
+import { loiAliasApi } from '@/entities/loi-check';
 import { getApiErrorMessage } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
-function unwrap<T>(payload: { isSuccess: boolean; message: string; result: T | null }): T {
-  if (!payload.isSuccess || payload.result === null) throw new Error(payload.message);
-  return payload.result;
-}
-
-export function useLoiSystemAliases() {
+export function useProjectLoiAliases(projectId: string | undefined) {
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
 
   const { data: aliases, loading, error, reload } = useAsyncData<LoiAlias[]>(
-    'loi-system-aliases',
+    `project-loi-aliases:${projectId ?? ''}`,
     async () => {
-      const { data } = await loiRuleApi.getSystemAliases();
-      return unwrap(data);
+      if (!projectId) return [];
+      const { data } = await loiAliasApi.getByProject(projectId);
+      if (!data.isSuccess || !data.result) throw new Error(data.message);
+      return data.result;
     },
     {
       fallback: [],
+      enabled: Boolean(projectId),
       toErrorMessage: (err) => getApiErrorMessage(err, t('loiRule.error.loadAliases')),
     },
   );
@@ -49,17 +47,23 @@ export function useLoiSystemAliases() {
   }, [reload]);
 
   const createAlias = useCallback(
-    (payload: CreateSystemLoiAliasPayload) =>
+    (payload: CreateLoiAliasPayload) =>
       runMutation(async () => {
-        const { data } = await loiRuleApi.createSystemAlias(payload);
-        return unwrap(data);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        const { data } = await loiAliasApi.create(projectId, payload);
+        if (!data.isSuccess || !data.result) throw new Error(data.message);
+        return data.result;
       }),
-    [runMutation],
+    [projectId, runMutation],
   );
 
   const deleteAlias = useCallback(
-    (aliasId: string) => runMutation(() => loiRuleApi.deleteSystemAlias(aliasId)),
-    [runMutation],
+    (aliasId: string) =>
+      runMutation(() => {
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        return loiAliasApi.remove(projectId, aliasId);
+      }),
+    [projectId, runMutation],
   );
 
   return { aliases, visible, loading, error, busy, search, setSearch, reload, createAlias, deleteAlias };

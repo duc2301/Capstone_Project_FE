@@ -17,7 +17,7 @@ import {
 import { t } from '@/shared/lib/i18n';
 
 import { useLoiParameters } from '../model/useLoiParameters';
-import { useLoiSystemAliases } from '../model/useLoiSystemAliases';
+import { useProjectLoiAliases } from '../model/useProjectLoiAliases';
 import { LoiAliasFormModal } from './LoiAliasFormModal';
 
 const PAGE_SIZE = 12;
@@ -30,14 +30,14 @@ const COLUMNS: ListTableColumn[] = [
 ];
 
 interface LoiAliasesTabProps {
-  ruleSetId: string | null;
+  projectId: string;
   showToast: (message: string, type?: 'success' | 'error') => void;
 }
 
-export function LoiAliasesTab({ ruleSetId, showToast }: LoiAliasesTabProps) {
+export function LoiAliasesTab({ projectId, showToast }: LoiAliasesTabProps) {
   const { visible, loading, error, busy, search, setSearch, createAlias, deleteAlias } =
-    useLoiSystemAliases();
-  const { parameters } = useLoiParameters(ruleSetId);
+    useProjectLoiAliases(projectId);
+  const { parameters } = useLoiParameters(projectId);
 
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -117,15 +117,22 @@ export function LoiAliasesTab({ ruleSetId, showToast }: LoiAliasesTabProps) {
                         <span className="cell-wrap text-sm font-semibold text-primary">
                           {alias.standardParamName}
                         </span>
+                        {alias.isSystemWide && (
+                          <span className="mt-1 inline-flex rounded-[var(--radius-badge)] bg-content-bg px-2 py-0.5 text-2xs font-bold text-text-muted">
+                            {t('loiRule.alias.systemBadge')}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-3">
                         <RowActions>
-                          <ActionIconButton
-                            tone="danger"
-                            label={t('common.action.delete')}
-                            onClick={() => setDeleteTarget(alias)}
-                            icon={<DeleteIcon />}
-                          />
+                          {!alias.isSystemWide && (
+                            <ActionIconButton
+                              tone="danger"
+                              label={t('common.action.delete')}
+                              onClick={() => setDeleteTarget(alias)}
+                              icon={<DeleteIcon />}
+                            />
+                          )}
                         </RowActions>
                       </td>
                     </tr>

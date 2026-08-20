@@ -23,6 +23,7 @@ import {
   ManageProjectPanel,
   ProjectPartnersTab,
   useProjectDetail,
+  useProjectFileBundle,
   useProjectGroups,
   useProjectInvite,
 } from '@/features/projects';
@@ -357,6 +358,18 @@ export function ProjectDetailPage() {
 
   const { toast, showToast } = useToast();
 
+  const { downloading: bundleDownloading, downloadBundle } = useProjectFileBundle(projectId);
+
+  const handleDownloadBundle = async () => {
+    showToast(t('projectDetail.bundle.started'));
+    try {
+      await downloadBundle();
+      showToast(t('projectDetail.bundle.done'));
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : t('projectDetail.bundle.error'), 'error');
+    }
+  };
+
   const handleProjectSaved = async () => {
     setEditOpen(false);
     await refresh();
@@ -671,17 +684,35 @@ export function ProjectDetailPage() {
             </section>
 
             {canViewAllTabs && (
-              <button
-                type="button"
-                onClick={() => setEditOpen(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-card-border/50 px-6 py-3 text-base font-medium text-text transition-colors hover:bg-content-bg"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
-                </svg>
-                {t('projectDetail.actions.edit')}
-              </button>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-card-border/50 px-6 py-3 text-base font-medium text-text transition-colors hover:bg-content-bg"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
+                  </svg>
+                  {t('projectDetail.actions.edit')}
+                </button>
+
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => void handleDownloadBundle()}
+                    disabled={bundleDownloading}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-card-border/50 px-6 py-3 text-base font-medium text-text transition-colors hover:bg-content-bg disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {bundleDownloading ? t('projectDetail.bundle.preparing') : t('projectDetail.bundle.action')}
+                  </button>
+                )}
+              </div>
             )}
           </aside>
         </div>
@@ -820,8 +851,8 @@ export function ProjectDetailPage() {
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
       {tab === 'settings' && (isAdmin || isManager || isProjectLeader) && (
         <div className="space-y-10">
-          <NamingConventionSettings projectId={project.id} canConfigure={isAdmin || isManager} />
-          <ProjectLoiRuleSetPanel projectId={project.id} canConfigure={isAdmin || isManager} />
+          <NamingConventionSettings projectId={project.id} canConfigure={canViewAllTabs} />
+          {canViewAllTabs && <ProjectLoiRuleSetPanel projectId={project.id} canConfigure />}
         </div>
       )}
 

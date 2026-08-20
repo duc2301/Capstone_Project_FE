@@ -34,13 +34,13 @@ const COLUMNS: ListTableColumn[] = [
 ];
 
 interface LoiParametersTabProps {
-  ruleSetId: string | null;
+  projectId: string | null;
   showToast: (message: string, type?: 'success' | 'error') => void;
 }
 
-export function LoiParametersTab({ ruleSetId, showToast }: LoiParametersTabProps) {
+export function LoiParametersTab({ projectId, showToast }: LoiParametersTabProps) {
   const { parameters, loading, error, busy, createParameter, updateParameter, deleteParameter } =
-    useLoiParameters(ruleSetId);
+    useLoiParameters(projectId);
 
   const [search, setSearch] = useState('');
   const [disciplineFilter, setDisciplineFilter] = useState<LoiDiscipline>(Discipline.KienTrucKetCau);

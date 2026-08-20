@@ -1,12 +1,9 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
 
-import type { LoiAlias } from '../model/loiCheck.types';
 import type {
   CreateLoiComponentPayload,
   CreateLoiParameterPayload,
-  CreateLoiRuleSetPayload,
-  CreateSystemLoiAliasPayload,
   LoiDiscipline,
   LoiImportCommitPayload,
   LoiImportPreview,
@@ -21,114 +18,91 @@ import type {
   UpdateLoiRuleSetPayload,
 } from '../model/loiRule.types';
 
+const base = (projectId: string) => `/projects/${projectId}/loi-rules`;
+
 export const loiRuleApi = {
-  getRuleSets: () => axiosInstance.get<ApiResponse<LoiRuleSet[]>>('/loi-rule-sets'),
+  getRuleSetSummary: (projectId: string) =>
+    axiosInstance.get<ApiResponse<LoiRuleSet | null>>(`${base(projectId)}/summary`),
 
-  createRuleSet: (payload: CreateLoiRuleSetPayload) =>
-    axiosInstance.post<ApiResponse<LoiRuleSet>>('/loi-rule-sets', payload),
+  getRuleSet: (projectId: string) =>
+    axiosInstance.get<ApiResponse<LoiRuleSet | null>>(base(projectId)),
 
-  updateRuleSet: (ruleSetId: string, payload: UpdateLoiRuleSetPayload) =>
-    axiosInstance.put<ApiResponse<LoiRuleSet>>(`/loi-rule-sets/${ruleSetId}`, payload),
+  updateRuleSet: (projectId: string, payload: UpdateLoiRuleSetPayload) =>
+    axiosInstance.put<ApiResponse<LoiRuleSet>>(base(projectId), payload),
 
-  deleteRuleSet: (ruleSetId: string) =>
-    axiosInstance.delete<ApiResponse<unknown>>(`/loi-rule-sets/${ruleSetId}`),
+  deleteRuleSet: (projectId: string) =>
+    axiosInstance.delete<ApiResponse<unknown>>(base(projectId)),
 
-  setDefaultRuleSet: (ruleSetId: string) =>
-    axiosInstance.put<ApiResponse<LoiRuleSet>>(`/loi-rule-sets/${ruleSetId}/default`),
-
-  getComponents: (ruleSetId: string, discipline?: LoiDiscipline, search?: string) =>
-    axiosInstance.get<ApiResponse<LoiRuleComponent[]>>(`/loi-rule-sets/${ruleSetId}/components`, {
+  getComponents: (projectId: string, discipline?: LoiDiscipline, search?: string) =>
+    axiosInstance.get<ApiResponse<LoiRuleComponent[]>>(`${base(projectId)}/components`, {
       params: { discipline, search: search || undefined },
     }),
 
-  createComponent: (ruleSetId: string, payload: CreateLoiComponentPayload) =>
-    axiosInstance.post<ApiResponse<LoiRuleComponent>>(`/loi-rule-sets/${ruleSetId}/components`, payload),
+  createComponent: (projectId: string, payload: CreateLoiComponentPayload) =>
+    axiosInstance.post<ApiResponse<LoiRuleComponent>>(`${base(projectId)}/components`, payload),
 
-  updateComponent: (ruleSetId: string, componentId: string, payload: UpdateLoiComponentPayload) =>
+  updateComponent: (projectId: string, componentId: string, payload: UpdateLoiComponentPayload) =>
     axiosInstance.put<ApiResponse<LoiRuleComponent>>(
-      `/loi-rule-sets/${ruleSetId}/components/${componentId}`,
+      `${base(projectId)}/components/${componentId}`,
       payload,
     ),
 
-  deleteComponent: (ruleSetId: string, componentId: string) =>
-    axiosInstance.delete<ApiResponse<unknown>>(`/loi-rule-sets/${ruleSetId}/components/${componentId}`),
+  deleteComponent: (projectId: string, componentId: string) =>
+    axiosInstance.delete<ApiResponse<unknown>>(`${base(projectId)}/components/${componentId}`),
 
-  getMatrix: (ruleSetId: string, componentId: string) =>
-    axiosInstance.get<ApiResponse<LoiMatrix>>(
-      `/loi-rule-sets/${ruleSetId}/components/${componentId}/matrix`,
-    ),
+  getMatrix: (projectId: string, componentId: string) =>
+    axiosInstance.get<ApiResponse<LoiMatrix>>(`${base(projectId)}/components/${componentId}/matrix`),
 
-  saveMatrix: (ruleSetId: string, componentId: string, payload: SaveLoiMatrixPayload) =>
+  saveMatrix: (projectId: string, componentId: string, payload: SaveLoiMatrixPayload) =>
     axiosInstance.put<ApiResponse<LoiMatrix>>(
-      `/loi-rule-sets/${ruleSetId}/components/${componentId}/matrix`,
+      `${base(projectId)}/components/${componentId}/matrix`,
       payload,
     ),
 
-  renameVariant: (ruleSetId: string, componentId: string, payload: RenameLoiVariantPayload) =>
+  renameVariant: (projectId: string, componentId: string, payload: RenameLoiVariantPayload) =>
     axiosInstance.put<ApiResponse<LoiMatrix>>(
-      `/loi-rule-sets/${ruleSetId}/components/${componentId}/variant`,
+      `${base(projectId)}/components/${componentId}/variant`,
       payload,
     ),
 
-  deleteVariant: (ruleSetId: string, componentId: string, variant: string | null) =>
+  deleteVariant: (projectId: string, componentId: string, variant: string | null) =>
     axiosInstance.delete<ApiResponse<LoiMatrix>>(
-      `/loi-rule-sets/${ruleSetId}/components/${componentId}/variant`,
+      `${base(projectId)}/components/${componentId}/variant`,
       { params: { variant: variant ?? undefined } },
     ),
 
-  getParameters: (ruleSetId: string) =>
-    axiosInstance.get<ApiResponse<LoiRuleParameter[]>>(`/loi-rule-sets/${ruleSetId}/parameters`),
+  getParameters: (projectId: string) =>
+    axiosInstance.get<ApiResponse<LoiRuleParameter[]>>(`${base(projectId)}/parameters`),
 
-  createParameter: (ruleSetId: string, payload: CreateLoiParameterPayload) =>
-    axiosInstance.post<ApiResponse<LoiRuleParameter>>(`/loi-rule-sets/${ruleSetId}/parameters`, payload),
+  createParameter: (projectId: string, payload: CreateLoiParameterPayload) =>
+    axiosInstance.post<ApiResponse<LoiRuleParameter>>(`${base(projectId)}/parameters`, payload),
 
-  updateParameter: (ruleSetId: string, parameterId: string, payload: UpdateLoiParameterPayload) =>
+  updateParameter: (projectId: string, parameterId: string, payload: UpdateLoiParameterPayload) =>
     axiosInstance.put<ApiResponse<LoiRuleParameter>>(
-      `/loi-rule-sets/${ruleSetId}/parameters/${parameterId}`,
+      `${base(projectId)}/parameters/${parameterId}`,
       payload,
     ),
 
-  deleteParameter: (ruleSetId: string, parameterId: string) =>
-    axiosInstance.delete<ApiResponse<unknown>>(`/loi-rule-sets/${ruleSetId}/parameters/${parameterId}`),
+  deleteParameter: (projectId: string, parameterId: string) =>
+    axiosInstance.delete<ApiResponse<unknown>>(`${base(projectId)}/parameters/${parameterId}`),
 
-  getSystemAliases: (search?: string) =>
-    axiosInstance.get<ApiResponse<LoiAlias[]>>('/loi-aliases', {
-      params: { search: search || undefined },
-    }),
-
-  createSystemAlias: (payload: CreateSystemLoiAliasPayload) =>
-    axiosInstance.post<ApiResponse<LoiAlias>>('/loi-aliases', payload),
-
-  deleteSystemAlias: (aliasId: string) =>
-    axiosInstance.delete<ApiResponse<unknown>>(`/loi-aliases/${aliasId}`),
-
-  getProjectRuleSet: (projectId: string) =>
-    axiosInstance.get<ApiResponse<LoiRuleSet | null>>(`/projects/${projectId}/loi-rule-set`),
-
-  getSelectableRuleSets: (projectId: string) =>
-    axiosInstance.get<ApiResponse<LoiRuleSet[]>>(`/projects/${projectId}/loi-rule-sets`),
-
-  setProjectRuleSet: (projectId: string, ruleSetId: string | null) =>
-    axiosInstance.put<ApiResponse<LoiRuleSet | null>>(`/projects/${projectId}/loi-rule-set`, { ruleSetId }),
-
-  downloadImportTemplate: (ruleSetId: string) =>
-    axiosInstance.get(`/loi-rule-sets/${ruleSetId}/import-template`, {
+  downloadImportTemplate: (projectId: string) =>
+    axiosInstance.get(`${base(projectId)}/import-template`, {
       responseType: 'blob',
       timeout: 120_000,
     }),
 
-  importPreview: (file: File, ruleSetId: string | null) => {
+  importPreview: (projectId: string, file: File) => {
     const form = new FormData();
     form.append('file', file);
-    return axiosInstance.post<ApiResponse<LoiImportPreview>>('/loi-rule-sets/import-preview', form, {
-      params: ruleSetId ? { ruleSetId } : undefined,
+    return axiosInstance.post<ApiResponse<LoiImportPreview>>(`${base(projectId)}/import-preview`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120_000,
     });
   },
 
-  importCommit: (payload: LoiImportCommitPayload) =>
-    axiosInstance.post<ApiResponse<LoiRuleSet>>('/loi-rule-sets/import-commit', payload, {
+  importCommit: (projectId: string, payload: LoiImportCommitPayload) =>
+    axiosInstance.post<ApiResponse<LoiRuleSet>>(`${base(projectId)}/import-commit`, payload, {
       timeout: 180_000,
     }),
 };

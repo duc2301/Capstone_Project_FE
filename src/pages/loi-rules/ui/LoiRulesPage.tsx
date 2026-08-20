@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-import type { LoiRuleSet } from '@/entities/loi-check';
 import {
   LoiAliasesTab,
   LoiComponentsTab,
@@ -9,7 +9,7 @@ import {
   LoiRuleSetFormModal,
   LoiRuleSetStats,
   LoiRuleSetToolbar,
-  useLoiRuleSets,
+  useProjectLoiRuleSet,
 } from '@/features/loi-rules';
 import { getApiErrorMessage } from '@/shared/api';
 import { ConfirmDialog, ListErrorCard, ListLoadingCard, Toast, useToast } from '@/shared/components';
@@ -26,65 +26,29 @@ const TABS: { id: TabId; key: TranslationKey }[] = [
 ];
 
 export function LoiRulesPage() {
-  const {
-    ruleSets,
-    selected,
-    selectRuleSet,
-    loading,
-    error,
-    busy,
-    reload,
-    createRuleSet,
-    updateRuleSet,
-    deleteRuleSet,
-    setDefaultRuleSet,
-  } = useLoiRuleSets();
+  const { projectId } = useParams<{ projectId: string }>();
+  const { ruleSet, loading, error, busy, reload, renameRuleSet, deleteRuleSet } =
+    useProjectLoiRuleSet(projectId);
 
   const { toast, showToast } = useToast();
   const [tab, setTab] = useUrlTab<TabId>(TAB_IDS, 'components');
-  const [formTarget, setFormTarget] = useState<LoiRuleSet | null | undefined>(undefined);
+  const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [defaultOpen, setDefaultOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
-  const currentDefault = ruleSets.find((item) => item.isDefault) ?? null;
-  const affectedProjects = currentDefault?.inheritingProjectCount ?? 0;
-  const setDefaultMessage = [
-    currentDefault ? `${t('loiRule.ruleSet.setDefaultFromLabel')} ${currentDefault.name}.` : null,
-    affectedProjects > 0
-      ? `${affectedProjects} ${t('loiRule.ruleSet.setDefaultAffectedSuffix')}`
-      : t('loiRule.ruleSet.setDefaultNoneAffected'),
-    t('loiRule.ruleSet.setDefaultConfirm'),
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  const handleSubmit = async (values: { name: string; description: string | null }) => {
+  const handleRename = async (values: { name: string; description: string | null }) => {
     try {
-      if (formTarget) await updateRuleSet(formTarget.id, values);
-      else await createRuleSet(values);
-      setFormTarget(undefined);
+      await renameRuleSet(values);
+      setFormOpen(false);
       showToast(t('loiRule.ruleSet.saved'));
     } catch (err) {
       showToast(getApiErrorMessage(err, t('loiRule.ruleSet.saveError')), 'error');
     }
   };
 
-  const handleSetDefault = async () => {
-    if (!selected) return;
-    try {
-      await setDefaultRuleSet(selected.id);
-      setDefaultOpen(false);
-      showToast(t('loiRule.ruleSet.defaultUpdated'));
-    } catch (err) {
-      showToast(getApiErrorMessage(err, t('loiRule.ruleSet.defaultError')), 'error');
-    }
-  };
-
   const handleDelete = async () => {
-    if (!selected) return;
     try {
-      await deleteRuleSet(selected.id);
+      await deleteRuleSet();
       setDeleteOpen(false);
       showToast(t('loiRule.ruleSet.deleted'));
     } catch (err) {
@@ -92,19 +56,17 @@ export function LoiRulesPage() {
     }
   };
 
+  if (!projectId) return null;
+
   return (
     <div className="flex h-full flex-col gap-3">
       <h1 className="heading-page shrink-0">{t('loiRule.title')}</h1>
 
       {!loading && !error && (
         <LoiRuleSetToolbar
-          ruleSets={ruleSets}
-          selected={selected}
+          ruleSet={ruleSet}
           busy={busy}
-          onSelect={selectRuleSet}
-          onCreate={() => setFormTarget(null)}
-          onEdit={() => setFormTarget(selected)}
-          onSetDefault={() => setDefaultOpen(true)}
+          onEdit={() => setFormOpen(true)}
           onDelete={() => setDeleteOpen(true)}
           onImport={() => setImportOpen(true)}
         />
@@ -114,79 +76,57 @@ export function LoiRulesPage() {
       {!loading && error && <ListErrorCard message={error} />}
 
       {!loading && !error && (
-        <>
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-card-border">
-            <div className="flex gap-1">
-              {TABS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setTab(item.id)}
-                  className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
-                    tab === item.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-text-secondary hover:text-text'
-                  }`}
-                >
-                  {t(item.key)}
-                </button>
-              ))}
-            </div>
-            {selected && <LoiRuleSetStats ruleSet={selected} />}
+        ruleSet === null ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[var(--radius-card-lg)] border border-dashed border-card-border bg-card text-center">
+            <p className="max-w-md text-sm text-text-muted">{t('loiRule.project.emptyState')}</p>
+            <button type="button" onClick={() => setImportOpen(true)} className="btn-modal-primary">
+              {t('loiRule.import.actionCreate')}
+            </button>
           </div>
-
-          {ruleSets.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[var(--radius-card-lg)] border border-dashed border-card-border bg-card text-center">
-              <p className="text-sm text-text-muted">{t('loiRule.ruleSet.emptyState')}</p>
-              <button type="button" onClick={() => setFormTarget(null)} className="btn-modal-primary">
-                {t('loiRule.ruleSet.add')}
-              </button>
+        ) : (
+          <>
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-card-border">
+              <div className="flex gap-1">
+                {TABS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setTab(item.id)}
+                    className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                      tab === item.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-text-secondary hover:text-text'
+                    }`}
+                  >
+                    {t(item.key)}
+                  </button>
+                ))}
+              </div>
+              <LoiRuleSetStats ruleSet={ruleSet} />
             </div>
-          ) : (
-            <>
-              {tab === 'components' && (
-                <LoiComponentsTab
-                  ruleSetId={selected?.id ?? null}
-                  onRuleSetChanged={reload}
-                  showToast={showToast}
-                />
-              )}
-              {tab === 'parameters' && (
-                <LoiParametersTab ruleSetId={selected?.id ?? null} showToast={showToast} />
-              )}
-              {tab === 'aliases' && (
-                <LoiAliasesTab ruleSetId={selected?.id ?? null} showToast={showToast} />
-              )}
-            </>
-          )}
-        </>
+
+            {tab === 'components' && (
+              <LoiComponentsTab projectId={projectId} onRuleSetChanged={reload} showToast={showToast} />
+            )}
+            {tab === 'parameters' && <LoiParametersTab projectId={projectId} showToast={showToast} />}
+            {tab === 'aliases' && <LoiAliasesTab projectId={projectId} showToast={showToast} />}
+          </>
+        )
       )}
 
-      {formTarget !== undefined && (
+      {formOpen && ruleSet && (
         <LoiRuleSetFormModal
-          ruleSet={formTarget}
+          ruleSet={ruleSet}
           busy={busy}
-          onSubmit={handleSubmit}
-          onClose={() => setFormTarget(undefined)}
+          onSubmit={handleRename}
+          onClose={() => setFormOpen(false)}
         />
       )}
 
-      {defaultOpen && selected && (
-        <ConfirmDialog
-          title={t('loiRule.ruleSet.setDefaultTitle')}
-          message={setDefaultMessage}
-          confirmLabel={t('loiRule.ruleSet.setDefault')}
-          tone="primary"
-          busy={busy}
-          onConfirm={handleSetDefault}
-          onCancel={() => setDefaultOpen(false)}
-        />
-      )}
-
-      {deleteOpen && selected && (
+      {deleteOpen && ruleSet && (
         <ConfirmDialog
           title={t('loiRule.ruleSet.deleteTitle')}
-          message={t('loiRule.ruleSet.deleteConfirm')}
+          message={t('loiRule.project.deleteConfirm')}
           confirmLabel={t('common.action.delete')}
           busy={busy}
           onConfirm={handleDelete}
@@ -196,12 +136,12 @@ export function LoiRulesPage() {
 
       {importOpen && (
         <LoiImportModal
-          ruleSet={selected}
+          projectId={projectId}
+          ruleSet={ruleSet}
           showToast={showToast}
           onClose={() => setImportOpen(false)}
-          onImported={(saved) => {
+          onImported={() => {
             setImportOpen(false);
-            selectRuleSet(saved.id);
             void reload();
           }}
         />

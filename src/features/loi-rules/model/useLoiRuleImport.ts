@@ -6,7 +6,7 @@ import { getApiErrorMessage, getBlobApiErrorMessage } from '@/shared/api';
 import { downloadBlob } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 
-const TEMPLATE_FILE_NAME = 'bo-luat-kiem-loi.xlsx';
+const TEMPLATE_FILE_NAME = 'bo-luat-phi-hinh-hoc-mau.xlsx';
 
 export function useLoiRuleImport() {
   const [preview, setPreview] = useState<LoiImportPreview | null>(null);
@@ -14,10 +14,10 @@ export function useLoiRuleImport() {
   const [committing, setCommitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const downloadTemplate = useCallback(async (ruleSetId: string) => {
+  const downloadTemplate = useCallback(async (projectId: string) => {
     setDownloading(true);
     try {
-      const { data } = await loiRuleApi.downloadImportTemplate(ruleSetId);
+      const { data } = await loiRuleApi.downloadImportTemplate(projectId);
       downloadBlob(data as Blob, TEMPLATE_FILE_NAME);
     } catch (err) {
       throw new Error(await getBlobApiErrorMessage(err, t('loiRule.import.templateError')), { cause: err });
@@ -26,10 +26,10 @@ export function useLoiRuleImport() {
     }
   }, []);
 
-  const parseFile = useCallback(async (file: File, ruleSetId: string | null) => {
+  const parseFile = useCallback(async (projectId: string, file: File) => {
     setParsing(true);
     try {
-      const { data } = await loiRuleApi.importPreview(file, ruleSetId);
+      const { data } = await loiRuleApi.importPreview(projectId, file);
       if (!data.isSuccess || !data.result) throw new Error(data.message);
       setPreview(data.result);
       return data.result;
@@ -40,10 +40,10 @@ export function useLoiRuleImport() {
     }
   }, []);
 
-  const commit = useCallback(async (payload: LoiImportCommitPayload): Promise<LoiRuleSet> => {
+  const commit = useCallback(async (projectId: string, payload: LoiImportCommitPayload): Promise<LoiRuleSet> => {
     setCommitting(true);
     try {
-      const { data } = await loiRuleApi.importCommit(payload);
+      const { data } = await loiRuleApi.importCommit(projectId, payload);
       if (!data.isSuccess || !data.result) throw new Error(data.message);
       return data.result;
     } catch (err) {

@@ -4,6 +4,7 @@ export { useBepTask } from './model/useBepTask';
 export { BepTaskToast } from './ui/BepTaskToast';
 export { projectAddress } from './model/projectFormat';
 export { useProjectDetail } from './model/useProjectDetail';
+export { useProjectFileBundle } from './model/useProjectFileBundle';
 export { useProjectGroups } from './model/useProjectGroups';
 export type { AddGroupInput } from './model/useProjectGroups';
 export { useProjectInvite } from './model/useProjectInvite';

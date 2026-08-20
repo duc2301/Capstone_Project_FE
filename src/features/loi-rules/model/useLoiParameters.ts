@@ -15,19 +15,19 @@ function unwrap<T>(payload: { isSuccess: boolean; message: string; result: T | n
   return payload.result;
 }
 
-export function useLoiParameters(ruleSetId: string | null) {
+export function useLoiParameters(projectId: string | null) {
   const [busy, setBusy] = useState(false);
 
   const { data: parameters, loading, error, reload } = useAsyncData<LoiRuleParameter[]>(
-    ruleSetId ?? 'none',
+    projectId ?? 'none',
     async () => {
-      if (!ruleSetId) return [];
-      const { data } = await loiRuleApi.getParameters(ruleSetId);
+      if (!projectId) return [];
+      const { data } = await loiRuleApi.getParameters(projectId);
       return unwrap(data);
     },
     {
       fallback: [],
-      enabled: ruleSetId !== null,
+      enabled: projectId !== null,
       toErrorMessage: (err) => getApiErrorMessage(err, t('loiRule.error.loadParameters')),
     },
   );
@@ -46,30 +46,30 @@ export function useLoiParameters(ruleSetId: string | null) {
   const createParameter = useCallback(
     (payload: CreateLoiParameterPayload) =>
       runMutation(async () => {
-        if (!ruleSetId) throw new Error(t('loiRule.error.noRuleSet'));
-        const { data } = await loiRuleApi.createParameter(ruleSetId, payload);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        const { data } = await loiRuleApi.createParameter(projectId, payload);
         return unwrap(data);
       }),
-    [ruleSetId, runMutation],
+    [projectId, runMutation],
   );
 
   const updateParameter = useCallback(
     (parameterId: string, payload: UpdateLoiParameterPayload) =>
       runMutation(async () => {
-        if (!ruleSetId) throw new Error(t('loiRule.error.noRuleSet'));
-        const { data } = await loiRuleApi.updateParameter(ruleSetId, parameterId, payload);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        const { data } = await loiRuleApi.updateParameter(projectId, parameterId, payload);
         return unwrap(data);
       }),
-    [ruleSetId, runMutation],
+    [projectId, runMutation],
   );
 
   const deleteParameter = useCallback(
     (parameterId: string) =>
       runMutation(() => {
-        if (!ruleSetId) throw new Error(t('loiRule.error.noRuleSet'));
-        return loiRuleApi.deleteParameter(ruleSetId, parameterId);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        return loiRuleApi.deleteParameter(projectId, parameterId);
       }),
-    [ruleSetId, runMutation],
+    [projectId, runMutation],
   );
 
   return { parameters, loading, error, busy, reload, createParameter, updateParameter, deleteParameter };

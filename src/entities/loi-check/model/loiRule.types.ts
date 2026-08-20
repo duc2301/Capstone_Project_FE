@@ -24,13 +24,11 @@ export interface LoiRuleSet {
   id: string;
   name: string;
   description: string | null;
-  isDefault: boolean;
   isSystem: boolean;
   componentCount: number;
   requirementCount: number;
   parameterCount: number;
   projectCount: number;
-  inheritingProjectCount: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -78,11 +76,6 @@ export interface LoiMatrix {
   variants: LoiMatrixVariant[];
 }
 
-export interface CreateLoiRuleSetPayload {
-  name: string;
-  description?: string | null;
-}
-
 export interface UpdateLoiRuleSetPayload {
   name?: string;
   description?: string | null;
@@ -121,11 +114,6 @@ export interface SaveLoiMatrixPayload {
 export interface RenameLoiVariantPayload {
   currentVariant: string | null;
   newVariant: string | null;
-}
-
-export interface CreateSystemLoiAliasPayload {
-  paramNameInModel: string;
-  standardParamName: string;
 }
 
 export const LoiImportMode = {

@@ -381,8 +381,8 @@ function ResultBody({ result, ruleSetName, controls, mapping, reportHref }: Resu
 
 export function LoiCheckPanel({ fileItemId, projectId, readOnly = false }: { fileItemId: string; projectId?: string; readOnly?: boolean }) {
   const {
-    result, ruleSetName, stage, setStage, loading, error, recompute, recomputing, isRunning,
-    canMap, confirmMapping, mappingParam, mappingError,
+    result, ruleSetName, projectHasRuleSet, stage, setStage, loading, error, recompute, recomputing,
+    isRunning, canMap, confirmMapping, mappingParam, mappingError,
   } = useLoiCheck(fileItemId, projectId);
 
   const hasResult = result !== null && result.status !== LoiCheckStatus.None;
@@ -419,6 +419,15 @@ export function LoiCheckPanel({ fileItemId, projectId, readOnly = false }: { fil
       <div className="py-8 text-center">
         <p className="text-sm font-medium text-danger">{error}</p>
         {controls}
+      </div>
+    );
+  }
+
+  if (!projectHasRuleSet) {
+    return (
+      <div className="py-10 text-center">
+        <h3 className="heading-card text-warning">{t('loi.noRuleSet.title')}</h3>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-text-muted">{t('loi.noRuleSet.desc')}</p>
       </div>
     );
   }

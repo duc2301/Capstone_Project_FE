@@ -25,18 +25,20 @@ function statusLabel(status: LoiImportStatus): string {
 }
 
 interface LoiImportModalProps {
+  projectId: string;
   ruleSet: LoiRuleSet | null;
   onClose: () => void;
   onImported: (ruleSet: LoiRuleSet) => void;
   showToast: (message: string, type?: 'success' | 'error') => void;
 }
 
-export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiImportModalProps) {
+export function LoiImportModal({ projectId, ruleSet, onClose, onImported, showToast }: LoiImportModalProps) {
   const { preview, parsing, committing, downloading, downloadTemplate, parseFile, commit } =
     useLoiRuleImport();
 
-  const [mode, setMode] = useState<LoiImportMode>(LoiImportMode.Merge);
-  const [newName, setNewName] = useState('');
+  const [mode, setMode] = useState<LoiImportMode>(
+    ruleSet ? LoiImportMode.Merge : LoiImportMode.ReplaceAll,
+  );
   const [deleteMissing, setDeleteMissing] = useState(false);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<LoiImportStatus | null>(null);
@@ -66,7 +68,7 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
   const handleFile = async (file: File | null) => {
     if (!file) return;
     try {
-      await parseFile(file, ruleSet?.id ?? null);
+      await parseFile(projectId, file);
       setExcluded(new Set());
     } catch (err) {
       showToast(err instanceof Error ? err.message : t('loiRule.import.parseError'), 'error');
@@ -74,9 +76,8 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
   };
 
   const handleDownloadTemplate = async () => {
-    if (!ruleSet) return;
     try {
-      await downloadTemplate(ruleSet.id);
+      await downloadTemplate(projectId);
     } catch (err) {
       showToast(err instanceof Error ? err.message : t('loiRule.import.templateError'), 'error');
     }
@@ -86,10 +87,10 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
     if (!preview) return;
     setConfirmOpen(false);
     try {
-      const saved = await commit({
-        mode,
-        targetRuleSetId: mode === LoiImportMode.CreateNew ? null : ruleSet?.id ?? null,
-        newRuleSetName: mode === LoiImportMode.CreateNew ? newName.trim() : null,
+      const saved = await commit(projectId, {
+        mode: ruleSet ? mode : LoiImportMode.ReplaceAll,
+        targetRuleSetId: ruleSet?.id ?? null,
+        newRuleSetName: null,
         selectedComponentCodes: selectedCodes,
         deleteMissing: mode === LoiImportMode.Merge && deleteMissing,
         parameters: preview.parameters,
@@ -103,11 +104,7 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
     }
   };
 
-  const canCommit =
-    preview !== null &&
-    selectedCodes.length > 0 &&
-    !committing &&
-    (mode !== LoiImportMode.CreateNew || newName.trim().length > 0);
+  const canCommit = preview !== null && selectedCodes.length > 0 && !committing;
 
   const statusChip = (status: LoiImportStatus | null, label: string, count: number) => (
     <button
@@ -128,8 +125,8 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
         <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-card-border bg-content-bg/50 p-3">
           <button
             type="button"
-            onClick={handleDownloadTemplate}
-            disabled={!ruleSet || downloading}
+            onClick={() => void handleDownloadTemplate()}
+            disabled={downloading}
             className="btn-modal-ghost disabled:cursor-not-allowed disabled:opacity-50"
           >
             {downloading ? t('loiRule.import.downloading') : t('loiRule.import.downloadTemplate')}
@@ -230,11 +227,14 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
 
             <div className="space-y-3 rounded-[var(--radius-card)] border border-card-border p-3">
               <p className="field-label">{t('loiRule.import.modeLabel')}</p>
-              {[
-                { value: LoiImportMode.Merge, label: t('loiRule.import.modeMerge'), hint: t('loiRule.import.modeMergeHint') },
-                { value: LoiImportMode.ReplaceAll, label: t('loiRule.import.modeReplace'), hint: t('loiRule.import.modeReplaceHint') },
-                { value: LoiImportMode.CreateNew, label: t('loiRule.import.modeCreate'), hint: t('loiRule.import.modeCreateHint') },
-              ].map((option) => (
+              {!ruleSet && <p className="field-hint">{t('loiRule.import.modeFirstImportHint')}</p>}
+              {(ruleSet
+                ? [
+                  { value: LoiImportMode.Merge, label: t('loiRule.import.modeMerge'), hint: t('loiRule.import.modeMergeHint') },
+                  { value: LoiImportMode.ReplaceAll, label: t('loiRule.import.modeReplace'), hint: t('loiRule.import.modeReplaceHint') },
+                ]
+                : []
+              ).map((option) => (
                 <label key={option.value} className="flex cursor-pointer items-start gap-2.5">
                   <input
                     type="radio"
@@ -250,16 +250,7 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
                 </label>
               ))}
 
-              {mode === LoiImportMode.CreateNew && (
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder={t('loiRule.ruleSet.namePlaceholder')}
-                  className="field-input w-full"
-                />
-              )}
-
-              {mode === LoiImportMode.Merge && preview.missingCount > 0 && (
+              {ruleSet && mode === LoiImportMode.Merge && preview.missingCount > 0 && (
                 <label className="flex cursor-pointer items-start gap-2.5 rounded-lg bg-danger-light/50 p-2.5">
                   <input
                     type="checkbox"
@@ -301,12 +292,14 @@ export function LoiImportModal({ ruleSet, onClose, onImported, showToast }: LoiI
         <ConfirmDialog
           title={t('loiRule.import.confirmTitle')}
           message={
-            mode === LoiImportMode.ReplaceAll
-              ? t('loiRule.import.confirmReplace')
-              : t('loiRule.import.confirmMerge')
+            !ruleSet
+              ? t('loiRule.import.confirmCreate')
+              : mode === LoiImportMode.ReplaceAll
+                ? t('loiRule.import.confirmReplace')
+                : t('loiRule.import.confirmMerge')
           }
           confirmLabel={t('loiRule.import.commit')}
-          tone={mode === LoiImportMode.ReplaceAll ? 'danger' : 'primary'}
+          tone={ruleSet && mode === LoiImportMode.ReplaceAll ? 'danger' : 'primary'}
           busy={committing}
           onConfirm={runCommit}
           onCancel={() => setConfirmOpen(false)}

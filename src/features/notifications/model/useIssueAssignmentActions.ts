@@ -27,7 +27,7 @@ export function useIssueAssignmentActions(onDone?: () => void): UseIssueAssignme
         await call();
         onDone?.();
       } catch (err) {
-        setError(issueErrorMessage(err, t('common.error')));
+        setError(issueErrorMessage(err, t('notification.actionError')));
       } finally {
         setProcessingId(null);
         setProcessingAction(null);

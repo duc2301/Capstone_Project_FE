@@ -75,8 +75,8 @@ export type UpdateContractPackagePayload = Partial<CreateContractPackagePayload>
 
 export interface ContractPackagePage {
   items: ContractPackage[];
-  total: number;
-  page: number;
+  totalCount: number;
+  pageNumber: number;
   pageSize: number;
 }
 

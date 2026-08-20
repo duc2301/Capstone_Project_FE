@@ -170,8 +170,8 @@ interface RawProjectIssueListItem {
 
 interface RawProjectIssuePage {
   items: RawProjectIssueListItem[];
-  total: number;
-  page: number;
+  totalCount: number;
+  pageNumber: number;
   pageSize: number;
 }
 

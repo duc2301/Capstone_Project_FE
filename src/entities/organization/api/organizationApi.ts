@@ -8,8 +8,8 @@ import type {
 
 export interface OrganizationPage {
   items: Organization[];
-  total: number;
-  page: number;
+  totalCount: number;
+  pageNumber: number;
   pageSize: number;
 }
 

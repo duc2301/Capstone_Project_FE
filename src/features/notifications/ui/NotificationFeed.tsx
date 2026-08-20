@@ -38,7 +38,7 @@ export function NotificationFeed() {
     void refreshPendingIssues();
   }, [list, refreshBell, refreshPendingIssues]);
 
-  const { processingId, processingAction, respond } = useInvitationActions(handleResponded);
+  const { processingId, processingAction, error: invitationError, respond } = useInvitationActions(handleResponded);
   const assignment = useIssueAssignmentActions(handleAssignmentResponded);
 
   const isPendingInvite = useCallback(
@@ -76,6 +76,7 @@ export function NotificationFeed() {
   }, [markAllRead, list]);
 
   const showEmpty = !list.loading && list.groups.length === 0;
+  const actionError = invitationError ?? assignment.error;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5">
@@ -97,6 +98,12 @@ export function NotificationFeed() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card-hover">
+          {actionError && (
+            <p className="border-b border-danger/20 bg-danger-light px-6 py-2.5 text-sm font-medium text-danger">
+              {actionError}
+            </p>
+          )}
+
           <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
             {list.loading && list.groups.length === 0 ? (
               <p className="py-20 text-center text-sm text-text-muted">{t('common.loading')}</p>

@@ -23,7 +23,7 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
   const { notifications, unreadCount, loading, markRead, refresh } = useNotifications();
   const { pendingIds, refreshPending } = usePendingInvitations();
   const { pendingById, refreshPendingIssues } = usePendingIssueAssignments();
-  const { processingId, processingAction, respond } = useInvitationActions(() => {
+  const { processingId, processingAction, error: invitationError, respond } = useInvitationActions(() => {
     void refresh();
     void refreshPending();
   });
@@ -46,6 +46,8 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
     return null;
   };
 
+  const actionError = invitationError ?? assignment.error;
+
   const handleToggle = (n: NotificationItem) => {
     if (!n.isRead) void markRead(n.id);
     setExpandedId((cur) => (cur === n.id ? null : n.id));
@@ -66,6 +68,12 @@ export function NotificationPanel({ variant = 'dropdown' }: Props) {
           </span>
         )}
       </div>
+
+      {actionError && (
+        <p className="border-b border-danger/20 bg-danger-light px-4 py-2 text-xs font-medium text-danger">
+          {actionError}
+        </p>
+      )}
 
       {loading && all.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-text-muted">{t('common.loading')}</div>

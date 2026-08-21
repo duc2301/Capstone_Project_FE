@@ -7,13 +7,16 @@ import { t } from '@/shared/lib/i18n';
 import type {
   AssignableGroup,
   AssignableMember,
+  AssignIssuePayload,
   CreateIssuePayload,
+  IssueAssignmentStatus,
   IssueAttachment,
   IssueItem,
   IssueParticipant,
   IssuePriority,
   IssueStatus,
   IssueType,
+  PendingIssueAssignment,
   ProjectIssueListItem,
 } from '../model/issue.types';
 
@@ -22,6 +25,7 @@ interface RawAssignableGroup {
   groupName?: string | null;
   organizationName?: string | null;
   memberCount?: number | null;
+  hasActiveLeader?: boolean | null;
 }
 
 interface RawIssueParticipant {
@@ -60,6 +64,13 @@ interface RawIssueItem {
   assignedToGroupId?: string | null;
   assignedToGroupName?: string | null;
   dueDate?: string | null;
+  assignmentStatus?: number | string | null;
+  assignmentRespondedByAccountId?: string | null;
+  assignmentRespondedByName?: string | null;
+  assignedAt?: string | null;
+  assignmentRespondedAt?: string | null;
+  assignmentRejectReason?: string | null;
+  canRespondToAssignment?: boolean | null;
   linkedFolderId?: string | null;
   linkedFileItemId?: string | null;
   createdAt?: string | null;
@@ -85,6 +96,13 @@ function normalizeIssueStatus(value: number | string): IssueStatus {
   if (value === 2 || value === 'Answered') return 'InProgress';
   if (value === 3 || value === 'Closed') return 'Closed';
   return 'Open';
+}
+
+function normalizeAssignmentStatus(value: number | string | null | undefined): IssueAssignmentStatus {
+  if (value === 1 || value === 'Pending') return 'Pending';
+  if (value === 2 || value === 'Accepted') return 'Accepted';
+  if (value === 3 || value === 'Rejected') return 'Rejected';
+  return 'Unassigned';
 }
 
 function normalizeIssuePriority(value: number | string): IssuePriority {
@@ -133,6 +151,13 @@ function mapIssueItem(item: RawIssueItem): IssueItem {
     assignedToGroupId: item.assignedToGroupId ?? null,
     assignedToGroupName: item.assignedToGroupName ?? null,
     dueDate: item.dueDate ?? null,
+    assignmentStatus: normalizeAssignmentStatus(item.assignmentStatus),
+    assignmentRespondedByAccountId: item.assignmentRespondedByAccountId ?? null,
+    assignmentRespondedByName: item.assignmentRespondedByName ?? null,
+    assignedAt: item.assignedAt ?? null,
+    assignmentRespondedAt: item.assignmentRespondedAt ?? null,
+    assignmentRejectReason: item.assignmentRejectReason ?? null,
+    canRespondToAssignment: item.canRespondToAssignment ?? false,
     linkedFolderId: item.linkedFolderId ?? null,
     linkedFileItemId: item.linkedFileItemId ?? null,
     createdAt: item.createdAt ?? null,
@@ -160,6 +185,7 @@ interface RawProjectIssueListItem {
   assignedToAccountId?: string | null;
   assignedToName?: string | null;
   dueDate?: string | null;
+  assignmentStatus?: number | string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   linkedFileItemId?: string | null;
@@ -168,10 +194,19 @@ interface RawProjectIssueListItem {
   linkedFolderName?: string | null;
 }
 
+interface RawPendingIssueAssignment {
+  issueId: string;
+  title: string;
+  projectId: string;
+  linkedFileItemId?: string | null;
+  assignedToGroupName?: string | null;
+  dueDate?: string | null;
+}
+
 interface RawProjectIssuePage {
   items: RawProjectIssueListItem[];
-  total: number;
-  page: number;
+  totalCount: number;
+  pageNumber: number;
   pageSize: number;
 }
 
@@ -192,6 +227,7 @@ function mapProjectIssueListItem(item: RawProjectIssueListItem): ProjectIssueLis
     assignedToGroupId: item.assignedToGroupId ?? null,
     assignedToGroupName: item.assignedToGroupName ?? null,
     dueDate: item.dueDate ?? null,
+    assignmentStatus: normalizeAssignmentStatus(item.assignmentStatus),
     createdAt: item.createdAt ?? null,
     updatedAt: item.updatedAt ?? null,
     linkedFileItemId: item.linkedFileItemId ?? null,
@@ -262,7 +298,45 @@ export const issueApi = {
       groupName: g.groupName ?? '',
       organizationName: g.organizationName ?? null,
       memberCount: g.memberCount ?? 0,
+      hasActiveLeader: g.hasActiveLeader ?? false,
     }));
+  },
+
+  getPendingAssignments: async (): Promise<PendingIssueAssignment[]> => {
+    const { data } = await axiosInstance.get<ApiResponse<RawPendingIssueAssignment[]>>(
+      '/issues/assignments/pending',
+    );
+    return (unwrap(data) ?? []).map((item) => ({
+      issueId: item.issueId,
+      title: item.title,
+      projectId: item.projectId,
+      linkedFileItemId: item.linkedFileItemId ?? null,
+      assignedToGroupName: item.assignedToGroupName ?? null,
+      dueDate: item.dueDate ?? null,
+    }));
+  },
+
+  assign: async (issueId: string, payload: AssignIssuePayload): Promise<IssueItem> => {
+    const { data } = await axiosInstance.put<ApiResponse<RawIssueItem>>(
+      `/issues/${issueId}/assignment`,
+      payload,
+    );
+    return mapIssueItem(unwrap(data));
+  },
+
+  acceptAssignment: async (issueId: string): Promise<IssueItem> => {
+    const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(
+      `/issues/${issueId}/assignment/accept`,
+    );
+    return mapIssueItem(unwrap(data));
+  },
+
+  rejectAssignment: async (issueId: string, reason: string): Promise<IssueItem> => {
+    const { data } = await axiosInstance.post<ApiResponse<RawIssueItem>>(
+      `/issues/${issueId}/assignment/reject`,
+      { reason },
+    );
+    return mapIssueItem(unwrap(data));
   },
 
   addParticipant: async (issueId: string, accountId: string): Promise<void> => {

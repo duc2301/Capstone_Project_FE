@@ -42,8 +42,6 @@ export type {
 export type {
   CreateLoiComponentPayload,
   CreateLoiParameterPayload,
-  CreateLoiRuleSetPayload,
-  CreateSystemLoiAliasPayload,
   LoiMatrix,
   LoiMatrixCell,
   LoiMatrixRow,

@@ -9,6 +9,15 @@ import { t } from '@/shared/lib/i18n';
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_FAILURES = 3;
 
+type ProjectRuleSetStatus = 'unknown' | 'configured' | 'missing';
+
+interface ProjectRuleSetState {
+  name: string | null;
+  status: ProjectRuleSetStatus;
+}
+
+const UNKNOWN_RULE_SET: ProjectRuleSetState = { name: null, status: 'unknown' };
+
 function errorMessage(e: unknown, fallbackKey: 'loi.error' | 'loi.mapping.error'): string {
   const message = axios.isAxiosError(e) ? e.response?.data?.message : null;
   return typeof message === 'string' && message ? message : t(fallbackKey);
@@ -23,16 +32,19 @@ export function useLoiCheck(fileItemId: string | undefined, projectId: string | 
   const [mappingParam, setMappingParam] = useState<string | null>(null);
   const [mappingError, setMappingError] = useState<string | null>(null);
 
-  /* Tên bộ luật dự án đang áp dụng — chỉ để hiển thị, hỏng thì panel vẫn chạy. */
-  const { data: ruleSetName } = useAsyncData<string | null>(
+  const { data: ruleSet } = useAsyncData<ProjectRuleSetState>(
     `loi-rule-set:${projectId ?? ''}`,
     async () => {
-      if (!projectId) return null;
-      const { data } = await loiRuleApi.getProjectRuleSet(projectId);
-      return data.isSuccess ? data.result?.name ?? null : null;
+      if (!projectId) return UNKNOWN_RULE_SET;
+      const { data } = await loiRuleApi.getRuleSetSummary(projectId);
+      if (!data.isSuccess) return UNKNOWN_RULE_SET;
+      return { name: data.result?.name ?? null, status: data.result === null ? 'missing' : 'configured' };
     },
-    { fallback: null, enabled: Boolean(projectId) },
+    { fallback: UNKNOWN_RULE_SET, enabled: Boolean(projectId) },
   );
+
+  const ruleSetName = ruleSet.name;
+  const projectHasRuleSet = ruleSet.status !== 'missing';
 
   const fetchOnce = useCallback(async (): Promise<LoiCheckResult | null> => {
     if (!fileItemId) return null;
@@ -135,6 +147,7 @@ export function useLoiCheck(fileItemId: string | undefined, projectId: string | 
   return {
     result,
     ruleSetName,
+    projectHasRuleSet,
     stage,
     setStage,
     loading,

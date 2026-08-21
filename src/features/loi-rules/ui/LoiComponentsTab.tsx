@@ -12,12 +12,12 @@ import { LoiComponentPanel } from './LoiComponentPanel';
 import { LoiMatrixEditor } from './LoiMatrixEditor';
 
 interface LoiComponentsTabProps {
-  ruleSetId: string | null;
+  projectId: string | null;
   onRuleSetChanged: () => void;
   showToast: (message: string, type?: 'success' | 'error') => void;
 }
 
-export function LoiComponentsTab({ ruleSetId, onRuleSetChanged, showToast }: LoiComponentsTabProps) {
+export function LoiComponentsTab({ projectId, onRuleSetChanged, showToast }: LoiComponentsTabProps) {
   const {
     components,
     visible,
@@ -31,7 +31,7 @@ export function LoiComponentsTab({ ruleSetId, onRuleSetChanged, showToast }: Loi
     createComponent,
     updateComponent,
     deleteComponent,
-  } = useLoiComponents(ruleSetId);
+  } = useLoiComponents(projectId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -42,7 +42,7 @@ export function LoiComponentsTab({ ruleSetId, onRuleSetChanged, showToast }: Loi
   const selected = components.find((component) => component.id === selectedId) ?? null;
 
   const { matrix, loading: matrixLoading, error: matrixError, saving, saveVariant, renameVariant, deleteVariant } =
-    useLoiMatrix(ruleSetId, selected?.id ?? null);
+    useLoiMatrix(projectId, selected?.id ?? null);
 
   const afterRuleChange = () => {
     onRuleSetChanged();

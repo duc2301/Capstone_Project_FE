@@ -73,4 +73,10 @@ export const projectApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 0,
     }),
+
+  downloadFileBundle: (projectId: string) =>
+    axiosInstance.get(`/projects/${projectId}/files/bundle`, {
+      responseType: 'blob',
+      timeout: 0,
+    }),
 };

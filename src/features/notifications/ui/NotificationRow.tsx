@@ -7,20 +7,26 @@ interface Props {
   notification: NotificationItem;
   expanded: boolean;
   isPendingInvite: boolean;
+  isPendingAssignment: boolean;
   processingAction: InvitationAction | null;
   onToggle: () => void;
   onAccept: () => void;
   onReject: () => void;
+  onAcceptAssignment: () => void;
+  onRejectAssignment: () => void;
 }
 
 export function NotificationRow({
   notification,
   expanded,
   isPendingInvite,
+  isPendingAssignment,
   processingAction,
   onToggle,
   onAccept,
   onReject,
+  onAcceptAssignment,
+  onRejectAssignment,
 }: Props) {
   const { message, senderName, sendAt, isRead } = notification;
   const processing = processingAction !== null;
@@ -48,9 +54,9 @@ export function NotificationRow({
           </span>
         </span>
 
-        {isPendingInvite && (
-          <span className="shrink-0 rounded-[var(--radius-badge)] bg-warning-light px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-warning">
-            {t('notification.invitation.badge')}
+        {(isPendingInvite || isPendingAssignment) && (
+          <span className="shrink-0 rounded-[var(--radius-badge)] bg-warning-light px-2 py-0.5 text-2xs font-bold uppercase leading-6 tracking-wide text-warning">
+            {isPendingInvite ? t('notification.invitation.badge') : t('notification.assignment.badge')}
           </span>
         )}
       </button>
@@ -58,6 +64,27 @@ export function NotificationRow({
       {expanded && (
         <div className="space-y-3 bg-content-bg/60 px-4 pb-4 pt-1">
           <p className="text-xs text-text-muted">{formatDateTime(sendAt)}</p>
+
+          {isPendingAssignment && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onAcceptAssignment}
+                disabled={processing}
+                className="rounded-[var(--radius-button)] bg-primary px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+              >
+                {processingAction === 'accept' ? t('common.loading') : t('issues.assignment.accept')}
+              </button>
+              <button
+                type="button"
+                onClick={onRejectAssignment}
+                disabled={processing}
+                className="rounded-[var(--radius-button)] border border-danger/40 bg-danger-light px-4 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+              >
+                {processingAction === 'reject' ? t('common.loading') : t('issues.assignment.reject')}
+              </button>
+            </div>
+          )}
 
           {isPendingInvite && (
             <div className="flex items-center gap-2">

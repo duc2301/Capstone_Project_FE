@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationBell } from '@/features/notifications';
 import { t } from '@/shared/lib/i18n';
 
-import { resolveBackTarget } from '../model/backTarget';
+import { hasInAppHistory, resolveBackTarget } from '../model/backTarget';
 import { UserMenu } from './UserMenu';
 
 interface AdminTopBarProps {
@@ -14,15 +14,18 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/dashboard';
-  const backTarget = resolveBackTarget(location.pathname, location.search);
 
   const goBack = () => {
-    if (backTarget) navigate(backTarget);
-    else navigate(-1);
+    if (hasInAppHistory()) {
+      navigate(-1);
+      return;
+    }
+    const fallback = resolveBackTarget(location.pathname, location.search);
+    navigate(fallback ?? '/dashboard', { replace: true });
   };
 
   return (
-    <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border-sage bg-page-cream px-8 backdrop-blur-[6px]">
+    <header className="relative z-30 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border-sage bg-page-cream px-8 backdrop-blur-[6px]">
       <div className="flex items-center gap-4">
         {/* Mobile hamburger */}
         <button

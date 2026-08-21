@@ -1,3 +1,12 @@
+/* Kết quả trả về sau khi tải tệp lên (khớp BE FileUploadResultDTO).
+ * Chỉ khai những trường FE thật sự dùng — displayVersion là thứ cho người dùng biết
+ * lần tải này tạo tài liệu mới hay lên phiên bản của tài liệu đã có. */
+export interface FileUploadResult {
+  fileItem: { id: string; name: string };
+  version: { id: string; versionNumber: number; displayVersion: string };
+  url?: string | null;
+}
+
 /* Loại tệp — numeric enum khớp BE (Domain.Enum.File.FileType) */
 export const FileType = {
   Pdf: 0,

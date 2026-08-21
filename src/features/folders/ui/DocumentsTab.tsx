@@ -713,6 +713,9 @@ export function DocumentsTab({
       {uploadFolder && (
         <UploadModal
           targetFolder={uploadFolder}
+          // Danh sách tệp chỉ đúng cho folder ĐANG chọn. Mở upload từ menu chuột phải của folder
+          // khác thì không có dữ liệu để so trùng tên -> truyền rỗng, BE vẫn là chốt chặn cuối.
+          existingFiles={uploadFolder.id === selectedId ? files : []}
           onClose={() => setUploadFolder(null)}
           onUploaded={() => {
             showToast(t('documents.toast.uploaded'));

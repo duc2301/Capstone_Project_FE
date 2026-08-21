@@ -4,7 +4,7 @@ import type { AuditLogItem, AuditLogQuery } from '@/entities/audit-log';
 import { auditLogApi } from '@/entities/audit-log';
 import { getApiErrorMessage } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
-import { downloadBlob } from '@/shared/lib/download';
+import { downloadBlob, fileNameFromDisposition } from '@/shared/lib/download';
 import { t } from '@/shared/lib/i18n';
 
 /* Nguồn dữ liệu:
@@ -14,6 +14,7 @@ import { t } from '@/shared/lib/i18n';
 export type AuditLogMode = 'system' | 'project' | 'my' | 'me' | 'file';
 
 const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_EXPORT_FILE_NAME = 'nhat-ky-hoat-dong.xlsx';
 
 interface AuditLogPageData {
   items: AuditLogItem[];
@@ -75,7 +76,7 @@ export function useAuditLogs(mode: AuditLogMode, projectId?: string, fileItemId?
         ? await auditLogApi.exportSystem(filters)
         : await auditLogApi.exportByProject(projectId!, filters);
 
-      downloadBlob(res.data as Blob, fileNameFromDisposition(res.headers['content-disposition']));
+      downloadBlob(res.data as Blob, fileNameFromDisposition(res.headers['content-disposition'], DEFAULT_EXPORT_FILE_NAME));
     } catch (e) {
       setError(getApiErrorMessage(e, t('audit.exportError')));
     } finally {
@@ -98,10 +99,4 @@ export function useAuditLogs(mode: AuditLogMode, projectId?: string, fileItemId?
     exportCsv,
     exporting,
   };
-}
-
-function fileNameFromDisposition(disposition: unknown): string {
-  const raw = typeof disposition === 'string' ? disposition : '';
-  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(raw);
-  return match ? decodeURIComponent(match[1]) : 'audit-log.csv';
 }

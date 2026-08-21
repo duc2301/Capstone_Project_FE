@@ -19,21 +19,21 @@ function unwrap<T>(payload: { isSuccess: boolean; message: string; result: T | n
 const searchable = (component: LoiRuleComponent) =>
   `${component.code} ${component.name}`.toLowerCase();
 
-export function useLoiComponents(ruleSetId: string | null) {
+export function useLoiComponents(projectId: string | null) {
   const [disciplineFilter, setDisciplineFilter] = useState<LoiDiscipline | null>(null);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
 
   const { data: components, loading, error, reload } = useAsyncData<LoiRuleComponent[]>(
-    ruleSetId ?? 'none',
+    projectId ?? 'none',
     async () => {
-      if (!ruleSetId) return [];
-      const { data } = await loiRuleApi.getComponents(ruleSetId);
+      if (!projectId) return [];
+      const { data } = await loiRuleApi.getComponents(projectId);
       return unwrap(data);
     },
     {
       fallback: [],
-      enabled: ruleSetId !== null,
+      enabled: projectId !== null,
       toErrorMessage: (err) => getApiErrorMessage(err, t('loiRule.error.loadComponents')),
     },
   );
@@ -61,30 +61,30 @@ export function useLoiComponents(ruleSetId: string | null) {
   const createComponent = useCallback(
     (payload: CreateLoiComponentPayload) =>
       runMutation(async () => {
-        if (!ruleSetId) throw new Error(t('loiRule.error.noRuleSet'));
-        const { data } = await loiRuleApi.createComponent(ruleSetId, payload);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        const { data } = await loiRuleApi.createComponent(projectId, payload);
         return unwrap(data);
       }),
-    [ruleSetId, runMutation],
+    [projectId, runMutation],
   );
 
   const updateComponent = useCallback(
     (componentId: string, payload: UpdateLoiComponentPayload) =>
       runMutation(async () => {
-        if (!ruleSetId) throw new Error(t('loiRule.error.noRuleSet'));
-        const { data } = await loiRuleApi.updateComponent(ruleSetId, componentId, payload);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        const { data } = await loiRuleApi.updateComponent(projectId, componentId, payload);
         return unwrap(data);
       }),
-    [ruleSetId, runMutation],
+    [projectId, runMutation],
   );
 
   const deleteComponent = useCallback(
     (componentId: string) =>
       runMutation(() => {
-        if (!ruleSetId) throw new Error(t('loiRule.error.noRuleSet'));
-        return loiRuleApi.deleteComponent(ruleSetId, componentId);
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        return loiRuleApi.deleteComponent(projectId, componentId);
       }),
-    [ruleSetId, runMutation],
+    [projectId, runMutation],
   );
 
   return {

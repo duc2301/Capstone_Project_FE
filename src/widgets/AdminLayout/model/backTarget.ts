@@ -27,3 +27,10 @@ export function resolveBackTarget(pathname: string, search: string): string | nu
 
   return null;
 }
+
+export function hasInAppHistory(): boolean {
+  const state: unknown = window.history.state;
+  if (typeof state !== 'object' || state === null) return false;
+  const index = (state as { idx?: unknown }).idx;
+  return typeof index === 'number' && index > 0;
+}

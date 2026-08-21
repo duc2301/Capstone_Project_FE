@@ -105,18 +105,6 @@ export const AppRoutes = () => {
           }
         />
         <Route
-          path="/loi-rules"
-          element={
-            <RequireAuth>
-              <RequireAdmin>
-                <AdminLayout>
-                  <LoiRulesPage />
-                </AdminLayout>
-              </RequireAdmin>
-            </RequireAuth>
-          }
-        />
-        <Route
           path="/audit-log"
           element={
             <RequireAuth>
@@ -154,6 +142,16 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <ProjectDetailPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:projectId/loi-rules"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <LoiRulesPage />
               </AdminLayout>
             </RequireAuth>
           }

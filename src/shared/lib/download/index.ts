@@ -1,1 +1,1 @@
-export { buildDownloadName, downloadBlob } from './downloadBlob';
+export { buildDownloadName, downloadBlob, fileNameFromDisposition } from './downloadBlob';

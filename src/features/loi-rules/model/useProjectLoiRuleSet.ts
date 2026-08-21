@@ -1,54 +1,61 @@
 import { useCallback, useState } from 'react';
 
-import type { LoiRuleSet } from '@/entities/loi-check';
+import type { LoiRuleSet, UpdateLoiRuleSetPayload } from '@/entities/loi-check';
 import { loiRuleApi } from '@/entities/loi-check';
 import { getApiErrorMessage } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
-interface ProjectLoiRuleSetState {
-  ruleSets: LoiRuleSet[];
-  current: LoiRuleSet | null;
-}
+export function useProjectLoiRuleSet(projectId: string | undefined, manageable = true) {
+  const [busy, setBusy] = useState(false);
 
-export function useProjectLoiRuleSet(projectId: string) {
-  const [saving, setSaving] = useState(false);
-
-  const { data, loading, error, setData, reload } = useAsyncData<ProjectLoiRuleSetState>(
-    projectId,
+  const { data: ruleSet, loading, error, reload } = useAsyncData<LoiRuleSet | null>(
+    `project-loi-rule-set:${projectId ?? ''}:${manageable}`,
     async () => {
-      const [listResponse, currentResponse] = await Promise.all([
-        loiRuleApi.getSelectableRuleSets(projectId),
-        loiRuleApi.getProjectRuleSet(projectId),
-      ]);
-      if (!listResponse.data.isSuccess || !listResponse.data.result)
-        throw new Error(listResponse.data.message);
-      return {
-        ruleSets: listResponse.data.result,
-        current: currentResponse.data.result ?? null,
-      };
+      if (!projectId) return null;
+      const { data } = manageable
+        ? await loiRuleApi.getRuleSet(projectId)
+        : await loiRuleApi.getRuleSetSummary(projectId);
+      if (!data.isSuccess) throw new Error(data.message);
+      return data.result ?? null;
     },
     {
-      fallback: { ruleSets: [], current: null },
+      fallback: null,
+      enabled: Boolean(projectId),
       toErrorMessage: (err) => getApiErrorMessage(err, t('loiRule.error.loadRuleSets')),
     },
   );
 
-  const setRuleSet = useCallback(
-    async (ruleSetId: string | null) => {
-      setSaving(true);
-      try {
-        const { data: response } = await loiRuleApi.setProjectRuleSet(projectId, ruleSetId);
-        if (!response.isSuccess) throw new Error(response.message);
-        setData((current) => ({ ...current, current: response.result ?? null }));
-      } finally {
-        setSaving(false);
-      }
-    },
-    [projectId, setData],
+  const runMutation = useCallback(async <T,>(action: () => Promise<T>): Promise<T> => {
+    setBusy(true);
+    try {
+      const result = await action();
+      await reload();
+      return result;
+    } finally {
+      setBusy(false);
+    }
+  }, [reload]);
+
+  const renameRuleSet = useCallback(
+    (payload: UpdateLoiRuleSetPayload) =>
+      runMutation(async () => {
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        const { data } = await loiRuleApi.updateRuleSet(projectId, payload);
+        if (!data.isSuccess || !data.result) throw new Error(data.message);
+        return data.result;
+      }),
+    [projectId, runMutation],
   );
 
-  const effective = data.current ?? data.ruleSets.find((item) => item.isDefault) ?? null;
+  const deleteRuleSet = useCallback(
+    () =>
+      runMutation(() => {
+        if (!projectId) throw new Error(t('loiRule.error.noRuleSet'));
+        return loiRuleApi.deleteRuleSet(projectId);
+      }),
+    [projectId, runMutation],
+  );
 
-  return { ruleSets: data.ruleSets, current: data.current, effective, loading, error, saving, reload, setRuleSet };
+  return { ruleSet, loading, error, busy, reload, renameRuleSet, deleteRuleSet };
 }

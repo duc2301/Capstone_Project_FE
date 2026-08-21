@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileUploadResult, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
+import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileUploadResult, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, NameAvailability, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
@@ -11,6 +11,17 @@ export const fileItemApi = {
       onUploadProgress: onProgress
         ? (e) => onProgress(Math.round((e.loaded / (e.total || e.loaded || 1)) * 100))
         : undefined,
+    }),
+
+  /** Tên tài liệu này còn trống không (hỏi trước khi gửi bytes). `format` là đuôi file không kèm dấu chấm. */
+  checkNameAvailability: (
+    folderId: string,
+    name: string,
+    format: string,
+    bypassNamingConvention = false,
+  ) =>
+    axiosInstance.get<ApiResponse<NameAvailability>>('/file-items/name-availability', {
+      params: { folderId, name, format, bypassNamingConvention },
     }),
 
   /** Danh sách file trong 1 folder. */

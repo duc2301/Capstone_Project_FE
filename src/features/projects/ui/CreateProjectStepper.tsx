@@ -4,7 +4,7 @@ import type { Account } from '@/entities/account';
 import { accountApi } from '@/entities/account';
 import type { ContractPackage, CreateContractPackagePayload } from '@/entities/contractPackage';
 import { contractPackageApi } from '@/entities/contractPackage';
-import { fileItemApi } from '@/entities/file-item';
+import { fileItemApi, UploadDuplicateAction } from '@/entities/file-item';
 import type { FolderTreeNodeDto } from '@/entities/folder';
 import { folderApi } from '@/entities/folder';
 import { groupApi } from '@/entities/group';
@@ -480,6 +480,9 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
             formData.append('FolderId', legalFolderId);
             formData.append('FileType', detectFileType(file.name).toString());
             formData.append('Name', file.name.replace(/\.[^/.]+$/, ''));
+            // Luồng tạo dự án không có chỗ hỏi khi trùng tên (thư mục vừa tạo, trùng chỉ xảy ra khi
+            // người dùng chọn hai tệp cùng tên) -> khai báo tường minh thay vì để upload lỗi.
+            formData.append('DuplicateAction', String(UploadDuplicateAction.NewVersion));
             formData.append('file', file);
             await fileItemApi.upload(formData);
           }
@@ -547,6 +550,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
               formData.append('FolderId', documentFolderId);
               formData.append('FileType', detectFileType(file.name).toString());
               formData.append('Name', file.name.replace(/\.[^/.]+$/, ''));
+              formData.append('DuplicateAction', String(UploadDuplicateAction.NewVersion));
               formData.append('file', file);
               await fileItemApi.upload(formData);
             }

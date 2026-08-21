@@ -31,6 +31,42 @@ export function is3DFile(fileType: FileType, format: string | null | undefined):
   return normalized !== 'DWG' && normalized !== 'DWGX';
 }
 
+/* Trùng tên lúc tải lên thì xử lý ra sao — khớp BE (Domain.Enum.File.UploadDuplicateAction).
+ * BE KHÔNG còn tự lên phiên bản khi trùng tên: không gửi lựa chọn thì upload bị từ chối (409). */
+export const UploadDuplicateAction = {
+  None: 0,
+  NewVersion: 1,
+  NewDocument: 2,
+} as const;
+export type UploadDuplicateAction = (typeof UploadDuplicateAction)[keyof typeof UploadDuplicateAction];
+
+/* Tên đang bị chiếm ở đâu — khớp BE (Domain.Enum.File.NameConflictScope) */
+export const NameConflictScope = {
+  None: 0,
+  SameFolder: 1,
+  OtherFolder: 2,
+} as const;
+export type NameConflictScope = (typeof NameConflictScope)[keyof typeof NameConflictScope];
+
+/* Trả lời của BE cho câu hỏi "tên này còn trống không" (khớp NameAvailabilityDTO).
+ * Hỏi TRƯỚC khi gửi bytes để hỏi ý người dùng ngay trên modal — tệp CDE nặng hàng trăm MB,
+ * tải xong mới báo trùng là quá muộn. */
+export interface NameAvailability {
+  name: string;
+  format: string;
+  scope: NameConflictScope;
+  isAvailable: boolean;
+  conflictFileItemId: string | null;
+  conflictFolderName: string | null;
+  /* Khu vực CDE của tài liệu đang giữ tên (0=WIP, 1=Shared, 2=Published, 3=Archived) */
+  conflictArea: number | null;
+  conflictDisplayVersion: string | null;
+  canCreateVersion: boolean;
+  canCreateNewDocument: boolean;
+  suggestedName: string | null;
+  guidance: string | null;
+}
+
 /* Trạng thái phê duyệt file — khớp BE (Domain.Enum.File.FileItemStatus) */
 export const FileItemStatus = {
   Draft: 0,

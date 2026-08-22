@@ -1,3 +1,4 @@
+import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 /* Các mảnh giao diện dùng chung cho các modal phân quyền (nhóm & thành viên):
@@ -15,7 +16,7 @@ export function SelectBox({ checked }: { checked: boolean }) {
       </svg>
     </span>
   ) : (
-    <span className="h-5 w-5 shrink-0 rounded-[var(--radius-card)] border-2 border-card-border bg-card" />
+    <span className="h-5 w-5 shrink-0 rounded-md border-2 border-card-border bg-card" />
   );
 }
 
@@ -98,41 +99,25 @@ export function PermissionModalShell({
   title, resourceName, loading, ready, error, onClose, children,
 }: PermissionModalShellProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <div className="min-w-0">
-            <h2 className="heading-entity">{title}</h2>
-            <p className="field-hint truncate">{resourceName}</p>
+    <Modal title={title} subtitle={resourceName} onClose={onClose} maxWidth="max-w-4xl" flush>
+      {ready ? (
+        children
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            {loading ? (
+              <p className="py-16 text-center text-sm text-text-muted">{t('common.loading')}</p>
+            ) : (
+              <p className="py-16 text-center text-sm text-danger">{error ?? t('folderPermission.error')}</p>
+            )}
           </div>
-          <button type="button" onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        {ready ? (
-          children
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto px-6 py-5">
-              {loading ? (
-                <p className="py-16 text-center text-sm text-text-muted">{t('common.loading')}</p>
-              ) : (
-                <p className="py-16 text-center text-sm text-danger">{error ?? t('folderPermission.error')}</p>
-              )}
-            </div>
-            <div className="flex justify-end border-t border-card-border px-6 py-4">
-              <button type="button" onClick={onClose} className="btn-modal-ghost">
-                {t('documents.action.cancel')}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+          <div className="flex justify-end border-t border-card-border px-6 py-4">
+            <button type="button" onClick={onClose} className="btn-modal-ghost">
+              {t('documents.action.cancel')}
+            </button>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 }

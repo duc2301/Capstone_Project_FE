@@ -10,7 +10,7 @@ import { folderApi } from '@/entities/folder';
 import { groupApi } from '@/entities/group';
 import type { Organization } from '@/entities/organization';
 import { organizationApi } from '@/entities/organization';
-import type { BepParseResult, Project } from '@/entities/project';
+import type { BepParseResult, Project, ProjectImportPreview } from '@/entities/project';
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, DeleteIcon, EditIcon, RowActions } from '@/shared/components';
@@ -90,7 +90,7 @@ const buildDefaultGroups = (): GroupDraft[] =>
   DEFAULT_GROUP_KEYS.map((key) => ({ key: newLocalId(), name: t(key), description: '', organizationId: null }));
 
 /* ── Khởi tạo nhanh từ BEP: seed state + match tên tổ chức -> Guid ── */
-const buildInitialState = (bep?: BepParseResult): StepperState => {
+const buildBepState = (bep?: BepParseResult): StepperState => {
   const groups: GroupDraft[] =
     bep && bep.groups.length > 0
       ? bep.groups.map((g) => ({
@@ -133,6 +133,56 @@ const buildInitialState = (bep?: BepParseResult): StepperState => {
     managerAccountId: '',
   };
 };
+
+const buildImportedState = (imported: ProjectImportPreview): StepperState => ({
+  projectName: imported.projectName ?? '',
+  projectCode: imported.projectCode ?? '',
+  projectImage: null,
+  projectDescription: imported.projectDescription ?? '',
+  ownerOrganizationId: imported.ownerOrganizationId ?? '',
+  contactAddress: imported.contactAddress ?? '',
+  address: imported.address ?? '',
+  latitude: imported.latitude == null ? '' : String(imported.latitude),
+  longitude: imported.longitude == null ? '' : String(imported.longitude),
+  mandatoryFiles: [],
+  packages: imported.packages.map((p) => ({
+    id: newLocalId(),
+    payload: {
+      projectId: '',
+      code: p.code ?? undefined,
+      name: p.name,
+      description: p.description ?? undefined,
+      contractValue: p.contractValue ?? undefined,
+      startDate: p.startDate ?? undefined,
+      endDate: p.endDate ?? undefined,
+      isDefault: true,
+      workTypes: p.workTypes ?? undefined,
+      scopeDescription: p.scopeDescription ?? undefined,
+      taxRate: p.taxRate ?? undefined,
+      currency: p.currency ?? undefined,
+      notes: p.notes ?? undefined,
+      contractorOrganizationId: p.contractorOrganizationId ?? undefined,
+      representativeAccountId: p.representativeAccountId ?? undefined,
+      contractNumber: p.contractNumber ?? undefined,
+      contractSignDate: p.contractSignDate ?? undefined,
+      contractJobTitle: p.contractJobTitle ?? undefined,
+    },
+    files: [],
+  })),
+  groups:
+    imported.groups.length > 0
+      ? imported.groups.map((g) => ({
+          key: newLocalId(),
+          name: g.name,
+          description: g.description ?? '',
+          organizationId: g.partnerOrganizationId ?? null,
+        }))
+      : buildDefaultGroups(),
+  managerAccountId: imported.managerAccountId ?? '',
+});
+
+const buildInitialState = (bep?: BepParseResult, imported?: ProjectImportPreview): StepperState =>
+  imported ? buildImportedState(imported) : buildBepState(bep);
 
 // Chuẩn hoá tiếng Việt (bỏ dấu, đ->d, gộp khoảng trắng) để so khớp tên tổ chức.
 const stripVN = (s: string): string =>
@@ -322,6 +372,7 @@ function FileDropzone({
 export interface PackageFormSlotContext {
   accounts: Account[];
   initialData?: ContractPackage;
+  pendingFiles: File[];
   onSubmit: (payload: CreateContractPackagePayload, files: File[]) => Promise<void>;
   onCancel: () => void;
 }
@@ -331,10 +382,11 @@ export interface CreateProjectStepperProps {
   onCancel: () => void;
   /** Kết quả AI đọc BEP để prefill sẵn các bước (khởi tạo nhanh). */
   initialData?: BepParseResult;
+  importData?: ProjectImportPreview;
   renderPackageForm: (ctx: PackageFormSlotContext) => React.ReactNode;
 }
 
-export function CreateProjectStepper({ onComplete, onCancel, initialData, renderPackageForm }: CreateProjectStepperProps) {
+export function CreateProjectStepper({ onComplete, onCancel, initialData, importData, renderPackageForm }: Readonly<CreateProjectStepperProps>) {
   const [step, setStep] = useState(0);
   const [maxStep, setMaxStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -364,7 +416,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
   }, []);
 
   /* ── Form state (prefill từ BEP nếu có) ── */
-  const [state, setState] = useState<StepperState>(() => buildInitialState(initialData));
+  const [state, setState] = useState<StepperState>(() => buildInitialState(initialData, importData));
 
   const update = useCallback(<K extends keyof StepperState>(key: K, value: StepperState[K]) => {
     setState((prev) => ({ ...prev, [key]: value }));
@@ -638,6 +690,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
             organizations={organizations}
             orgsLoading={orgsLoading}
             existingProjects={existingProjects}
+            importWarnings={importData?.warnings ?? []}
           />
         )}
         {step === 1 && <Step2MandatoryFiles state={state} update={update} />}
@@ -720,15 +773,33 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, render
 /* ══════════════════════════════════════════════════════════════
    Step 1: Thông tin dự án
    ══════════════════════════════════════════════════════════════ */
+function ImportWarningList({ warnings }: Readonly<{ warnings: string[] }>) {
+  return (
+    <div className="rounded-[var(--radius-card)] border border-warning/40 bg-warning-light/60 px-4 py-3 lg:col-span-2">
+      <p className="text-sm font-semibold text-warning">
+        {warnings.length} {t('projects.import.warningTitleSuffix')}
+      </p>
+      <ul className="mt-2 space-y-1">
+        {warnings.map((warning) => (
+          <li key={warning} className="text-xs text-text-secondary">
+            • {warning}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function Step1ProjectInfo({
-  state, update, organizations, orgsLoading, existingProjects,
-}: {
+  state, update, organizations, orgsLoading, existingProjects, importWarnings,
+}: Readonly<{
   state: StepperState;
   update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void;
   organizations: Organization[];
   orgsLoading: boolean;
   existingProjects: Project[];
-}) {
+  importWarnings: string[];
+}>) {
   const [projectImagePreview, setProjectImagePreview] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 
@@ -755,6 +826,8 @@ function Step1ProjectInfo({
 
   return (
     <div className="grid animate-fade-in gap-8 lg:grid-cols-2">
+      {importWarnings.length > 0 && <ImportWarningList warnings={importWarnings} />}
+
       <div className="space-y-5">
         <div>
           <SectionLabel required>{t('projects.form.name')}</SectionLabel>
@@ -1052,6 +1125,9 @@ function Step3PackageInfo({
                     } as unknown as ContractPackage;
                   })()
                   : undefined,
+                pendingFiles: editingPackageId
+                  ? state.packages.find((p) => p.id === editingPackageId)?.files ?? []
+                  : [],
                 onSubmit: handlePackageSubmit,
                 onCancel: () => setIsFormOpen(false),
               })}

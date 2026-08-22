@@ -83,6 +83,51 @@ export interface BepParseResult {
   extractionEmpty: boolean;
 }
 
+export interface ProjectImportGroup {
+  name: string;
+  description?: string | null;
+  partnerOrganizationId?: string | null;
+  partnerOrganizationName?: string | null;
+}
+
+export interface ProjectImportPackage {
+  code?: string | null;
+  name: string;
+  description?: string | null;
+  workTypes?: string | null;
+  scopeDescription?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  contractValue?: number | null;
+  currency?: string | null;
+  taxRate?: number | null;
+  contractorOrganizationId?: string | null;
+  contractorOrganizationName?: string | null;
+  contractNumber?: string | null;
+  contractSignDate?: string | null;
+  representativeAccountId?: string | null;
+  representativeAccountName?: string | null;
+  contractJobTitle?: string | null;
+  notes?: string | null;
+}
+
+export interface ProjectImportPreview {
+  projectName?: string | null;
+  projectCode?: string | null;
+  projectDescription?: string | null;
+  ownerOrganizationId?: string | null;
+  ownerOrganizationName?: string | null;
+  contactAddress?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  managerAccountId?: string | null;
+  managerAccountName?: string | null;
+  packages: ProjectImportPackage[];
+  groups: ProjectImportGroup[];
+  warnings: string[];
+}
+
 export interface AssignManagerPayload {
   accountId: string;
 }

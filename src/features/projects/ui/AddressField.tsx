@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { getApiErrorMessage } from '@/shared/api';
 import { geocodeAddress } from '@/shared/lib/geo';
 import { t } from '@/shared/lib/i18n';
 
@@ -34,8 +35,8 @@ export function AddressField({ value, onChange }: Props) {
       } else {
         setMessage({ type: 'error', text: t('projects.form.geocodeNotFound') });
       }
-    } catch {
-      setMessage({ type: 'error', text: t('projects.form.geocodeError') });
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiErrorMessage(err, t('projects.form.geocodeError')) });
     } finally {
       setLocating(false);
     }

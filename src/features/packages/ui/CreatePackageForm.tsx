@@ -62,9 +62,10 @@ export interface CreatePackageFormProps {
   onCancel: () => void;
   accounts?: Account[];
   initialData?: ContractPackage;
+  pendingFiles?: File[];
 }
 
-export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialData }: CreatePackageFormProps) {
+export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialData, pendingFiles }: Readonly<CreatePackageFormProps>) {
   const { organizations, loading: orgsLoading } = useOrganizationList();
   const [loading, setLoading] = useState(false);
   const [viewFileUrl, setViewFileUrl] = useState<{ url: string; name: string; type: string } | null>(null);
@@ -72,7 +73,7 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
   // ── Form state ──
   const [name, setName] = useState(initialData?.name ?? '');
   const [description, setDescription] = useState(initialData?.description ?? '');
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>(pendingFiles ?? []);
   const [deleteFileTarget, setDeleteFileTarget] = useState<{ id: string } | null>(null);
   const [deletingFile, setDeletingFile] = useState(false);
   const { toast, showToast } = useToast();

@@ -4,7 +4,7 @@ import { t } from '@/shared/lib/i18n';
 import { CreatePackageForm } from './CreatePackageForm';
 import { contractPackageApi } from '@/entities/contractPackage';
 import type { ContractPackage, CreateContractPackagePayload, UpdateContractPackagePayload } from '@/entities/contractPackage';
-import { fileItemApi, FileType } from '@/entities/file-item';
+import { fileItemApi, FileType, UploadDuplicateAction } from '@/entities/file-item';
 
 /** Detect BE FileType from file extension for proper view/download support */
 function detectFileType(fileName: string): number {
@@ -75,6 +75,9 @@ export function PackageFormModal({
                 formData.append('FileType', detectFileType(file.name).toString());
                 const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
                 formData.append('Name', nameWithoutExt);
+                // Màn này không có chỗ hỏi người dùng khi trùng tên: đính kèm lại đúng tên tệp cũ
+                // của gói thầu = cập nhật tài liệu đó -> khai báo tường minh, đừng để BE từ chối.
+                formData.append('DuplicateAction', String(UploadDuplicateAction.NewVersion));
                 formData.append('file', file);
                 return fileItemApi.upload(formData);
               });

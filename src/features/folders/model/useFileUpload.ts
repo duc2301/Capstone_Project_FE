@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { FileType, fileItemApi } from '@/entities/file-item';
+import { FileType, UploadDuplicateAction, fileItemApi } from '@/entities/file-item';
 import type { NamingSelection } from '@/entities/naming-convention';
 
 function inferFileType(fileName: string): FileType {
@@ -23,11 +23,15 @@ export function useFileUpload() {
       bypassNaming?: boolean,
       // "Tệp liên quan" chọn riêng cho từng file trong lô — tùy chọn, để trống thì không liên kết gì.
       relatedFileItemIds: string[] = [],
+      // Trùng tên trong thư mục đích thì làm gì. BE không tự lên phiên bản nữa: trùng mà không gửi
+      // lựa chọn sẽ bị từ chối (409) — người gọi phải hỏi người dùng trước.
+      duplicateAction: UploadDuplicateAction = UploadDuplicateAction.None,
     ) => {
       const form = new FormData();
       form.append('file', file);
       form.append('FolderId', folderId);
       form.append('FileType', String(inferFileType(file.name)));
+      form.append('DuplicateAction', String(duplicateAction));
       if (bypassNaming) {
         // Tệp ngoại lệ (văn bản hành chính...): giữ tên gốc, bỏ qua quy tắc đặt tên.
         form.append('BypassNamingConvention', 'true');

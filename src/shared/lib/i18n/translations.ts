@@ -1636,16 +1636,32 @@ export const translations = {
   'documents.uploadModal.empty': 'Chưa chọn tệp nào.',
   'documents.uploadModal.done': 'Hoàn tất',
   'documents.uploadModal.savedAsVersion': 'Đã lưu thành phiên bản',
-  'documents.uploadModal.conflictTitle': 'Tệp trùng tên đã có trong thư mục',
-  'documents.uploadModal.conflictBody':
-    'Thư mục này đã có tài liệu tên {name} (phiên bản {version}). Tải lên sẽ tạo phiên bản mới của chính tài liệu đó, không tạo tài liệu riêng.',
-  'documents.uploadModal.conflictBodyNoVersion':
-    'Thư mục này đã có tài liệu tên {name}. Tải lên sẽ tạo phiên bản mới của chính tài liệu đó, không tạo tài liệu riêng.',
-  'documents.uploadModal.conflictHintNewDoc':
-    'Nếu đây là một tài liệu khác, hãy đổi giá trị các trường đặt tên để sinh ra tên khác, rồi tải lên lại.',
-  'documents.uploadModal.conflictConfirm': 'Tạo phiên bản mới',
+  'documents.uploadModal.savedAsNewDoc': 'Đã lưu thành tài liệu riêng',
+  'documents.uploadModal.checkingNames': 'Đang kiểm tra tên tệp…',
+  'documents.uploadModal.checkFailed': 'Không kiểm tra được tên tệp. Vui lòng thử lại.',
+  'documents.uploadModal.conflictTitle': 'Tệp trùng tên — chọn cách xử lý',
+  'documents.uploadModal.conflictIntro':
+    'Những tệp dưới đây trùng tên với tài liệu đã có. Chọn cách xử lý cho từng tệp — hệ thống không tự quyết thay bạn.',
+  'documents.uploadModal.conflictExisting':
+    'Thư mục này đã có tài liệu “{name}” (phiên bản {version}).',
+  'documents.uploadModal.conflictExistingNoVersion': 'Thư mục này đã có tài liệu “{name}”.',
+  'documents.uploadModal.conflictOtherFolder':
+    'Dự án đã có tài liệu “{name}” ở {area} — thư mục “{folder}”.',
+  'documents.uploadModal.conflictOptionVersion': 'Ghi đè: tạo phiên bản mới cho tài liệu đang có',
+  'documents.uploadModal.conflictOptionVersionHint':
+    'Nội dung mới nối tiếp lịch sử của tài liệu đó. Bản hiện tại vẫn giữ trong lịch sử phiên bản, không mất đi.',
+  'documents.uploadModal.conflictOptionNewDoc': 'Thêm mới: lưu thành tài liệu riêng',
+  'documents.uploadModal.conflictOptionNewDocHint':
+    'Tài liệu cũ giữ nguyên. Tệp này được lưu với tên “{name}”.',
+  'documents.uploadModal.conflictOptionNewDocIso': 'Thêm mới: tài liệu riêng, cấp số hiệu tiếp theo',
+  'documents.uploadModal.conflictOptionNewDocIsoHint':
+    'Theo ISO 19650, hai tài liệu khác nhau không dùng chung một mã. Tài liệu cũ giữ nguyên, tệp này được cấp mã “{name}”.',
+  'documents.uploadModal.conflictBlocked': 'Không tải vào thư mục này được',
+  'documents.uploadModal.conflictChooseFirst': 'Hãy chọn cách xử lý cho từng tệp trùng tên.',
+  'documents.uploadModal.conflictContinue': 'Tải lên theo lựa chọn',
   'documents.uploadModal.conflictCancel': 'Để tôi xem lại',
   'documents.uploadModal.conflictBadge': 'Trùng tên',
+  'documents.uploadModal.conflictBadgeBlocked': 'Bị chặn',
   'documents.uploadModal.failed': 'Lỗi',
   'documents.uploadModal.cancel': 'Hủy',
   'documents.uploadModal.submit': 'Tải lên',

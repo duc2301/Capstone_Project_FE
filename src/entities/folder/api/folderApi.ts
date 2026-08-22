@@ -11,7 +11,9 @@ import type {
   FolderPermissionEntry,
   FolderPermissionUiDto,
   FolderTreeNodeDto,
+  FolderUserPermissionUiDto,
   UpdateFolderGroupPermissionsPayload,
+  UpdateFolderUserPermissionsPayload,
   UpdateFolderPayload,
 } from "../model/folder.types";
 
@@ -55,6 +57,19 @@ export const folderApi = {
   updateGroupPermissions: (payload: UpdateFolderGroupPermissionsPayload) =>
     axiosInstance.post<ApiResponse<FolderPermissionEntry[]>>(
       "/folder-permissions/add-group",
+      payload,
+    ),
+
+  /** Bảng phân quyền thành viên trên folder: danh sách người thấy thư mục qua nhóm + cờ bị chặn. */
+  getUserUi: (folderId: string) =>
+    axiosInstance.get<ApiResponse<FolderUserPermissionUiDto>>(
+      `/folder-permissions/${folderId}/user-ui`,
+    ),
+
+  /** Cập nhật blacklist thành viên trên folder: bật/tắt chặn trong 1 lần gọi (chỉ gửi dòng đổi). */
+  updateUserPermissions: (payload: UpdateFolderUserPermissionsPayload) =>
+    axiosInstance.post<ApiResponse<unknown>>(
+      "/folder-permissions/add-user",
       payload,
     ),
 };

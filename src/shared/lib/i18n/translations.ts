@@ -1257,6 +1257,7 @@ export const translations = {
   'documents.menu.delete': 'Xóa',
   'documents.menu.noActions': 'Không có thao tác khả dụng',
   'documents.menu.permission': 'Phân quyền',
+  'documents.menu.permissionUsers': 'Phân quyền thành viên',
 
   // Modal phân quyền thư mục (chỉ xem)
   'folderPermission.title': 'Phân quyền truy cập tài liệu',
@@ -1281,6 +1282,23 @@ export const translations = {
   // Modal phân quyền tệp (dùng chung layout với phân quyền thư mục)
   'filePermission.title': 'Phân quyền truy cập tệp',
   'filePermission.toast.updated': 'Đã cập nhật phân quyền tệp',
+
+  // Modal phân quyền thành viên (mức override theo từng người, dùng chung vỏ modal phân quyền nhóm)
+  'userPermission.folder.title': 'Phân quyền thành viên cho thư mục',
+  'userPermission.file.title': 'Phân quyền thành viên cho tệp',
+  'userPermission.empty': 'Chưa có thành viên nào có quyền xem qua nhóm.',
+  'userPermission.col.member': 'Thành viên',
+  'userPermission.col.groups': 'Nhóm',
+  'userPermission.col.inherited': 'Quyền kế thừa',
+  'userPermission.col.applied': 'Quyền áp dụng',
+  'userPermission.level.inherit': 'Kế thừa nhóm',
+  'userPermission.level.view': 'Xem',
+  'userPermission.level.edit': 'Sửa',
+  'userPermission.level.deny': 'Chặn',
+  'userPermission.folderScopeHint': 'Quyền đặt cho thư mục áp dụng cho cả thư mục và toàn bộ nội dung bên trong (kể cả tệp thêm sau).',
+  'userPermission.signerNote': 'Người dùng đang là người ký hoặc bên liên quan của phiếu vẫn có thể xem tệp dù bị chặn.',
+  'userPermission.saveError': 'Cập nhật phân quyền thành viên thất bại. Vui lòng thử lại.',
+  'userPermission.toast.updated': 'Đã cập nhật phân quyền thành viên',
   'documents.action.createTitle': 'Tạo thư mục con',
   'documents.action.renameTitle': 'Đổi tên thư mục',
   'documents.action.moveTitle': 'Di chuyển thư mục',
@@ -1337,6 +1355,7 @@ export const translations = {
   'documents.delete.toastFile': 'Đã xoá tệp khỏi hệ thống.',
   'documents.delete.toastVersion': 'Đã xoá phiên bản, bản trước đó trở lại làm bản hiện hành.',
   'documents.fileMenu.permission': 'Phân quyền',
+  'documents.fileMenu.permissionUsers': 'Phân quyền thành viên',
   'documents.fileMenu.transition': 'Chuyển trạng thái',
   'documents.fileMenu.submitApproval': 'Gửi phê duyệt',
   'documents.fileMenu.returnToWip': 'Yêu cầu trả về WIP',

@@ -26,10 +26,12 @@ import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
 import { FilePermissionModal } from './FilePermissionModal';
+import { FilePermissionUsersModal } from './FilePermissionUsersModal';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
 import { FolderContextMenu } from './FolderContextMenu';
 import { FolderPermissionModal } from './FolderPermissionModal';
+import { FolderPermissionUsersModal } from './FolderPermissionUsersModal';
 import { FolderTree } from './FolderTree';
 import { PendingApprovalsModal } from './PendingApprovalsModal';
 import { ReturnRequestModal } from './ReturnRequestModal';
@@ -168,7 +170,9 @@ export function DocumentsTab({
   const [returnRequestFor, setReturnRequestFor] = useState<FileListItem | null>(null);
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
   const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
+  const [permissionUsersFor, setPermissionUsersFor] = useState<FolderTreeNode | null>(null);
   const [filePermissionFor, setFilePermissionFor] = useState<FileListItem | null>(null);
+  const [filePermissionUsersFor, setFilePermissionUsersFor] = useState<FileListItem | null>(null);
   const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
   const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
@@ -596,6 +600,7 @@ export function DocumentsTab({
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
           onPermission={() => setPermissionFor(menu.node)}
           canPermission={canShowPermissionMenu(menu.node.area)}
+          onPermissionUsers={() => setPermissionUsersFor(menu.node)}
           onNaming={() => setNamingFor(menu.node)}
         />
       )}
@@ -615,6 +620,18 @@ export function DocumentsTab({
           onClose={() => setPermissionFor(null)}
           onSaved={() => {
             showToast(t('folderPermission.toast.updated'));
+            void refetch();
+          }}
+        />
+      )}
+
+      {/* Modal phân quyền thành viên trên thư mục */}
+      {permissionUsersFor && (
+        <FolderPermissionUsersModal
+          node={permissionUsersFor}
+          onClose={() => setPermissionUsersFor(null)}
+          onSaved={() => {
+            showToast(t('userPermission.toast.updated'));
             void refetch();
           }}
         />
@@ -644,6 +661,8 @@ export function DocumentsTab({
           onVersions={() => setVersionsFor(fileMenu.file)}
           onPermission={() => setFilePermissionFor(fileMenu.file)}
           canPermission={!!selected && canShowPermissionMenu(selected.area)}
+          onPermissionUsers={() => setFilePermissionUsersFor(fileMenu.file)}
+          canPermissionUsers={!!selected && canShowPermissionMenu(selected.area)}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
           onSubmitApproval={() => openSubmitApproval(fileMenu.file)}
           canTransferZone={canTransferZone(fileMenu.file)}
@@ -687,6 +706,16 @@ export function DocumentsTab({
           area={selected.area}
           onClose={() => setFilePermissionFor(null)}
           onSaved={() => showToast(t('filePermission.toast.updated'))}
+        />
+      )}
+
+      {/* Modal phân quyền thành viên trên tệp */}
+      {filePermissionUsersFor && selected && (
+        <FilePermissionUsersModal
+          fileItemId={filePermissionUsersFor.id}
+          fileName={filePermissionUsersFor.name}
+          onClose={() => setFilePermissionUsersFor(null)}
+          onSaved={() => showToast(t('userPermission.toast.updated'))}
         />
       )}
 

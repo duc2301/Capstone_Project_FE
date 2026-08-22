@@ -59,7 +59,7 @@ interface MethodCardProps {
   onClick: () => void;
 }
 
-function MethodCard({ icon, titleKey, hintKey, disabled, onClick }: MethodCardProps) {
+function MethodCard({ icon, titleKey, hintKey, disabled, onClick }: Readonly<MethodCardProps>) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} className={cardClass}>
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -78,7 +78,7 @@ export interface CreateProjectMethodPickerProps {
   bepBusy?: boolean;
 }
 
-export function CreateProjectMethodPicker({ onManual, onImported, onBepSelected, bepBusy = false }: CreateProjectMethodPickerProps) {
+export function CreateProjectMethodPicker({ onManual, onImported, onBepSelected, bepBusy = false }: Readonly<CreateProjectMethodPickerProps>) {
   const { downloading, parsing, downloadTemplate, parseFile } = useProjectImport();
   const excelInputRef = useRef<HTMLInputElement>(null);
   const bepInputRef = useRef<HTMLInputElement>(null);

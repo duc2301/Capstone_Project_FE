@@ -386,7 +386,7 @@ export interface CreateProjectStepperProps {
   renderPackageForm: (ctx: PackageFormSlotContext) => React.ReactNode;
 }
 
-export function CreateProjectStepper({ onComplete, onCancel, initialData, importData, renderPackageForm }: CreateProjectStepperProps) {
+export function CreateProjectStepper({ onComplete, onCancel, initialData, importData, renderPackageForm }: Readonly<CreateProjectStepperProps>) {
   const [step, setStep] = useState(0);
   const [maxStep, setMaxStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -773,7 +773,7 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, import
 /* ══════════════════════════════════════════════════════════════
    Step 1: Thông tin dự án
    ══════════════════════════════════════════════════════════════ */
-function ImportWarningList({ warnings }: { warnings: string[] }) {
+function ImportWarningList({ warnings }: Readonly<{ warnings: string[] }>) {
   return (
     <div className="rounded-[var(--radius-card)] border border-warning/40 bg-warning-light/60 px-4 py-3 lg:col-span-2">
       <p className="text-sm font-semibold text-warning">
@@ -792,14 +792,14 @@ function ImportWarningList({ warnings }: { warnings: string[] }) {
 
 function Step1ProjectInfo({
   state, update, organizations, orgsLoading, existingProjects, importWarnings,
-}: {
+}: Readonly<{
   state: StepperState;
   update: <K extends keyof StepperState>(k: K, v: StepperState[K]) => void;
   organizations: Organization[];
   orgsLoading: boolean;
   existingProjects: Project[];
   importWarnings: string[];
-}) {
+}>) {
   const [projectImagePreview, setProjectImagePreview] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 

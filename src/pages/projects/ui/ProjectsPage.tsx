@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import type { ProjectImportPreview } from '@/entities/project';
+import type { BepParseResult, ProjectImportPreview } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreatePackageForm } from '@/features/packages';
 import {
@@ -15,6 +15,15 @@ import { Modal, PaginationBar, SearchField, Toast, useToast } from '@/shared/com
 import { t } from '@/shared/lib/i18n';
 
 const PAGE_SIZE = 6;
+
+function resolveStepperSource(
+  bep: BepParseResult | undefined,
+  imported: ProjectImportPreview | null,
+): string {
+  if (bep) return 'bep';
+  if (imported) return 'import';
+  return 'blank';
+}
 
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
@@ -32,7 +41,7 @@ export function ProjectsPage() {
   const bepData = bepTask.status === 'opened' ? bepTask.result ?? undefined : undefined;
   const createOpen = createStage !== null || bepData !== undefined;
   const stepperOpen = createStage === 'form' || bepData !== undefined;
-  const stepperSource = bepData ? 'bep' : importData ? 'import' : 'blank';
+  const stepperSource = resolveStepperSource(bepData, importData);
 
   const clearOpenedBepTask = () => {
     if (bepTask.status === 'opened') bepTask.dismiss();

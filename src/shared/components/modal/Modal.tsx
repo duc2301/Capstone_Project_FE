@@ -9,7 +9,7 @@ export interface ModalProps {
   flush?: boolean;
 }
 
-export function Modal({ title, subtitle, onClose, children, maxWidth = 'max-w-2xl', flush = false }: ModalProps) {
+export function Modal({ title, subtitle, onClose, children, maxWidth = 'max-w-2xl', flush = false }: Readonly<ModalProps>) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />

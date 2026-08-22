@@ -65,7 +65,7 @@ export interface CreatePackageFormProps {
   pendingFiles?: File[];
 }
 
-export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialData, pendingFiles }: CreatePackageFormProps) {
+export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialData, pendingFiles }: Readonly<CreatePackageFormProps>) {
   const { organizations, loading: orgsLoading } = useOrganizationList();
   const [loading, setLoading] = useState(false);
   const [viewFileUrl, setViewFileUrl] = useState<{ url: string; name: string; type: string } | null>(null);

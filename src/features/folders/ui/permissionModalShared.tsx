@@ -97,7 +97,7 @@ interface PermissionModalShellProps {
  * Khi đã sẵn sàng thì render `children` (phần thân + footer riêng của từng modal). */
 export function PermissionModalShell({
   title, resourceName, loading, ready, error, onClose, children,
-}: PermissionModalShellProps) {
+}: Readonly<PermissionModalShellProps>) {
   return (
     <Modal title={title} subtitle={resourceName} onClose={onClose} maxWidth="max-w-4xl" flush>
       {ready ? (

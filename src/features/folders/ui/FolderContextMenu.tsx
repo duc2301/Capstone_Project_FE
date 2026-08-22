@@ -16,6 +16,7 @@ interface FolderContextMenuProps {
   onPermission: () => void;
   /** Được phép hiển thị mục "Phân quyền" — Leader ở Published/Archived và Member đều bị ẩn. */
   canPermission: boolean;
+  onPermissionUsers: () => void;
   onNaming: () => void;
   onClose: () => void;
 }
@@ -29,7 +30,7 @@ interface Item {
 }
 
 export function FolderContextMenu({
-  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onPermission, canPermission, onNaming, onClose,
+  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onPermission, canPermission, onPermissionUsers, onNaming, onClose,
 }: FolderContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -60,6 +61,17 @@ export function FolderContextMenu({
       icon: (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      ),
+    });
+    items.push({
+      key: 'permissionUsers',
+      label: t('documents.menu.permissionUsers'),
+      onClick: onPermissionUsers,
+      icon: (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       ),
     });

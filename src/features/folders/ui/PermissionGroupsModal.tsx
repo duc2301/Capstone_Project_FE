@@ -7,7 +7,9 @@ import type {
   PermissionGroupsLoader,
   PermissionGroupsSaver,
 } from '../model/permissionGroups.types';
+import { toggleInSet } from '../model/toggleInSet';
 import { usePermissionGroupUi } from '../model/usePermissionGroupUi';
+import { MoveArrows, PermissionModalShell, SearchInput, SelectBox } from './permissionModalShared';
 
 interface PermissionGroupsModalProps {
   /** folderId hoặc fileItemId */
@@ -91,19 +93,6 @@ function buildInitialSelected(data: PermissionGroupUiData): PermissionItem[] {
 const SELECTED_ROW_GRID_VIEW_ONLY = 'grid grid-cols-[1.5rem_minmax(0,1fr)_3.5rem] items-center gap-x-1';
 const SELECTED_ROW_GRID_VIEW_EDIT = 'grid grid-cols-[1.5rem_minmax(0,1fr)_repeat(2,3.5rem)] items-center gap-x-1';
 
-/* Ô đánh dấu chọn nhóm (để di chuyển giữa 2 panel) */
-function SelectBox({ checked }: { checked: boolean }) {
-  return checked ? (
-    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-primary text-white">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    </span>
-  ) : (
-    <span className="h-5 w-5 shrink-0 rounded-[var(--radius-card)] border-2 border-card-border bg-card" />
-  );
-}
-
 function TickBox({ granted }: { granted: boolean }) {
   return granted ? (
     <span className="flex h-5 w-5 items-center justify-center rounded-md bg-success text-white transition-opacity group-hover:opacity-80">
@@ -145,24 +134,6 @@ function PermissionColumnHeader({ label, granted, disabled, onToggle }: {
   );
 }
 
-function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-      </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={t('folderPermission.searchPlaceholder')}
-        className="w-full rounded-[var(--radius-input)] border border-input-border bg-input-bg py-2 pl-9 pr-3 text-sm text-text outline-none focus:border-input-focus"
-      />
-    </div>
-  );
-}
-
 function matchesQuery(item: PermissionItem, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
@@ -170,13 +141,6 @@ function matchesQuery(item: PermissionItem, query: string): boolean {
     item.groupName.toLowerCase().includes(q) ||
     (item.organizationName ?? '').toLowerCase().includes(q)
   );
-}
-
-function toggleInSet(set: Set<string>, id: string): Set<string> {
-  const next = new Set(set);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
 }
 
 interface PermissionEditorProps {
@@ -322,38 +286,12 @@ function PermissionEditor({ resourceId, data, canAssignEdit, save, onClose, onSa
           </section>
 
           {/* Nút mũi tên di chuyển nhóm giữa 2 panel */}
-          <div className="flex items-center justify-center gap-3 md:flex-col">
-            <button
-              type="button"
-              disabled={availableChecked.size === 0}
-              onClick={moveToSelected}
-              title={t('folderPermission.moveRight')}
-              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-                availableChecked.size > 0
-                  ? 'border-primary bg-primary text-white hover:bg-primary-hover'
-                  : 'cursor-not-allowed border-card-border text-text-muted opacity-50'
-              }`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 md:rotate-0">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              disabled={selectedChecked.size === 0}
-              onClick={moveToAvailable}
-              title={t('folderPermission.moveLeft')}
-              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-                selectedChecked.size > 0
-                  ? 'border-primary bg-primary text-white hover:bg-primary-hover'
-                  : 'cursor-not-allowed border-card-border text-text-muted opacity-50'
-              }`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90 md:rotate-0">
-                <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-              </svg>
-            </button>
-          </div>
+          <MoveArrows
+            canMoveRight={availableChecked.size > 0}
+            canMoveLeft={selectedChecked.size > 0}
+            onMoveRight={moveToSelected}
+            onMoveLeft={moveToAvailable}
+          />
 
           {/* Panel phải: Nhóm được chọn */}
           <section className="flex min-w-0 flex-col rounded-[var(--radius-card)] border border-card-border bg-content-bg/40 p-4">
@@ -442,48 +380,24 @@ export function PermissionGroupsModal({
   const { data, loading, error } = usePermissionGroupUi(resourceId, load);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-          <div className="min-w-0">
-            <h2 className="heading-entity">{title}</h2>
-            <p className="field-hint truncate">{resourceName}</p>
-          </div>
-          <button type="button" onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        {loading || error || !data ? (
-          <>
-            <div className="flex-1 overflow-y-auto px-6 py-5">
-              {loading ? (
-                <p className="py-16 text-center text-sm text-text-muted">{t('common.loading')}</p>
-              ) : (
-                <p className="py-16 text-center text-sm text-danger">{error ?? t('folderPermission.error')}</p>
-              )}
-            </div>
-            <div className="flex justify-end border-t border-card-border px-6 py-4">
-              <button type="button" onClick={onClose} className="btn-modal-ghost">
-                {t('documents.action.cancel')}
-              </button>
-            </div>
-          </>
-        ) : (
-          <PermissionEditor
-            resourceId={resourceId}
-            data={data}
-            canAssignEdit={canAssignEdit}
-            save={save}
-            onClose={onClose}
-            onSaved={onSaved}
-          />
-        )}
-      </div>
-    </div>
+    <PermissionModalShell
+      title={title}
+      resourceName={resourceName}
+      loading={loading}
+      ready={!loading && !error && !!data}
+      error={error}
+      onClose={onClose}
+    >
+      {data && (
+        <PermissionEditor
+          resourceId={resourceId}
+          data={data}
+          canAssignEdit={canAssignEdit}
+          save={save}
+          onClose={onClose}
+          onSaved={onSaved}
+        />
+      )}
+    </PermissionModalShell>
   );
 }

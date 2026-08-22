@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance } from '@/shared/api';
-import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileUploadResult, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, NameAvailability, RelatedFilesResult, UpdateFileGroupPermissionsPayload } from '../model/fileItem.types';
+import type { DeleteFileResult, FileListItem, FilePermissionEntry, FilePermissionUiDto, FileUploadResult, FileUserPermissionUiDto, FileVersion, FileVersionResult, FileViewInfo, LinkableFile, NameAvailability, RelatedFilesResult, UpdateFileGroupPermissionsPayload, UpdateFileUserPermissionsPayload } from '../model/fileItem.types';
 
 export const fileItemApi = {
   /** Bắn file lên server */
@@ -115,4 +115,14 @@ export const fileItemApi = {
   /** Cập nhật phân quyền nhóm trên file: gán/sửa quyền + gỡ quyền trong 1 lần gọi. */
   updateGroupPermissions: (payload: UpdateFileGroupPermissionsPayload) =>
     axiosInstance.post<ApiResponse<FilePermissionEntry[]>>('/file-permissions/add-group', payload),
+
+  /** Bảng phân quyền thành viên trên file: danh sách người thấy file qua nhóm + cờ bị chặn. */
+  getPermissionUserUi: (fileItemId: string) =>
+    axiosInstance.get<ApiResponse<FileUserPermissionUiDto>>(
+      `/file-permissions/${fileItemId}/user-ui`,
+    ),
+
+  /** Cập nhật blacklist thành viên trên file: bật/tắt chặn trong 1 lần gọi (chỉ gửi dòng đổi). */
+  updateUserPermissions: (payload: UpdateFileUserPermissionsPayload) =>
+    axiosInstance.post<ApiResponse<unknown>>('/file-permissions/add-user', payload),
 };

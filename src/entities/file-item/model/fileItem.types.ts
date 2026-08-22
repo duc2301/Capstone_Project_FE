@@ -307,3 +307,46 @@ export interface UpdateFileGroupPermissionsPayload {
   /** projectParticipantId của các nhóm bị gỡ quyền */
   removeParticipantIds: string[];
 }
+
+/* ── Phân quyền theo từng thành viên trên 1 file (override đè lên quyền nhóm) ─────────── */
+
+/* Mức override riêng của 1 thành viên trên tài nguyên (khớp BE, trả về dạng chuỗi).
+ * None = kế thừa nhóm, View/Edit = ép quyền, Blocked = chặn hoàn toàn. */
+export type UserOverrideLevel = 'None' | 'View' | 'Edit' | 'Blocked';
+
+/* 1 dòng trong bảng phân quyền thành viên: người đang thấy file qua nhóm, kèm mức override.
+ * inheritedCanView/inheritedCanEdit là quyền kế thừa từ nhóm (chỉ đọc), overrideLevel là
+ * mức áp dụng riêng cho file này (điều khiển duy nhất được sửa trong bảng). */
+export interface FileUserPermissionMember {
+  accountId: string;
+  userName: string;
+  email: string;
+  /** Tên các nhóm mà thành viên đang qua đó thấy file */
+  groups: string[];
+  inheritedCanView: boolean;
+  inheritedCanEdit: boolean;
+  overrideLevel: UserOverrideLevel;
+  /** Tiện lợi: == (overrideLevel === 'Blocked') */
+  isBlacklisted: boolean;
+}
+
+/* GET /file-permissions/{fileId}/user-ui */
+export interface FileUserPermissionUiDto {
+  members: FileUserPermissionMember[];
+}
+
+/* POST /file-permissions/add-user */
+export interface FileUserPermissionInput {
+  accountId: string;
+  canView: boolean;
+  canEdit: boolean;
+}
+
+export interface UpdateFileUserPermissionsPayload {
+  /** fileItemId */
+  id: string;
+  /** Thành viên bật chặn (blacklist) — canView/canEdit đều false */
+  usersPermission: FileUserPermissionInput[];
+  /** accountId của các thành viên tắt chặn (bỏ blacklist, trở lại kế thừa quyền nhóm) */
+  removeAccountIds: string[];
+}

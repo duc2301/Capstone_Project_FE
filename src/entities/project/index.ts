@@ -10,6 +10,9 @@ export type {
   CreateProjectPayload,
   Participant,
   Project,
+  ProjectImportGroup,
+  ProjectImportPackage,
+  ProjectImportPreview,
   ProjectLocation,
   UpdateParticipantStatusPayload,
   UpdateProjectPayload

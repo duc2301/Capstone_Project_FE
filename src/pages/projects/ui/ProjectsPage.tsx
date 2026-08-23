@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import type { BepParseResult, ProjectImportPreview } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreatePackageForm } from '@/features/packages';
 import {
+  CreateProjectMethodPicker,
   CreateProjectStepper,
   ProjectCard,
   useBepTask,
@@ -14,6 +16,15 @@ import { t } from '@/shared/lib/i18n';
 
 const PAGE_SIZE = 6;
 
+function resolveStepperSource(
+  bep: BepParseResult | undefined,
+  imported: ProjectImportPreview | null,
+): string {
+  if (bep) return 'bep';
+  if (imported) return 'import';
+  return 'blank';
+}
+
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -21,34 +32,48 @@ export function ProjectsPage() {
   const { currentUser } = useSession();
   const isAdmin = isAccountAdmin(currentUser?.role);
 
-  const [creating, setCreating] = useState(false);
+  const [createStage, setCreateStage] = useState<'picker' | 'form' | null>(null);
+  const [importData, setImportData] = useState<ProjectImportPreview | null>(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const bepInputRef = useRef<HTMLInputElement>(null);
   const bepTask = useBepTask();
   const bepData = bepTask.status === 'opened' ? bepTask.result ?? undefined : undefined;
-  const stepperOpen = creating || bepData !== undefined;
-  const parsing = bepTask.status === 'running';
+  const createOpen = createStage !== null || bepData !== undefined;
+  const stepperOpen = createStage === 'form' || bepData !== undefined;
+  const stepperSource = resolveStepperSource(bepData, importData);
 
   const clearOpenedBepTask = () => {
     if (bepTask.status === 'opened') bepTask.dismiss();
   };
 
-  const openBlankCreate = () => {
+  const openCreate = () => {
     clearOpenedBepTask();
-    setCreating(true);
+    setImportData(null);
+    setCreateStage('picker');
   };
 
   const closeCreate = () => {
-    setCreating(false);
+    setCreateStage(null);
+    setImportData(null);
     clearOpenedBepTask();
+  };
+
+  const startFromImport = (preview: ProjectImportPreview) => {
+    setImportData(preview);
+    setCreateStage('form');
+  };
+
+  const startFromBep = (file: File) => {
+    setCreateStage(null);
+    bepTask.start(file);
   };
 
   const { toast, showToast } = useToast();
 
   const handleStepperComplete = (projectId: string) => {
-    setCreating(false);
+    setCreateStage(null);
+    setImportData(null);
     clearOpenedBepTask();
     showToast(t('projects.toast.created'));
     window.location.href = `/projects/${projectId}`;
@@ -82,40 +107,9 @@ export function ProjectsPage() {
         <h1 className="heading-page">{t('projects.title')}</h1>
         {isAdmin && (
           <div className="flex shrink-0 items-center gap-3">
-            <input
-              ref={bepInputRef}
-              type="file"
-              accept=".pdf,.docx"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                e.target.value = '';
-                if (f) bepTask.start(f);
-              }}
-            />
             <button
               type="button"
-              onClick={() => bepInputRef.current?.click()}
-              disabled={parsing}
-              className="flex items-center gap-2 rounded-[var(--radius-button)] border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-ghost disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {parsing ? (
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-              )}
-              {parsing ? t('projects.bep.parsing') : t('projects.bep.quickCreate')}
-            </button>
-            <button
-              type="button"
-              onClick={openBlankCreate}
+              onClick={openCreate}
               className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-hover"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -179,23 +173,34 @@ export function ProjectsPage() {
       )}
 
       {/* Create modal */}
-      {stepperOpen && (
-        <Modal title={t('projects.modal.createTitle')} onClose={closeCreate} maxWidth="max-w-5xl" flush>
-          <CreateProjectStepper
-            key={bepData ? 'bep' : 'blank'}
-            initialData={bepData}
-            onComplete={handleStepperComplete}
-            onCancel={closeCreate}
-            renderPackageForm={(ctx) => (
-              <CreatePackageForm
-                key={ctx.initialData?.id ?? 'new'}
-                accounts={ctx.accounts}
-                initialData={ctx.initialData}
-                onSubmit={ctx.onSubmit}
-                onCancel={ctx.onCancel}
-              />
-            )}
-          />
+      {createOpen && (
+        <Modal title={t('projects.modal.createTitle')} onClose={closeCreate} maxWidth="max-w-5xl" flush={stepperOpen}>
+          {stepperOpen ? (
+            <CreateProjectStepper
+              key={stepperSource}
+              initialData={bepData}
+              importData={importData ?? undefined}
+              onComplete={handleStepperComplete}
+              onCancel={closeCreate}
+              renderPackageForm={(ctx) => (
+                <CreatePackageForm
+                  key={ctx.initialData?.id ?? 'new'}
+                  accounts={ctx.accounts}
+                  initialData={ctx.initialData}
+                  pendingFiles={ctx.pendingFiles}
+                  onSubmit={ctx.onSubmit}
+                  onCancel={ctx.onCancel}
+                />
+              )}
+            />
+          ) : (
+            <CreateProjectMethodPicker
+              onManual={() => setCreateStage('form')}
+              onImported={startFromImport}
+              onBepSelected={startFromBep}
+              bepBusy={bepTask.status === 'running'}
+            />
+          )}
         </Modal>
       )}
     </div>

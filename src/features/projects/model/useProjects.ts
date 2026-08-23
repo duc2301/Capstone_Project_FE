@@ -47,8 +47,12 @@ export function useProjects(): UseProjectsReturn {
   // theo nhóm tham gia hoặc vai trò PM. KHÔNG lọc ở client (tránh lộ danh sách dự án
   // của đơn vị khác qua network, và tránh N+1 request getParticipants cho từng dự án).
   const loadProjects = useCallback(async (): Promise<Project[]> => {
-    const { data } = isAdmin ? await projectApi.getAll() : await projectApi.getMine();
-    return sortByNewest(data.result ?? [], (p) => p.createdAt);
+    // Cả /projects và /projects/mine giờ đã phân trang: lấy nguyên danh sách bằng
+    // pageSize tối đa, đọc list từ `result.items`.
+    const { data } = isAdmin
+      ? await projectApi.getAll({ pageSize: 500 })
+      : await projectApi.getMine({ pageSize: 500 });
+    return sortByNewest(data.result?.items ?? [], (p) => p.createdAt);
   }, [isAdmin]);
 
   const fetchProjects = useCallback(async () => {

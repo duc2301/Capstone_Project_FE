@@ -9,6 +9,8 @@ export { useProjectGroups } from './model/useProjectGroups';
 export type { AddGroupInput } from './model/useProjectGroups';
 export { useProjectInvite } from './model/useProjectInvite';
 export type { InviteManyInput, InviteManyResult } from './model/useProjectInvite';
+export { useProjectList } from './model/useProjectList';
+export type { ProjectStatusFilter, UseProjectListReturn } from './model/useProjectList';
 export { useProjects } from './model/useProjects';
 export type { CreateProjectWithGroupsInput, ProjectGroupDraft } from './model/useProjects';
 export { AddPartnerModal } from './ui/AddPartnerModal';

@@ -7,17 +7,33 @@ import type {
   CreateProjectPayload,
   Participant,
   Project,
+  ProjectListQuery,
+  ProjectPage,
   UpdateParticipantStatusPayload,
   UpdateProjectPayload,
 } from '../model/project.types';
 
-export const projectApi = {
-  getAll: () =>
-    axiosInstance.get<ApiResponse<Project[]>>('/projects'),
+/** Bỏ hẳn các tham số rỗng/không set — BE yêu cầu omit param rỗng, không gửi chuỗi trống. */
+function toProjectParams(query: ProjectListQuery): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  if (query.page != null) params.page = query.page;
+  if (query.pageSize != null) params.pageSize = query.pageSize;
+  if (query.search?.trim()) params.search = query.search.trim();
+  if (query.status) params.status = query.status;
+  if (query.ownerOrganizationId) params.ownerOrganizationId = query.ownerOrganizationId;
+  return params;
+}
 
-  /** Dự án người dùng hiện tại tham gia (qua nhóm) hoặc làm PM — BE đã lọc sẵn. */
-  getMine: () =>
-    axiosInstance.get<ApiResponse<Project[]>>('/projects/mine'),
+export const projectApi = {
+  /** Danh sách dự án đã PHÂN TRANG + LỌC phía server. Đọc list từ `result.items`. */
+  getAll: (query: ProjectListQuery = {}) =>
+    axiosInstance.get<ApiResponse<ProjectPage>>('/projects', { params: toProjectParams(query) }),
+
+  /** Dự án người dùng hiện tại tham gia (qua nhóm) hoặc làm PM — BE lọc theo quyền
+   *  TRƯỚC, rồi mới áp bộ lọc. Đã PHÂN TRANG + LỌC phía server (cùng contract với
+   *  getAll). Đọc list từ `result.items`. */
+  getMine: (query: ProjectListQuery = {}) =>
+    axiosInstance.get<ApiResponse<ProjectPage>>('/projects/mine', { params: toProjectParams(query) }),
 
   getById: (projectId: string) =>
     axiosInstance.get<ApiResponse<Project>>(`/projects/${projectId}`),

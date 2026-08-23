@@ -10,7 +10,10 @@ export type {
   CreateProjectPayload,
   Participant,
   Project,
+  ProjectListQuery,
   ProjectLocation,
+  ProjectPage,
+  ProjectStatusName,
   UpdateParticipantStatusPayload,
   UpdateProjectPayload
 } from './model/project.types';

@@ -1,29 +1,55 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import type { Organization } from '@/entities/organization';
+import { organizationApi } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { CreatePackageForm } from '@/features/packages';
 import {
   CreateProjectStepper,
   ProjectCard,
   useBepTask,
-  useProjects,
+  useProjectList,
+  type ProjectStatusFilter,
 } from '@/features/projects';
 import { Modal, PaginationBar, SearchField, Toast, useToast } from '@/shared/components';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
+import { sortByNewest } from '@/shared/lib/sort';
 
-const PAGE_SIZE = 6;
+const SELECT_CLASS = 'field-select w-auto border-card-border bg-card shadow-card';
 
 /* ── Main page ────────────────────────────────────────── */
 export function ProjectsPage() {
   const navigate = useNavigate();
-  const { projects, loading, error } = useProjects();
   const { currentUser } = useSession();
   const isAdmin = isAccountAdmin(currentUser?.role);
 
+  const {
+    projects,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    loading,
+    error,
+    search,
+    setSearch,
+    status,
+    setStatus,
+    ownerOrganizationId,
+    setOwnerOrganizationId,
+    setPage,
+  } = useProjectList();
+
+  // Danh sách đơn vị cho bộ lọc chủ đầu tư — chỉ admin mới thấy & mới tải.
+  const { data: organizations } = useAsyncData<Organization[]>(
+    'projects:filter-orgs',
+    async () => sortByNewest((await organizationApi.getAll()).data.result?.items ?? [], (o) => o.createdAt),
+    { fallback: [], enabled: isAdmin, toErrorMessage: () => '' },
+  );
+
   const [creating, setCreating] = useState(false);
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const bepInputRef = useRef<HTMLInputElement>(null);
   const bepTask = useBepTask();
@@ -54,24 +80,7 @@ export function ProjectsPage() {
     window.location.href = `/projects/${projectId}`;
   };
 
-  const filtered = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return projects;
-    return projects.filter((p) => {
-      const haystack = [p.projectName, p.projectCode].filter(Boolean).join(' ').toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [projects, searchQuery]);
-
-  const changeSearch = (value: string) => {
-    setSearchQuery(value);
-    setPage(1);
-  };
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  const hasActiveFilters = Boolean(search.trim() || status || ownerOrganizationId);
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -128,14 +137,43 @@ export function ProjectsPage() {
         )}
       </div>
 
-      {!loading && !error && (
+      {!error && (
         <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <SearchField
-            value={searchQuery}
-            onChange={changeSearch}
+            value={search}
+            onChange={setSearch}
             placeholder={t('projects.search')}
             className="w-full lg:max-w-[420px]"
           />
+
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
+            <select
+              className={SELECT_CLASS}
+              title={t('projects.col.status')}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as ProjectStatusFilter)}
+            >
+              <option value="">{t('projects.filter.allStatus')}</option>
+              <option value="Active">{t('projects.status.active')}</option>
+              <option value="Completed">{t('projects.status.completed')}</option>
+            </select>
+
+            {isAdmin && (
+              <select
+                className={`${SELECT_CLASS} max-w-52`}
+                title={t('projects.filter.allOrgs')}
+                value={ownerOrganizationId}
+                onChange={(e) => setOwnerOrganizationId(e.target.value)}
+              >
+                <option value="">{t('projects.filter.allOrgs')}</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.displayName ?? org.legalName}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
       )}
 
@@ -154,13 +192,13 @@ export function ProjectsPage() {
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto pb-1 pr-1">
-            {pageItems.length === 0 ? (
+            {projects.length === 0 ? (
               <div className="flex h-full min-h-[240px] items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card">
-                <p className="text-sm text-text-muted">{searchQuery ? t('projects.noResults') : t('projects.empty')}</p>
+                <p className="text-sm text-text-muted">{hasActiveFilters ? t('projects.noResults') : t('projects.empty')}</p>
               </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {pageItems.map((p) => (
+                {projects.map((p) => (
                   <ProjectCard key={p.id} project={p} onOpen={(id) => navigate(`/projects/${id}`)} />
                 ))}
               </div>
@@ -168,10 +206,10 @@ export function ProjectsPage() {
           </div>
 
           <PaginationBar
-            page={currentPage}
-            pageCount={pageCount}
-            pageSize={PAGE_SIZE}
-            total={filtered.length}
+            page={page}
+            pageCount={totalPages}
+            pageSize={pageSize}
+            total={totalCount}
             unit={t('projects.pagination.projects')}
             onChange={setPage}
           />

@@ -248,7 +248,12 @@ export function useDashboard() {
 
   const projects = useAsyncData(
     'dashboard-projects',
-    async () => listOf(await projectApi.getMine()),
+    async () => {
+      // /projects/mine đã phân trang: lấy trọn danh sách với pageSize tối đa, đọc `result.items`.
+      const { data } = await projectApi.getMine({ pageSize: 500 });
+      if (!data.isSuccess) throw new Error(data.message || t('common.error'));
+      return data.result?.items ?? [];
+    },
     { fallback: EMPTY_PROJECTS, toErrorMessage: loadErrorMessage },
   );
 

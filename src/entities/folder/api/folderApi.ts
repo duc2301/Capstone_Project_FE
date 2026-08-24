@@ -8,6 +8,7 @@ import type {
   CreateSubFolderPayload,
   Folder,
   FolderContentsDto,
+  FolderContentsQuery,
   FolderPermissionEntry,
   FolderPermissionUiDto,
   FolderTreeNodeDto,
@@ -25,10 +26,12 @@ export const folderApi = {
       params: { projectId, area },
     }),
 
-  /** Nội dung 1 folder (subfolder + file) — gọi khi người dùng chọn folder trên cây. */
-  getContents: (folderId: string) =>
+  /** Nội dung 1 folder — gọi khi người dùng chọn folder trên cây. Chỉ `files` được
+   *  phân trang (page/pageSize); subfolders/hoistedFiles luôn trả đủ (xem FolderContentsDto). */
+  getContents: (folderId: string, params?: FolderContentsQuery) =>
     axiosInstance.get<ApiResponse<FolderContentsDto>>(
       `/folder-tree/folders/${folderId}/contents`,
+      { params },
     ),
 
   /** Tạo thư mục con (Team Leader/PM/Admin). Area/Owner kế thừa từ folder cha ở BE. */

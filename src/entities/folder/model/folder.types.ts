@@ -66,11 +66,37 @@ export interface FolderContentsFileDto {
   hasOpenIssue?: boolean;
 }
 
-/* Nội dung 1 folder: subfolder + file (GET /folder-tree/folders/{id}/contents) */
+/* Query phân trang cho GET /folder-tree/folders/{id}/contents.
+ * Chỉ phân trang FILES; subfolders/hoistedFiles luôn trả đủ. BE mặc định page=1,
+ * pageSize=20 (tối đa 500; giá trị <1 hoặc >500 bị BE ép về 20). */
+export interface FolderContentsQuery {
+  page?: number;
+  pageSize?: number;
+}
+
+/* Nội dung 1 folder (GET /folder-tree/folders/{id}/contents).
+ * QUAN TRỌNG: chỉ `files` được phân trang — `subfolders` và `hoistedFiles` luôn trả
+ * đầy đủ trên MỌI trang. Các trường phân trang (totalCount, totalPages, ...) mô tả
+ * RIÊNG danh sách files, KHÔNG tính subfolders hay hoistedFiles.
+ * `files` rỗng KHÔNG có nghĩa folder rỗng — có thể chỉ là trang vượt quá totalPages. */
 export interface FolderContentsDto {
   id: string;
+  /* Toàn bộ thư mục con xem được — KHÔNG phân trang. */
   subfolders: FolderTreeNodeDto[];
+  /* Một trang tệp của folder này. */
   files: FolderContentsFileDto[];
+  /* Tệp được cấp quyền riêng lẻ (chỉ với người dùng bị hạn chế) — KHÔNG phân trang. */
+  hoistedFiles: FolderContentsFileDto[];
+  /* = subfolders.length (tiện lợi). */
+  folderCount: number;
+  /* Trạng thái phân trang — chỉ áp dụng cho `files`. */
+  pageNumber: number;
+  pageSize: number;
+  /* Tổng số FILE trong folder (cơ sở phân trang) — KHÔNG gồm hoistedFiles/subfolders. */
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 /* 1 nút trong cây thư mục CDE (đã lọc theo quyền ở BE) */

@@ -10,7 +10,7 @@ import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
-import { ConfirmDialog, Toast, ToolbarIconButton, useToast } from '@/shared/components';
+import { ConfirmDialog, PaginationBar, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -175,7 +175,19 @@ export function DocumentsTab({
   const [filePermissionUsersFor, setFilePermissionUsersFor] = useState<FileListItem | null>(null);
   const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
-  const { subfolders, files, loading: filesLoading, error: filesError, refetch: refetchFiles } = useFolderFiles(selectedId);
+  const {
+    subfolders,
+    files,
+    hoistedFiles,
+    page: filesPage,
+    pageSize: filesPageSize,
+    totalCount: filesTotalCount,
+    totalPages: filesTotalPages,
+    setPage: setFilesPage,
+    loading: filesLoading,
+    error: filesError,
+    refetch: refetchFiles,
+  } = useFolderFiles(selectedId);
   const semanticSearch = useSemanticSearch(projectId);
 
   const selected = findNode(tree, selectedId);
@@ -573,6 +585,7 @@ export function DocumentsTab({
                 <FileList
                   subfolders={subfolders}
                   files={files}
+                  hoistedFiles={hoistedFiles}
                   loading={filesLoading}
                   error={filesError}
                   onFolderOpen={(n) => setSelectedId(n.id)}
@@ -580,6 +593,20 @@ export function DocumentsTab({
                   onFileMenu={handleFileMenu}
                   onFileOpen={handleDetail}
                 />
+
+                {/* Phân trang chỉ cho danh sách TỆP — subfolders/hoistedFiles luôn hiển thị đủ.
+                    Ẩn khi đang tải/lỗi hoặc folder không có tệp (PaginationBar tự ẩn khi total=0). */}
+                {!filesLoading && !filesError && (
+                  <PaginationBar
+                    page={filesPage}
+                    pageCount={filesTotalPages}
+                    pageSize={filesPageSize}
+                    total={filesTotalCount}
+                    unit={t('documents.pagination.files')}
+                    variant="inline"
+                    onChange={setFilesPage}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -744,7 +771,8 @@ export function DocumentsTab({
           targetFolder={uploadFolder}
           // Danh sách tệp chỉ đúng cho folder ĐANG chọn. Mở upload từ menu chuột phải của folder
           // khác thì không có dữ liệu để so trùng tên -> truyền rỗng, BE vẫn là chốt chặn cuối.
-          existingFiles={uploadFolder.id === selectedId ? files : []}
+          // Chỉ có tệp của TRANG hiện tại + hoistedFiles (files đã phân trang) — BE vẫn kiểm tra trùng.
+          existingFiles={uploadFolder.id === selectedId ? [...files, ...hoistedFiles] : []}
           onClose={() => setUploadFolder(null)}
           onUploaded={() => {
             showToast(t('documents.toast.uploaded'));

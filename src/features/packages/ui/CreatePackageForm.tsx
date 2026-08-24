@@ -128,8 +128,11 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
   const fetchExistingFiles = useCallback(async (): Promise<FolderContentsFileDto[]> => {
     const { folderApi } = await import('@/entities/folder');
-    const res = await folderApi.getContents(documentFolderId);
-    return res.data?.result?.files ?? [];
+    // /contents nay phan trang `files` (mac dinh 20). Form nay can TOAN BO tai lieu san co de
+    // so trung ten -> lay pageSize toi da (500) + gop hoistedFiles (khong phan trang).
+    const res = await folderApi.getContents(documentFolderId, { pageSize: 500 });
+    const contents = res.data?.result;
+    return [...(contents?.files ?? []), ...(contents?.hoistedFiles ?? [])];
   }, [documentFolderId]);
 
   const { data: existingFiles, setData: setExistingFiles } = useAsyncData(

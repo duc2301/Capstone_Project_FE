@@ -1345,6 +1345,7 @@ export const translations = {
 
   // Danh sách tệp trong folder
   'documents.files.empty': 'Thư mục này chưa có tệp.',
+  'documents.pagination.files': 'tệp',
   'documents.files.openHint': 'Bấm đúp để xem chi tiết · Chuột phải để mở menu thao tác',
   'documents.files.folderOpenHint': 'Bấm để mở thư mục · Chuột phải để mở menu thao tác',
   'documents.files.folderBadge': 'Thư mục',

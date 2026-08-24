@@ -47,6 +47,8 @@ function FileDescription({ text }: { text: string }) {
 interface FileListProps {
   subfolders: FolderTreeNode[];
   files: FileListItem[];
+  /* Tệp cấp quyền riêng lẻ — hiển thị sau danh sách `files`, KHÔNG phân trang. */
+  hoistedFiles?: FileListItem[];
   loading: boolean;
   error: string | null;
   onFolderOpen: (folder: FolderTreeNode) => void;
@@ -71,12 +73,74 @@ function WarningIcon({ message }: { message?: string | null }) {
   );
 }
 
-export function FileList({ subfolders, files, loading, error, onFolderOpen, onFolderMenu, onFileMenu, onFileOpen }: FileListProps) {
+/* 1 hàng tệp — dùng chung cho `files` (trang hiện tại) và `hoistedFiles`. */
+function FileRow({
+  file: f,
+  onFileMenu,
+  onFileOpen,
+}: {
+  file: FileListItem;
+  onFileMenu: (e: React.MouseEvent, file: FileListItem) => void;
+  onFileOpen: (file: FileListItem) => void;
+}) {
+  return (
+    <tr
+      onContextMenu={(e) => onFileMenu(e, f)}
+      onDoubleClick={() => onFileOpen(f)}
+      title={t('documents.files.openHint')}
+      className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
+    >
+      <td className="overflow-hidden py-3 pr-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
+              <span className="cell-wrap min-w-0">{f.name}</span>
+              {/* Truyền warnningMessage vào WarningIcon */}
+              {f.warnning && <WarningIcon message={f.warnningMessage} />}
+            </p>
+            {f.description && <FileDescription text={f.description} />}
+          </div>
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-3">
+        <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
+          {f.displayVersion ?? `V${f.currentVersionNumber}`}
+        </span>
+      </td>
+      <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
+      <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
+      <td className="whitespace-nowrap px-3 py-3">
+        {(() => {
+          const badge = fileStatusBadge(f);
+          return (
+            <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>
+              {badge.label}
+            </span>
+          );
+        })()}
+      </td>
+      <td className="py-3 pr-2 align-top">
+        <RowActions>
+          <ActionIconButton
+            label={t('documents.files.rowMenu')}
+            icon={<MoreIcon />}
+            onClick={(e) => { e.stopPropagation(); onFileMenu(e, f); }}
+          />
+        </RowActions>
+      </td>
+    </tr>
+  );
+}
+
+export function FileList({ subfolders, files, hoistedFiles = [], loading, error, onFolderOpen, onFolderMenu, onFileMenu, onFileOpen }: FileListProps) {
   if (loading)
     return <p className="py-12 text-center text-sm text-text-muted">{t('common.loading')}</p>;
   if (error)
     return <p className="py-12 text-center text-sm text-danger">{error}</p>;
-  if (subfolders.length === 0 && files.length === 0)
+  // `files` rỗng KHÔNG có nghĩa folder rỗng — có thể chỉ là trang vượt quá totalPages, trong khi
+  // subfolders/hoistedFiles vẫn còn. Chỉ báo trống khi cả ba đều rỗng.
+  if (subfolders.length === 0 && files.length === 0 && hoistedFiles.length === 0)
     return <p className="py-12 text-center text-sm text-text-muted">{t('documents.files.empty')}</p>;
 
   return (
@@ -133,54 +197,12 @@ export function FileList({ subfolders, files, loading, error, onFolderOpen, onFo
               </td>
             </tr>
           ))}
+          {/* Trang tệp hiện tại, rồi tệp được cấp quyền riêng lẻ (hoistedFiles) — đều không phân trang riêng */}
           {files.map((f) => (
-            <tr
-              key={f.id}
-              onContextMenu={(e) => onFileMenu(e, f)}
-              onDoubleClick={() => onFileOpen(f)}
-              title={t('documents.files.openHint')}
-              className="group cursor-pointer select-none border-b border-card-border/60 transition-colors hover:bg-content-bg/50"
-            >
-              <td className="overflow-hidden py-3 pr-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <FileTypeIcon fileName={f.name} format={f.format} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="flex min-w-0 items-start gap-1.5 font-medium text-text">
-                      <span className="cell-wrap min-w-0">{f.name}</span>
-                      {/* Truyền warnningMessage vào WarningIcon */}
-                      {f.warnning && <WarningIcon message={f.warnningMessage} />}
-                    </p>
-                    {f.description && <FileDescription text={f.description} />}
-                  </div>
-                </div>
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                <span className="rounded-md bg-content-bg px-2 py-0.5 text-xs font-semibold text-text-secondary">
-                  {f.displayVersion ?? `V${f.currentVersionNumber}`}
-                </span>
-              </td>
-              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatSize(f.sizeBytes)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-text-secondary">{formatDate(f.updatedAt)}</td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {(() => {
-                  const badge = fileStatusBadge(f);
-                  return (
-                    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>
-                      {badge.label}
-                    </span>
-                  );
-                })()}
-              </td>
-              <td className="py-3 pr-2 align-top">
-                <RowActions>
-                  <ActionIconButton
-                    label={t('documents.files.rowMenu')}
-                    icon={<MoreIcon />}
-                    onClick={(e) => { e.stopPropagation(); onFileMenu(e, f); }}
-                  />
-                </RowActions>
-              </td>
-            </tr>
+            <FileRow key={f.id} file={f} onFileMenu={onFileMenu} onFileOpen={onFileOpen} />
+          ))}
+          {hoistedFiles.map((f) => (
+            <FileRow key={f.id} file={f} onFileMenu={onFileMenu} onFileOpen={onFileOpen} />
           ))}
         </tbody>
       </table>

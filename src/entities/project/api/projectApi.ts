@@ -7,6 +7,7 @@ import type {
   CreateProjectPayload,
   Participant,
   Project,
+  ProjectImportPreview,
   ProjectListQuery,
   ProjectPage,
   UpdateParticipantStatusPayload,
@@ -89,6 +90,21 @@ export const projectApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 0,
     }),
+
+  downloadImportTemplate: () =>
+    axiosInstance.get('/projects/import-template', {
+      responseType: 'blob',
+      timeout: 120_000,
+    }),
+
+  importPreview: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axiosInstance.post<ApiResponse<ProjectImportPreview>>('/projects/import-preview', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+    });
+  },
 
   downloadFileBundle: (projectId: string) =>
     axiosInstance.get(`/projects/${projectId}/files/bundle`, {

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api';
+import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
 import type {
@@ -9,7 +10,7 @@ import type {
   PermissionUsersSaver,
   UserOverrideLevel,
 } from '../model/permissionUsers.types';
-import { usePermissionUserUi } from '../model/usePermissionUserUi';
+import { EMPTY_PERMISSION_USER_UI } from '../model/permissionUsers.types';
 import { PermissionModalShell } from './permissionModalShared';
 
 interface PermissionUsersModalProps {
@@ -51,9 +52,7 @@ function LevelSelect({ level, onChange }: { level: UserOverrideLevel; onChange: 
     <select
       value={level}
       onChange={(e) => onChange(e.target.value as UserOverrideLevel)}
-      className={`w-full rounded-[var(--radius-input)] border bg-input-bg px-3 py-1.5 text-sm text-text outline-none focus:border-input-focus ${
-        blocked ? 'border-danger font-semibold text-danger' : 'border-input-border'
-      }`}
+      className={`field-select py-1.5 ${blocked ? 'border-danger font-semibold text-danger' : ''}`}
     >
       {LEVEL_ORDER.map((lv) => (
         <option key={lv} value={lv}>
@@ -132,31 +131,37 @@ function PermissionUserEditor({
           <p className="py-16 text-center text-sm text-text-muted">{t('userPermission.empty')}</p>
         ) : (
           <div className="overflow-x-auto rounded-[var(--radius-card)] border border-card-border">
-            <table className="w-full min-w-[42rem] border-collapse text-sm">
+            <table className="table-list min-w-[42rem] border-collapse">
+              <colgroup>
+                <col className="w-[30%]" />
+                <col />
+                <col className="w-[120px]" />
+                <col className="w-[176px]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-card-border bg-content-bg/40 text-left text-2xs font-bold uppercase tracking-wide text-text-muted">
                   <th className="px-4 py-2.5 font-bold">{t('userPermission.col.member')}</th>
                   <th className="px-4 py-2.5 font-bold">{t('userPermission.col.groups')}</th>
                   <th className="px-4 py-2.5 font-bold">{t('userPermission.col.inherited')}</th>
-                  <th className="w-44 px-4 py-2.5 font-bold">{t('userPermission.col.applied')}</th>
+                  <th className="px-4 py-2.5 font-bold">{t('userPermission.col.applied')}</th>
                 </tr>
               </thead>
               <tbody>
                 {data.members.map((m) => (
-                  <tr key={m.accountId} className="border-b border-card-border/60 last:border-0 align-middle">
-                    <td className="px-4 py-3">
-                      <span className="block truncate font-semibold text-text">{m.userName}</span>
-                      <span className="block truncate text-xs text-text-muted">{m.email}</span>
+                  <tr key={m.accountId} className="border-b border-card-border/60 last:border-0">
+                    <td className="cell-wrap px-4 py-3 align-top">
+                      <span className="block font-semibold text-text">{m.userName}</span>
+                      <span className="block text-xs text-text-muted">{m.email}</span>
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">
+                    <td className="cell-wrap px-4 py-3 align-top text-text-secondary">
                       {m.groups.length > 0 ? m.groups.join(', ') : '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className="rounded-full bg-content-bg px-2.5 py-0.5 text-xs font-semibold text-text-secondary">
                         {m.inheritedCanEdit ? t('userPermission.level.edit') : t('userPermission.level.view')}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <LevelSelect
                         level={level.get(m.accountId) ?? 'None'}
                         onChange={(value) => setMemberLevel(m.accountId, value)}
@@ -207,29 +212,33 @@ function PermissionUserEditor({
 export function PermissionUsersModal({
   resourceId, resourceName, title, isFolder, load, save, onClose, onSaved,
 }: PermissionUsersModalProps) {
-  const { data, loading, error, reload, version } = usePermissionUserUi(resourceId, load);
+  const { data, loading, error, reload } = useAsyncData(
+    resourceId,
+    () => load(resourceId),
+    { fallback: EMPTY_PERMISSION_USER_UI, toErrorMessage: () => t('folderPermission.error') },
+  );
+
+  const editorKey = data.members.map((m) => `${m.accountId}:${m.overrideLevel}`).join('|');
 
   return (
     <PermissionModalShell
       title={title}
       resourceName={resourceName}
       loading={loading}
-      ready={!loading && !error && !!data}
+      ready={!loading && !error}
       error={error}
       onClose={onClose}
     >
-      {data && (
-        <PermissionUserEditor
-          key={version}
-          resourceId={resourceId}
-          data={data}
-          isFolder={isFolder}
-          save={save}
-          onClose={onClose}
-          onSaved={onSaved}
-          onReload={reload}
-        />
-      )}
+      <PermissionUserEditor
+        key={editorKey}
+        resourceId={resourceId}
+        data={data}
+        isFolder={isFolder}
+        save={save}
+        onClose={onClose}
+        onSaved={onSaved}
+        onReload={reload}
+      />
     </PermissionModalShell>
   );
 }

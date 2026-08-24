@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import type { Project, ProjectListQuery, ProjectStatusName } from '@/entities/project';
-import { projectApi } from '@/entities/project';
+import { PROJECT_STATUS_NAMES, projectApi } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { getApiErrorMessage } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
@@ -13,6 +13,13 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 /** '' = mọi trạng thái (không gửi param). */
 export type ProjectStatusFilter = '' | ProjectStatusName;
+
+function toStatusFilter(rawStatus: string | null): ProjectStatusFilter {
+  const allowedNames: readonly string[] = PROJECT_STATUS_NAMES;
+  return rawStatus && allowedNames.includes(rawStatus)
+    ? (rawStatus as ProjectStatusName)
+    : '';
+}
 
 interface ProjectPageData {
   items: Project[];
@@ -37,6 +44,7 @@ export interface UseProjectListReturn {
   page: number;
   pageSize: number;
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
   /** Giá trị ô tìm kiếm (cập nhật tức thì; đẩy vào URL sau debounce). */
   search: string;
@@ -63,7 +71,7 @@ export function useProjectList(): UseProjectListReturn {
   // URL là nguồn sự thật cho việc fetch.
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const search = searchParams.get('q') ?? '';
-  const status = (searchParams.get('status') as ProjectStatusFilter) || '';
+  const status = toStatusFilter(searchParams.get('status'));
   const ownerOrganizationId = searchParams.get('org') ?? '';
 
   const updateParams = useCallback(
@@ -116,7 +124,7 @@ export function useProjectList(): UseProjectListReturn {
   const [syncedSearch, setSyncedSearch] = useState(search);
   if (search !== syncedSearch) {
     setSyncedSearch(search);
-    setSearchInput(search);
+    if (search !== searchInput.trim()) setSearchInput(search);
   }
 
   useEffect(() => {
@@ -145,6 +153,8 @@ export function useProjectList(): UseProjectListReturn {
     const { data } = isAdmin
       ? await projectApi.getAll(query)
       : await projectApi.getMine(query);
+    if (!data.isSuccess) throw new Error(data.message || t('common.error'));
+
     const result = data.result;
     return {
       items: result?.items ?? [],
@@ -157,15 +167,16 @@ export function useProjectList(): UseProjectListReturn {
 
   const cacheKey = `projects:${isAdmin ? 'all' : 'mine'}|${page}|${search}|${status}|${ownerOrganizationId}`;
 
-  const { data, loading, error, reload } = useAsyncData(cacheKey, fetchPage, {
+  const { data, loading, refreshing, error, reload } = useAsyncData(cacheKey, fetchPage, {
     fallback: EMPTY_PAGE,
     toErrorMessage: (e) => getApiErrorMessage(e, t('common.error')),
+    keepPreviousDataWithin: isAdmin ? 'all' : 'mine',
   });
 
   // Nếu trang hiện tại vượt quá tổng trang (vd. bộ lọc thu hẹp kết quả), lùi về trang cuối.
   useEffect(() => {
-    if (!loading && page > data.totalPages) setPage(data.totalPages);
-  }, [loading, page, data.totalPages, setPage]);
+    if (!loading && !refreshing && page > data.totalPages) setPage(data.totalPages);
+  }, [loading, refreshing, page, data.totalPages, setPage]);
 
   return {
     projects: data.items,
@@ -174,6 +185,7 @@ export function useProjectList(): UseProjectListReturn {
     page: Math.min(page, data.totalPages),
     pageSize: PAGE_SIZE,
     loading,
+    refreshing,
     error,
     search: searchInput,
     setSearch: setSearchInput,

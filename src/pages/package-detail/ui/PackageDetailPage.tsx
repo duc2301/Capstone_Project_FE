@@ -12,6 +12,7 @@ import { Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { formatDate } from '@/shared/lib/format';
 import { t } from '@/shared/lib/i18n';
+import { fetchAllPages } from '@/shared/lib/paging';
 
 interface PackageDetailData {
   pkg: ContractPackage | null;
@@ -61,17 +62,17 @@ export default function PackageDetailPage() {
     if (!p?.documentFolderId) return { pkg: p, docFiles: [] };
 
     const { folderApi } = await import('@/entities/folder');
-    // /contents nay phan trang `files` (mac dinh 20). Man hinh nay muon TOAN BO tai lieu cua
-    // goi thau -> lay pageSize toi da (500) + gop hoistedFiles (khong phan trang).
-    const viewRes = await folderApi
-      .getContents(p.documentFolderId, { pageSize: 500 })
-      .catch(() => null);
-    const contents = viewRes?.data?.result;
+    const documentFolderId = p.documentFolderId;
+    let hoistedFiles: FolderContentsFileDto[] = [];
 
-    return {
-      pkg: p,
-      docFiles: [...(contents?.files ?? []), ...(contents?.hoistedFiles ?? [])],
-    };
+    const pagedFiles = await fetchAllPages<FolderContentsFileDto>(async (page, pageSize) => {
+      const { data } = await folderApi.getContents(documentFolderId, { page, pageSize });
+      const contents = data?.result;
+      if (page === 1) hoistedFiles = contents?.hoistedFiles ?? [];
+      return { items: contents?.files ?? [], totalPages: contents?.totalPages ?? 1 };
+    }).catch(() => [] as FolderContentsFileDto[]);
+
+    return { pkg: p, docFiles: [...pagedFiles, ...hoistedFiles] };
   }, [packageId]);
 
   const { data, loading, reload: loadData } = useAsyncData(packageId ?? '', fetchPackage, {

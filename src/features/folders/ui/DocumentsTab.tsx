@@ -19,7 +19,7 @@ import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-trans
 
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderPermission } from '../model/useFolderPermission';
-import { useFolderFiles } from '../model/useFolderFiles';
+import { useFolderFiles, useFolderFileNames } from '../model/useFolderFiles';
 import { useFolderTree } from '@/entities/folder';
 import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
@@ -185,9 +185,11 @@ export function DocumentsTab({
     totalPages: filesTotalPages,
     setPage: setFilesPage,
     loading: filesLoading,
+    refreshing: filesRefreshing,
     error: filesError,
     refetch: refetchFiles,
   } = useFolderFiles(selectedId);
+  const uploadFolderFiles = useFolderFileNames(uploadFolder?.id ?? null);
   const semanticSearch = useSemanticSearch(projectId);
 
   const selected = findNode(tree, selectedId);
@@ -582,17 +584,19 @@ export function DocumentsTab({
                 )}
 
                 {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
-                <FileList
-                  subfolders={subfolders}
-                  files={files}
-                  hoistedFiles={hoistedFiles}
-                  loading={filesLoading}
-                  error={filesError}
-                  onFolderOpen={(n) => setSelectedId(n.id)}
-                  onFolderMenu={handleFolderRowMenu}
-                  onFileMenu={handleFileMenu}
-                  onFileOpen={handleDetail}
-                />
+                <div className={`transition-opacity ${filesRefreshing ? 'opacity-60' : ''}`}>
+                  <FileList
+                    subfolders={subfolders}
+                    files={files}
+                    hoistedFiles={hoistedFiles}
+                    loading={filesLoading}
+                    error={filesError}
+                    onFolderOpen={(n) => setSelectedId(n.id)}
+                    onFolderMenu={handleFolderRowMenu}
+                    onFileMenu={handleFileMenu}
+                    onFileOpen={handleDetail}
+                  />
+                </div>
 
                 {/* Phân trang chỉ cho danh sách TỆP — subfolders/hoistedFiles luôn hiển thị đủ.
                     Ẩn khi đang tải/lỗi hoặc folder không có tệp (PaginationBar tự ẩn khi total=0). */}
@@ -772,11 +776,14 @@ export function DocumentsTab({
           // Danh sách tệp chỉ đúng cho folder ĐANG chọn. Mở upload từ menu chuột phải của folder
           // khác thì không có dữ liệu để so trùng tên -> truyền rỗng, BE vẫn là chốt chặn cuối.
           // Chỉ có tệp của TRANG hiện tại + hoistedFiles (files đã phân trang) — BE vẫn kiểm tra trùng.
-          existingFiles={uploadFolder.id === selectedId ? [...files, ...hoistedFiles] : []}
+          existingFiles={uploadFolderFiles}
           onClose={() => setUploadFolder(null)}
           onUploaded={() => {
             showToast(t('documents.toast.uploaded'));
-            if (uploadFolder.id === selectedId) void refetchFiles();
+            if (uploadFolder.id === selectedId) {
+              setFilesPage(1);
+              void refetchFiles();
+            }
           }}
         />
       )}

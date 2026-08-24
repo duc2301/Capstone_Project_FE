@@ -10,6 +10,7 @@ import { ConfirmDialog, Toast, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { numberToWordsVN } from '@/shared/lib/format';
+import { fetchAllPages } from '@/shared/lib/paging';
 
 const EMPTY_EXISTING_FILES: FolderContentsFileDto[] = [];
 
@@ -128,11 +129,16 @@ export function CreatePackageForm({ onSubmit, onCancel, accounts = [], initialDa
 
   const fetchExistingFiles = useCallback(async (): Promise<FolderContentsFileDto[]> => {
     const { folderApi } = await import('@/entities/folder');
-    // /contents nay phan trang `files` (mac dinh 20). Form nay can TOAN BO tai lieu san co de
-    // so trung ten -> lay pageSize toi da (500) + gop hoistedFiles (khong phan trang).
-    const res = await folderApi.getContents(documentFolderId, { pageSize: 500 });
-    const contents = res.data?.result;
-    return [...(contents?.files ?? []), ...(contents?.hoistedFiles ?? [])];
+    let hoistedFiles: FolderContentsFileDto[] = [];
+
+    const pagedFiles = await fetchAllPages<FolderContentsFileDto>(async (page, pageSize) => {
+      const { data } = await folderApi.getContents(documentFolderId, { page, pageSize });
+      const contents = data?.result;
+      if (page === 1) hoistedFiles = contents?.hoistedFiles ?? [];
+      return { items: contents?.files ?? [], totalPages: contents?.totalPages ?? 1 };
+    });
+
+    return [...pagedFiles, ...hoistedFiles];
   }, [documentFolderId]);
 
   const { data: existingFiles, setData: setExistingFiles } = useAsyncData(

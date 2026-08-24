@@ -61,9 +61,17 @@ export default function PackageDetailPage() {
     if (!p?.documentFolderId) return { pkg: p, docFiles: [] };
 
     const { folderApi } = await import('@/entities/folder');
-    const viewRes = await folderApi.getContents(p.documentFolderId).catch(() => null);
+    // /contents nay phan trang `files` (mac dinh 20). Man hinh nay muon TOAN BO tai lieu cua
+    // goi thau -> lay pageSize toi da (500) + gop hoistedFiles (khong phan trang).
+    const viewRes = await folderApi
+      .getContents(p.documentFolderId, { pageSize: 500 })
+      .catch(() => null);
+    const contents = viewRes?.data?.result;
 
-    return { pkg: p, docFiles: viewRes?.data?.result?.files ?? [] };
+    return {
+      pkg: p,
+      docFiles: [...(contents?.files ?? []), ...(contents?.hoistedFiles ?? [])],
+    };
   }, [packageId]);
 
   const { data, loading, reload: loadData } = useAsyncData(packageId ?? '', fetchPackage, {

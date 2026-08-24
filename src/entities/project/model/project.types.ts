@@ -4,6 +4,31 @@ export const ProjectStatus = {
 } as const;
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
+/** Tên trạng thái gửi cho BE lọc (`?status=`). BE nhận cả tên lẫn số; ta gửi tên. */
+export type ProjectStatusName = 'Active' | 'Completed';
+
+/** Tham số truy vấn cho GET /projects (đã phân trang + lọc phía server).
+ *  Trường rỗng phải được bỏ hẳn khỏi query string. */
+export interface ProjectListQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: ProjectStatusName;
+  ownerOrganizationId?: string;
+}
+
+/** Envelope phân trang của GET /projects — `items` là dữ liệu trang hiện tại,
+ *  còn `totalCount`/`totalPages` phản ánh TẬP ĐÃ LỌC. */
+export interface ProjectPage {
+  items: Project[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface ProjectLocation {
   id: string;
   projectId: string;

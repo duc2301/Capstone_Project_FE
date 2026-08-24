@@ -404,12 +404,12 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, import
     Promise.all([
       organizationApi.getAll(),
       accountApi.getAll(),
-      projectApi.getAll()
+      projectApi.getAll({ pageSize: 500 })
     ])
       .then(([orgRes, accRes, projectRes]) => {
         setOrganizations(sortByNewest(orgRes.data.result?.items ?? [], (o) => o.createdAt));
         setAccounts(sortByNewest(accRes.data.result ?? [], (a) => a.createdAt));
-        setExistingProjects(projectRes.data.result ?? []);
+        setExistingProjects(projectRes.data.result?.items ?? []);
       })
       .catch(() => { })
       .finally(() => setOrgsLoading(false));

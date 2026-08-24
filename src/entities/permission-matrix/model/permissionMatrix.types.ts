@@ -61,6 +61,19 @@ export interface MatrixActor {
   editableFolderIds: string[]; // leader: id folder được sửa; rỗng khi isFullAccess
 }
 
+/* Bộ lọc tuỳ chọn cho GET ma trận. Bỏ trống/rỗng => trả toàn bộ như cũ.
+ * - area:      1 giá trị CdeArea (số).
+ * - groupIds:  lọc CỘT về đúng các nhóm đã chọn.
+ * - folderIds: giữ folder đã chọn kèm toàn bộ cây con (file + folder bên trong).
+ * - fileIds:   giữ file đã chọn. folderIds + fileIds kết hợp bằng OR.
+ * groupIds/folderIds/fileIds mã hoá bằng cách lặp param: ?groupIds=a&groupIds=b */
+export interface MatrixFilter {
+  area?: MatrixArea;
+  groupIds?: string[];
+  folderIds?: string[];
+  fileIds?: string[];
+}
+
 /* GET /api/projects/{projectId}/permission-matrix */
 export interface PermissionMatrixResponse {
   projectId: string;

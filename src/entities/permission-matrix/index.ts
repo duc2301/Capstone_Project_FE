@@ -6,6 +6,7 @@ export type {
   MatrixCellChange,
   MatrixCellResult,
   MatrixColumn,
+  MatrixFilter,
   MatrixRow,
   PermissionMatrixResponse,
   SavePermissionMatrixPayload,

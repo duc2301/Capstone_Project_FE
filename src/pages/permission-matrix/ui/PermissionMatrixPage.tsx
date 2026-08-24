@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import type { MatrixArea } from '@/entities/permission-matrix';
-import { areaLabel, AREA_OPTIONS, PermissionMatrixTable, usePermissionMatrix } from '@/features/permission-matrix';
+import type { MatrixFilter } from '@/entities/permission-matrix';
+import { MatrixFilterBar, PermissionMatrixTable, usePermissionMatrix } from '@/features/permission-matrix';
 import { useProjectDetail } from '@/features/projects';
 import { ConfirmDialog, ListErrorCard, ListLoadingCard, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
-
-const AREA_SELECT_ID = 'permission-matrix-area';
 
 function DiscardIcon() {
   return (
@@ -34,11 +32,12 @@ export function PermissionMatrixPage() {
   const matrix = usePermissionMatrix(projectId);
   const { toast, showToast } = useToast();
 
-  const [pendingArea, setPendingArea] = useState<{ area: MatrixArea | undefined } | null>(null);
+  // Bộ lọc chờ áp dụng khi có thay đổi chưa lưu (đổi bộ lọc sẽ refetch -> mất chỉnh sửa).
+  const [pendingFilter, setPendingFilter] = useState<{ filter: MatrixFilter } | null>(null);
 
-  const applyArea = (area: MatrixArea | undefined) => {
-    if (matrix.dirtyCount > 0) setPendingArea({ area });
-    else matrix.setArea(area);
+  const applyFilter = (filter: MatrixFilter) => {
+    if (matrix.dirtyCount > 0) setPendingFilter({ filter });
+    else matrix.setFilter(filter);
   };
 
   const handleSave = async () => {
@@ -70,25 +69,16 @@ export function PermissionMatrixPage() {
     const data = matrix.data;
     body = (
       <>
-        <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2.5">
-            <label htmlFor={AREA_SELECT_ID} className="text-sm font-medium text-text-secondary">
-              {t('matrix.filter.area')}
-            </label>
-            <select
-              id={AREA_SELECT_ID}
-              className="field-select w-auto border-card-border bg-card shadow-card"
-              value={matrix.area ?? ''}
-              onChange={(e) => applyArea(e.target.value === '' ? undefined : (Number(e.target.value) as MatrixArea))}
-            >
-              <option value="">{t('matrix.filter.allAreas')}</option>
-              {AREA_OPTIONS.map((a) => (
-                <option key={a} value={a}>
-                  {areaLabel(a)}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <MatrixFilterBar
+            filter={matrix.filter}
+            groupOptions={matrix.groupOptions}
+            folderOptions={matrix.folderOptions}
+            fileOptions={matrix.fileOptions}
+            hasActiveFilters={matrix.hasActiveFilters}
+            onChange={applyFilter}
+            onClear={() => applyFilter({})}
+          />
 
           <div className="flex flex-wrap items-center gap-3">
             {matrix.dirtyCount > 0 && (
@@ -152,18 +142,18 @@ export function PermissionMatrixPage() {
         {body}
       </div>
 
-      {pendingArea && (
+      {pendingFilter && (
         <ConfirmDialog
-          title={t('matrix.confirm.switchArea.title')}
-          message={t('matrix.confirm.switchArea.desc')}
-          confirmLabel={t('matrix.confirm.switchArea.submit')}
+          title={t('matrix.confirm.switchFilter.title')}
+          message={t('matrix.confirm.switchFilter.desc')}
+          confirmLabel={t('matrix.confirm.switchFilter.submit')}
           cancelLabel={t('matrix.action.keepEditing')}
           tone="primary"
           onConfirm={() => {
-            matrix.setArea(pendingArea.area);
-            setPendingArea(null);
+            matrix.setFilter(pendingFilter.filter);
+            setPendingFilter(null);
           }}
-          onCancel={() => setPendingArea(null)}
+          onCancel={() => setPendingFilter(null)}
         />
       )}
     </>

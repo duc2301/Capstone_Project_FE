@@ -6,6 +6,7 @@ import type {
   MatrixCell,
   MatrixCellChange,
   MatrixCellResult,
+  MatrixFilter,
   MatrixRow,
   PermissionLevel,
   PermissionMatrixResponse,
@@ -20,6 +21,24 @@ export interface SaveOutcome {
   message: string;
 }
 
+/* 1 tuỳ chọn của bộ lọc đa chọn (nhóm/thư mục/tệp). */
+export interface MatrixFilterOption {
+  value: string;
+  label: string;
+}
+
+const EMPTY_FILTER: MatrixFilter = {};
+
+/* Không có tiêu chí nào => coi như không lọc (trả toàn bộ). */
+function isFilterEmpty(f: MatrixFilter): boolean {
+  return (
+    f.area === undefined &&
+    !(f.groupIds && f.groupIds.length > 0) &&
+    !(f.folderIds && f.folderIds.length > 0) &&
+    !(f.fileIds && f.fileIds.length > 0)
+  );
+}
+
 export interface UsePermissionMatrixReturn {
   data: PermissionMatrixResponse | null;
   loading: boolean;
@@ -32,8 +51,17 @@ export interface UsePermissionMatrixReturn {
   notFound: boolean;
   /** Thông điệp kèm theo 403/404 từ envelope. */
   accessMessage: string | null;
-  area: MatrixArea | undefined;
-  setArea: (area: MatrixArea | undefined) => void;
+  /** Bộ lọc đang áp dụng. Refetch mỗi khi đổi. */
+  filter: MatrixFilter;
+  setFilter: (filter: MatrixFilter) => void;
+  /** Đặt lại bộ lọc về rỗng (refetch toàn bộ ma trận). */
+  clearFilters: () => void;
+  /** Có ít nhất 1 tiêu chí lọc đang bật. */
+  hasActiveFilters: boolean;
+  /** Tuỳ chọn bộ lọc dựng từ ma trận CHƯA lọc (giữ nguyên khi đang lọc). */
+  groupOptions: MatrixFilterOption[];
+  folderOptions: MatrixFilterOption[];
+  fileOptions: MatrixFilterOption[];
   dirtyCount: number;
   /** Giá trị đang chọn của 1 ô (ưu tiên chỉnh sửa cục bộ). */
   valueOf: (row: MatrixRow, cell: MatrixCell) => PermissionLevel;
@@ -103,9 +131,9 @@ type LoadOutcome =
   | { kind: 'notFound'; message: string }
   | { kind: 'error'; message: string };
 
-async function fetchMatrixOutcome(projectId: string, area: MatrixArea | undefined): Promise<LoadOutcome> {
+async function fetchMatrixOutcome(projectId: string, filter: MatrixFilter): Promise<LoadOutcome> {
   try {
-    const { data: res } = await permissionMatrixApi.getMatrix(projectId, area);
+    const { data: res } = await permissionMatrixApi.getMatrix(projectId, filter);
     if (!res.isSuccess || !res.result) return { kind: 'error', message: res.message || t('common.error') };
     return { kind: 'ok', data: res.result };
   } catch (err) {
@@ -119,13 +147,15 @@ async function fetchMatrixOutcome(projectId: string, area: MatrixArea | undefine
 
 export function usePermissionMatrix(projectId: string | undefined): UsePermissionMatrixReturn {
   const [data, setData] = useState<PermissionMatrixResponse | null>(null);
+  // Ma trận CHƯA lọc — nguồn dựng tuỳ chọn bộ lọc. Chỉ cập nhật khi tải rỗng lọc.
+  const [baseData, setBaseData] = useState<PermissionMatrixResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
-  const [area, setAreaState] = useState<MatrixArea | undefined>(undefined);
+  const [filter, setFilterState] = useState<MatrixFilter>(EMPTY_FILTER);
   // dirty-set: cellKey -> mức đang chọn (khác trạng thái đã tải).
   const [overrides, setOverrides] = useState<Map<string, PermissionLevel>>(new Map());
 
@@ -136,45 +166,74 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
   }, [data]);
 
   // Áp kết quả tải vào state. Gọi sau await -> không phải setState đồng bộ trong effect.
-  const applyOutcome = useCallback((o: LoadOutcome) => {
+  // `captureBase`: lần tải này không có bộ lọc -> dùng làm nguồn tuỳ chọn bộ lọc.
+  const applyOutcome = useCallback((o: LoadOutcome, captureBase: boolean) => {
     setForbidden(o.kind === 'forbidden');
     setNotFound(o.kind === 'notFound');
     setAccessMessage(o.kind === 'forbidden' || o.kind === 'notFound' ? o.message : null);
     if (o.kind === 'ok') {
       setData(o.data);
+      if (captureBase) setBaseData(o.data);
       setError(null);
       setOverrides(new Map()); // dữ liệu mới -> xoá dirty-set
     } else {
       setData(null);
+      if (captureBase) setBaseData(null);
       setError(o.kind === 'error' ? o.message : null);
     }
     setLoading(false);
   }, []);
 
-  // Tải khi đổi projectId/area. Effect chỉ setState sau await (qua applyOutcome).
+  // Tải khi đổi projectId/filter. Effect chỉ setState sau await (qua applyOutcome).
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
+    const captureBase = isFilterEmpty(filter);
     void (async () => {
-      const outcome = await fetchMatrixOutcome(projectId, area);
-      if (!cancelled) applyOutcome(outcome);
+      const outcome = await fetchMatrixOutcome(projectId, filter);
+      if (!cancelled) applyOutcome(outcome, captureBase);
     })();
     return () => {
       cancelled = true;
     };
-  }, [projectId, area, applyOutcome]);
+  }, [projectId, filter, applyOutcome]);
 
   // reload thủ công (nút "Thử lại") — là event handler nên được setState đồng bộ.
   const reload = useCallback(async () => {
     if (!projectId) return;
     setLoading(true);
-    const outcome = await fetchMatrixOutcome(projectId, area);
-    applyOutcome(outcome);
-  }, [projectId, area, applyOutcome]);
+    const outcome = await fetchMatrixOutcome(projectId, filter);
+    applyOutcome(outcome, isFilterEmpty(filter));
+  }, [projectId, filter, applyOutcome]);
 
-  const setArea = useCallback((next: MatrixArea | undefined) => {
-    setAreaState(next);
+  const setFilter = useCallback((next: MatrixFilter) => {
+    setFilterState(next);
   }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilterState(EMPTY_FILTER);
+  }, []);
+
+  // Tuỳ chọn bộ lọc dựng từ ma trận CHƯA lọc để không bị co lại khi đang lọc:
+  // Nhóm = cột; Thư mục = hàng Folder (bỏ hàng root-area); Tệp = hàng File.
+  const groupOptions = useMemo<MatrixFilterOption[]>(
+    () => (baseData?.columns ?? []).map((c) => ({ value: c.groupId, label: c.groupName })),
+    [baseData],
+  );
+  const folderOptions = useMemo<MatrixFilterOption[]>(
+    () =>
+      (baseData?.rows ?? [])
+        .filter((r) => r.targetType === MatrixTargetType.Folder && !r.isRootArea)
+        .map((r) => ({ value: r.targetId, label: r.name })),
+    [baseData],
+  );
+  const fileOptions = useMemo<MatrixFilterOption[]>(
+    () =>
+      (baseData?.rows ?? [])
+        .filter((r) => r.targetType === MatrixTargetType.File)
+        .map((r) => ({ value: r.targetId, label: r.name })),
+    [baseData],
+  );
 
   const valueOf = useCallback(
     (row: MatrixRow, cell: MatrixCell): PermissionLevel => {
@@ -245,8 +304,13 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
     forbidden,
     notFound,
     accessMessage,
-    area,
-    setArea,
+    filter,
+    setFilter,
+    clearFilters,
+    hasActiveFilters: !isFilterEmpty(filter),
+    groupOptions,
+    folderOptions,
+    fileOptions,
     dirtyCount: overrides.size,
     valueOf,
     isDirty,

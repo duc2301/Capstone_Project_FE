@@ -8,6 +8,7 @@ import type {
 import { projectApi, ProjectParticipantRole } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { t } from '@/shared/lib/i18n';
+import { fetchAllPages } from '@/shared/lib/paging';
 import { sortByNewest } from '@/shared/lib/sort';
 
 export interface ProjectGroupDraft {
@@ -47,12 +48,14 @@ export function useProjects(): UseProjectsReturn {
   // theo nhóm tham gia hoặc vai trò PM. KHÔNG lọc ở client (tránh lộ danh sách dự án
   // của đơn vị khác qua network, và tránh N+1 request getParticipants cho từng dự án).
   const loadProjects = useCallback(async (): Promise<Project[]> => {
-    // Cả /projects và /projects/mine giờ đã phân trang: lấy nguyên danh sách bằng
-    // pageSize tối đa, đọc list từ `result.items`.
-    const { data } = isAdmin
-      ? await projectApi.getAll({ pageSize: 500 })
-      : await projectApi.getMine({ pageSize: 500 });
-    return sortByNewest(data.result?.items ?? [], (p) => p.createdAt);
+    const projects = await fetchAllPages<Project>(async (page, pageSize) => {
+      const { data } = isAdmin
+        ? await projectApi.getAll({ page, pageSize })
+        : await projectApi.getMine({ page, pageSize });
+      if (!data.isSuccess) throw new Error(data.message || t('common.error'));
+      return { items: data.result?.items ?? [], totalPages: data.result?.totalPages ?? 1 };
+    });
+    return sortByNewest(projects, (p) => p.createdAt);
   }, [isAdmin]);
 
   const fetchProjects = useCallback(async () => {

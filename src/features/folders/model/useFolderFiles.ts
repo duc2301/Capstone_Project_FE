@@ -10,6 +10,7 @@ import { folderApi, toFolderTreeNode } from "@/entities/folder";
 import { issueApi } from "@/entities/issue";
 import { useAsyncData } from "@/shared/lib/async";
 import { t } from "@/shared/lib/i18n";
+import { fetchAllPages } from "@/shared/lib/paging";
 import { sortByNewest } from "@/shared/lib/sort";
 
 /* Số tệp tối đa mỗi trang. Chỉ `files` bị phân trang; subfolders/hoistedFiles luôn trả đủ. */
@@ -31,6 +32,7 @@ interface UseFolderFilesReturn {
   hasPreviousPage: boolean;
   setPage: (page: number) => void;
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
@@ -97,11 +99,13 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
       page,
       pageSize: FOLDER_FILES_PAGE_SIZE,
     });
+    if (!data.isSuccess) throw new Error(data.message || t('documents.error'));
+
     const r = data.result;
 
     return {
       subfolders: (r?.subfolders ?? []).map(toFolderTreeNode),
-      files: sortByNewest((r?.files ?? []).map(toFileListItem), (f) => f.createdAt),
+      files: (r?.files ?? []).map(toFileListItem),
       hoistedFiles: sortByNewest((r?.hoistedFiles ?? []).map(toFileListItem), (f) => f.createdAt),
       totalCount: r?.totalCount ?? 0,
       totalPages: Math.max(1, r?.totalPages ?? 1),
@@ -110,13 +114,14 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
     };
   }, [folderId, page]);
 
-  const { data, loading, error, setData, reload } = useAsyncData(
+  const { data, loading, refreshing, error, setData, reload } = useAsyncData(
     `${folderId ?? ""}|${page}`,
     fetchContents,
     {
       fallback: EMPTY_CONTENTS,
       enabled: Boolean(folderId),
       toErrorMessage: () => t("documents.error"),
+      keepPreviousDataWithin: folderId ?? "",
     },
   );
 
@@ -125,7 +130,7 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
   // Trang hien tai vuot qua tong trang (vd file bi xoa lam giam so trang) -> lui ve trang cuoi.
   // Dat lai trong render (khong dung effect) de tranh cascading render; doi key -> tu fetch lai.
   // BE van tra subfolders/hoistedFiles day du nen KHONG duoc coi files rong la folder rong.
-  if (!loading && page > totalPages) {
+  if (!loading && !refreshing && page > totalPages) {
     setPage(totalPages);
   }
 
@@ -171,7 +176,35 @@ export function useFolderFiles(folderId: string | null): UseFolderFilesReturn {
     hasPreviousPage,
     setPage,
     loading,
+    refreshing,
     error,
     refetch,
   };
+}
+
+const NO_FILES: FileListItem[] = [];
+
+export function useFolderFileNames(folderId: string | null): FileListItem[] {
+  const loadEveryFile = useCallback(async (): Promise<FileListItem[]> => {
+    const dtos = await fetchAllPages<FolderContentsFileDto>(async (page, pageSize) => {
+      const { data } = await folderApi.getContents(folderId!, { page, pageSize });
+      if (!data.isSuccess) throw new Error(data.message || t("documents.error"));
+
+      const contents = data.result;
+      const hoisted = page === 1 ? contents?.hoistedFiles ?? [] : [];
+      return {
+        items: [...(contents?.files ?? []), ...hoisted],
+        totalPages: contents?.totalPages ?? 1,
+      };
+    });
+    return dtos.map(toFileListItem);
+  }, [folderId]);
+
+  const { data } = useAsyncData(`folder-file-names:${folderId ?? ""}`, loadEveryFile, {
+    fallback: NO_FILES,
+    enabled: Boolean(folderId),
+    toErrorMessage: () => "",
+  });
+
+  return data;
 }

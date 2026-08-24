@@ -18,6 +18,7 @@ import { numberToWordsVN } from '@/shared/lib/format';
 import { newLocalId } from '@/shared/lib/id';
 import type { TranslationKey } from '@/shared/lib/i18n';
 import { t } from '@/shared/lib/i18n';
+import { fetchAllPages } from '@/shared/lib/paging';
 import { sortByNewest } from '@/shared/lib/sort';
 import { AddressField } from './AddressField';
 import { ManagerAccountPicker } from './ManagerAccountPicker';
@@ -404,12 +405,15 @@ export function CreateProjectStepper({ onComplete, onCancel, initialData, import
     Promise.all([
       organizationApi.getAll(),
       accountApi.getAll(),
-      projectApi.getAll({ pageSize: 500 })
+      fetchAllPages<Project>(async (page, pageSize) => {
+        const { data } = await projectApi.getAll({ page, pageSize });
+        return { items: data.result?.items ?? [], totalPages: data.result?.totalPages ?? 1 };
+      }),
     ])
-      .then(([orgRes, accRes, projectRes]) => {
+      .then(([orgRes, accRes, allProjects]) => {
         setOrganizations(sortByNewest(orgRes.data.result?.items ?? [], (o) => o.createdAt));
         setAccounts(sortByNewest(accRes.data.result ?? [], (a) => a.createdAt));
-        setExistingProjects(projectRes.data.result?.items ?? []);
+        setExistingProjects(allProjects);
       })
       .catch(() => { })
       .finally(() => setOrgsLoading(false));

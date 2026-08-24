@@ -14,7 +14,7 @@ import {
   useProjectList,
   type ProjectStatusFilter,
 } from '@/features/projects';
-import { Modal, PaginationBar, SearchField, Toast, useToast } from '@/shared/components';
+import { ListErrorCard, ListLoadingCard, Modal, PaginationBar, SearchField, Toast, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
@@ -43,6 +43,7 @@ export function ProjectsPage() {
     page,
     pageSize,
     loading,
+    refreshing,
     error,
     search,
     setSearch,
@@ -171,21 +172,13 @@ export function ProjectsPage() {
         </div>
       )}
 
-      {loading && (
-        <div className="flex items-center justify-center rounded-[var(--radius-card)] border border-card-border bg-card py-20 shadow-card">
-          <p className="text-sm text-text-muted">{t('common.loading')}</p>
-        </div>
-      )}
+      {loading && <ListLoadingCard />}
 
-      {error && !loading && (
-        <div className="rounded-[var(--radius-card)] border border-danger/20 bg-danger-light p-6 text-center">
-          <p className="text-sm font-medium text-danger">{error}</p>
-        </div>
-      )}
+      {error && !loading && <ListErrorCard message={error} />}
 
       {!loading && !error && (
         <div className="flex min-h-0 flex-1 flex-col gap-4">
-          <div className="admin-scrollbar min-h-0 flex-1 overflow-y-auto pb-1 pr-1">
+          <div className={`admin-scrollbar min-h-0 flex-1 overflow-y-auto pb-1 pr-1 transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
             {projects.length === 0 ? (
               <div className="flex h-full min-h-[240px] items-center justify-center rounded-[var(--radius-card-lg)] border border-card-border bg-card shadow-card">
                 <p className="text-sm text-text-muted">{hasActiveFilters ? t('projects.noResults') : t('projects.empty')}</p>

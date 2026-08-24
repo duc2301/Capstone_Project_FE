@@ -584,7 +584,7 @@ export function DocumentsTab({
                 )}
 
                 {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
-                <div className={`transition-opacity ${filesRefreshing ? 'opacity-60' : ''}`}>
+                <div className={`flex min-h-0 flex-1 flex-col transition-opacity ${filesRefreshing ? 'opacity-60' : ''}`}>
                   <FileList
                     subfolders={subfolders}
                     files={files}

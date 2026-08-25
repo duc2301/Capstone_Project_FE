@@ -10,8 +10,11 @@ interface FileContextMenuProps {
   onDownload: () => void;
   canManageVersions: boolean;
   onVersions: () => void;
+  onPermission: () => void;
+  /** Được phép hiển thị mục "Phân quyền" — Leader ở Published/Archived và Member đều bị ẩn. */
+  canPermission: boolean;
   onPermissionUsers: () => void;
-  /** Được phép hiển thị mục "Phân quyền thành viên" — Leader ở Published/Archived và Member đều bị ẩn. */
+  /** Được phép hiển thị mục "Phân quyền thành viên" (cùng điều kiện với "Phân quyền"). */
   canPermissionUsers: boolean;
   canSubmitApproval: boolean;
   onSubmitApproval: () => void;
@@ -41,6 +44,8 @@ export function FileContextMenu({
   onDownload,
   canManageVersions,
   onVersions,
+  onPermission,
+  canPermission,
   onPermissionUsers,
   canPermissionUsers,
   canSubmitApproval,
@@ -91,6 +96,10 @@ export function FileContextMenu({
     ...(canArchive ? [{
       key: 'archive', label: t('documents.fileMenu.archive'), onClick: onArchive,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>,
+    }] : []),
+    ...(canPermission ? [{
+      key: 'permission', label: t('documents.fileMenu.permission'), onClick: onPermission,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
     }] : []),
     ...(canPermissionUsers ? [{
       key: 'permissionUsers', label: t('documents.fileMenu.permissionUsers'), onClick: onPermissionUsers,

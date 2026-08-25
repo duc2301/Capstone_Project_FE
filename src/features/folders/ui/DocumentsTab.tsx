@@ -19,12 +19,13 @@ import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-trans
 
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderPermission } from '../model/useFolderPermission';
-import { useFolderFiles, useFolderFileNames } from '../model/useFolderFiles';
+import { useFolderFiles } from '../model/useFolderFiles';
 import { useFolderTree } from '@/entities/folder';
 import { zoneNameFromArea } from '../model/zoneTransferFormat';
 import { ApprovalHistoryModal } from './ApprovalHistoryModal';
 import { FileContextMenu } from './FileContextMenu';
 import { FileList } from './FileList';
+import { FilePermissionModal } from './FilePermissionModal';
 import { FilePermissionUsersModal } from './FilePermissionUsersModal';
 import { FileVersionsModal } from './FileVersionsModal';
 import { FolderActionModal, type FolderAction } from './FolderActionModal';
@@ -170,6 +171,7 @@ export function DocumentsTab({
   const [returnRequestBusy, setReturnRequestBusy] = useState(false);
   const [permissionFor, setPermissionFor] = useState<FolderTreeNode | null>(null);
   const [permissionUsersFor, setPermissionUsersFor] = useState<FolderTreeNode | null>(null);
+  const [filePermissionFor, setFilePermissionFor] = useState<FileListItem | null>(null);
   const [filePermissionUsersFor, setFilePermissionUsersFor] = useState<FileListItem | null>(null);
   const [namingFor, setNamingFor] = useState<FolderTreeNode | null>(null);
 
@@ -183,11 +185,9 @@ export function DocumentsTab({
     totalPages: filesTotalPages,
     setPage: setFilesPage,
     loading: filesLoading,
-    refreshing: filesRefreshing,
     error: filesError,
     refetch: refetchFiles,
   } = useFolderFiles(selectedId);
-  const uploadFolderFiles = useFolderFileNames(uploadFolder?.id ?? null);
   const semanticSearch = useSemanticSearch(projectId);
 
   const selected = findNode(tree, selectedId);
@@ -582,19 +582,17 @@ export function DocumentsTab({
                 )}
 
                 {/* Nội dung thư mục: thư mục con trước, tệp sau — chuột phải / nút ⋮ để mở menu thao tác */}
-                <div className={`flex min-h-0 flex-1 flex-col transition-opacity ${filesRefreshing ? 'opacity-60' : ''}`}>
-                  <FileList
-                    subfolders={subfolders}
-                    files={files}
-                    hoistedFiles={hoistedFiles}
-                    loading={filesLoading}
-                    error={filesError}
-                    onFolderOpen={(n) => setSelectedId(n.id)}
-                    onFolderMenu={handleFolderRowMenu}
-                    onFileMenu={handleFileMenu}
-                    onFileOpen={handleDetail}
-                  />
-                </div>
+                <FileList
+                  subfolders={subfolders}
+                  files={files}
+                  hoistedFiles={hoistedFiles}
+                  loading={filesLoading}
+                  error={filesError}
+                  onFolderOpen={(n) => setSelectedId(n.id)}
+                  onFolderMenu={handleFolderRowMenu}
+                  onFileMenu={handleFileMenu}
+                  onFileOpen={handleDetail}
+                />
 
                 {/* Phân trang chỉ cho danh sách TỆP — subfolders/hoistedFiles luôn hiển thị đủ.
                     Ẩn khi đang tải/lỗi hoặc folder không có tệp (PaginationBar tự ẩn khi total=0). */}
@@ -688,6 +686,8 @@ export function DocumentsTab({
           onDownload={() => handleDownload(fileMenu.file)}
           canManageVersions={selectedPermission.canEdit}
           onVersions={() => setVersionsFor(fileMenu.file)}
+          onPermission={() => setFilePermissionFor(fileMenu.file)}
+          canPermission={!!selected && canShowPermissionMenu(selected.area)}
           onPermissionUsers={() => setFilePermissionUsersFor(fileMenu.file)}
           canPermissionUsers={!!selected && canShowPermissionMenu(selected.area)}
           canSubmitApproval={canSubmitApproval(fileMenu.file)}
@@ -722,6 +722,17 @@ export function DocumentsTab({
           busy={returnRequestBusy}
           onClose={() => setReturnRequestFor(null)}
           onSubmit={handleReturnRequest}
+        />
+      )}
+
+      {/* Modal phân quyền tệp */}
+      {filePermissionFor && selected && (
+        <FilePermissionModal
+          fileItemId={filePermissionFor.id}
+          fileName={filePermissionFor.name}
+          area={selected.area}
+          onClose={() => setFilePermissionFor(null)}
+          onSaved={() => showToast(t('filePermission.toast.updated'))}
         />
       )}
 
@@ -761,14 +772,11 @@ export function DocumentsTab({
           // Danh sách tệp chỉ đúng cho folder ĐANG chọn. Mở upload từ menu chuột phải của folder
           // khác thì không có dữ liệu để so trùng tên -> truyền rỗng, BE vẫn là chốt chặn cuối.
           // Chỉ có tệp của TRANG hiện tại + hoistedFiles (files đã phân trang) — BE vẫn kiểm tra trùng.
-          existingFiles={uploadFolderFiles}
+          existingFiles={uploadFolder.id === selectedId ? [...files, ...hoistedFiles] : []}
           onClose={() => setUploadFolder(null)}
           onUploaded={() => {
             showToast(t('documents.toast.uploaded'));
-            if (uploadFolder.id === selectedId) {
-              setFilesPage(1);
-              void refetchFiles();
-            }
+            if (uploadFolder.id === selectedId) void refetchFiles();
           }}
         />
       )}

@@ -1297,6 +1297,10 @@ export const translations = {
   'folderPermission.grantAll': 'Cấp quyền "{permission}" cho tất cả nhóm đang hiển thị',
   'folderPermission.revokeAll': 'Bỏ quyền "{permission}" của tất cả nhóm đang hiển thị',
 
+  // Modal phân quyền nhóm trên tệp (dùng chung layout với phân quyền thư mục)
+  'filePermission.title': 'Phân quyền truy cập tệp',
+  'filePermission.toast.updated': 'Đã cập nhật phân quyền tệp',
+
   // Modal phân quyền thành viên (mức override theo từng người, dùng chung vỏ modal phân quyền nhóm)
   'userPermission.folder.title': 'Phân quyền thành viên cho thư mục',
   'userPermission.file.title': 'Phân quyền thành viên cho tệp',
@@ -1309,6 +1313,8 @@ export const translations = {
   'userPermission.level.view': 'Xem',
   'userPermission.level.edit': 'Sửa',
   'userPermission.level.deny': 'Chặn',
+  'userPermission.effective': 'Hiệu lực',
+  'userPermission.maskNote': 'Quyền riêng chỉ có thể THU HẸP quyền mà nhóm đã cấp, không thể cấp thêm quyền mới. Đặt "Sửa" khi nhóm chỉ cho Xem sẽ chỉ có hiệu lực Xem.',
   'userPermission.folderScopeHint': 'Quyền đặt cho thư mục áp dụng cho cả thư mục và toàn bộ nội dung bên trong (kể cả tệp thêm sau).',
   'userPermission.signerNote': 'Người dùng đang là người ký hoặc bên liên quan của phiếu vẫn có thể xem tệp dù bị chặn.',
   'userPermission.saveError': 'Cập nhật phân quyền thành viên thất bại. Vui lòng thử lại.',
@@ -1369,6 +1375,7 @@ export const translations = {
     'Bản hiện hành sẽ bị xoá khỏi hệ thống, không hoàn tác được. Nếu tệp còn phiên bản trước thì bản đó trở lại làm bản hiện hành và giữ nguyên số hiệu.',
   'documents.delete.toastFile': 'Đã xoá tệp khỏi hệ thống.',
   'documents.delete.toastVersion': 'Đã xoá phiên bản, bản trước đó trở lại làm bản hiện hành.',
+  'documents.fileMenu.permission': 'Phân quyền',
   'documents.fileMenu.permissionUsers': 'Phân quyền thành viên',
   'documents.fileMenu.transition': 'Chuyển trạng thái',
   'documents.fileMenu.submitApproval': 'Gửi phê duyệt',

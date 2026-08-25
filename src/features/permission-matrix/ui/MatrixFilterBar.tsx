@@ -8,7 +8,6 @@ interface MatrixFilterBarProps {
   filter: MatrixFilter;
   groupOptions: MatrixFilterOption[];
   folderOptions: MatrixFilterOption[];
-  fileOptions: MatrixFilterOption[];
   hasActiveFilters: boolean;
   /** Áp bộ lọc mới (đã gồm mọi tiêu chí). Trang tự chặn khi có thay đổi chưa lưu. */
   onChange: (next: MatrixFilter) => void;
@@ -31,7 +30,6 @@ export function MatrixFilterBar({
   filter,
   groupOptions,
   folderOptions,
-  fileOptions,
   hasActiveFilters,
   onChange,
   onClear,
@@ -75,15 +73,6 @@ export function MatrixFilterBar({
         options={folderOptions}
         selected={filter.folderIds ?? []}
         onChange={(folderIds) => onChange({ ...filter, folderIds })}
-      />
-
-      <MatrixMultiSelect
-        label={t('matrix.filter.file')}
-        allLabel={t('matrix.filter.allFiles')}
-        title={t('matrix.filter.fileHint')}
-        options={fileOptions}
-        selected={filter.fileIds ?? []}
-        onChange={(fileIds) => onChange({ ...filter, fileIds })}
       />
 
       {hasActiveFilters && (

@@ -74,7 +74,6 @@ export function PermissionMatrixPage() {
             filter={matrix.filter}
             groupOptions={matrix.groupOptions}
             folderOptions={matrix.folderOptions}
-            fileOptions={matrix.fileOptions}
             hasActiveFilters={matrix.hasActiveFilters}
             onChange={applyFilter}
             onClear={() => applyFilter({})}

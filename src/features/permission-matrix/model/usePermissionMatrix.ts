@@ -34,8 +34,7 @@ function isFilterEmpty(f: MatrixFilter): boolean {
   return (
     f.area === undefined &&
     !(f.groupIds && f.groupIds.length > 0) &&
-    !(f.folderIds && f.folderIds.length > 0) &&
-    !(f.fileIds && f.fileIds.length > 0)
+    !(f.folderIds && f.folderIds.length > 0)
   );
 }
 
@@ -61,7 +60,6 @@ export interface UsePermissionMatrixReturn {
   /** Tuỳ chọn bộ lọc dựng từ ma trận CHƯA lọc (giữ nguyên khi đang lọc). */
   groupOptions: MatrixFilterOption[];
   folderOptions: MatrixFilterOption[];
-  fileOptions: MatrixFilterOption[];
   dirtyCount: number;
   /** Giá trị đang chọn của 1 ô (ưu tiên chỉnh sửa cục bộ). */
   valueOf: (row: MatrixRow, cell: MatrixCell) => PermissionLevel;
@@ -73,14 +71,12 @@ export interface UsePermissionMatrixReturn {
   save: () => Promise<SaveOutcome>;
 }
 
-/* Kiểm tra mức hợp lệ theo loại đối tượng + khu vực (mirror ràng buộc BE để đỡ round-trip). */
-function isLevelAllowed(targetType: MatrixTargetType, area: MatrixArea, level: PermissionLevel): boolean {
+/* Kiểm tra mức hợp lệ theo khu vực (mirror ràng buộc BE để đỡ round-trip).
+ * Ma trận chỉ còn hàng folder: N/R mọi vùng, W chỉ ở WIP. */
+function isLevelAllowed(area: MatrixArea, level: PermissionLevel): boolean {
   // Ghi (W) chỉ cho phép ở WIP — các vùng khác là chỉ đọc.
   if (level === Level.Write && !areaAllowsWrite(area)) return false;
-  if (targetType === MatrixTargetType.Folder) {
-    return level === Level.NoAccess || level === Level.Read || level === Level.Write;
-  }
-  return level >= Level.Inherit && level <= Level.Write;
+  return level === Level.NoAccess || level === Level.Read || level === Level.Write;
 }
 
 /* Dựng danh sách thay đổi (diff) từ dirty-set. */
@@ -92,7 +88,7 @@ function buildChanges(
   for (const [key, level] of overrides) {
     const [targetId, projectParticipantId] = key.split('|');
     const row = rowByTarget.get(targetId);
-    if (!row || !isLevelAllowed(row.targetType, row.area, level)) continue;
+    if (!row || !isLevelAllowed(row.area, level)) continue;
     changes.push({ targetId, targetType: row.targetType, projectParticipantId, level });
   }
   return changes;
@@ -215,7 +211,7 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
   }, []);
 
   // Tuỳ chọn bộ lọc dựng từ ma trận CHƯA lọc để không bị co lại khi đang lọc:
-  // Nhóm = cột; Thư mục = hàng Folder (bỏ hàng root-area); Tệp = hàng File.
+  // Nhóm = cột; Thư mục = hàng Folder (bỏ hàng root-area). Ma trận chỉ còn hàng folder.
   const groupOptions = useMemo<MatrixFilterOption[]>(
     () => (baseData?.columns ?? []).map((c) => ({ value: c.groupId, label: c.groupName })),
     [baseData],
@@ -224,13 +220,6 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
     () =>
       (baseData?.rows ?? [])
         .filter((r) => r.targetType === MatrixTargetType.Folder && !r.isRootArea)
-        .map((r) => ({ value: r.targetId, label: r.name })),
-    [baseData],
-  );
-  const fileOptions = useMemo<MatrixFilterOption[]>(
-    () =>
-      (baseData?.rows ?? [])
-        .filter((r) => r.targetType === MatrixTargetType.File)
         .map((r) => ({ value: r.targetId, label: r.name })),
     [baseData],
   );
@@ -252,7 +241,7 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
   const setCell = useCallback(
     (row: MatrixRow, cell: MatrixCell, level: PermissionLevel) => {
       if (!cell.editable || !row.assignable) return;
-      if (!isLevelAllowed(row.targetType, row.area, level)) return;
+      if (!isLevelAllowed(row.area, level)) return;
       const key = cellKey(row.targetId, cell.projectParticipantId);
       const original = cellSelectValue(cell);
       setOverrides((prev) => {
@@ -310,7 +299,6 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
     hasActiveFilters: !isFilterEmpty(filter),
     groupOptions,
     folderOptions,
-    fileOptions,
     dirtyCount: overrides.size,
     valueOf,
     isDirty,

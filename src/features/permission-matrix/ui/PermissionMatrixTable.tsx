@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
 import type { MatrixCell, PermissionMatrixResponse } from '@/entities/permission-matrix';
-import { MatrixTargetType } from '@/entities/permission-matrix';
 import { ToolbarIconButton } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import { collapsibleRowIds, flattenMatrixRows } from '../model/matrixTree';
@@ -46,13 +45,6 @@ function Legend() {
           swatch={<span className={`${LEGEND_SWATCH} border ${levelSwatchClass(lvl)}`}>{levelLetter(lvl)}</span>}
         />
       ))}
-      <span className="h-5 w-px bg-card-border" />
-      <LegendItem
-        label={t('matrix.legend.inherited')}
-        swatch={
-          <span className={`${LEGEND_SWATCH} border-2 border-dashed ${levelSwatchClass(PermissionLevel.Read)}`} />
-        }
-      />
     </div>
   );
 }
@@ -93,15 +85,10 @@ function CollapseAllIcon() {
   );
 }
 
-function TargetGlyph({ isFolder }: { isFolder: boolean }) {
-  return isFolder ? (
+function TargetGlyph() {
+  return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-primary/80">
       <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    </svg>
-  ) : (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-text-muted">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
     </svg>
   );
 }
@@ -190,7 +177,6 @@ export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTablePro
                   const cellByPid = new Map<string, MatrixCell>(
                     row.cells.map((c) => [c.projectParticipantId, c]),
                   );
-                  const isFolder = row.targetType === MatrixTargetType.Folder;
                   const isHeader = row.isRootArea || !row.assignable;
 
                   return (
@@ -218,7 +204,7 @@ export function PermissionMatrixTable({ data, matrix }: PermissionMatrixTablePro
                           ) : (
                             <>
                               <span className="mt-0.5">
-                                <TargetGlyph isFolder={isFolder} />
+                                <TargetGlyph />
                               </span>
                               <span className="cell-wrap font-medium leading-5 text-text" title={row.name}>{row.name}</span>
                             </>

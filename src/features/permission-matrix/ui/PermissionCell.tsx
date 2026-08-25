@@ -1,5 +1,4 @@
 import type { MatrixCell, MatrixRow, PermissionLevel } from '@/entities/permission-matrix';
-import { MatrixTargetType, PermissionLevel as Level } from '@/entities/permission-matrix';
 import { levelLabel, levelLetter, levelOptionsFor, levelSwatchClass } from '../model/permissionMatrixFormat';
 
 interface PermissionCellProps {
@@ -12,29 +11,22 @@ interface PermissionCellProps {
 }
 
 export function PermissionCell({ row, cell, value, dirty, onChange }: PermissionCellProps) {
-  const isFile = row.targetType === MatrixTargetType.File;
   // Tuỳ chọn theo khu vực (Shared/Published/Archived không có Ghi). Vẫn giữ giá trị
   // hiện tại nếu vì lý do nào đó nằm ngoài danh sách -> select không bị trống.
-  const areaOptions = levelOptionsFor(row.targetType, row.area);
+  const areaOptions = levelOptionsFor(row.area);
   const options = areaOptions.includes(value) ? areaOptions : [value, ...areaOptions];
-  // Người dùng vừa chọn "đặt lại về kế thừa" (chưa lưu).
-  const inheritPending = value === Level.Inherit;
-  // File đang kế thừa từ thư mục cha và chưa bị sửa -> tô nhạt/nghiêng.
-  const showInherited = isFile && cell.isInherited && !dirty;
   const disabled = !cell.editable;
 
   const className = [
     'h-9 w-full cursor-pointer appearance-none rounded-[var(--radius-input)] px-2 text-center',
     'text-sm font-bold outline-none transition-colors focus:ring-2 focus:ring-primary/30',
-    levelSwatchClass(inheritPending ? Level.Inherit : value),
-    showInherited || inheritPending ? 'border-2 border-dashed' : 'border',
+    levelSwatchClass(value),
+    'border',
     dirty ? 'ring-2 ring-primary ring-offset-1 ring-offset-content-bg' : '',
     disabled ? 'cursor-not-allowed opacity-60' : '',
   ].join(' ');
 
-  const title = showInherited
-    ? `${levelLabel(cell.level)} · ${levelLabel(Level.Inherit)}`
-    : levelLabel(inheritPending ? Level.Inherit : value);
+  const title = levelLabel(value);
 
   return (
     <select

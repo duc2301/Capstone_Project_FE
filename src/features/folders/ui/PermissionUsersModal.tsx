@@ -45,8 +45,28 @@ const LEVEL_FLAGS: Record<Exclude<UserOverrideLevel, 'None'>, { canView: boolean
   Blocked: { canView: false, canEdit: false },
 };
 
-/* Dropdown chọn mức quyền áp dụng cho 1 thành viên. Viền đỏ khi đang Chặn để dễ nhận ra. */
-function LevelSelect({ level, onChange }: { level: UserOverrideLevel; onChange: (level: UserOverrideLevel) => void }) {
+/* Quyền hiệu lực THỰC TẾ sau khi BE áp trần theo quyền nhóm (override chỉ THU HẸP, không cấp thêm):
+ *   effectiveView = level !== 'Blocked'         (roster chỉ gồm người nhóm đã cho Xem)
+ *   effectiveEdit = inheritedCanEdit && level !== 'View' && level !== 'Blocked'
+ * overrideLevel hiển thị là mức ĐÃ LƯU, còn đây là kết quả người dùng thật sự nhận. */
+function effectiveLabel(level: UserOverrideLevel, inheritedCanEdit: boolean): string {
+  if (level === 'Blocked') return t('userPermission.level.deny');
+  const canEdit = inheritedCanEdit && level !== 'View';
+  return canEdit ? t('userPermission.level.edit') : t('userPermission.level.view');
+}
+
+/* Dropdown chọn mức quyền áp dụng cho 1 thành viên. Viền đỏ khi đang Chặn để dễ nhận ra.
+ * "Sửa" chỉ có nghĩa khi nhóm đã cấp quyền Sửa (inheritedCanEdit) — nếu không thì vô hiệu hoá
+ * lựa chọn này vì BE sẽ chặn trần ở mức Xem. */
+function LevelSelect({
+  level,
+  inheritedCanEdit,
+  onChange,
+}: {
+  level: UserOverrideLevel;
+  inheritedCanEdit: boolean;
+  onChange: (level: UserOverrideLevel) => void;
+}) {
   const blocked = level === 'Blocked';
   return (
     <select
@@ -55,7 +75,7 @@ function LevelSelect({ level, onChange }: { level: UserOverrideLevel; onChange: 
       className={`field-select py-1.5 ${blocked ? 'border-danger font-semibold text-danger' : ''}`}
     >
       {LEVEL_ORDER.map((lv) => (
-        <option key={lv} value={lv}>
+        <option key={lv} value={lv} disabled={lv === 'Edit' && !inheritedCanEdit}>
           {LEVEL_LABEL[lv]()}
         </option>
       ))}
@@ -162,10 +182,23 @@ function PermissionUserEditor({
                       </span>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <LevelSelect
-                        level={level.get(m.accountId) ?? 'None'}
-                        onChange={(value) => setMemberLevel(m.accountId, value)}
-                      />
+                      {(() => {
+                        const lv = level.get(m.accountId) ?? 'None';
+                        const effective = effectiveLabel(lv, m.inheritedCanEdit);
+                        const denied = lv === 'Blocked';
+                        return (
+                          <>
+                            <LevelSelect
+                              level={lv}
+                              inheritedCanEdit={m.inheritedCanEdit}
+                              onChange={(value) => setMemberLevel(m.accountId, value)}
+                            />
+                            <p className={`mt-1 text-2xs ${denied ? 'text-danger' : 'text-text-muted'}`}>
+                              {t('userPermission.effective')}: {effective}
+                            </p>
+                          </>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -174,8 +207,14 @@ function PermissionUserEditor({
           </div>
         )}
 
-        {/* Ghi chú: áp dụng cho cả cây thư mục + trường hợp người ký/bên liên quan vẫn xem được */}
+        {/* Ghi chú: override chỉ thu hẹp quyền nhóm + áp dụng cho cả cây thư mục + người ký/bên liên quan vẫn xem được */}
         <div className="mt-4 space-y-2">
+          <p className="flex items-start gap-2 rounded-[var(--radius-card)] border border-info/25 bg-info-light px-3.5 py-2.5 text-xs text-text-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-info">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>{t('userPermission.maskNote')}</span>
+          </p>
           {isFolder && (
             <p className="flex items-start gap-2 rounded-[var(--radius-card)] border border-warning/30 bg-warning-light px-3.5 py-2.5 text-xs text-text-secondary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-warning">

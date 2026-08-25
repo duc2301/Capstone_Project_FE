@@ -1297,7 +1297,7 @@ export const translations = {
   'folderPermission.grantAll': 'Cấp quyền "{permission}" cho tất cả nhóm đang hiển thị',
   'folderPermission.revokeAll': 'Bỏ quyền "{permission}" của tất cả nhóm đang hiển thị',
 
-  // Modal phân quyền tệp (dùng chung layout với phân quyền thư mục)
+  // Modal phân quyền nhóm trên tệp (dùng chung layout với phân quyền thư mục)
   'filePermission.title': 'Phân quyền truy cập tệp',
   'filePermission.toast.updated': 'Đã cập nhật phân quyền tệp',
 
@@ -1313,6 +1313,8 @@ export const translations = {
   'userPermission.level.view': 'Xem',
   'userPermission.level.edit': 'Sửa',
   'userPermission.level.deny': 'Chặn',
+  'userPermission.effective': 'Hiệu lực',
+  'userPermission.maskNote': 'Quyền riêng chỉ có thể THU HẸP quyền mà nhóm đã cấp, không thể cấp thêm quyền mới. Đặt "Sửa" khi nhóm chỉ cho Xem sẽ chỉ có hiệu lực Xem.',
   'userPermission.folderScopeHint': 'Quyền đặt cho thư mục áp dụng cho cả thư mục và toàn bộ nội dung bên trong (kể cả tệp thêm sau).',
   'userPermission.signerNote': 'Người dùng đang là người ký hoặc bên liên quan của phiếu vẫn có thể xem tệp dù bị chặn.',
   'userPermission.saveError': 'Cập nhật phân quyền thành viên thất bại. Vui lòng thử lại.',
@@ -2562,9 +2564,6 @@ export const translations = {
   'matrix.filter.folder': 'Thư mục',
   'matrix.filter.allFolders': 'Tất cả',
   'matrix.filter.folderHint': 'Giữ thư mục đã chọn kèm toàn bộ thư mục con và tệp bên trong.',
-  'matrix.filter.file': 'Tệp',
-  'matrix.filter.allFiles': 'Tất cả',
-  'matrix.filter.fileHint': 'Giữ đúng các tệp đã chọn.',
   'matrix.filter.searchPlaceholder': 'Tìm kiếm…',
   'matrix.filter.noOptions': 'Không có mục nào phù hợp.',
   'matrix.filter.clearOne': 'Bỏ chọn ({n})',
@@ -2577,8 +2576,7 @@ export const translations = {
   'matrix.level.noAccess': 'Không truy cập',
   'matrix.level.read': 'Đọc',
   'matrix.level.write': 'Ghi',
-  'matrix.legend.inherited': 'Kế thừa từ thư mục cha',
-  'matrix.col.target': 'Thư mục / Tệp',
+  'matrix.col.target': 'Thư mục',
   'matrix.tree.expandAll': 'Mở tất cả',
   'matrix.tree.collapseAll': 'Thu tất cả',
   'matrix.tree.expand': 'Mở rộng',

@@ -207,14 +207,7 @@ function PermissionUserEditor({
           </div>
         )}
 
-        {/* Ghi chú: override chỉ thu hẹp quyền nhóm + áp dụng cho cả cây thư mục + người ký/bên liên quan vẫn xem được */}
         <div className="mt-4 space-y-2">
-          <p className="flex items-start gap-2 rounded-[var(--radius-card)] border border-info/25 bg-info-light px-3.5 py-2.5 text-xs text-text-secondary">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-info">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            <span>{t('userPermission.maskNote')}</span>
-          </p>
           {isFolder && (
             <p className="flex items-start gap-2 rounded-[var(--radius-card)] border border-warning/30 bg-warning-light px-3.5 py-2.5 text-xs text-text-secondary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-warning">
@@ -223,12 +216,6 @@ function PermissionUserEditor({
               <span>{t('userPermission.folderScopeHint')}</span>
             </p>
           )}
-          <p className="flex items-start gap-2 rounded-[var(--radius-card)] border border-card-border bg-content-bg/40 px-3.5 py-2.5 text-xs text-text-muted">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            <span>{t('userPermission.signerNote')}</span>
-          </p>
         </div>
       </div>
 

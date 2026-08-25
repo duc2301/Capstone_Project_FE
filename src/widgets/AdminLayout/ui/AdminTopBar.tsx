@@ -32,7 +32,7 @@ export function AdminTopBar({ onMenuToggle }: AdminTopBarProps) {
           type="button"
           onClick={onMenuToggle}
           className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)] text-text-muted transition-colors hover:bg-card hover:text-text lg:hidden"
-          aria-label="Toggle menu"
+          aria-label={t('admin.menu.toggle')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="3" y1="6" x2="21" y2="6" />

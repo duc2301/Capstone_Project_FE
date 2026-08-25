@@ -18,6 +18,7 @@ import { toDateKey } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 import type { TranslationKey } from '@/shared/lib/i18n';
+import { fetchAllPages } from '@/shared/lib/paging';
 import { sortByNewest } from '@/shared/lib/sort';
 
 export type WorkItemKind = 'approval' | 'signature' | 'submitted' | 'returnRequest' | 'invitation' | 'issue';
@@ -248,12 +249,12 @@ export function useDashboard() {
 
   const projects = useAsyncData(
     'dashboard-projects',
-    async () => {
-      // /projects/mine đã phân trang: lấy trọn danh sách với pageSize tối đa, đọc `result.items`.
-      const { data } = await projectApi.getMine({ pageSize: 500 });
-      if (!data.isSuccess) throw new Error(data.message || t('common.error'));
-      return data.result?.items ?? [];
-    },
+    () =>
+      fetchAllPages<Project>(async (page, pageSize) => {
+        const { data } = await projectApi.getMine({ page, pageSize });
+        if (!data.isSuccess) throw new Error(data.message || t('common.error'));
+        return { items: data.result?.items ?? [], totalPages: data.result?.totalPages ?? 1 };
+      }),
     { fallback: EMPTY_PROJECTS, toErrorMessage: loadErrorMessage },
   );
 

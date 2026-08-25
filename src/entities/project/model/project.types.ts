@@ -5,7 +5,8 @@ export const ProjectStatus = {
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
 /** Tên trạng thái gửi cho BE lọc (`?status=`). BE nhận cả tên lẫn số; ta gửi tên. */
-export type ProjectStatusName = 'Active' | 'Completed';
+export const PROJECT_STATUS_NAMES = ['Active', 'Completed'] as const;
+export type ProjectStatusName = (typeof PROJECT_STATUS_NAMES)[number];
 
 /** Tham số truy vấn cho GET /projects (đã phân trang + lọc phía server).
  *  Trường rỗng phải được bỏ hẳn khỏi query string. */

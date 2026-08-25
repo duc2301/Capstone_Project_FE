@@ -24,7 +24,6 @@ export const permissionMatrixApi = {
           area: filter?.area,
           groupIds: nonEmpty(filter?.groupIds),
           folderIds: nonEmpty(filter?.folderIds),
-          fileIds: nonEmpty(filter?.fileIds),
         },
         // Lặp key thay vì groupIds[]=... để khớp binding của BE.
         paramsSerializer: { indexes: null },

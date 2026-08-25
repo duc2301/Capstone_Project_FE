@@ -264,50 +264,6 @@ export interface FileVersionResult {
   displayVersion: string;
 }
 
-/* ── Phân quyền nhóm trên 1 file (file-permissions) ─────────── */
-
-/* Nhóm trong dự án chưa từng được gán quyền trên file */
-export interface FilePermissionAvailableGroup {
-  projectParticipantId: string;
-  groupId: string;
-  groupName: string;
-  organizationId?: string | null;
-  organizationName?: string | null;
-}
-
-/* 1 bản ghi quyền của nhóm trên file — hiện chỉ hỗ trợ Xem/Sửa.
- * status: 0 = đang hiệu lực, 1 = từng có quyền nhưng đã gỡ (inactive). */
-export interface FilePermissionEntry {
-  id: string;
-  projectParticipantId: string;
-  groupParticipantName: string;
-  canView: boolean;
-  canEdit: boolean;
-  status: number;
-}
-
-/* GET /file-permissions/{fileId}/group-ui */
-export interface FilePermissionUiDto {
-  availableGroups: FilePermissionAvailableGroup[];
-  selectedPermissions: FilePermissionEntry[];
-}
-
-/* POST /file-permissions/add-group */
-export interface FileGroupPermissionInput {
-  projectParticipantId: string;
-  canView: boolean;
-  canEdit: boolean;
-}
-
-export interface UpdateFileGroupPermissionsPayload {
-  /** fileItemId */
-  id: string;
-  /** Toàn bộ nhóm ở panel "Nhóm được chọn" kèm cờ quyền mong muốn */
-  groupsPermission: FileGroupPermissionInput[];
-  /** projectParticipantId của các nhóm bị gỡ quyền */
-  removeParticipantIds: string[];
-}
-
 /* ── Phân quyền theo từng thành viên trên 1 file (override đè lên quyền nhóm) ─────────── */
 
 /* Mức override riêng của 1 thành viên trên tài nguyên (khớp BE, trả về dạng chuỗi).

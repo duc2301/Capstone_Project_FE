@@ -221,7 +221,5 @@ export interface CreateSubFolderPayload {
 
 /* PUT /folders/{id} — partial (chỉ field gửi mới đè) */
 export interface UpdateFolderPayload {
-  name?: string;
-  parentFolderId?: string;
-  area?: CdeArea;
+  name: string;
 }

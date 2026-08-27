@@ -403,14 +403,6 @@ export function ConventionDetail({
       <div className={cardClass}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              title={t('naming.back')}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-text-muted transition-colors hover:bg-content-bg hover:text-primary"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-            </button>
             <div className="min-w-0">
               <h2 className="heading-tab truncate">{convention.name}</h2>
               <div className="mt-1 flex flex-wrap items-center gap-2">

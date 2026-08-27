@@ -79,7 +79,7 @@ export function FileContextMenu({
     },
     ...(canManageVersions ? [{
       key: 'versions', label: t('documents.fileMenu.versions'), onClick: onVersions,
-      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>,
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>,
     }] : []),
     ...(canSubmitApproval ? [{
       key: 'submitApproval', label: t('documents.fileMenu.submitApproval'), onClick: onSubmitApproval,

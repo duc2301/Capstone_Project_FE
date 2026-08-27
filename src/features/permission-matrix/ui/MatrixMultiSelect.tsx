@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 
+import type { MatrixArea } from '@/entities/permission-matrix';
 import { t } from '@/shared/lib/i18n';
+import { areaLabel } from '../model/permissionMatrixFormat';
 import type { MatrixFilterOption } from '../model/usePermissionMatrix';
 
 interface MatrixMultiSelectProps {
@@ -14,6 +16,7 @@ interface MatrixMultiSelectProps {
   allLabel: string;
   /** Tooltip mô tả tác dụng của bộ lọc này. */
   title?: string;
+  mode?: 'multi' | 'single';
 }
 
 /* Số tuỳ chọn tối thiểu để hiện ô tìm kiếm trong dropdown. */
@@ -28,10 +31,11 @@ function CheckIcon() {
 }
 
 /* Bộ lọc đa chọn dạng dropdown checkbox. Đổi ô tick => onChange ngay. */
-export function MatrixMultiSelect({ label, options, selected, onChange, allLabel, title }: MatrixMultiSelectProps) {
+export function MatrixMultiSelect({ label, options, selected, onChange, allLabel, title, mode = 'multi' }: MatrixMultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
+  const single = mode === 'single';
   const selectedSet = useMemo(() => new Set(selected), [selected]);
   const count = selected.length;
   const disabled = options.length === 0;
@@ -39,8 +43,25 @@ export function MatrixMultiSelect({ label, options, selected, onChange, allLabel
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return options;
-    return options.filter((o) => o.label.toLowerCase().includes(q));
+    return options.filter(
+      (o) => o.label.toLowerCase().includes(q) || (o.path ?? '').toLowerCase().includes(q),
+    );
   }, [options, query]);
+
+  const sections = useMemo<{ area: MatrixArea | undefined; items: MatrixFilterOption[] }[]>(() => {
+    if (!visible.some((o) => o.area !== undefined)) return [{ area: undefined, items: visible }];
+    const byArea = new Map<MatrixArea | undefined, MatrixFilterOption[]>();
+    for (const o of visible) {
+      const bucket = byArea.get(o.area);
+      if (bucket) bucket.push(o);
+      else byArea.set(o.area, [o]);
+    }
+    return [...byArea.entries()].map(([area, items]) => ({ area, items }));
+  }, [visible]);
+
+  const selectedLabel = single
+    ? options.find((o) => o.value === selected[0])?.label ?? ''
+    : '';
 
   const openPanel = () => {
     setQuery('');
@@ -48,6 +69,11 @@ export function MatrixMultiSelect({ label, options, selected, onChange, allLabel
   };
 
   const toggle = (value: string) => {
+    if (single) {
+      onChange([value]);
+      setOpen(false);
+      return;
+    }
     const next = new Set(selectedSet);
     if (next.has(value)) next.delete(value);
     else next.add(value);
@@ -70,12 +96,14 @@ export function MatrixMultiSelect({ label, options, selected, onChange, allLabel
         }`}
       >
         <span className="whitespace-nowrap">{label}</span>
-        {count > 0 ? (
+        {count === 0 ? (
+          <span className="whitespace-nowrap text-text-muted">{allLabel}</span>
+        ) : single ? (
+          <span className="max-w-40 truncate font-semibold">{selectedLabel}</span>
+        ) : (
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white">
             {count}
           </span>
-        ) : (
-          <span className="whitespace-nowrap text-text-muted">{allLabel}</span>
         )}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
           <polyline points="6 9 12 15 18 9" />
@@ -109,26 +137,61 @@ export function MatrixMultiSelect({ label, options, selected, onChange, allLabel
               {visible.length === 0 ? (
                 <p className="px-3 py-4 text-center text-xs text-text-muted">{t('matrix.filter.noOptions')}</p>
               ) : (
-                visible.map((o) => {
-                  const on = selectedSet.has(o.value);
-                  return (
+                <>
+                  {single && (
                     <button
-                      key={o.value}
                       type="button"
-                      onClick={() => toggle(o.value)}
+                      onClick={() => { onChange([]); setOpen(false); }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-content-bg"
                     >
                       <span
-                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                          on ? 'border-primary bg-primary text-white' : 'border-card-border bg-card text-transparent'
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                          count === 0 ? 'border-primary bg-primary text-white' : 'border-card-border bg-card text-transparent'
                         }`}
                       >
                         <CheckIcon />
                       </span>
-                      <span className="cell-wrap flex-1 leading-5 text-text" title={o.label}>{o.label}</span>
+                      <span className="flex-1 leading-5 text-text">{allLabel}</span>
                     </button>
-                  );
-                })
+                  )}
+
+                  {sections.map((section) => (
+                    <div key={section.area ?? 'all'}>
+                      {section.area !== undefined && (
+                        <p className="sticky top-0 z-10 bg-content-bg px-3 py-1.5 text-2xs font-bold uppercase tracking-[1px] text-text-secondary">
+                          {areaLabel(section.area)}
+                        </p>
+                      )}
+                      {section.items.map((o) => {
+                        const on = selectedSet.has(o.value);
+                        return (
+                          <button
+                            key={o.value}
+                            type="button"
+                            onClick={() => toggle(o.value)}
+                            className="flex w-full items-start gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-content-bg"
+                          >
+                            <span
+                              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border ${single ? 'rounded-full' : 'rounded'} ${
+                                on ? 'border-primary bg-primary text-white' : 'border-card-border bg-card text-transparent'
+                              }`}
+                            >
+                              <CheckIcon />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="cell-wrap block leading-5 text-text" title={o.label}>{o.label}</span>
+                              {o.path && (
+                                <span className="cell-wrap block text-xs leading-4 text-text-muted" title={o.path}>
+                                  {o.path}
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </>
               )}
             </div>
 

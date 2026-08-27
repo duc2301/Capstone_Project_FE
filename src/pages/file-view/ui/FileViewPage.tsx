@@ -20,6 +20,19 @@ import { sortByNewest } from '@/shared/lib/sort';
 import { useUrlTab } from '@/shared/lib/url';
 import { ModelViewer } from '@/widgets/ModelViewer';
 
+// "Lịch sử phê duyệt" (/approvals) giờ chỉ trả về request actor tự gửi (Admin/PM xem hết) —
+// nên gộp thêm /approvals/pending (actor là signer/team leader được xem, không cần tự gửi)
+// để người được chỉ định ký vẫn thấy đúng approval đang chờ ký của file mình đang mở.
+async function fetchFileApprovals(fileId: string): Promise<ApprovalListItem[]> {
+  const [own, pending] = await Promise.all([
+    approvalApi.getApprovals().catch(() => []),
+    approvalApi.getPendingApprovals().catch(() => []),
+  ]);
+  const byId = new Map<string, ApprovalListItem>();
+  [...own, ...pending].forEach((item) => byId.set(item.id, item));
+  return [...byId.values()].filter((item) => item.fileItemId === fileId);
+}
+
 const POLL_INTERVAL_MS = 3000;
 const VERSION_PREVIEW_COUNT = 5;
 // Chữa cháy: lỡ không lấy được kích thước thật thì dùng tạm A4
@@ -195,10 +208,7 @@ export function FileViewPage() {
             .then((res) => res.data.result?.find((file) => file.id === fileId) ?? null)
             .catch(() => null)
           : Promise.resolve(null);
-        const fileApprovalsPromise = approvalApi
-          .getApprovals()
-          .then((items) => items.filter((item) => item.fileItemId === fileId))
-          .catch(() => []);
+        const fileApprovalsPromise = fetchFileApprovals(fileId).catch(() => []);
 
         const [viewResult, versionsResult, currentFileResult, fileApprovalsResult] = await Promise.all([
           fetchView(),
@@ -394,8 +404,7 @@ export function FileViewPage() {
 
   const refreshFileApprovals = useCallback(async () => {
     if (!fileId) return;
-    const items = await approvalApi.getApprovals();
-    setFileApprovals(items.filter((item) => item.fileItemId === fileId));
+    setFileApprovals(await fetchFileApprovals(fileId));
   }, [fileId]);
 
   const handleConfirmSignaturePlacement = useCallback(async (position: SignaturePlacementValue) => {

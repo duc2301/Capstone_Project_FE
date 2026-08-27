@@ -17,6 +17,7 @@ import type { FileListItem } from '@/entities/file-item';
 import { fileItemApi, FileItemStatus, FileReturnRequestStatus, is3DFile } from '@/entities/file-item';
 import { zoneTransferApi, zoneTransferErrorMessage } from '@/entities/zone-transfer';
 
+import { useApprovalRealtime } from '../model/useApprovalRealtime';
 import { useFolderActions } from '../model/useFolderActions';
 import { useFolderPermission } from '../model/useFolderPermission';
 import { useFolderFiles, useFolderFileNames } from '../model/useFolderFiles';
@@ -189,6 +190,9 @@ export function DocumentsTab({
     error: filesError,
     refetch: refetchFiles,
   } = useFolderFiles(selectedId);
+  useApprovalRealtime((approval) => {
+    if (approval.folderId === selectedId) void refetchFiles();
+  });
   const uploadFolderFiles = useFolderFileNames(uploadFolder?.id ?? null);
   const semanticSearch = useSemanticSearch(projectId);
 

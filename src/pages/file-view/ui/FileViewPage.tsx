@@ -8,7 +8,7 @@ import { fileItemApi, FileItemStatus, FileType, InlineFileView, ModelViewerStatu
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { FileActivitySection } from '@/features/audit-logs';
-import { FileVersionsModal, formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal, useFolderPermission } from '@/features/folders';
+import { findMySignerRecord, FileVersionsModal, formatSize, RelatedFilesPanel, SmartCaSignModal, useApprovalRealtime, useFolderPermission } from '@/features/folders';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
@@ -318,10 +318,15 @@ export function FileViewPage() {
       approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
     [signatureApprovals],
   );
-  const isSignerForCurrentApproval = Boolean(
-    signableApproval && isRequiredSigner(signableApproval.signers, currentUser?.accountId, projectGroups),
+  const mySignerRecordForCurrentApproval = signableApproval
+    ? findMySignerRecord(signableApproval.signers, currentUser?.accountId, projectGroups)
+    : undefined;
+  const isSignerForCurrentApproval = Boolean(mySignerRecordForCurrentApproval);
+  // Đã ký phần của mình rồi (đang chờ signer còn lại) thì không hiện lại nút ký nữa.
+  const hasAlreadySignedCurrentApproval = mySignerRecordForCurrentApproval?.status === 'Signed';
+  const canSignCurrentApproval = Boolean(
+    signableApproval && isVisualSignableFile && isSignerForCurrentApproval && !hasAlreadySignedCurrentApproval,
   );
-  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile && isSignerForCurrentApproval);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -406,6 +411,12 @@ export function FileViewPage() {
     if (!fileId) return;
     setFileApprovals(await fetchFileApprovals(fileId));
   }, [fileId]);
+
+  // Người khác duyệt/từ chối/ký ở nơi khác trong lúc mình đang mở file này -> tự cập nhật trạng thái
+  // (badge vùng, tab KÝ SỐ...) mà không cần reload trang.
+  useApprovalRealtime((approval) => {
+    if (approval.fileItemId === fileId) void refreshFileApprovals();
+  });
 
   const handleConfirmSignaturePlacement = useCallback(async (position: SignaturePlacementValue) => {
     if (!signableApproval) {

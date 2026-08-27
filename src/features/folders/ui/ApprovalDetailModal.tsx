@@ -8,6 +8,7 @@ import { FileTypeIcon } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner } from '../model/approvalFormat';
+import { useApprovalRealtime } from '../model/useApprovalRealtime';
 
 interface ApprovalDetailModalProps {
   approvalId: string;
@@ -51,6 +52,10 @@ export function ApprovalDetailModal({ approvalId, onClose, fallbackProjectId, cu
       cancelled = true;
     };
   }, [approvalId]);
+
+  useApprovalRealtime((updated) => {
+    if (updated.id === approvalId) setDetail(updated);
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">

@@ -8,6 +8,7 @@ import type { MyInvitation } from '@/entities/invitation';
 import { issueApi } from '@/entities/issue';
 import type { ProjectIssueListItem } from '@/entities/issue';
 import { useNotifications } from '@/entities/notification';
+import { useApprovalRealtime } from '@/features/folders';
 import { projectApi } from '@/entities/project';
 import type { Project } from '@/entities/project';
 import { useSession } from '@/entities/session';
@@ -228,6 +229,7 @@ export function useDashboard() {
     () => approvalApi.getPendingApprovals(),
     { fallback: EMPTY_APPROVALS, toErrorMessage: loadErrorMessage },
   );
+  useApprovalRealtime(() => void approvals.reload());
 
   const returnRequests = useAsyncData(
     'dashboard-return-requests',

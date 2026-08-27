@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { ApprovalListItem, ApprovalSigner } from '@/entities/approval';
-import { isTeamPermissionError } from '@/entities/approval';
+import { approvalApi, isTeamPermissionError } from '@/entities/approval';
 import type { Certificate, SignatureInfo, SignatureTransactionStatus, SignedFileInfo, TransactionStatusInfo } from '@/entities/smartca';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { t } from '@/shared/lib/i18n';
@@ -34,12 +34,6 @@ function statusLabel(status: SignatureTransactionStatus): string {
     default:
       return t('smartca.status.failed');
   }
-}
-
-function statusClassName(status: SignatureTransactionStatus): string {
-  if (status === 'Signed') return 'bg-success-light text-success';
-  if (status === 'Failed' || status === 'Expired') return 'bg-danger-light text-danger';
-  return 'bg-warning-light text-warning';
 }
 
 function isSignedFileGeneratedMessage(message?: string | null): boolean {
@@ -98,6 +92,11 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
   const finalizeSignedTransaction = async (statusInfo?: TransactionStatusInfo) => {
     if (generatingSignedPdfRef.current) return;
 
+    // BE xac nhan giao dich cua CHINH minh da Signed truoc khi goi ham nay (statusInfo tuoi, khong qua
+    // state stale) -> neu buoc hoan tat sau do loi (vd "Signature transaction not found" vi ho so can
+    // nhieu nguoi ky, chua du nguoi), do khong phai loi that cua minh, chi la dang cho nguoi khac.
+    const alreadySignedByMe = statusInfo?.status === 'Signed';
+
     generatingSignedPdfRef.current = true;
     setGeneratingSignedPdf(true);
     setError(null);
@@ -130,11 +129,14 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
       onSigned();
     } catch (err) {
       const message = smartcaErrorMessage(err, t('smartca.error.status'));
-      if (isWaitingForOtherSignersMessage(message)) {
+      if (isWaitingForOtherSignersMessage(message) || alreadySignedByMe) {
         // Ban than nguoi dung hien tai da ky xong roi - chi la ho so can nhieu nguoi ky, chua du nguoi.
         // Khong phai loi, hien banner thong tin thay vi banner do.
         setWaitingForOtherSigners(true);
         setTransactionStatus('Signed');
+        // "Danh sach nguoi ky" doc approval.signers - initialApproval co the la snapshot cu tu truoc luc
+        // vua ky (chua kip vá qua realtime), nen chu dong lay lai ban moi nhat thay vi cho realtime toi.
+        approvalApi.getApprovalDetail(approval.id).then(setApprovalPatch).catch(() => undefined);
       } else {
         setError(message);
       }
@@ -360,23 +362,10 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
                 )}
               </section>
 
-              {(transactionId || transactionStatus) && (
-                <div className="rounded-xl border border-card-border p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-text">{t('smartca.signModal.transactionStatus')}</p>
-                    {transactionStatus && (
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClassName(transactionStatus)}`}>
-                        {statusLabel(transactionStatus)}
-                      </span>
-                    )}
-                  </div>
-                  {transactionId && <p className="mt-2 break-all text-xs text-text-muted">{transactionId}</p>}
-                  {(polling || generatingSignedPdf) && (
-                    <p className="mt-2 text-sm text-warning">
-                      {generatingSignedPdf ? t('smartca.signModal.generatingSignedPdf') : t('smartca.signModal.waitingConfirm')}
-                    </p>
-                  )}
-                </div>
+              {(polling || generatingSignedPdf) && (
+                <p className="text-sm text-warning">
+                  {generatingSignedPdf ? t('smartca.signModal.generatingSignedPdf') : t('smartca.signModal.waitingConfirm')}
+                </p>
               )}
 
               {approval.currentZone === 'Shared' &&

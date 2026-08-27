@@ -13,15 +13,16 @@ export function formatDateTime(iso: string | null | undefined): string {
   });
 }
 
-/* Chỉ đúng người/nhóm được chỉ định (signerAccountId khớp, hoặc thành viên active của signerGroupId)
- * mới được thấy nút ký số — asign người nào thì chỉ người đó ký, kể cả Leader khác cũng không được. */
-export function isRequiredSigner(
+/* Dòng signer (trực tiếp theo tài khoản, hoặc theo nhóm mà accountId là thành viên active) khớp với
+ * accountId hiện tại — dùng để biết cả quyền được ký (isRequiredSigner) lẫn đã ký phần của mình chưa
+ * (status === 'Signed'), vì signer theo nhóm dùng chung 1 dòng trạng thái cho cả nhóm. */
+export function findMySignerRecord(
   signers: ApprovalSigner[],
   accountId: string | undefined,
   groups: Group[],
-): boolean {
-  if (!accountId) return false;
-  return signers.some((s) => {
+): ApprovalSigner | undefined {
+  if (!accountId) return undefined;
+  return signers.find((s) => {
     if (s.signerAccountId === accountId) return true;
     if (s.signerGroupId) {
       const group = groups.find((g) => g.id === s.signerGroupId);
@@ -29,6 +30,16 @@ export function isRequiredSigner(
     }
     return false;
   });
+}
+
+/* Chỉ đúng người/nhóm được chỉ định (signerAccountId khớp, hoặc thành viên active của signerGroupId)
+ * mới được thấy nút ký số — asign người nào thì chỉ người đó ký, kể cả Leader khác cũng không được. */
+export function isRequiredSigner(
+  signers: ApprovalSigner[],
+  accountId: string | undefined,
+  groups: Group[],
+): boolean {
+  return Boolean(findMySignerRecord(signers, accountId, groups));
 }
 
 /* "Người nhận" của 1 yêu cầu phê duyệt — ai đang cần xử lý tiếp theo:

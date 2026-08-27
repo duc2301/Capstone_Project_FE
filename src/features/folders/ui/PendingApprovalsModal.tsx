@@ -68,13 +68,13 @@ export function PendingApprovalsModal({
   projectGroups = [],
 }: PendingApprovalsModalProps) {
   const navigate = useNavigate();
-  const { items: allItems, loading, error, refetch } = usePendingApprovals();
+  const { items: allItems, loading, error, refetch } = usePendingApprovals(projectId);
   const {
     items: allReturnRequests,
     loading: returnLoading,
     error: returnError,
     refetch: refetchReturnRequests,
-  } = useZoneReturnRequests();
+  } = useZoneReturnRequests(projectId);
 
   /* Vai trò của chính mình vừa đổi -> làm mới ngay để ẩn/hiện đúng nút Ký/Duyệt. */
   useGroupMemberRoleRealtime(() => {

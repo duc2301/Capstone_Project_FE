@@ -10,8 +10,7 @@ import type { Organization } from '@/entities/organization';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { DocumentsTab } from '@/features/folders';
 import { ProjectIssuesTab } from '@/features/issues';
-import { ProjectLoiRuleSetPanel } from '@/features/loi-rules';
-import { FolderNamingInfoModal, NamingConventionSettings } from '@/features/naming-conventions';
+import { FolderNamingInfoModal } from '@/features/naming-conventions';
 import { useOrganizations } from '@/features/organizations';
 import { packageStatusMeta, PackageFormModal, usePackages } from '@/features/packages';
 import type { AddGroupInput } from '@/features/projects';
@@ -28,6 +27,7 @@ import {
   useProjectInvite,
 } from '@/features/projects';
 import { AuditLogPanel } from '@/features/audit-logs';
+import { ProjectSettingsHub } from '@/widgets/ProjectSettingsHub';
 import { getApiErrorMessage } from '@/shared/api';
 import { ActionIconButton, ConfirmDialog, DeleteIcon, EditIcon, Modal, RowActions, Toast, ToolbarIconButton, UserAvatar, useToast } from '@/shared/components';
 import { formatDate, formatRelativeTime } from '@/shared/lib/format';
@@ -328,15 +328,6 @@ export function ProjectDetailPage() {
   const openedGroup = useMemo(
     () => (openedGroupId ? groups.find((g) => g.id === openedGroupId) ?? null : null),
     [groups, openedGroupId],
-  );
-
-  const isLeaderOfOpenedGroup = Boolean(
-    openedGroup?.members.some(
-      (m) =>
-        m.accountId === currentUser?.accountId
-        && m.role === GroupMemberRole.Leader
-        && m.status === GroupMemberStatus.Active,
-    ),
   );
 
   const openGroup = useCallback((groupId: string | null) => {
@@ -690,10 +681,7 @@ export function ProjectDetailPage() {
                   onClick={() => setEditOpen(true)}
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-card-border/50 px-6 py-3 text-base font-medium text-text transition-colors hover:bg-content-bg"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
-                  </svg>
+                  <EditIcon size={14} />
                   {t('projectDetail.actions.edit')}
                 </button>
 
@@ -722,10 +710,11 @@ export function ProjectDetailPage() {
         <GroupDetailPanel
           projectId={projectId!}
           group={openedGroup}
+          projectGroups={groups}
           organizations={organizations}
           accounts={accounts}
           canManage={canViewAllTabs}
-          canChangeRole={canViewAllTabs || isLeaderOfOpenedGroup}
+          canChangeRole={canViewAllTabs}
           onBack={() => openGroup(null)}
           onUpdateGroup={handleUpdateGroup}
           onChangeRole={handleChangeRole}
@@ -850,10 +839,7 @@ export function ProjectDetailPage() {
 
       {/* ── Tab: Cài đặt (quy tắc đặt tên tệp) — Admin/PM full, Leader bản rút gọn ── */}
       {tab === 'settings' && (isAdmin || isManager || isProjectLeader) && (
-        <div className="space-y-10">
-          <NamingConventionSettings projectId={project.id} canConfigure={canViewAllTabs} />
-          {canViewAllTabs && <ProjectLoiRuleSetPanel projectId={project.id} canConfigure />}
-        </div>
+        <ProjectSettingsHub projectId={project.id} canConfigure={canViewAllTabs} />
       )}
 
       {/* ── Tab: Packages ───────────── */}

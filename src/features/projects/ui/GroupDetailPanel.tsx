@@ -26,6 +26,7 @@ const ROLE_FILTERS: { id: RoleFilter; key: 'projectDetail.teams.filter.all' | 'p
 interface Props {
   projectId: string;
   group: Group;
+  projectGroups: Group[];
   organizations: Organization[];
   accounts: Account[];
   canManage: boolean;
@@ -41,6 +42,7 @@ interface Props {
 export function GroupDetailPanel({
   projectId,
   group,
+  projectGroups,
   organizations,
   accounts,
   canManage,
@@ -86,6 +88,9 @@ export function GroupDetailPanel({
 
   const resetPage = () => setPage(1);
 
+  const showActionsColumn = canManage || canChangeRole;
+  const columnCount = showActionsColumn ? 4 : 3;
+
   const runMemberAction = async (accountId: string, action: () => Promise<void>) => {
     setBusyAccountId(accountId);
     try {
@@ -104,7 +109,8 @@ export function GroupDetailPanel({
         onClick={onBack}
         icon={
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
           </svg>
         }
       />
@@ -237,20 +243,22 @@ export function GroupDetailPanel({
               <col />
               <col className="w-[150px]" />
               <col className="w-[150px]" />
-              <col className="w-[130px]" />
+              {showActionsColumn && <col className="w-[130px]" />}
             </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="table-head bg-content-bg">
                 <th className="px-6 py-3.5">{t('projectDetail.teams.detail.col.member')}</th>
                 <th className="px-5 py-3.5">{t('projectDetail.teams.detail.col.role')}</th>
                 <th className="px-5 py-3.5">{t('projectDetail.teams.detail.col.joinedAt')}</th>
-                <th className="px-6 py-3.5 text-right">{t('common.col.actions')}</th>
+                {showActionsColumn && (
+                  <th className="px-6 py-3.5 text-right">{t('common.col.actions')}</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {pageItems.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center">
+                  <td colSpan={columnCount} className="px-6 py-12 text-center">
                     <p className="text-sm text-text-muted">
                       {query || roleFilter !== 'all'
                         ? t('projectDetail.teams.detail.noResults')
@@ -283,6 +291,7 @@ export function GroupDetailPanel({
                       <td className="px-5 py-3 text-sm text-text-secondary">
                         {member.joinedAt ? formatDate(member.joinedAt) : '—'}
                       </td>
+                      {showActionsColumn && (
                       <td className="px-6 py-3">
                         <RowActions>
                           {canChangeRole && (
@@ -324,6 +333,7 @@ export function GroupDetailPanel({
                           )}
                         </RowActions>
                       </td>
+                      )}
                     </tr>
                   );
                 })
@@ -372,6 +382,7 @@ export function GroupDetailPanel({
             projectId={projectId}
             accounts={accounts}
             groups={[group]}
+            projectGroups={projectGroups}
             loadingGroups={false}
             lockedGroupId={group.id}
             onSubmit={onInvite}

@@ -10,7 +10,7 @@ import { GroupMemberStatus } from '@/entities/group';
 import { GroupMemberRole } from '@/entities/invitation';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { buildDownloadName, downloadBlob } from '@/shared/lib/download';
-import { ConfirmDialog, PaginationBar, Toast, ToolbarIconButton, useToast } from '@/shared/components';
+import { ConfirmDialog, DeleteIcon, EditIcon, PaginationBar, Toast, ToolbarIconButton, useToast } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 import type { FileListItem } from '@/entities/file-item';
@@ -79,6 +79,25 @@ function subtreeIds(node: FolderTreeNode): string[] {
   return [node.id, ...node.children.flatMap(subtreeIds)];
 }
 
+function findSiblings(tree: FolderTreeNode[], nodeId: string): FolderTreeNode[] {
+  if (tree.some((n) => n.id === nodeId)) return tree;
+  for (const node of tree) {
+    const found = findSiblings(node.children, nodeId);
+    if (found.length > 0) return found;
+  }
+  return [];
+}
+
+function siblingsForAction(
+  action: FolderAction,
+  node: FolderTreeNode,
+  tree: FolderTreeNode[],
+): FolderTreeNode[] {
+  if (action === 'create') return node.children;
+  if (action === 'rename') return findSiblings(tree, node.id);
+  return [];
+}
+
 /* Tìm node theo id trong cây */
 function findNode(nodes: FolderTreeNode[], id: string | null): FolderTreeNode | null {
   if (!id) return null;
@@ -123,7 +142,7 @@ export function DocumentsTab({
   const [searchParams] = useSearchParams();
 
   const { tree, loading, error, refetch } = useFolderTree(projectId);
-  const { createSubFolder, renameFolder, moveFolder, deleteFolder } = useFolderActions();
+  const { createSubFolder, renameFolder, deleteFolder } = useFolderActions();
   const { currentUser } = useSession();
   const isAdmin = isAccountAdmin(currentUser?.role);
   const hasFullFolderAccess = isAdmin || isProjectManager;
@@ -223,16 +242,6 @@ export function DocumentsTab({
   const canCreateSubIn = (node: FolderTreeNode, canEdit: boolean) =>
     canEdit && node.area === CdeArea.Wip;
 
-  const handleNewFolderClick = () => {
-    if (!selected || !selectedPermission.canEdit) {
-      showToast(t('documents.selectFolderToCreate'), 'error');
-    } else if (selected.area !== CdeArea.Wip) {
-      showToast(t('documents.createWipOnly'), 'error');
-    } else {
-      setModal({ action: 'create', node: selected });
-    }
-  };
-
   // Mở modal upload cho 1 folder (chỉ ô con WIP/Shared có quyền ghi).
   // Chặn sớm cho khớp BE: chỉ WIP mới nhận file, trừ 2 thư mục hồ sơ hệ thống ở Published.
   const uploadBlockOf = (node: FolderTreeNode, canEdit: boolean): UploadBlock | null => {
@@ -295,7 +304,6 @@ export function DocumentsTab({
     try {
       if (action === 'create') await createSubFolder(node.id, value ?? '');
       else if (action === 'rename') await renameFolder(node.id, value ?? '');
-      else if (action === 'move') await moveFolder(node.id, value ?? '');
       else await deleteFolder(node.id);
 
       await refetch();
@@ -303,7 +311,6 @@ export function DocumentsTab({
       showToast(
         action === 'create' ? t('documents.toast.created')
         : action === 'rename' ? t('documents.toast.renamed')
-        : action === 'move' ? t('documents.toast.moved')
         : t('documents.toast.deleted'),
       );
       setModal(null);
@@ -428,60 +435,47 @@ export function DocumentsTab({
           {canOverseeProject && (
             <>
               <ToolbarIconButton
-                showLabel
                 label={t('projectDetail.nav.permissionMatrix')}
                 onClick={() => navigate(`/projects/${projectId}/permission-matrix`)}
                 icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
                   </svg>
                 }
               />
               <ToolbarIconButton
-                showLabel
                 label={t('approvals.pending.title')}
                 onClick={() => setPendingApprovalsOpen(true)}
                 icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+                    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
                   </svg>
                 }
               />
             </>
           )}
           <ToolbarIconButton
-            showLabel
             label={t('approvals.history.title')}
             onClick={() => setApprovalHistoryOpen(true)}
             icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="2" width="6" height="4" rx="1" />
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <path d="m9 14 2 2 4-4" />
               </svg>
             }
           />
           <ToolbarIconButton
-            showLabel
             label={t('documents.upload')}
             onClick={() => { if (selected) openUpload(selected); else showToast(t('documents.selectFolderToCreate'), 'error'); }}
             icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             }
           />
-          <button
-            type="button"
-            onClick={handleNewFolderClick}
-            className="flex items-center gap-2 rounded-[var(--radius-button)] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              <line x1="12" y1="11" x2="12" y2="17" />
-              <line x1="9" y1="14" x2="15" y2="14" />
-            </svg>
-            {t('documents.newFolder')}
-          </button>
         </div>
       </div>
 
@@ -559,10 +553,7 @@ export function DocumentsTab({
                             onClick={() => setModal({ action: 'rename', node: selected })}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-content-bg hover:text-primary"
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
+                            <EditIcon />
                           </button>
                           <button
                             type="button"
@@ -570,10 +561,7 @@ export function DocumentsTab({
                             onClick={() => setModal({ action: 'delete', node: selected })}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-danger-light hover:text-danger"
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
+                            <DeleteIcon />
                           </button>
                         </>
                       )}
@@ -630,7 +618,6 @@ export function DocumentsTab({
           onUpload={() => openUpload(menu.node)}
           onCreateSub={() => setModal({ action: 'create', node: menu.node })}
           onRename={() => setModal({ action: 'rename', node: menu.node })}
-          onMove={() => setModal({ action: 'move', node: menu.node })}
           onDelete={() => setModal({ action: 'delete', node: menu.node })}
           onPermission={() => setPermissionFor(menu.node)}
           canPermission={canShowPermissionMenu(menu.node.area)}
@@ -676,7 +663,7 @@ export function DocumentsTab({
         <FolderActionModal
           action={modal.action}
           node={modal.node}
-          tree={tree}
+          siblings={siblingsForAction(modal.action, modal.node, tree)}
           busy={busy}
           onClose={() => setModal(null)}
           onSubmit={handleSubmit}

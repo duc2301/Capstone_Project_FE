@@ -12,7 +12,6 @@ import {
   ProjectCard,
   useBepTask,
   useProjectList,
-  type ProjectStatusFilter,
 } from '@/features/projects';
 import { ListErrorCard, ListLoadingCard, Modal, PaginationBar, SearchField, Toast, useToast } from '@/shared/components';
 import { useAsyncData } from '@/shared/lib/async';
@@ -47,8 +46,6 @@ export function ProjectsPage() {
     error,
     search,
     setSearch,
-    status,
-    setStatus,
     ownerOrganizationId,
     setOwnerOrganizationId,
     setPage,
@@ -106,7 +103,7 @@ export function ProjectsPage() {
     window.location.href = `/projects/${projectId}`;
   };
 
-  const hasActiveFilters = Boolean(search.trim() || status || ownerOrganizationId);
+  const hasActiveFilters = Boolean(search.trim() || ownerOrganizationId);
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -133,42 +130,29 @@ export function ProjectsPage() {
       </div>
 
       {!error && (
-        <div className="flex shrink-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
           <SearchField
             value={search}
             onChange={setSearch}
             placeholder={t('projects.search')}
-            className="w-full lg:max-w-[420px]"
+            className="w-full sm:max-w-[420px]"
           />
 
-          <div className="flex shrink-0 flex-wrap items-center gap-3">
+          {isAdmin && (
             <select
-              className={SELECT_CLASS}
-              title={t('projects.col.status')}
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ProjectStatusFilter)}
+              className={`${SELECT_CLASS} w-full sm:w-auto sm:max-w-52`}
+              title={t('projects.filter.allOrgs')}
+              value={ownerOrganizationId}
+              onChange={(e) => setOwnerOrganizationId(e.target.value)}
             >
-              <option value="">{t('projects.filter.allStatus')}</option>
-              <option value="Active">{t('projects.status.active')}</option>
-              <option value="Completed">{t('projects.status.completed')}</option>
+              <option value="">{t('projects.filter.allOrgs')}</option>
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.displayName ?? org.legalName}
+                </option>
+              ))}
             </select>
-
-            {isAdmin && (
-              <select
-                className={`${SELECT_CLASS} max-w-52`}
-                title={t('projects.filter.allOrgs')}
-                value={ownerOrganizationId}
-                onChange={(e) => setOwnerOrganizationId(e.target.value)}
-              >
-                <option value="">{t('projects.filter.allOrgs')}</option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.displayName ?? org.legalName}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+          )}
         </div>
       )}
 

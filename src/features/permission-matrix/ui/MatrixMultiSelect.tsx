@@ -31,7 +31,7 @@ function CheckIcon() {
 }
 
 /* Bộ lọc đa chọn dạng dropdown checkbox. Đổi ô tick => onChange ngay. */
-export function MatrixMultiSelect({ label, options, selected, onChange, allLabel, title, mode = 'multi' }: MatrixMultiSelectProps) {
+export function MatrixMultiSelect({ label, options, selected, onChange, allLabel, title, mode = 'multi' }: Readonly<MatrixMultiSelectProps>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -83,6 +83,16 @@ export function MatrixMultiSelect({ label, options, selected, onChange, allLabel
 
   const clear = () => onChange([]);
 
+  const renderTriggerValue = () => {
+    if (count === 0) return <span className="whitespace-nowrap text-text-muted">{allLabel}</span>;
+    if (single) return <span className="max-w-40 truncate font-semibold">{selectedLabel}</span>;
+    return (
+      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white">
+        {count}
+      </span>
+    );
+  };
+
   return (
     <div className="relative">
       <button
@@ -96,15 +106,7 @@ export function MatrixMultiSelect({ label, options, selected, onChange, allLabel
         }`}
       >
         <span className="whitespace-nowrap">{label}</span>
-        {count === 0 ? (
-          <span className="whitespace-nowrap text-text-muted">{allLabel}</span>
-        ) : single ? (
-          <span className="max-w-40 truncate font-semibold">{selectedLabel}</span>
-        ) : (
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white">
-            {count}
-          </span>
-        )}
+        {renderTriggerValue()}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
           <polyline points="6 9 12 15 18 9" />
         </svg>

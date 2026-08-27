@@ -21,7 +21,7 @@ const STATUS_DOT: Record<SettingsEntryTone, string> = {
   missing: 'bg-warning',
 };
 
-export function SettingsEntryRow({ icon, title, detail, status, to }: SettingsEntryRowProps) {
+export function SettingsEntryRow({ icon, title, detail, status, to }: Readonly<SettingsEntryRowProps>) {
   return (
     <Link
       to={to}

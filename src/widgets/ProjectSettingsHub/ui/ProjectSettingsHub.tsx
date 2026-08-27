@@ -27,7 +27,7 @@ function LoiIcon() {
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
+function Stat({ value, label }: Readonly<{ value: number; label: string }>) {
   return (
     <span>
       <strong className="font-semibold text-text">{value}</strong> {label}
@@ -39,42 +39,42 @@ function Dot() {
   return <span className="h-1 w-1 shrink-0 rounded-full bg-card-border" />;
 }
 
-export function ProjectSettingsHub({ projectId, canConfigure }: ProjectSettingsHubProps) {
+export function ProjectSettingsHub({ projectId, canConfigure }: Readonly<ProjectSettingsHubProps>) {
   const { conventions, loading: namingLoading } = useNamingConventions(projectId);
   const { ruleSet, loading: loiLoading } = useProjectLoiRuleSet(projectId, canConfigure);
 
   const activeConventions = conventions.filter((c) => c.isActive).length;
   const assignedFolders = conventions.reduce((total, c) => total + c.assignedFolders.length, 0);
 
-  const namingDetail = namingLoading ? (
-    <span>{t('common.loading')}</span>
-  ) : conventions.length === 0 ? (
-    <span>{t('settingsHub.naming.empty')}</span>
-  ) : (
-    <>
-      <Stat value={conventions.length} label={t('settingsHub.naming.setCount')} />
-      <Dot />
-      <Stat value={activeConventions} label={t('settingsHub.naming.activeCount')} />
-      <Dot />
-      <Stat value={assignedFolders} label={t('settingsHub.naming.folderCount')} />
-    </>
-  );
+  const renderNamingDetail = () => {
+    if (namingLoading) return <span>{t('common.loading')}</span>;
+    if (conventions.length === 0) return <span>{t('settingsHub.naming.empty')}</span>;
+    return (
+      <>
+        <Stat value={conventions.length} label={t('settingsHub.naming.setCount')} />
+        <Dot />
+        <Stat value={activeConventions} label={t('settingsHub.naming.activeCount')} />
+        <Dot />
+        <Stat value={assignedFolders} label={t('settingsHub.naming.folderCount')} />
+      </>
+    );
+  };
 
-  const loiDetail = loiLoading ? (
-    <span>{t('common.loading')}</span>
-  ) : !ruleSet ? (
-    <span>{t('loiRule.project.hint')}</span>
-  ) : (
-    <>
-      <span className="font-semibold text-text">{ruleSet.name}</span>
-      <Dot />
-      <Stat value={ruleSet.componentCount} label={t('loiRule.ruleSet.statComponents')} />
-      <Dot />
-      <Stat value={ruleSet.requirementCount} label={t('loiRule.ruleSet.statRequirements')} />
-      <Dot />
-      <Stat value={ruleSet.parameterCount} label={t('loiRule.ruleSet.statParameters')} />
-    </>
-  );
+  const renderLoiDetail = () => {
+    if (loiLoading) return <span>{t('common.loading')}</span>;
+    if (!ruleSet) return <span>{t('loiRule.project.hint')}</span>;
+    return (
+      <>
+        <span className="font-semibold text-text">{ruleSet.name}</span>
+        <Dot />
+        <Stat value={ruleSet.componentCount} label={t('loiRule.ruleSet.statComponents')} />
+        <Dot />
+        <Stat value={ruleSet.requirementCount} label={t('loiRule.ruleSet.statRequirements')} />
+        <Dot />
+        <Stat value={ruleSet.parameterCount} label={t('loiRule.ruleSet.statParameters')} />
+      </>
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -85,7 +85,7 @@ export function ProjectSettingsHub({ projectId, canConfigure }: ProjectSettingsH
           icon={<NamingIcon />}
           title={t('naming.title')}
           to={`/projects/${projectId}/naming-conventions`}
-          detail={namingDetail}
+          detail={renderNamingDetail()}
           status={
             conventions.length > 0
               ? { label: t('settingsHub.status.configured'), tone: 'ready' }
@@ -98,7 +98,7 @@ export function ProjectSettingsHub({ projectId, canConfigure }: ProjectSettingsH
             icon={<LoiIcon />}
             title={t('loiRule.project.title')}
             to={`/projects/${projectId}/loi-rules`}
-            detail={loiDetail}
+            detail={renderLoiDetail()}
             status={
               ruleSet
                 ? { label: t('settingsHub.status.configured'), tone: 'ready' }

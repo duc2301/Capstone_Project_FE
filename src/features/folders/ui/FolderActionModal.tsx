@@ -24,7 +24,7 @@ const TITLE: Record<FolderAction, () => string> = {
   delete: () => t('documents.action.deleteTitle'),
 };
 
-export function FolderActionModal({ action, node, siblings, busy, onClose, onSubmit }: FolderActionModalProps) {
+export function FolderActionModal({ action, node, siblings, busy, onClose, onSubmit }: Readonly<FolderActionModalProps>) {
   const [name, setName] = useState(action === 'rename' ? node.name : '');
   const descendantCount = useMemo(
     () => (action === 'delete' ? countDescendants(node) : 0),

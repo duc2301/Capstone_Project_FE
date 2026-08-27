@@ -6,7 +6,7 @@ interface ConventionListProps {
   onOpen: (conventionId: string) => void;
 }
 
-export function ConventionList({ conventions, onOpen }: ConventionListProps) {
+export function ConventionList({ conventions, onOpen }: Readonly<ConventionListProps>) {
   if (conventions.length === 0) {
     return (
       <div className="rounded-[var(--radius-card-lg)] border border-dashed border-card-border bg-card/70 px-6 py-10 text-center shadow-card">

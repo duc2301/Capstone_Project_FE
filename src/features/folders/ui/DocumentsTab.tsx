@@ -315,7 +315,6 @@ export function DocumentsTab({
     !!selected
     && canStartApprovalFromArea(selected.area)
     && file.status !== FileItemStatus.PendingApproval
-    && file.status !== FileItemStatus.Rejected
     && file.returnRequestStatus !== FileReturnRequestStatus.Pending;
 
   const handleSubmitApproval = async (payload: SubmitApprovalPayload) => {

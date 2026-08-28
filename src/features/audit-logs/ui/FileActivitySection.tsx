@@ -3,17 +3,11 @@ import { useState } from 'react';
 import type { AuditLogItem } from '@/entities/audit-log';
 import { Modal } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
-import { actionBadge, detailTone, formatLogTime } from '../model/auditFormat';
+import { actionBadge, entityLabel, formatLogTime, splitDetail } from '../model/auditFormat';
 import { useAuditLogs } from '../model/useAuditLogs';
 import { AuditLogPanel } from './AuditLogPanel';
 
 const PREVIEW_COUNT = 5;
-
-const DETAIL_TONE_CLASS = {
-  danger: 'text-danger',
-  warning: 'text-warning',
-  normal: 'text-text',
-} as const;
 
 interface Props {
   fileItemId: string;
@@ -70,19 +64,32 @@ export function FileActivitySection({ fileItemId }: Props) {
 
 function ActivityRow({ log }: { log: AuditLogItem }) {
   const action = actionBadge(log.action);
+  const detail = splitDetail(log.detail ?? '');
 
   return (
     <div className="flex gap-3 rounded-[var(--radius-input)] px-2 py-2">
       <span className="mt-0.5 w-1 shrink-0 rounded-full bg-card-border" />
       <div className="min-w-0 flex-1">
+        {/* Chip giữ màu hành động; phần mô tả để màu chữ thường cho dễ đọc. */}
         <p className="flex flex-wrap items-center gap-1.5">
           <span className={`rounded-[var(--radius-badge)] px-2 py-0.5 text-2xs font-semibold ${action.className}`}>
             {action.label}
           </span>
-          <span className={`text-xs font-medium ${DETAIL_TONE_CLASS[detailTone(log.action)]}`}>
-            {log.detail ?? log.entityType}
+          <span className="text-xs font-medium text-text">
+            {log.detail ? detail.head : entityLabel(log.entityType)}
           </span>
         </p>
+
+        {detail.items.length > 0 && (
+          <ul className="mt-1 space-y-0.5">
+            {detail.items.map((item, i) => (
+              <li key={i} className="flex gap-1.5 text-xs text-text-secondary">
+                <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-text-muted" />
+                <span className="break-words">{item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="mt-0.5 text-xs text-text-muted">
           {formatLogTime(log.createdAt)}
           {log.actorName ? ` · ${log.actorName}` : ''}

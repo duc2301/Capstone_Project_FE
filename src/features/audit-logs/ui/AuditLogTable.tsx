@@ -1,12 +1,8 @@
 import type { AuditLogItem } from '@/entities/audit-log';
 import { t } from '@/shared/lib/i18n';
-import { actionBadge, detailTone, formatLogClock, formatLogDate, moduleLabel } from '../model/auditFormat';
-
-const DETAIL_TONE_CLASS = {
-  danger: 'font-semibold text-danger',
-  warning: 'font-semibold text-warning',
-  normal: 'font-medium text-text',
-} as const;
+import {
+  actionBadge, entityLabel, formatLogClock, formatLogDate, moduleLabel, rowAccentClass, splitDetail,
+} from '../model/auditFormat';
 
 interface Props {
   items: AuditLogItem[];
@@ -38,12 +34,13 @@ export function AuditLogTable({ items, loading }: Props) {
 
   return (
     <div className="admin-scrollbar min-h-0 flex-1 overflow-auto">
-      <table className="table-list min-w-[820px]">
+      {/* Cột Nội dung rộng hơn hẳn: log phân quyền giờ liệt kê từng bên/từng người kèm mức quyền. */}
+      <table className="table-list min-w-[960px]">
         <colgroup>
-          <col className="w-[140px]" />
-          <col className="w-[190px]" />
-          <col className="w-[150px]" />
-          <col className="w-[140px]" />
+          <col className="w-[132px]" />
+          <col className="w-[180px]" />
+          <col className="w-[146px]" />
+          <col className="w-[124px]" />
           <col />
         </colgroup>
         <thead className="sticky top-0 z-10">
@@ -59,8 +56,12 @@ export function AuditLogTable({ items, loading }: Props) {
           {items.map((log) => {
             const action = actionBadge(log.action);
             const initial = (log.actorName ?? '?').charAt(0).toUpperCase();
+            const detail = splitDetail(log.detail ?? '');
             return (
-              <tr key={log.id} className="border-b border-card-border last:border-b-0 transition-colors hover:bg-content-bg">
+              <tr
+                key={log.id}
+                className={`border-b border-card-border last:border-b-0 transition-colors hover:bg-content-bg ${rowAccentClass(log.action)}`}
+              >
                 {/* Thời gian: ngày trên, giờ dưới */}
                 <td className="whitespace-nowrap px-6 py-4 align-top">
                   <p className="text-sm font-semibold text-text">{formatLogDate(log.createdAt)}</p>
@@ -77,10 +78,10 @@ export function AuditLogTable({ items, loading }: Props) {
                   </div>
                 </td>
 
-                {/* Thao tác: pill + chấm màu cùng tông chữ */}
+                {/* Thao tác: chip màu — nơi DUY NHẤT mang màu ngữ nghĩa trên dòng */}
                 <td className="px-5 py-4 align-top">
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${action.className}`}>
-                    <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {action.label}
                   </span>
                 </td>
@@ -90,13 +91,25 @@ export function AuditLogTable({ items, loading }: Props) {
                   {moduleLabel(log)}
                 </td>
 
-                {/* Chi tiết: dòng chính + phụ */}
+                {/* Nội dung: luôn màu chữ trung tính để đọc được; danh sách phân quyền tách dòng */}
                 <td className="px-5 py-4 align-top">
-                  <p className={`cell-wrap text-sm ${DETAIL_TONE_CLASS[detailTone(log.action)]}`}>
-                    {log.detail ?? `${log.entityType} · ${log.entityId}`}
+                  <p className="cell-wrap text-sm font-medium text-text">
+                    {log.detail ? detail.head : `${entityLabel(log.entityType)} · ${log.entityId}`}
                   </p>
+
+                  {detail.items.length > 0 && (
+                    <ul className="mt-1.5 space-y-1">
+                      {detail.items.map((item, i) => (
+                        <li key={i} className="cell-wrap flex gap-1.5 text-sm text-text-secondary">
+                          <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-text-muted" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
                   {log.detail && log.entityType && (
-                    <p className="cell-wrap mt-0.5 text-xs text-text-muted">{log.entityType}</p>
+                    <p className="cell-wrap mt-1.5 text-xs text-text-muted">{entityLabel(log.entityType)}</p>
                   )}
                 </td>
               </tr>

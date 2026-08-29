@@ -38,7 +38,6 @@ export const folderApi = {
   createSubFolder: (payload: CreateSubFolderPayload) =>
     axiosInstance.post<ApiResponse<Folder>>("/folders", payload),
 
-  /** Cập nhật folder: đổi tên (name) hoặc di chuyển (parentFolderId). */
   update: (id: string, payload: UpdateFolderPayload) =>
     axiosInstance.put<ApiResponse<Folder>>(`/folders/${id}`, payload),
 
@@ -84,7 +83,27 @@ const FOLDER_PERMISSION_MESSAGES: Record<string, TranslationKey> = {
     "documents.error.noCreateSubFolderPermission",
 };
 
-const NOT_EMPTY_PATTERN = /Folder still contains (\d+) document/i;
+const NOT_EMPTY_PATTERN = /Folder still contains (\d+) document\(s\) in zone\(s\): ([^.]+)\./i;
+const DUPLICATE_NAME_PATTERN = /Folder name '(.+)' already exists in zone: (\w+)\./i;
+
+const ZONE_LABEL_KEYS: Record<string, TranslationKey> = {
+  wip: "documents.zone.wipShort",
+  shared: "documents.zone.sharedShort",
+  published: "documents.zone.publishedShort",
+  archived: "documents.zone.archivedShort",
+};
+
+function zoneLabels(rawZones: string): string {
+  return rawZones
+    .split(",")
+    .map((zone) => zone.trim())
+    .filter(Boolean)
+    .map((zone) => {
+      const key = ZONE_LABEL_KEYS[zone.toLowerCase()];
+      return key ? t(key) : zone;
+    })
+    .join(", ");
+}
 
 export function folderErrorMessage(err: unknown, fallback: string): string {
   const raw = getApiErrorMessage(err, "");
@@ -92,7 +111,16 @@ export function folderErrorMessage(err: unknown, fallback: string): string {
 
   const notEmpty = NOT_EMPTY_PATTERN.exec(raw);
   if (notEmpty) {
-    return t("documents.action.deleteHasDocuments").replace("{count}", notEmpty[1]);
+    return t("documents.action.deleteHasDocuments")
+      .replace("{count}", notEmpty[1])
+      .replace("{zones}", zoneLabels(notEmpty[2]));
+  }
+
+  const duplicate = DUPLICATE_NAME_PATTERN.exec(raw);
+  if (duplicate) {
+    return t("documents.action.duplicateName")
+      .replace("{name}", duplicate[1])
+      .replace("{zone}", zoneLabels(duplicate[2]));
   }
 
   const knownKey = Object.keys(FOLDER_PERMISSION_MESSAGES).find((m) => raw.includes(m));

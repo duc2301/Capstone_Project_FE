@@ -8,7 +8,7 @@ import { fileItemApi, FileItemStatus, FileType, InlineFileView, ModelViewerStatu
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { smartcaApi, smartcaErrorMessage } from '@/entities/smartca';
 import { FileActivitySection } from '@/features/audit-logs';
-import { FileVersionsModal, formatSize, isRequiredSigner, RelatedFilesPanel, SmartCaSignModal, useFolderPermission } from '@/features/folders';
+import { findMySignerRecord, FileVersionsModal, formatSize, RelatedFilesPanel, SmartCaSignModal, useApprovalRealtime, useFolderPermission } from '@/features/folders';
 import { IssuesPanel } from '@/features/issues';
 import { LoiCheckPanel } from '@/features/loi-check';
 import { useProjectGroups } from '@/features/projects';
@@ -19,6 +19,19 @@ import { t } from '@/shared/lib/i18n';
 import { sortByNewest } from '@/shared/lib/sort';
 import { useUrlTab } from '@/shared/lib/url';
 import { ModelViewer } from '@/widgets/ModelViewer';
+
+// "Lịch sử phê duyệt" (/approvals) giờ chỉ trả về request actor tự gửi (Admin/PM xem hết) —
+// nên gộp thêm /approvals/pending (actor là signer/team leader được xem, không cần tự gửi)
+// để người được chỉ định ký vẫn thấy đúng approval đang chờ ký của file mình đang mở.
+async function fetchFileApprovals(fileId: string): Promise<ApprovalListItem[]> {
+  const [own, pending] = await Promise.all([
+    approvalApi.getApprovals().catch(() => []),
+    approvalApi.getPendingApprovals().catch(() => []),
+  ]);
+  const byId = new Map<string, ApprovalListItem>();
+  [...own, ...pending].forEach((item) => byId.set(item.id, item));
+  return [...byId.values()].filter((item) => item.fileItemId === fileId);
+}
 
 const POLL_INTERVAL_MS = 3000;
 const VERSION_PREVIEW_COUNT = 5;
@@ -195,10 +208,7 @@ export function FileViewPage() {
             .then((res) => res.data.result?.find((file) => file.id === fileId) ?? null)
             .catch(() => null)
           : Promise.resolve(null);
-        const fileApprovalsPromise = approvalApi
-          .getApprovals()
-          .then((items) => items.filter((item) => item.fileItemId === fileId))
-          .catch(() => []);
+        const fileApprovalsPromise = fetchFileApprovals(fileId).catch(() => []);
 
         const [viewResult, versionsResult, currentFileResult, fileApprovalsResult] = await Promise.all([
           fetchView(),
@@ -308,10 +318,15 @@ export function FileViewPage() {
       approval.status === 'PendingApproval' && !approval.isSigned) ?? null,
     [signatureApprovals],
   );
-  const isSignerForCurrentApproval = Boolean(
-    signableApproval && isRequiredSigner(signableApproval.signers, currentUser?.accountId, projectGroups),
+  const mySignerRecordForCurrentApproval = signableApproval
+    ? findMySignerRecord(signableApproval.signers, currentUser?.accountId, projectGroups)
+    : undefined;
+  const isSignerForCurrentApproval = Boolean(mySignerRecordForCurrentApproval);
+  // Đã ký phần của mình rồi (đang chờ signer còn lại) thì không hiện lại nút ký nữa.
+  const hasAlreadySignedCurrentApproval = mySignerRecordForCurrentApproval?.status === 'Signed';
+  const canSignCurrentApproval = Boolean(
+    signableApproval && isVisualSignableFile && isSignerForCurrentApproval && !hasAlreadySignedCurrentApproval,
   );
-  const canSignCurrentApproval = Boolean(signableApproval && isVisualSignableFile && isSignerForCurrentApproval);
   const requiresSignature = Boolean(
     info?.requiresSignature ||
     fileListItem?.requiresSignature ||
@@ -394,9 +409,14 @@ export function FileViewPage() {
 
   const refreshFileApprovals = useCallback(async () => {
     if (!fileId) return;
-    const items = await approvalApi.getApprovals();
-    setFileApprovals(items.filter((item) => item.fileItemId === fileId));
+    setFileApprovals(await fetchFileApprovals(fileId));
   }, [fileId]);
+
+  // Người khác duyệt/từ chối/ký ở nơi khác trong lúc mình đang mở file này -> tự cập nhật trạng thái
+  // (badge vùng, tab KÝ SỐ...) mà không cần reload trang.
+  useApprovalRealtime((approval) => {
+    if (approval.fileItemId === fileId) void refreshFileApprovals();
+  });
 
   const handleConfirmSignaturePlacement = useCallback(async (position: SignaturePlacementValue) => {
     if (!signableApproval) {
@@ -958,8 +978,9 @@ function FilePropertiesPanel({
               label={t('documents.fileMenu.versions')}
               icon={
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="1 4 1 10 7 10" />
-                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                  <polyline points="2 17 12 22 22 17" />
+                  <polyline points="2 12 12 17 22 12" />
                 </svg>
               }
               onClick={onManageVersions}

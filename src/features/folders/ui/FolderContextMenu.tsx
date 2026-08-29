@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import type { FolderTreeNode } from '@/entities/folder';
 import { CdeArea } from '@/entities/folder';
+import { DeleteIcon, EditIcon } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 
 interface FolderContextMenuProps {
@@ -11,7 +12,6 @@ interface FolderContextMenuProps {
   onUpload: () => void;
   onCreateSub: () => void;
   onRename: () => void;
-  onMove: () => void;
   onDelete: () => void;
   onPermission: () => void;
   /** Được phép hiển thị mục "Phân quyền" — Leader ở Published/Archived và Member đều bị ẩn. */
@@ -30,7 +30,7 @@ interface Item {
 }
 
 export function FolderContextMenu({
-  node, x, y, onUpload, onCreateSub, onRename, onMove, onDelete, onPermission, canPermission, onPermissionUsers, onNaming, onClose,
+  node, x, y, onUpload, onCreateSub, onRename, onDelete, onPermission, canPermission, onPermissionUsers, onNaming, onClose,
 }: FolderContextMenuProps) {
   // Giữ menu trong viewport: đo kích thước thật rồi lật vào trong nếu tràn phải/dưới.
   const clampRef = useCallback((el: HTMLDivElement | null) => {
@@ -125,36 +125,14 @@ export function FolderContextMenu({
       key: 'rename',
       label: t('documents.menu.rename'),
       onClick: onRename,
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-      ),
-    });
-    items.push({
-      key: 'move',
-      label: t('documents.menu.move'),
-      onClick: onMove,
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="5 9 2 12 5 15" /><polyline points="9 5 12 2 15 5" />
-          <polyline points="15 19 12 22 9 19" /><polyline points="19 9 22 12 19 15" />
-          <line x1="2" y1="12" x2="22" y2="12" /><line x1="12" y1="2" x2="12" y2="22" />
-        </svg>
-      ),
+      icon: <EditIcon size={15} />,
     });
     items.push({
       key: 'delete',
       label: t('documents.menu.delete'),
       danger: true,
       onClick: onDelete,
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
-      ),
+      icon: <DeleteIcon size={15} />,
     });
   }
 

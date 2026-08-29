@@ -70,9 +70,10 @@ export const zoneTransferApi = {
     return unwrapResult(data);
   },
 
-  getPendingReturnRequests: async (): Promise<ZoneReturnRequestItem[]> => {
+  getPendingReturnRequests: async (projectId?: string): Promise<ZoneReturnRequestItem[]> => {
     const { data } = await axiosInstance.get<ApiResponse<RawZoneReturnRequestItem[]>>(
       '/zone-return-requests/pending',
+      { params: { projectId } },
     );
     return (unwrapResult(data) ?? []).map(mapReturnRequestItem);
   },

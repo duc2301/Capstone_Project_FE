@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import type { Account } from '@/entities/account';
 import type { Group } from '@/entities/group';
+import { GroupMemberStatus } from '@/entities/group';
 import { SearchField } from '@/shared/components';
 import { t } from '@/shared/lib/i18n';
 import type { InviteManyInput, InviteManyResult } from '../model/useProjectInvite';
@@ -11,6 +12,7 @@ interface Props {
   projectId: string;
   accounts: Account[];
   groups: Group[];
+  projectGroups?: Group[];
   loadingGroups: boolean;
   lockedGroupId?: string;
   onSubmit: (input: InviteManyInput) => Promise<InviteManyResult>;
@@ -21,7 +23,7 @@ const fieldClass =
 
 const NO_ORGANIZATION = '__none__';
 
-export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, lockedGroupId, onSubmit }: Props) {
+export function InviteMemberForm({ projectId, accounts, groups, projectGroups, loadingGroups, lockedGroupId, onSubmit }: Readonly<Props>) {
   const [pickedGroupId, setGroupId] = useState('');
   const groupId = lockedGroupId ?? pickedGroupId;
   const [query, setQuery] = useState('');
@@ -31,20 +33,18 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const selectedGroup = useMemo(
-    () => groups.find((g) => g.id === groupId),
-    [groups, groupId],
-  );
-
-  /* Tài khoản đã thuộc nhóm được chọn → không cho mời lại */
-  const existingIds = useMemo(
-    () => new Set((selectedGroup?.members ?? []).map((m) => m.accountId)),
-    [selectedGroup],
-  );
+  const assignedIds = useMemo(() => {
+    const scope = projectGroups ?? groups;
+    const ids = new Set<string>();
+    scope.forEach((g) => g.members
+      .filter((m) => m.status !== GroupMemberStatus.Left)
+      .forEach((m) => ids.add(m.accountId)));
+    return ids;
+  }, [projectGroups, groups]);
 
   const invitableAccounts = useMemo(
-    () => accounts.filter((a) => !existingIds.has(a.id)),
-    [accounts, existingIds],
+    () => accounts.filter((a) => !assignedIds.has(a.id)),
+    [accounts, assignedIds],
   );
 
   const organizationOptions = useMemo(() => {
@@ -97,6 +97,12 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
 
   const canSubmit = Boolean(groupId) && selectedIds.length > 0;
 
+  const emptyListMessage = (() => {
+    if (invitableAccounts.length === 0) return t('projects.invite.allAssigned');
+    if (filteredAccounts.length === 0) return t('projects.invite.noUsers');
+    return null;
+  })();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
@@ -135,7 +141,7 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-muted">
             <span>
-              <strong className="text-text-secondary">{existingIds.size}</strong> {t('projects.invite.inGroupSuffix')}
+              <strong className="text-text-secondary">{assignedIds.size}</strong> {t('projects.invite.assignedSuffix')}
             </span>
             <span className="h-1 w-1 rounded-full bg-card-border" />
             <span>
@@ -173,10 +179,8 @@ export function InviteMemberForm({ projectId, accounts, groups, loadingGroups, l
           </div>
 
           <div className="max-h-72 space-y-1 overflow-y-auto rounded-[var(--radius-input)] border border-card-border p-1.5">
-            {invitableAccounts.length === 0 ? (
-              <p className="px-3 py-8 text-center text-sm text-text-muted">{t('projects.invite.allInGroup')}</p>
-            ) : filteredAccounts.length === 0 ? (
-              <p className="px-3 py-8 text-center text-sm text-text-muted">{t('projects.invite.noUsers')}</p>
+            {emptyListMessage ? (
+              <p className="px-3 py-8 text-center text-sm text-text-muted">{emptyListMessage}</p>
             ) : (
               filteredAccounts.map((a) => {
                 const selected = selectedIds.includes(a.id);

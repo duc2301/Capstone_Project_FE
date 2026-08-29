@@ -12,6 +12,7 @@ export const SIGNALR_EVENTS = {
   issueCreated: 'IssueCreated',
   issueUpdated: 'IssueUpdated',
   discussionMessagePosted: 'DiscussionMessagePosted',
+  groupMemberRoleChanged: 'GroupMemberRoleChanged',
 } as const;
 export const SIGNALR_MARKUP_METHODS = {
   joinFile: 'JoinFile',

@@ -3,83 +3,58 @@ import { useMemo, useState } from 'react';
 import type { FolderTreeNode } from '@/entities/folder';
 import { t } from '@/shared/lib/i18n';
 
-export type FolderAction = 'create' | 'rename' | 'move' | 'delete';
+export type FolderAction = 'create' | 'rename' | 'delete';
 
 interface FolderActionModalProps {
   action: FolderAction;
   node: FolderTreeNode;
-  tree: FolderTreeNode[];
+  siblings: FolderTreeNode[];
   busy: boolean;
   onClose: () => void;
-  /** create/rename -> name; move -> targetFolderId; delete -> undefined */
   onSubmit: (value?: string) => void;
-}
-
-/* Làm phẳng cây thành danh sách (kèm nhãn có thụt lề theo độ sâu) */
-function flatten(nodes: FolderTreeNode[], depth = 0): { node: FolderTreeNode; depth: number }[] {
-  return nodes.flatMap((n) => [{ node: n, depth }, ...flatten(n.children, depth + 1)]);
 }
 
 function countDescendants(node: FolderTreeNode): number {
   return node.children.reduce((total, child) => total + 1 + countDescendants(child), 0);
 }
 
-/* Tập id của node + toàn bộ hậu duệ (không cho di chuyển vào chính mình/con cháu) */
-function collectSubtreeIds(node: FolderTreeNode): Set<string> {
-  const ids = new Set<string>();
-  const walk = (n: FolderTreeNode) => {
-    ids.add(n.id);
-    n.children.forEach(walk);
-  };
-  walk(node);
-  return ids;
-}
-
 const TITLE: Record<FolderAction, () => string> = {
   create: () => t('documents.action.createTitle'),
   rename: () => t('documents.action.renameTitle'),
-  move: () => t('documents.action.moveTitle'),
   delete: () => t('documents.action.deleteTitle'),
 };
 
-export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit }: FolderActionModalProps) {
+export function FolderActionModal({ action, node, siblings, busy, onClose, onSubmit }: Readonly<FolderActionModalProps>) {
   const [name, setName] = useState(action === 'rename' ? node.name : '');
-  const [targetId, setTargetId] = useState('');
   const descendantCount = useMemo(
     () => (action === 'delete' ? countDescendants(node) : 0),
     [action, node],
   );
 
-  // Đích di chuyển hợp lệ: cùng khu vực, có quyền Sửa, không phải node/hậu duệ, không phải cha hiện tại.
-  const moveTargets = useMemo(() => {
-    if (action !== 'move') return [];
-    const blocked = collectSubtreeIds(node);
-    return flatten(tree)
-      .filter(({ node: n }) =>
-        n.area === node.area &&
-        n.permission.canEdit &&
-        !blocked.has(n.id) &&
-        n.id !== node.parentFolderId,
-      );
-  }, [action, node, tree]);
+  const takenNames = useMemo(
+    () => siblings
+      .filter((sibling) => sibling.id !== node.id)
+      .map((sibling) => sibling.name.trim().toLowerCase()),
+    [siblings, node.id],
+  );
+
+  const trimmedName = name.trim();
+  const isDuplicate = trimmedName.length > 0 && takenNames.includes(trimmedName.toLowerCase());
 
   const canSubmit = (() => {
     if (busy) return false;
-    if (action === 'create' || action === 'rename') return name.trim().length > 0;
-    if (action === 'move') return targetId.length > 0;
-    return true; // delete
+    if (action === 'create' || action === 'rename') return trimmedName.length > 0 && !isDuplicate;
+    return true;
   })();
 
   const handleSubmit = () => {
-    if (action === 'create' || action === 'rename') onSubmit(name.trim());
-    else if (action === 'move') onSubmit(targetId);
+    if (action === 'create' || action === 'rename') onSubmit(trimmedName);
     else onSubmit();
   };
 
   const submitLabel =
     action === 'create' ? t('documents.action.create')
     : action === 'rename' ? t('documents.action.save')
-    : action === 'move' ? t('documents.action.confirmMove')
     : t('documents.action.confirmDelete');
 
   return (
@@ -112,30 +87,14 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
                 onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit(); }}
                 placeholder={t('documents.action.namePlaceholder')}
                 className="field-input"
+                aria-invalid={isDuplicate}
               />
+              {isDuplicate && (
+                <span className="text-xs font-medium text-danger">
+                  {t('documents.action.duplicateNameInline')}
+                </span>
+              )}
             </label>
-          )}
-
-          {action === 'move' && (
-            moveTargets.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-card-border bg-input-bg/40 p-4 text-center text-sm text-text-muted">
-                {t('documents.action.moveEmpty')}
-              </p>
-            ) : (
-              <label className="flex flex-col gap-1.5">
-                <span className="field-label">{t('documents.action.moveLabel')}</span>
-                <select
-                  value={targetId}
-                  onChange={(e) => setTargetId(e.target.value)}
-                  className="field-select"
-                >
-                  <option value="">—</option>
-                  {moveTargets.map(({ node: n, depth }) => (
-                    <option key={n.id} value={n.id}>{' '.repeat(depth * 2) + n.name}</option>
-                  ))}
-                </select>
-              </label>
-            )
           )}
 
           {action === 'delete' && (
@@ -148,6 +107,7 @@ export function FolderActionModal({ action, node, tree, busy, onClose, onSubmit 
                   {t('documents.action.deleteSubFolders').replace('{count}', String(descendantCount))}
                 </p>
               )}
+              <p className="text-sm text-text-secondary">{t('documents.action.deleteAllZones')}</p>
               <p className="text-sm text-danger">{t('documents.action.deleteWarning')}</p>
             </div>
           )}

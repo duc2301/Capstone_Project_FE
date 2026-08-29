@@ -11,6 +11,7 @@ import { ActionPillButton, ConfirmDialog, ListTable, PaginationBar, RowActions, 
 import { t } from '@/shared/lib/i18n';
 
 import { approvalStatusBadge, formatDateTime, isRequiredSigner, recipientNames } from '../model/approvalFormat';
+import { useGroupMemberRoleRealtime } from '../model/useGroupMemberRoleRealtime';
 import { usePendingApprovals } from '../model/usePendingApprovals';
 import { useZoneReturnRequests } from '../model/useZoneReturnRequests';
 import { zoneLabel } from '../model/zoneTransferFormat';
@@ -27,19 +28,19 @@ const RETURN_REQUEST_COLUMNS: ListTableColumn[] = [
   { key: 'file', label: t('returnRequests.page.colFile'), width: 'w-[24%]' },
   { key: 'zone', label: t('returnRequests.page.colZone'), width: 'w-[110px]' },
   { key: 'requestedBy', label: t('returnRequests.page.colRequestedBy'), width: 'w-[140px]' },
-  { key: 'reason', label: t('returnRequests.page.colReason') },
+  { key: 'reason', label: t('returnRequests.page.colReason'), width: 'w-[280px]' },
   { key: 'date', label: t('returnRequests.page.colDate'), width: 'w-[140px]' },
   { key: 'actions', label: t('common.col.actions'), width: 'w-[180px]', align: 'right' },
 ];
 
 const APPROVAL_COLUMNS: ListTableColumn[] = [
   { key: 'name', label: t('approvals.pending.colName') },
-  { key: 'sender', label: t('approvals.pending.colSender'), width: 'w-[140px]' },
-  { key: 'recipient', label: t('approvals.pending.colRecipient'), width: 'w-[140px]' },
-  { key: 'date', label: t('approvals.pending.colDate'), width: 'w-[140px]' },
-  { key: 'status', label: t('approvals.pending.colStatus'), width: 'w-[120px]' },
-  { key: 'signature', label: t('approvals.pending.colSignature'), width: 'w-[120px]' },
-  { key: 'actions', label: t('common.col.actions'), width: 'w-[330px]', align: 'right' },
+  { key: 'sender', label: t('approvals.pending.colSender'), width: 'w-[110px]' },
+  { key: 'recipient', label: t('approvals.pending.colRecipient'), width: 'w-[110px]' },
+  { key: 'date', label: t('approvals.pending.colDate'), width: 'w-[120px]' },
+  { key: 'status', label: t('approvals.pending.colStatus'), width: 'w-[100px]' },
+  { key: 'signature', label: t('approvals.pending.colSignature'), width: 'w-[100px]' },
+  { key: 'actions', label: t('common.col.actions'), width: 'w-[190px]', align: 'right' },
 ];
 
 interface PendingApprovalsModalProps {
@@ -67,13 +68,19 @@ export function PendingApprovalsModal({
   projectGroups = [],
 }: PendingApprovalsModalProps) {
   const navigate = useNavigate();
-  const { items: allItems, loading, error, refetch } = usePendingApprovals();
+  const { items: allItems, loading, error, refetch } = usePendingApprovals(projectId);
   const {
     items: allReturnRequests,
     loading: returnLoading,
     error: returnError,
     refetch: refetchReturnRequests,
-  } = useZoneReturnRequests();
+  } = useZoneReturnRequests(projectId);
+
+  /* Vai trò của chính mình vừa đổi -> làm mới ngay để ẩn/hiện đúng nút Ký/Duyệt. */
+  useGroupMemberRoleRealtime(() => {
+    void refetch();
+    void refetchReturnRequests();
+  });
 
   const items = allItems;
   /* Duyệt/Từ chối được: phải nằm trong pendingApproverAccountIds (Team Leader ACTIVE của đúng nhóm
@@ -93,11 +100,9 @@ export function PendingApprovalsModal({
   const needsMyApprovalItems = items.filter(
     (it) => canActOnItem(it) || isRequiredSigner(it.signers, currentAccountId, projectGroups),
   );
-  const myOwnItems = items.filter((it) => it.requestedByAccountId === currentAccountId);
 
   const returnRequests = allReturnRequests;
   const [needsApprovalPage, setNeedsApprovalPage] = useState(1);
-  const [myRequestsPage, setMyRequestsPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<ApprovalListItem | null>(null);
   const [rejectFor, setRejectFor] = useState<ApprovalListItem | null>(null);
@@ -185,7 +190,7 @@ export function PendingApprovalsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[88vh] w-full max-w-6xl flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[1400px] flex-col animate-scale-in rounded-[var(--radius-card-lg)] bg-card shadow-modal">
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
           <h2 className="heading-entity">{t('approvals.pending.title')}</h2>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-content-bg hover:text-text">
@@ -222,25 +227,8 @@ export function PendingApprovalsModal({
                 />
               )}
 
-              {myOwnItems.length > 0 && (
-                <ApprovalItemsTable
-                  title={t('approvals.pending.myRequests')}
-                  items={myOwnItems}
-                  page={myRequestsPage}
-                  onPageChange={setMyRequestsPage}
-                  currentAccountId={currentAccountId}
-                  projectGroups={projectGroups}
-                  actionBusyId={actionBusyId}
-                  onDetail={setDetailId}
-                  onSignNow={handleSignNow}
-                  onApprove={setConfirmApprove}
-                  onReject={setRejectFor}
-                  hideDecisionActions
-                />
-              )}
-
               {returnRequests.length > 0 && (
-                <section className="space-y-3">
+                <section className="space-y-4">
                   <h3 className="heading-label">{t('returnRequests.page.title')}</h3>
                   <div className="overflow-x-auto">
                     <ListTable
@@ -255,15 +243,15 @@ export function PendingApprovalsModal({
                           const busy = returnBusyId === request.id;
                           return (
                             <tr key={request.id} className="border-b border-card-border/60">
-                              <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{request.fileName}</td>
-                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{zoneLabel(request.currentZone)}</td>
-                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{request.requestedByName}</td>
-                              <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{request.reason}</td>
-                              <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(request.createdAt)}</td>
+                              <td className="cell-wrap py-4 pr-3 align-top font-medium text-text">{request.fileName}</td>
+                              <td className="cell-wrap px-3 py-4 align-top text-text-secondary">{zoneLabel(request.currentZone)}</td>
+                              <td className="cell-wrap px-3 py-4 align-top text-text-secondary">{request.requestedByName}</td>
+                              <td className="cell-wrap px-3 py-4 align-top text-text-secondary">{request.reason}</td>
+                              <td className="px-3 py-4 align-top text-text-secondary">{formatDateTime(request.createdAt)}</td>
                               {/* /return-requests/pending chỉ trả về khi actor đúng là Leader của nhóm
                                   phụ trách file này (403 nếu không phải leader ở đâu cả) — có mặt trong
                                   danh sách nghĩa là chắc chắn được thao tác, không cần kiểm tra thêm. */}
-                              <td className="whitespace-nowrap px-3 py-3 text-right">
+                              <td className="whitespace-nowrap px-3 py-4 text-right align-top">
                                 <RowActions columns={2}>
                                   <ActionPillButton
                                     tone="success"
@@ -365,7 +353,6 @@ function ApprovalItemsTable({
   onSignNow,
   onApprove,
   onReject,
-  hideDecisionActions = false,
 }: {
   title: string;
   items: ApprovalListItem[];
@@ -378,9 +365,6 @@ function ApprovalItemsTable({
   onSignNow: (item: ApprovalListItem) => void;
   onApprove: (item: ApprovalListItem) => void;
   onReject: (item: ApprovalListItem) => void;
-  /* Ẩn nút Duyệt/Từ chối — dùng cho khối "Các phê duyệt đã gửi" để Leader tự gửi đơn của mình
-   * không thấy nút Duyệt lặp lại ở đây, chỉ thao tác thống nhất từ khối "Quản lý phê duyệt". */
-  hideDecisionActions?: boolean;
 }) {
   const total = allItems.length;
   const pageCount = Math.max(1, Math.ceil(total / PENDING_TABLE_PAGE_SIZE));
@@ -388,12 +372,12 @@ function ApprovalItemsTable({
   const items = allItems.slice((safePage - 1) * PENDING_TABLE_PAGE_SIZE, safePage * PENDING_TABLE_PAGE_SIZE);
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
       <h3 className="heading-label">{title}</h3>
       <div className="overflow-x-auto">
         <ListTable
           columns={APPROVAL_COLUMNS}
-          minWidth="min-w-[1080px]"
+          minWidth="min-w-[820px]"
           dense
           stickyHead={false}
           filledHead={false}
@@ -407,29 +391,28 @@ function ApprovalItemsTable({
               const canOpenSmartCa = canSignWithSmartCa && !it.isSigned && isSignerForItem;
               const approvalLockedBySignature = canSignWithSmartCa && !it.isSigned;
               const isTeamLeaderForItem =
-                !hideDecisionActions
-                && !(it.requiresSignature && !it.isSigned)
+                !(it.requiresSignature && !it.isSigned)
                 && Boolean(currentAccountId && it.pendingApproverAccountIds?.includes(currentAccountId));
               /* Từ chối: ngoài Team Leader, người/nhóm được asign ký cũng được từ chối thẳng nếu
                * không đồng ý ký (khớp RequireCanDecideAsync(..., allowRequiredSigner: true) ở BE) —
                * chỉ riêng Duyệt vẫn dành riêng cho Team Leader. */
-              const canRejectItem = isTeamLeaderForItem || (!hideDecisionActions && canSignWithSmartCa && isSignerForItem);
+              const canRejectItem = isTeamLeaderForItem || (canSignWithSmartCa && isSignerForItem);
               return (
                 <tr key={it.id} className="border-b border-card-border/60">
-                  <td className="cell-wrap py-3 pr-3 align-top font-medium text-text">{it.fileName}</td>
-                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{it.requestedByName}</td>
-                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">{recipientNames(it)}</td>
-                  <td className="px-3 py-3 align-top text-text-secondary">{formatDateTime(it.createdAt)}</td>
-                  <td className="px-3 py-3 align-top">
+                  <td className="cell-wrap py-4 pr-3 align-top font-medium text-text">{it.fileName}</td>
+                  <td className="cell-wrap px-3 py-4 align-top text-text-secondary">{it.requestedByName}</td>
+                  <td className="cell-wrap px-3 py-4 align-top text-text-secondary">{recipientNames(it)}</td>
+                  <td className="px-3 py-4 align-top text-text-secondary">{formatDateTime(it.createdAt)}</td>
+                  <td className="px-3 py-4 align-top">
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
                   </td>
-                  <td className="cell-wrap px-3 py-3 align-top text-text-secondary">
+                  <td className="cell-wrap px-3 py-4 align-top text-text-secondary">
                     {canSignWithSmartCa
                       ? (it.isSigned ? t('smartca.status.signed') : t('smartca.signature.required'))
                       : t('approvals.detail.no')}
                   </td>
-                  <td className="px-3 py-3 text-right align-top">
-                    <RowActions columns={4}>
+                  <td className="px-3 py-4 text-right align-top">
+                    <RowActions columns={2}>
                       <ActionPillButton onClick={() => onDetail(it.id)}>
                         {t('approvals.action.detail')}
                       </ActionPillButton>

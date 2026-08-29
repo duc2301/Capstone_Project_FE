@@ -364,7 +364,7 @@ function GeneralTab({ organization, orgTypeName }: { organization: Organization,
               <p className="mt-1 text-sm text-text font-medium">{organization.phone || '---'}</p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-text-placeholder">EMAIL</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-text-placeholder">{t('orgDetail.contact.email')}</p>
               <p className="mt-1 text-sm text-text font-medium">{organization.email || '---'}</p>
             </div>
           </div>

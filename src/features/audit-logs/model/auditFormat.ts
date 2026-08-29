@@ -3,11 +3,24 @@ import { AuditAction, LogScope } from '@/entities/audit-log';
 import { t } from '@/shared/lib/i18n';
 import type { TranslationKey } from '@/shared/lib/i18n';
 
+/* Màu CHỈ dùng cho chip hành động — phần nội dung luôn giữ màu chữ trung tính.
+ * Trước đây cả chip lẫn nội dung cùng tô một màu nên nhìn vào chỉ thấy "cả dòng đỏ",
+ * không tách được đâu là hành động, đâu là dữ liệu. Thêm viền để 4 mức phân biệt được
+ * cả khi in đen trắng hoặc với người khó phân biệt màu. */
 const SEVERITY_CLASS = {
-  critical: 'bg-danger-light text-danger',
-  lifecycle: 'bg-warning-light text-warning',
-  routine: 'bg-info-light text-info',
-  readonly: 'bg-content-bg text-text-muted',
+  critical: 'bg-danger-light text-danger ring-1 ring-inset ring-danger/25',
+  lifecycle: 'bg-warning-light text-warning ring-1 ring-inset ring-warning/30',
+  routine: 'bg-info-light text-info ring-1 ring-inset ring-info/25',
+  readonly: 'bg-content-bg text-text-muted ring-1 ring-inset ring-card-border',
+} as const;
+
+/* Vạch màu đầu dòng: giữ khả năng quét nhanh các thao tác nhạy cảm mà không phải
+ * tô màu chữ nội dung. */
+const ROW_ACCENT_CLASS = {
+  critical: 'border-l-2 border-l-danger',
+  lifecycle: 'border-l-2 border-l-warning',
+  routine: 'border-l-2 border-l-transparent',
+  readonly: 'border-l-2 border-l-transparent',
 } as const;
 
 type ActionSeverity = keyof typeof SEVERITY_CLASS;
@@ -46,11 +59,51 @@ export function actionBadge(action: number) {
     : { label: String(action), className: SEVERITY_CLASS.readonly };
 }
 
-export function detailTone(action: number): 'danger' | 'warning' | 'normal' {
-  const severity = ACTION_META[action]?.severity;
-  if (severity === 'critical') return 'danger';
-  if (severity === 'lifecycle') return 'warning';
-  return 'normal';
+export function rowAccentClass(action: number): string {
+  const severity = ACTION_META[action]?.severity ?? 'readonly';
+  return ROW_ACCENT_CLASS[severity];
+}
+
+/* BE ghi log phân quyền dạng "Tiêu đề: A → mức; B → mức".
+ * Tách tiêu đề và các mục để bảng xuống dòng từng mục, thay vì một câu dài khó dò.
+ * Không khớp mẫu (log thường) thì trả nguyên câu — mọi log cũ vẫn hiển thị như trước. */
+export function splitDetail(detail: string): { head: string; items: string[] } {
+  const arrow = detail.indexOf(' → ');
+  if (arrow < 0) return { head: detail, items: [] };
+
+  // Lấy dấu ':' cuối cùng TRƯỚC mũi tên đầu tiên -> tên tệp/thư mục có chứa ':' vẫn tách đúng.
+  const sep = detail.lastIndexOf(': ', arrow);
+  if (sep < 0) return { head: detail, items: [] };
+
+  const items = detail.slice(sep + 2).split('; ').map((s) => s.trim()).filter(Boolean);
+  return items.length > 1 ? { head: detail.slice(0, sep), items } : { head: detail, items: [] };
+}
+
+const ENTITY_LABEL: Record<string, TranslationKey> = {
+  fileitem: 'audit.entity.fileItem',
+  folder: 'audit.entity.folder',
+  approvalrequest: 'audit.entity.approvalRequest',
+  zonereturnrequest: 'audit.entity.zoneReturnRequest',
+  project: 'audit.entity.project',
+  account: 'audit.entity.account',
+  group: 'audit.entity.group',
+  groupmember: 'audit.entity.groupMember',
+  projectparticipant: 'audit.entity.projectParticipant',
+  projectinvitation: 'audit.entity.projectInvitation',
+  issue: 'audit.entity.issue',
+  discussion: 'audit.entity.discussion',
+  markupset: 'audit.entity.markupSet',
+  namingconvention: 'audit.entity.namingConvention',
+  contract: 'audit.entity.contract',
+  contractpackage: 'audit.entity.contractPackage',
+  organization: 'audit.entity.organization',
+};
+
+/* Tên loại đối tượng bằng tiếng Việt; entity lạ thì giữ nguyên chuỗi BE trả về. */
+export function entityLabel(entityType: string | null): string {
+  if (!entityType) return '';
+  const key = ENTITY_LABEL[entityType.toLowerCase()];
+  return key ? t(key) : entityType;
 }
 
 const SCOPE_META: Record<number, { key: TranslationKey; className: string }> = {

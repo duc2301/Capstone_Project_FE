@@ -185,6 +185,8 @@ const TEAM_PERMISSION_MESSAGES: Record<string, TranslationKey> = {
   'Only the Team Leader can approve or reject this file.': 'approvals.error.leaderOnlyApprove',
   'Only the Team Leader can perform this action.': 'approvals.error.leaderOnlyAction',
   'Signer must be an active Team Leader of a group in this project.': 'approvals.error.signerMustBeLeader',
+  'File still has unresolved issues. Please resolve all issues before approving or signing.':
+    'approvals.error.unresolvedIssues',
 };
 
 /* Phát hiện các lỗi "thiếu quyền theo nhóm/vai trò" ở trên để FE hiện cảnh báo rõ ràng

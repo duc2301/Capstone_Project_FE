@@ -493,6 +493,7 @@ export const translations = {
   'approvals.error.leaderOnlyApprove': 'Chỉ Leader của nhóm phụ trách mới được phê duyệt/từ chối tài liệu này. Hãy nhờ quản trị dự án đổi vai trò Leader ở tab "Nhóm".',
   'approvals.error.leaderOnlyAction': 'Bạn chưa được phân quyền để thực hiện thao tác này trên tài liệu này.',
   'approvals.error.signerMustBeLeader': 'Người ký được chọn phải là Leader active của 1 nhóm trong dự án. Vui lòng chọn lại người ký hoặc nhờ quản trị dự án đổi vai trò Leader ở tab "Nhóm".',
+  'approvals.error.unresolvedIssues': 'File còn vấn đề (issue) chưa được đánh dấu đã giải quyết. Vui lòng giải quyết hết trước khi duyệt hoặc ký số.',
   'approvals.error.needSmartCa': 'Tài liệu này cần ký số VNPT SmartCA thành công trước khi phê duyệt.',
   'approvals.error.needSignedPdf': 'Tài liệu cần tạo PDF đã ký trước khi phê duyệt.',
   'smartca.error.noApproveGroup': 'Thư mục này chưa được cấp quyền Duyệt (CanApprove) cho nhóm nào cả. Hãy nhờ quản trị dự án vào "Phân quyền" cấu hình quyền Duyệt cho đúng nhóm phụ trách trước khi thao tác.',
@@ -1385,6 +1386,13 @@ export const translations = {
 
   // Yêu cầu trả tài liệu về WIP
   'returnRequests.error': 'Không tải được danh sách yêu cầu trả về WIP.',
+  'returnRequests.error.reasonRequired': 'Vui lòng nhập lý do.',
+  'returnRequests.error.fileInWip': 'File đang ở WIP, không thể tạo yêu cầu trả về WIP.',
+  'returnRequests.error.pendingApproval': 'File đang chờ phê duyệt, không thể tạo yêu cầu trả về WIP. Vui lòng từ chối yêu cầu phê duyệt đang chờ trước.',
+  'returnRequests.error.alreadyPending': 'File đã có 1 yêu cầu trả về WIP đang chờ xử lý.',
+  'returnRequests.error.leaderOnly': 'Chỉ Team Leader đang hoạt động mới được xem/duyệt yêu cầu trả về WIP.',
+  'returnRequests.error.zoneChanged': 'File không còn ở vùng lúc gửi yêu cầu — có thể đã được xử lý ở nơi khác.',
+  'returnRequests.error.rejectReasonRequired': 'Vui lòng nhập lý do từ chối.',
   'returnRequests.status.pending': 'Đang chờ',
   'returnRequests.modal.title': 'Yêu cầu trả tài liệu về WIP',
   'returnRequests.modal.currentZone': 'Vùng hiện tại',

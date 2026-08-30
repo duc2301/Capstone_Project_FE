@@ -2,6 +2,16 @@ import { isAxiosError } from 'axios';
 
 import type { ApiResponse } from './apiResponse.types';
 
+/** Mã HTTP của lỗi (nếu là lỗi axios có response). Dùng để phân nhánh theo 403/404… */
+export function getApiErrorStatus(error: unknown): number | undefined {
+  return isAxiosError(error) ? error.response?.status : undefined;
+}
+
+/** BE trả 403 khi người gọi không được phép thao tác (vd không phải nhóm sở hữu khi phân quyền). */
+export function isForbiddenError(error: unknown): boolean {
+  return getApiErrorStatus(error) === 403;
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError(error)) {
     const data = error.response?.data as Partial<ApiResponse> | undefined;

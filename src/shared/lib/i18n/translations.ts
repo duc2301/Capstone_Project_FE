@@ -1292,6 +1292,8 @@ export const translations = {
   'folderPermission.moveLeft': 'Chuyển về "Nhóm hữu dụng"',
   'folderPermission.grantAll': 'Cấp quyền "{permission}" cho tất cả nhóm đang hiển thị',
   'folderPermission.revokeAll': 'Bỏ quyền "{permission}" của tất cả nhóm đang hiển thị',
+  // BE trả 403: chỉ nhóm sở hữu thư mục/tệp (hoặc Admin/PM) mới được phân quyền tại đây.
+  'permission.assign.forbidden': 'Chỉ nhóm sở hữu thư mục/tệp (hoặc quản trị viên / PM) mới được phân quyền tại đây.',
 
   // Modal phân quyền nhóm trên tệp (dùng chung layout với phân quyền thư mục)
   'filePermission.title': 'Phân quyền truy cập tệp',

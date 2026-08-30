@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { getApiErrorMessage } from '@/shared/api';
+import { getApiErrorMessage, isForbiddenError } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
 import { t } from '@/shared/lib/i18n';
 
@@ -139,7 +139,12 @@ function PermissionUserEditor({
       // Tải lại user-ui để bảng phản ánh đúng mức quyền sau khi lưu.
       onReload();
     } catch (err) {
-      setSaveError(getApiErrorMessage(err, t('userPermission.saveError')));
+      // 403 khi lưu = không phải nhóm sở hữu -> giữ modal mở, hiện thông báo phân quyền.
+      setSaveError(
+        isForbiddenError(err)
+          ? t('permission.assign.forbidden')
+          : getApiErrorMessage(err, t('userPermission.saveError')),
+      );
       setSaving(false);
     }
   };
@@ -241,7 +246,13 @@ export function PermissionUsersModal({
   const { data, loading, error, reload } = useAsyncData(
     resourceId,
     () => load(resourceId),
-    { fallback: EMPTY_PERMISSION_USER_UI, toErrorMessage: () => t('folderPermission.error') },
+    {
+      fallback: EMPTY_PERMISSION_USER_UI,
+      // 403 = không phải nhóm sở hữu (và không phải Admin/PM) -> vẫn mở modal nhưng hiện
+      // thông báo phân quyền thay vì lỗi tải chung; vỏ modal chỉ render lỗi + nút Đóng.
+      toErrorMessage: (err) =>
+        isForbiddenError(err) ? t('permission.assign.forbidden') : t('folderPermission.error'),
+    },
   );
 
   const editorKey = data.members.map((m) => `${m.accountId}:${m.overrideLevel}`).join('|');

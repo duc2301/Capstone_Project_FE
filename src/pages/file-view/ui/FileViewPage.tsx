@@ -348,6 +348,10 @@ export function FileViewPage() {
       showToast(t('fileView.signatureHistory.noPendingSignature'), 'error');
       return;
     }
+    if (fileListItem?.hasOpenIssue) {
+      showToast(t('approvals.error.unresolvedIssues'), 'error');
+      return;
+    }
 
     try {
       const pageInfo = await smartcaApi.getPdfPageInfo(signableApproval.fileItemId, 1);
@@ -365,7 +369,7 @@ export function FileViewPage() {
 
     setActivePanelTab('signatureHistory');
     setSignaturePlacementMode(true);
-  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast, setActivePanelTab]);
+  }, [requiresSignature, signableApproval, isVisualSignableFile, signaturePlacementConfirmed, showToast, setActivePanelTab, fileListItem]);
 
   // Đổi trang thì nhớ check lại kích thước trang mới để không bị lọt chữ ký ra ngoài
   const handleSignaturePageChange = useCallback(async (nextPage: number) => {

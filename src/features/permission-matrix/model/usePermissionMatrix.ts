@@ -12,7 +12,7 @@ import type {
   PermissionMatrixResponse,
 } from '@/entities/permission-matrix';
 import { MatrixTargetType, PermissionLevel as Level, permissionMatrixApi } from '@/entities/permission-matrix';
-import { getApiErrorMessage } from '@/shared/api';
+import { getApiErrorMessage, isForbiddenError } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 import { areaAllowsWrite, cellKey, cellSelectValue } from './permissionMatrixFormat';
 
@@ -342,7 +342,12 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
       });
       return { ok: true, message: res.message || t('matrix.toast.saved') };
     } catch (err) {
-      return { ok: false, message: getApiErrorMessage(err, t('common.error')) };
+      // 403 = có ô nhắm tới folder/file người gọi không được phân quyền (không phải nhóm
+      // sở hữu, không phải Admin/PM) -> dùng chung thông báo với các modal phân quyền.
+      const message = isForbiddenError(err)
+        ? t('permission.assign.forbidden')
+        : getApiErrorMessage(err, t('common.error'));
+      return { ok: false, message };
     } finally {
       setSaving(false);
     }

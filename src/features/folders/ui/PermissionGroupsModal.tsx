@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { isForbiddenError } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
 import type {
@@ -236,8 +237,9 @@ function PermissionEditor({ resourceId, data, canAssignEdit, save, onClose, onSa
       );
       setAvailable((prev) => prev.map((it) => ({ ...it, ...EMPTY_FLAGS, wasSelected: false })));
       onSaved?.();
-    } catch {
-      setSaveError(t('folderPermission.saveError'));
+    } catch (err) {
+      // 403 khi lưu = không phải nhóm sở hữu -> giữ modal mở, hiện thông báo phân quyền.
+      setSaveError(isForbiddenError(err) ? t('permission.assign.forbidden') : t('folderPermission.saveError'));
     } finally {
       setSaving(false);
     }

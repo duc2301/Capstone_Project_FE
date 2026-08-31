@@ -8,7 +8,6 @@ export function toFolderTreeNode(dto: FolderTreeNodeDto): FolderTreeNode {
     name: dto.name,
     area: dto.area,
     ownerOrganizationId: null,
-    ownerGroupId: null,
     hasWarning: dto.hasWarning ?? false,
     permission: {
       folderId: dto.id,

@@ -1,4 +1,9 @@
 export type { ApiResponse } from './apiResponse.types';
 export { default as axiosInstance } from './axiosInstance';
-export { getApiErrorMessage, getBlobApiErrorMessage } from './getApiErrorMessage';
+export {
+  getApiErrorMessage,
+  getApiErrorStatus,
+  getBlobApiErrorMessage,
+  isForbiddenError,
+} from './getApiErrorMessage';
 

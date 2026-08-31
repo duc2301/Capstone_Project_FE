@@ -241,6 +241,8 @@ const TEAM_LEADER_MESSAGES: Record<string, TranslationKey> = {
   'No group has been granted approve permission on this folder yet. Please ask the project Admin to configure it.':
     'smartca.error.noApproveGroup',
   'Only the Team Leader can perform this action.': 'approvals.error.leaderOnlyAction',
+  'File still has unresolved issues. Please resolve all issues before approving or signing.':
+    'approvals.error.unresolvedIssues',
 };
 
 function translateTeamLeaderMessage(message: string): string {

@@ -1,5 +1,7 @@
 import type { ApiResponse } from '@/shared/api';
 import { axiosInstance, getApiErrorMessage } from '@/shared/api';
+import type { TranslationKey } from '@/shared/lib/i18n';
+import { t } from '@/shared/lib/i18n';
 
 import type { ZoneName, ZoneReturnRequestItem, ZoneReturnRequestStatus } from '../model/zoneTransfer.types';
 
@@ -94,6 +96,21 @@ export const zoneTransferApi = {
   },
 };
 
+/* BE trả nguyên văn tiếng Anh cho các lỗi trả-về-WIP — map sang thông báo tiếng Việt thân thiện. */
+const RETURN_REQUEST_MESSAGES: Record<string, TranslationKey> = {
+  'Reason is required.': 'returnRequests.error.reasonRequired',
+  'File in WIP cannot create return request.': 'returnRequests.error.fileInWip',
+  'File is pending approval and cannot create return request.': 'returnRequests.error.pendingApproval',
+  'File already has a pending return request.': 'returnRequests.error.alreadyPending',
+  'Only active Team Leader can view pending return requests.': 'returnRequests.error.leaderOnly',
+  'File is no longer in the requested source zone.': 'returnRequests.error.zoneChanged',
+  'Reject reason is required.': 'returnRequests.error.rejectReasonRequired',
+};
+
 export function zoneTransferErrorMessage(err: unknown, fallback: string): string {
-  return getApiErrorMessage(err, fallback);
+  const apiMessage = getApiErrorMessage(err, '');
+  if (!apiMessage) return fallback;
+
+  const messageKey = Object.keys(RETURN_REQUEST_MESSAGES).find((m) => apiMessage.includes(m));
+  return messageKey ? t(RETURN_REQUEST_MESSAGES[messageKey]) : apiMessage;
 }

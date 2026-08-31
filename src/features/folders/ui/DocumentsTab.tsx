@@ -515,7 +515,10 @@ export function DocumentsTab({
                     </span>
                     <h3 className="heading-entity truncate">{selected.name}</h3>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      {PERMISSION_FLAGS.filter((f) => selectedPermission[f.key]).map((f) => (
+                      {PERMISSION_FLAGS.filter((f) => selectedPermission[f.key])
+                        // Ngoài WIP (Shared/Published/Archived) chỉ được xem — ẩn nhãn "Sửa".
+                        .filter((f) => f.key !== 'canEdit' || selected.area === CdeArea.Wip)
+                        .map((f) => (
                         <span
                           key={f.key}
                           title={t('documents.yourPermission')}

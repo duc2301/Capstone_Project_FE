@@ -7,6 +7,7 @@ export interface Certificate {
   validFrom: string | null;
   validTo: string | null;
   status: string | null;
+  nameMismatchesAccount: boolean;
 }
 
 export interface SignRequestResult {

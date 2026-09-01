@@ -23,6 +23,7 @@ interface RawCertificate {
   validFrom?: string | null;
   validTo?: string | null;
   status?: string | null;
+  nameMismatchesAccount?: boolean;
 }
 
 interface RawSignRequestResult {
@@ -86,6 +87,7 @@ function mapCertificate(item: RawCertificate): Certificate {
     validFrom: item.validFrom ?? null,
     validTo: item.validTo ?? null,
     status: item.status ?? null,
+    nameMismatchesAccount: item.nameMismatchesAccount ?? false,
   };
 }
 

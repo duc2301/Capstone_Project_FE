@@ -4,7 +4,6 @@ export { useLoiParameters } from './model/useLoiParameters';
 export { useLoiRuleImport } from './model/useLoiRuleImport';
 export { useProjectLoiAliases } from './model/useProjectLoiAliases';
 export { useProjectLoiRuleSet } from './model/useProjectLoiRuleSet';
-export { ProjectLoiRuleSetPanel } from './ui/ProjectLoiRuleSetPanel';
 export { LoiAliasesTab } from './ui/LoiAliasesTab';
 export { LoiComponentsTab } from './ui/LoiComponentsTab';
 export { LoiImportModal } from './ui/LoiImportModal';

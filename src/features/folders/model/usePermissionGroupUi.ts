@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { isForbiddenError } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 
 import type { PermissionGroupUiData, PermissionGroupsLoader } from './permissionGroups.types';
@@ -28,8 +29,13 @@ export function usePermissionGroupUi(
       .then((result) => {
         if (!cancelled) setData(result);
       })
-      .catch(() => {
-        if (!cancelled) setError(t('folderPermission.error'));
+      .catch((err) => {
+        // 403 = không phải nhóm sở hữu (và không phải Admin/PM) -> vẫn mở modal nhưng
+        // hiện thông báo rõ nghĩa thay vì lỗi tải chung. Không có form/nút Lưu (vỏ modal
+        // chỉ render trạng thái lỗi + nút Đóng khi chưa sẵn sàng).
+        if (!cancelled) {
+          setError(isForbiddenError(err) ? t('permission.assign.forbidden') : t('folderPermission.error'));
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

@@ -35,6 +35,7 @@ const MyIssuesPage = lazy(() => import('@/pages/issues').then((m) => ({ default:
 const ContractPackagesPage = lazy(() => import('@/pages/contract-packages').then((m) => ({ default: m.ContractPackagesPage })));
 const AuditLogsPage = lazy(() => import('@/pages/audit-logs').then((m) => ({ default: m.AuditLogsPage })));
 const LoiRulesPage = lazy(() => import('@/pages/loi-rules').then((m) => ({ default: m.LoiRulesPage })));
+const NamingConventionsPage = lazy(() => import('@/pages/naming-conventions').then((m) => ({ default: m.NamingConventionsPage })));
 
 function FullPageFallback() {
   return (
@@ -152,6 +153,26 @@ export const AppRoutes = () => {
             <RequireAuth>
               <AdminLayout>
                 <LoiRulesPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:projectId/naming-conventions"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <NamingConventionsPage />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:projectId/naming-conventions/:conventionId"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <NamingConventionsPage />
               </AdminLayout>
             </RequireAuth>
           }

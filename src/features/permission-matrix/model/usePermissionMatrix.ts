@@ -12,7 +12,7 @@ import type {
   PermissionMatrixResponse,
 } from '@/entities/permission-matrix';
 import { MatrixTargetType, PermissionLevel as Level, permissionMatrixApi } from '@/entities/permission-matrix';
-import { getApiErrorMessage } from '@/shared/api';
+import { getApiErrorMessage, isForbiddenError } from '@/shared/api';
 import { t } from '@/shared/lib/i18n';
 import { areaAllowsWrite, cellKey, cellSelectValue } from './permissionMatrixFormat';
 
@@ -25,6 +25,40 @@ export interface SaveOutcome {
 export interface MatrixFilterOption {
   value: string;
   label: string;
+  area?: MatrixArea;
+  path?: string;
+}
+
+function buildFolderPath(row: MatrixRow, byId: Map<string, MatrixRow>): string {
+  const parts: string[] = [];
+  let cur = row.parentRowId ? byId.get(row.parentRowId) : undefined;
+  while (cur && !cur.isRootArea) {
+    parts.unshift(cur.name);
+    cur = cur.parentRowId ? byId.get(cur.parentRowId) : undefined;
+  }
+  return parts.join(' / ');
+}
+
+function participantIdsOfGroups(
+  columns: PermissionMatrixResponse['columns'],
+  groupIds: string[] | undefined,
+): Set<string> {
+  const wanted = new Set(groupIds ?? []);
+  return new Set(
+    columns.filter((c) => wanted.has(c.groupId)).map((c) => c.projectParticipantId),
+  );
+}
+
+function folderMatchesFilter(
+  row: MatrixRow,
+  area: MatrixArea | undefined,
+  participantIds: Set<string>,
+): boolean {
+  if (area !== undefined && row.area !== area) return false;
+  if (participantIds.size === 0) return true;
+  return row.cells.some(
+    (c) => participantIds.has(c.projectParticipantId) && c.level !== Level.NoAccess,
+  );
 }
 
 const EMPTY_FILTER: MatrixFilter = {};
@@ -202,9 +236,25 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
     applyOutcome(outcome, isFilterEmpty(filter));
   }, [projectId, filter, applyOutcome]);
 
-  const setFilter = useCallback((next: MatrixFilter) => {
-    setFilterState(next);
-  }, []);
+  const setFilter = useCallback(
+    (next: MatrixFilter) => {
+      const chosen = next.folderIds ?? [];
+      if (chosen.length === 0 || !baseData) {
+        setFilterState(next);
+        return;
+      }
+
+      const byId = new Map(baseData.rows.map((r) => [r.targetId, r]));
+      const participantIds = participantIdsOfGroups(baseData.columns, next.groupIds);
+      const kept = chosen.filter((id) => {
+        const row = byId.get(id);
+        return row ? folderMatchesFilter(row, next.area, participantIds) : false;
+      });
+
+      setFilterState(kept.length === chosen.length ? next : { ...next, folderIds: kept });
+    },
+    [baseData],
+  );
 
   const clearFilters = useCallback(() => {
     setFilterState(EMPTY_FILTER);
@@ -216,13 +266,26 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
     () => (baseData?.columns ?? []).map((c) => ({ value: c.groupId, label: c.groupName })),
     [baseData],
   );
-  const folderOptions = useMemo<MatrixFilterOption[]>(
-    () =>
-      (baseData?.rows ?? [])
-        .filter((r) => r.targetType === MatrixTargetType.Folder && !r.isRootArea)
-        .map((r) => ({ value: r.targetId, label: r.name })),
-    [baseData],
-  );
+  const folderOptions = useMemo<MatrixFilterOption[]>(() => {
+    const rows = baseData?.rows ?? [];
+    const byId = new Map(rows.map((r) => [r.targetId, r]));
+    const participantIds = participantIdsOfGroups(baseData?.columns ?? [], filter.groupIds);
+
+    return rows
+      .filter((r) => r.targetType === MatrixTargetType.Folder && !r.isRootArea)
+      .filter((r) => folderMatchesFilter(r, filter.area, participantIds))
+      .map((r) => ({
+        value: r.targetId,
+        label: r.name,
+        area: r.area,
+        path: buildFolderPath(r, byId),
+      }))
+      .sort((a, b) =>
+        a.area !== b.area
+          ? a.area - b.area
+          : (a.path || '').localeCompare(b.path || '', 'vi') || a.label.localeCompare(b.label, 'vi'),
+      );
+  }, [baseData, filter.area, filter.groupIds]);
 
   const valueOf = useCallback(
     (row: MatrixRow, cell: MatrixCell): PermissionLevel => {
@@ -279,7 +342,12 @@ export function usePermissionMatrix(projectId: string | undefined): UsePermissio
       });
       return { ok: true, message: res.message || t('matrix.toast.saved') };
     } catch (err) {
-      return { ok: false, message: getApiErrorMessage(err, t('common.error')) };
+      // 403 = có ô nhắm tới folder/file người gọi không được phân quyền (không phải nhóm
+      // sở hữu, không phải Admin/PM) -> dùng chung thông báo với các modal phân quyền.
+      const message = isForbiddenError(err)
+        ? t('permission.assign.forbidden')
+        : getApiErrorMessage(err, t('common.error'));
+      return { ok: false, message };
     } finally {
       setSaving(false);
     }

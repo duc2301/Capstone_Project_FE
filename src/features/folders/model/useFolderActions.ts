@@ -15,12 +15,7 @@ export function useFolderActions() {
     [],
   );
 
-  const moveFolder = useCallback(
-    (id: string, parentFolderId: string) => folderApi.update(id, { parentFolderId }),
-    [],
-  );
-
   const deleteFolder = useCallback((id: string) => folderApi.remove(id), []);
 
-  return { createSubFolder, renameFolder, moveFolder, deleteFolder };
+  return { createSubFolder, renameFolder, deleteFolder };
 }

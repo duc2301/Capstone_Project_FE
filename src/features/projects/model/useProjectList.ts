@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import type { Project, ProjectListQuery, ProjectStatusName } from '@/entities/project';
-import { PROJECT_STATUS_NAMES, projectApi } from '@/entities/project';
+import type { Project, ProjectListQuery } from '@/entities/project';
+import { projectApi } from '@/entities/project';
 import { isAccountAdmin, useSession } from '@/entities/session';
 import { getApiErrorMessage } from '@/shared/api';
 import { useAsyncData } from '@/shared/lib/async';
@@ -12,15 +12,6 @@ const PAGE_SIZE = 6;
 const SEARCH_DEBOUNCE_MS = 300;
 
 /** '' = mọi trạng thái (không gửi param). */
-export type ProjectStatusFilter = '' | ProjectStatusName;
-
-function toStatusFilter(rawStatus: string | null): ProjectStatusFilter {
-  const allowedNames: readonly string[] = PROJECT_STATUS_NAMES;
-  return rawStatus && allowedNames.includes(rawStatus)
-    ? (rawStatus as ProjectStatusName)
-    : '';
-}
-
 interface ProjectPageData {
   items: Project[];
   totalCount: number;
@@ -49,8 +40,6 @@ export interface UseProjectListReturn {
   /** Giá trị ô tìm kiếm (cập nhật tức thì; đẩy vào URL sau debounce). */
   search: string;
   setSearch: (value: string) => void;
-  status: ProjectStatusFilter;
-  setStatus: (value: ProjectStatusFilter) => void;
   ownerOrganizationId: string;
   setOwnerOrganizationId: (value: string) => void;
   setPage: (page: number) => void;
@@ -71,7 +60,6 @@ export function useProjectList(): UseProjectListReturn {
   // URL là nguồn sự thật cho việc fetch.
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const search = searchParams.get('q') ?? '';
-  const status = toStatusFilter(searchParams.get('status'));
   const ownerOrganizationId = searchParams.get('org') ?? '';
 
   const updateParams = useCallback(
@@ -95,15 +83,6 @@ export function useProjectList(): UseProjectListReturn {
         if (nextPage <= 1) p.delete('page');
         else p.set('page', String(nextPage));
       }, false),
-    [updateParams],
-  );
-
-  const setStatus = useCallback(
-    (value: ProjectStatusFilter) =>
-      updateParams((p) => {
-        if (value) p.set('status', value);
-        else p.delete('status');
-      }),
     [updateParams],
   );
 
@@ -144,7 +123,6 @@ export function useProjectList(): UseProjectListReturn {
       page,
       pageSize: PAGE_SIZE,
       search: search || undefined,
-      status: status || undefined,
       ownerOrganizationId: ownerOrganizationId || undefined,
     };
 
@@ -163,9 +141,9 @@ export function useProjectList(): UseProjectListReturn {
       hasNextPage: result?.hasNextPage ?? false,
       hasPreviousPage: result?.hasPreviousPage ?? false,
     };
-  }, [isAdmin, page, search, status, ownerOrganizationId]);
+  }, [isAdmin, page, search, ownerOrganizationId]);
 
-  const cacheKey = `projects:${isAdmin ? 'all' : 'mine'}|${page}|${search}|${status}|${ownerOrganizationId}`;
+  const cacheKey = `projects:${isAdmin ? 'all' : 'mine'}|${page}|${search}|${ownerOrganizationId}`;
 
   const { data, loading, refreshing, error, reload } = useAsyncData(cacheKey, fetchPage, {
     fallback: EMPTY_PAGE,
@@ -189,8 +167,6 @@ export function useProjectList(): UseProjectListReturn {
     error,
     search: searchInput,
     setSearch: setSearchInput,
-    status,
-    setStatus,
     ownerOrganizationId,
     setOwnerOrganizationId,
     setPage,

@@ -107,7 +107,6 @@ export interface FolderTreeNode {
   name: string;
   area: CdeArea;
   ownerOrganizationId: string | null;
-  ownerGroupId: string | null;
   hasWarning: boolean;
   permission: EffectivePermission;
   children: FolderTreeNode[];
@@ -121,7 +120,6 @@ export interface Folder {
   name: string;
   area: CdeArea;
   ownerOrganizationId: string | null;
-  ownerGroupId: string | null;
   isTemplate: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -221,7 +219,5 @@ export interface CreateSubFolderPayload {
 
 /* PUT /folders/{id} — partial (chỉ field gửi mới đè) */
 export interface UpdateFolderPayload {
-  name?: string;
-  parentFolderId?: string;
-  area?: CdeArea;
+  name: string;
 }

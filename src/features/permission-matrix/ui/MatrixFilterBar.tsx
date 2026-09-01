@@ -15,8 +15,6 @@ interface MatrixFilterBarProps {
   onClear: () => void;
 }
 
-const AREA_SELECT_ID = 'permission-matrix-area';
-
 function ClearIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -36,26 +34,16 @@ export function MatrixFilterBar({
 }: MatrixFilterBarProps) {
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-      <div className="flex items-center gap-2">
-        <label htmlFor={AREA_SELECT_ID} className="text-sm font-medium text-text-secondary">
-          {t('matrix.filter.area')}
-        </label>
-        <select
-          id={AREA_SELECT_ID}
-          className="field-select w-auto border-card-border bg-card shadow-card"
-          value={filter.area ?? ''}
-          onChange={(e) =>
-            onChange({ ...filter, area: e.target.value === '' ? undefined : (Number(e.target.value) as MatrixArea) })
-          }
-        >
-          <option value="">{t('matrix.filter.allAreas')}</option>
-          {AREA_OPTIONS.map((a) => (
-            <option key={a} value={a}>
-              {areaLabel(a)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <MatrixMultiSelect
+        mode="single"
+        label={t('matrix.filter.area')}
+        allLabel={t('matrix.filter.allAreas')}
+        options={AREA_OPTIONS.map((a) => ({ value: String(a), label: areaLabel(a) }))}
+        selected={filter.area === undefined ? [] : [String(filter.area)]}
+        onChange={(values) =>
+          onChange({ ...filter, area: values.length === 0 ? undefined : (Number(values[0]) as MatrixArea) })
+        }
+      />
 
       <MatrixMultiSelect
         label={t('matrix.filter.group')}

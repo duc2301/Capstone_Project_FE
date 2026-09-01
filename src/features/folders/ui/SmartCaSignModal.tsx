@@ -36,6 +36,24 @@ function statusLabel(status: SignatureTransactionStatus): string {
   }
 }
 
+function certificateStatusLabel(status: string | null | undefined): string {
+  switch ((status ?? '').trim().toUpperCase()) {
+    case 'VALID':
+    case 'ACTIVE':
+      return t('smartca.certStatus.valid');
+    case 'REVOKED':
+      return t('smartca.certStatus.revoked');
+    case 'EXPIRED':
+      return t('smartca.certStatus.expired');
+    case 'SUSPENDED':
+      return t('smartca.certStatus.suspended');
+    case '':
+      return '-';
+    default:
+      return status as string;
+  }
+}
+
 function isSignedFileGeneratedMessage(message?: string | null): boolean {
   const normalized = message?.trim().toLowerCase() ?? '';
   return normalized.startsWith('signed file generated')
@@ -357,7 +375,10 @@ export function SmartCaSignModal({ approval: initialApproval, currentAccountId, 
                   <div className="rounded-xl border border-card-border bg-page-cream-alt p-4 text-xs text-text-secondary">
                     <p className="font-semibold text-text">{selectedCertificate.subject ?? selectedCertificate.serialNumber}</p>
                     <p className="mt-1">{t('smartca.signModal.validTo')}: {formatDateTime(selectedCertificate.validTo)}</p>
-                    <p className="mt-1">{t('smartca.signModal.certificateStatus')}: {selectedCertificate.status ?? '-'}</p>
+                    <p className="mt-1">{t('smartca.signModal.certificateStatus')}: {certificateStatusLabel(selectedCertificate.status)}</p>
+                    {selectedCertificate.nameMismatchesAccount && (
+                      <p className="mt-2 font-medium text-danger">{t('smartca.signModal.nameMismatchWarning')}</p>
+                    )}
                   </div>
                 )}
               </section>

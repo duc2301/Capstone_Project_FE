@@ -10,14 +10,14 @@ import { useApprovalRealtime } from './useApprovalRealtime';
 const PAGE_SIZE = 20;
 const EMPTY_PAGE: ApprovalListPage = { items: [], total: 0, page: 1, pageSize: PAGE_SIZE };
 
-export function useApprovalHistory() {
+export function useApprovalHistory(projectId?: string) {
   const [page, setPage] = useState(1);
   const [pageLoading, setPageLoading] = useState(false);
   const requestedPageRef = useRef(1);
 
   const { data, loading, error, reload } = useAsyncData<ApprovalListPage>(
-    'approval-history',
-    () => approvalApi.getApprovalsPage(requestedPageRef.current, PAGE_SIZE),
+    `approval-history:${projectId ?? 'all'}`,
+    () => approvalApi.getApprovalsPage(requestedPageRef.current, PAGE_SIZE, projectId),
     {
       fallback: EMPTY_PAGE,
       toErrorMessage: (err) => approvalErrorMessage(err, t('approvals.error')),

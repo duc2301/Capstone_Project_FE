@@ -1559,6 +1559,7 @@ export const translations = {
   "approvals.history.colApprovedAt": "Ngày phê duyệt",
   "approvals.history.colRejectReason": "Lý do từ chối",
   "approvals.history.paginationUnit": "yêu cầu",
+  
   "smartca.action.sign": "Ký số",
   "smartca.signModal.title": "Ký số phê duyệt tài liệu",
   "smartca.signModal.document": "Tài liệu",

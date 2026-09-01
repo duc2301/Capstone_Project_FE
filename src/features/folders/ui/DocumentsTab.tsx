@@ -831,7 +831,7 @@ export function DocumentsTab({
 
       {/* Lịch sử phê duyệt */}
       {approvalHistoryOpen && (
-        <ApprovalHistoryModal onClose={() => setApprovalHistoryOpen(false)} />
+        <ApprovalHistoryModal projectId={projectId} onClose={() => setApprovalHistoryOpen(false)} />
       )}
     </div>
   );

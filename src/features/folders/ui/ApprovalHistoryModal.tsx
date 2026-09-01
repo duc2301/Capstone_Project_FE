@@ -6,10 +6,11 @@ import { useApprovalHistory } from '../model/useApprovalHistory';
 
 interface ApprovalHistoryModalProps {
   onClose: () => void;
+  projectId?: string;
 }
 
-export function ApprovalHistoryModal({ onClose }: ApprovalHistoryModalProps) {
-  const { items, total, page, pageSize, totalPages, goToPage, loading, pageLoading, error } = useApprovalHistory();
+export function ApprovalHistoryModal({ onClose, projectId }: ApprovalHistoryModalProps) {
+  const { items, total, page, pageSize, totalPages, goToPage, loading, pageLoading, error } = useApprovalHistory(projectId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

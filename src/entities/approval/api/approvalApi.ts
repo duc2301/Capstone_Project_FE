@@ -143,9 +143,9 @@ export const approvalApi = {
     return (unwrapResult(data)?.items ?? []).map(mapApprovalItem);
   },
 
-  getApprovalsPage: async (page = 1, pageSize = 20): Promise<ApprovalListPage> => {
+  getApprovalsPage: async (page = 1, pageSize = 20, projectId?: string): Promise<ApprovalListPage> => {
     const { data } = await axiosInstance.get<ApiResponse<RawApprovalPage>>('/approvals', {
-      params: { page, pageSize },
+      params: { page, pageSize, projectId },
     });
     const result = unwrapResult(data);
     return {
